@@ -128,5 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Singularity build files
+singularity/cu*
+singularity/.*
+singularity/Vagrantfile
+
 # Pycharm files
 .idea
