@@ -136,3 +136,6 @@ singularity/*.sif
 
 # Pycharm files
 .idea
+
+# Virtualenv files
+virtualenvironment/venv
