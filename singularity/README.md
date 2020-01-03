@@ -12,7 +12,8 @@ make launch-image
 _Using Makefile_
 
 Create Vagrant environment, build singularity image and push it to singularity library.
-Dependency: cudnn-* and cuda-* libraries should be in current directory. 
+Dependency: cudnn-* and cuda-* libraries should be in current directory.
+
 ```bash
 make build-image
 ```
@@ -24,7 +25,6 @@ make clean-vm
 ```
 
 _Manually_
-
 
 ```bash
 # copy singularity build file 

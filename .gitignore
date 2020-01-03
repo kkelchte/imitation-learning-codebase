@@ -132,6 +132,7 @@ dmypy.json
 singularity/cu*
 singularity/.*
 singularity/Vagrantfile
+singularity/*.sif
 
 # Pycharm files
 .idea

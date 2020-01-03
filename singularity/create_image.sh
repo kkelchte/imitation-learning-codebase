@@ -1,7 +1,22 @@
 #!/bin/sh
 cd /vagrant
-echo "VERSION: $1"
 
-sudo singularity build image.sif singularity.def
+VERSION=$1
+if [ -z $VERSION ] ; then
+	VERSION="latest"
+fi
+echo "VERSION = ${VERSION}"
 
-singularity push -U image.sif library://kkelchte/default/ros-gazebo-cuda:$1
+if [ -e image.sif ] ; then
+	echo "found existing singularity image $(echo *.sif)"
+else
+	sudo singularity build image.sif singularity.def
+fi
+
+if [ ! -e /home/vagrant/.singularity/remote.yaml ] ; then
+	mkdir -p /home/vagrant/.singularity
+	touch /home/vagrant/.singularity/remote.yaml
+	singularity remote login SylabsCloud
+fi
+
+singularity push -U image.sif library://kkelchte/default/ros-gazebo-cuda:$VERSION
