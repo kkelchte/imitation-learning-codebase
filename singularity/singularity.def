@@ -1,0 +1,102 @@
+Bootstrap: library
+From: ubuntu:16.04
+
+%labels
+Author kkelchte
+Version 0.0.1
+
+
+%environment
+LANG C.UTF-8
+LC_ALL C.UTF-8
+ROS_DISTRO kinetic
+
+%post
+
+# ---- General packages ----
+apt-get -y update
+apt-get install -q -y \
+		dialog \
+		apt-utils \
+		xvfb \
+		udev \
+	    dirmngr \
+	    gnupg2 \
+	    python-pip \
+	    vim \
+	    less \
+	    wget \
+	    libxml2 \
+	    && rm -rf /var/lib/apt/lists/*
+
+	    
+
+# ---- ROS ----
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+
+echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros1-latest.list
+
+apt-get update && apt-get install -y -q \
+    python-rosdep \
+    python-rosinstall \
+    python-vcstools \
+    && rm -rf /var/lib/apt/lists/*
+
+rosdep init
+rosdep update
+
+#wget -O enable_kernel_sources.sh https://raw.githubusercontent.com/IntelRealSense/librealsense/rosdebian/scripts/enable_kernel_sources.sh
+#bash ./enable_kernel_sources.sh
+#apt-get -y -q dist-upgrade
+
+apt-get update && apt-get install -y -q -–no-install-recommends\
+    ros-kinetic-ros-core \
+    ros-kinetic-gazebo-ros-pkgs ros-kinetic-gazebo-ros-control \
+    ros-kinetic-tf2-geometry-msgs \
+    ros-kinetic-hector-pose-estimation \
+    libignition-math2-dev \
+    ros-kinetic-turtlebot \
+    ros-kinetic-turtlebot-gazebo \
+    ros-kinetic-turtlebot3 \
+    && rm -rf /var/lib/apt/lists/*
+#    ros-kinetic-hector-sensors-description \
+#    ros-kinetic-hector-localization \
+#    ros-kinetic-hector-models \
+#    ros-kinetic-teleop-twist-keyboard \
+#    ros-kinetic-hector-mapping \
+#    ros-kinetic-hector-gazebo \
+#    ros-kinetic-hector-gazebo-plugins \
+#    ros-kinetic-hector-sensors-description \
+#    ros-kinetic-hector-sensors-gazebo \
+
+# optional
+# ros-kinetic-parrot-arsdk
+
+# ---- GAZEBO ----
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys D2486D2DD83DB69272AFE98867170598AF249743
+. /etc/os-release \
+ && echo "deb http://packages.osrfoundation.org/gazebo/$ID-stable `lsb_release -sc` main" > /etc/apt/sources.list.d/gazebo-latest.list
+
+apt-get update && apt-get install -q -y \
+    gazebo7 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- CUDA ----
+%files
+cuda-10.2 /usr/lib/local
+
+#%post
+#wget http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_440.33.01_linux.run
+#chmod 700 cuda_10.2.89_440.33.01_linux.run
+#sh cuda_10.2.89_440.33.01_linux.run --silent
+
+# ---- CUDNN ----
+# ! Make sure cudnn_7.1 is in current directory (~/vm-singularity)
+%files
+cudnn-7.1 /usr/lib/local
+
+
+
+
+
+
