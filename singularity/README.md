@@ -1,6 +1,45 @@
-# Singularity on Mac instructions
+# Instructions
 
-### Installation
+### Get shell in singularity image
+
+```bash
+make launch-image
+```
+
+
+### Launch VM to create singularity image on Mac
+
+_Using Makefile_
+
+Create Vagrant environment, build singularity image and push it to singularity library.
+Dependency: cudnn-* and cuda-* libraries should be in current directory. 
+```bash
+make build-image
+```
+
+Cleanup directory:
+
+```bash
+make clean-vm
+```
+
+_Manually_
+
+
+```bash
+# copy singularity build file 
+vagrant ssh
+# go to mounted vagrant directory
+cd /vagrant
+# build image as 
+sudo singularity build image.sif singularity.def
+# push image online
+singularity sign image.sif
+singularity push -U image.sif library://kkelchte/default/ros-gazebo-cuda:v0.0.1
+```
+
+
+### Installation of VB and Vagrant on Mac
 
 ```bash
 $ /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -23,16 +62,3 @@ touch $HOME/.singularity/remote.yaml
 singularity remote login SylabsCloud
 ```
 
-### Launch VM to create singularity image
-
-```bash
-# copy singularity build file 
-vagrant ssh
-# go to mounted vagrant directory
-cd /vagrant
-# build image as 
-sudo singularity build image.sif singularity.def
-# push image online
-singularity sign image.sif
-singularity push -U image.sif library://kkelchte/default/ros-gazebo-cuda:v0.0.1
-```

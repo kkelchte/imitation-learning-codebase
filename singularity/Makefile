@@ -1,4 +1,9 @@
 VM=sylabs/singularity-3.2-ubuntu-bionic64
+VERSION="$(cat VERSION)"
+
+launch-singularity:
+	if [ ! -e *.sif ] ; then \
+		singularity pull
 
 create-vm:
 	vagrant init ${VM}
@@ -14,7 +19,7 @@ build-image: create-vm
 		echo "Found cuda folder: $(echo cuda-*)"; \
 		if [ -e cudnn-* ] ; then \
 			echo "Found cudnn folder: $(echo cudnn-*)"; \
-			vagrant ssh -- -t '/bin/bash /vagrant/create_image.sh'; \
+			vagrant ssh -- -t "/bin/bash /vagrant/create_image.sh ${VERSION}"; \
 		else \
 			echo "ERROR: Could not found cudnn folder."; \
 		fi ; \
