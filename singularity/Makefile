@@ -3,16 +3,13 @@ VERSION=$(shell cat VERSION)
 
 COMMAND="/bin/bash /vagrant/create_image.sh ${VERSION}"
 
-launch-singularity:
-	if [ ! -e *.sif ] ; then \
-		singularity pull
-
 create-vm:
 	vagrant init ${VM}
 	vagrant up
 
 clean-vm:
 	vagrant destroy
+	rm image.sif
 	rm Vagrantfile
 	rm -r .vagrant
 
@@ -31,7 +28,7 @@ build-image: #create-vm
 
 fetch-image:
 	if [ ! -e singularity-image.sif ] ; then \
-		singularity pull library://kkelchte/default/ros-gazebo-cuda: && \
+		singularity pull library://kkelchte/default/ros-gazebo-cuda:${VERSION} && \
 		echo "Successfully pulled singularity-image"; \
 	else \
 		echo "Singularity image already there"; \

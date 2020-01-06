@@ -1,0 +1,14 @@
+ipython
+jupyter-core
+jupyter-client
+matplotlib
+mock
+numpy
+pillow
+pylint
+pytest
+pyyaml
+scikit-image
+scikit-learn
+scipy
+dataclasses

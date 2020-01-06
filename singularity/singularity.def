@@ -1,9 +1,10 @@
 Bootstrap: library
 From: ubuntu:16.04
 
+
 %labels
-Author kkelchte
-Version 0.0.1
+    Author kkelchte
+    Version 0.0.1
 
 
 %environment
@@ -12,10 +13,9 @@ LC_ALL C.UTF-8
 ROS_DISTRO kinetic
 
 %post
-
 # ---- General packages ----
-apt-get -y update
-apt-get install -q -y \
+apt -y update
+apt install -q -y \
 		dialog \
 		apt-utils \
 		xvfb \
@@ -23,13 +23,31 @@ apt-get install -q -y \
 	    dirmngr \
 	    gnupg2 \
 	    python-pip \
+	    python3-pip \
 	    vim \
 	    less \
 	    wget \
 	    libxml2 \
 	    && rm -rf /var/lib/apt/lists/*
 
-	    
+apt -y upgrade
+
+# ---- PYTHON3 ---
+%post
+apt update
+apt install -y -q software-properties-common
+apt update
+add-apt-repository ppa:deadsnakes/ppa
+apt update
+apt install -y -q python3.7-dev
+apt update
+
+%files
+requirements /
+
+%post
+python3.7 -m pip install --user --upgrade pip
+python3.7 -m pip install -r /requirements
 
 # ---- ROS ----
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
