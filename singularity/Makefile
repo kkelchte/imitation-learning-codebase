@@ -28,3 +28,11 @@ build-image: #create-vm
 	else \
 		echo "ERROR: Could not found cuda folder."; \
 	fi
+
+fetch-image:
+	if [ ! -e singularity-image.sif ] ; then \
+		singularity pull library://kkelchte/default/ros-gazebo-cuda: && \
+		echo "Successfully pulled singularity-image"; \
+	else \
+		echo "Singularity image already there"; \
+	fi
