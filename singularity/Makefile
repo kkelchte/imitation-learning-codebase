@@ -27,10 +27,17 @@ image.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
 		echo "ERROR: Could not found cuda folder."; \
 	fi
 
-fetch-image:
-	if [ ! -e image.sif ] ; then \
+update-image:
+	for image in *.sif ; do \
+		if [ $$image != ros-gazebo-cuda_${version}.sif ] ; then \
+			echo "cleaned up: $$image"; \
+			rm $$image; \
+		fi ; \
+	done
+	if [ ! -e ./ros-gazebo-cuda_${version}.sif ] ; then \
 		singularity pull library://kkelchte/default/ros-gazebo-cuda:${version} && \
 		echo "Successfully pulled singularity-image"; \
 	else \
 		echo "Singularity image already there"; \
 	fi
+
