@@ -1,11 +1,12 @@
 VM=sylabs/singularity-3.2-ubuntu-bionic64
 version=$(shell cat VERSION)
-
-COMMAND="/bin/bash /vagrant/create_image.sh ${version}"
+LOGINCOMMAND="/bin/bash /vagrant/login_remote.sh"
+BUILDCOMMAND="/bin/bash /vagrant/create_image.sh ${version}"
 
 Vagrantfile:
 	vagrant init ${VM}
 	vagrant up
+	vagrant ssh -- -t ${LOGINCOMMAND}
 
 clean-vm:
 	vagrant destroy
@@ -18,7 +19,7 @@ image.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
 		echo "Found cuda folder: $(echo cuda-*)"; \
 		if [ -e cudnn-* ] ; then \
 			echo "Found cudnn folder: $(echo cudnn-*)"; \
-			vagrant ssh -- -t ${COMMAND}; \
+			vagrant ssh -- -t ${BUILDCOMMAND}; \
 		else \
 			echo "ERROR: Could not found cudnn folder."; \
 		fi ; \

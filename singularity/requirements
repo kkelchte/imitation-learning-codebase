@@ -12,3 +12,10 @@ scikit-image
 scikit-learn
 scipy
 dataclasses
+torch
+torchvision
+roslibpy
+gym
+box2d-py
+pyglet
+frozendict

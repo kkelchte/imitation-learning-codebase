@@ -6,12 +6,6 @@ From: ubuntu:16.04
     Author kkelchte
     Version 0.0.1
 
-
-%environment
-LANG C.UTF-8
-LC_ALL C.UTF-8
-ROS_DISTRO kinetic
-
 %post
 # ---- General packages ----
 apt -y update
@@ -76,9 +70,9 @@ apt-get update && apt-get install -y -q -–no-install-recommends\
     ros-kinetic-turtlebot \
     ros-kinetic-turtlebot-gazebo \
     ros-kinetic-turtlebot3 \
-    ros-kinetic-hector-sensors-description \
     && rm -rf /var/lib/apt/lists/*
 #    ros-kinetic-parrot-arsdk
+#    ros-kinetic-hector-sensors-description \
 #    ros-kinetic-hector-sensors-description \
 #    ros-kinetic-hector-localization \
 #    ros-kinetic-hector-models \
