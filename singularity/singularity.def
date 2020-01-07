@@ -76,7 +76,9 @@ apt-get update && apt-get install -y -q -–no-install-recommends\
     ros-kinetic-turtlebot \
     ros-kinetic-turtlebot-gazebo \
     ros-kinetic-turtlebot3 \
+    ros-kinetic-hector-sensors-description \
     && rm -rf /var/lib/apt/lists/*
+#    ros-kinetic-parrot-arsdk
 #    ros-kinetic-hector-sensors-description \
 #    ros-kinetic-hector-localization \
 #    ros-kinetic-hector-models \
@@ -87,8 +89,6 @@ apt-get update && apt-get install -y -q -–no-install-recommends\
 #    ros-kinetic-hector-sensors-description \
 #    ros-kinetic-hector-sensors-gazebo \
 
-# optional
-# ros-kinetic-parrot-arsdk
 
 # ---- GAZEBO ----
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys D2486D2DD83DB69272AFE98867170598AF249743
