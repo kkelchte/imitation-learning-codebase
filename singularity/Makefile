@@ -1,22 +1,19 @@
 VM=sylabs/singularity-3.2-ubuntu-bionic64
-VERSION=$(shell cat VERSION)
+version=$(shell cat VERSION)
 
-COMMAND="/bin/bash /vagrant/create_image.sh ${VERSION}"
+COMMAND="/bin/bash /vagrant/create_image.sh ${version}"
 
-launch-singularity:
-	if [ ! -e *.sif ] ; then \
-		singularity pull
-
-create-vm:
+Vagrantfile:
 	vagrant init ${VM}
 	vagrant up
 
 clean-vm:
 	vagrant destroy
+	rm image.sif
 	rm Vagrantfile
 	rm -r .vagrant
 
-build-image: #create-vm
+image.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
 	if [ -e cuda-* ] ; then \
 		echo "Found cuda folder: $(echo cuda-*)"; \
 		if [ -e cudnn-* ] ; then \
@@ -30,8 +27,8 @@ build-image: #create-vm
 	fi
 
 fetch-image:
-	if [ ! -e *.sif ] ; then \
-		singularity pull library://kkelchte/default/ros-gazebo-cuda:v0.0.1 && \
+	if [ ! -e ./*.sif ] ; then \
+		singularity pull library://kkelchte/default/ros-gazebo-cuda:${version} && \
 		echo "Successfully pulled singularity-image"; \
 	else \
 		echo "Singularity image already there"; \
