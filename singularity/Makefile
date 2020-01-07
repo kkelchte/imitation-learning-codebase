@@ -30,8 +30,8 @@ build-image: #create-vm
 	fi
 
 fetch-image:
-	if [ ! -e singularity-image.sif ] ; then \
-		singularity pull library://kkelchte/default/ros-gazebo-cuda: && \
+	if [ ! -e *.sif ] ; then \
+		singularity pull library://kkelchte/default/ros-gazebo-cuda:v0.0.1 && \
 		echo "Successfully pulled singularity-image"; \
 	else \
 		echo "Singularity image already there"; \
