@@ -2,7 +2,7 @@ ENVIRONMENT_DIR=venv
 
 .PHONY: venv
 
-venv: requirements
+venv: ../singularity/requirements
 	if [ -d ${ENVIRONMENT_DIR} ] ; then \
 		rm -r ${ENVIRONMENT_DIR}; \
 	fi
