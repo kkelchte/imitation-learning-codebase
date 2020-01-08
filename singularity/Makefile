@@ -14,7 +14,7 @@ clean-vm:
 	rm Vagrantfile
 	rm -r .vagrant
 
-image.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
+*.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
 	if [ -e cuda-* ] ; then \
 		echo "Found cuda folder: $(echo cuda-*)"; \
 		if [ -e cudnn-* ] ; then \

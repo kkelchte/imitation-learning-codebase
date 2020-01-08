@@ -1,0 +1,5 @@
+output_path: '/tmp'
+environment_config:
+  max_number_episode_steps: 100
+  actor_config:
+    name: 'expert'

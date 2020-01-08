@@ -1,14 +1,31 @@
 import os
+import argparse
+
 import yaml
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 
+def iterative_check_for_none_values(dictionary: dict):
+    for key, value in dictionary.items():
+        if value is None:
+            raise IOError(f'Found None value in config. \n {key}: {value}')
+        if isinstance(value, dict):
+            iterative_check_for_none_values(value)
+
+
 @dataclass_json
 @dataclass
 class Config:
+    """Define config class to translate yaml/dicts to corresponding config objects.
 
-    def create(self, config_dict: dict = {}, config_file: str = ''):
+    Based on dataclass_json object.
+    Raises error if field contains None.
+    """
+
+    def create(self,
+               config_dict: dict = {},
+               config_file: str = ''):
         assert not (config_file and config_dict)
         assert (config_dict or config_file)
 
@@ -19,6 +36,13 @@ class Config:
                 config_dict = yaml.load(f, Loader=yaml.FullLoader)
 
         instant = self.from_dict(config_dict)
-        for field in instant.__dict__.values():
-            assert field is not None
+        iterative_check_for_none_values(instant.__dict__)
         return instant
+
+
+class Parser(argparse.ArgumentParser):
+    """Parser class to get config retrieve config file argument"""
+
+    def __init__(self):
+        super().__init__()
+        self.add_argument("--config", type=str, default=None)

@@ -33,6 +33,7 @@ class DNNActorConfig(ActorConfig):
     model_trace_path: str
     io_adapter_config: IOAdapterConfig
 
+
 class DNNActor(Actor):
 
     def __init__(self):

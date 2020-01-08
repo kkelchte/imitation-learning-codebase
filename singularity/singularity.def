@@ -6,7 +6,6 @@ This is a container with ROS, Gazebo, XPRA, CUDA and Torch for imitation learnin
 
 %environment
 export LC_ALL=C
-export DEBIAN_FRONTEND=noninteractive
 
 %labels
     Author kkelchte
@@ -15,8 +14,7 @@ export DEBIAN_FRONTEND=noninteractive
 %post
 # ---- General packages ----
 apt -y update && \
-export DEBIAN_FRONTEND=noninteractive && \
-apt install -q -y \
+export DEBIAN_FRONTEND=noninteractive && apt install -q -y \
 		dialog \
 		apt-utils \
 		xvfb \
@@ -37,14 +35,6 @@ apt install -q -y \
 
 apt -y -q upgrade
 
-# ---- Locales ---- (due to fatal error of gazebo)
-apt update && \
-apt install -y -q locales
-
-locale-gen en_US.UTF-8
-update-locale LANG=en_us.UTF-8
-
-
 # ---- PYTHON3 ---
 %post
 apt update && \
@@ -53,19 +43,20 @@ apt update && \
 add-apt-repository ppa:deadsnakes/ppa
 apt update && \
 apt install -y -q python3.7-dev
-
+apt update
 
 %files
 requirements /
 
 %post
-apt update && \
 python3.7 -m pip install --user --upgrade pip
 python3.7 -m pip install -r /requirements
 
 # ---- ROS ----
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+
 echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros1-latest.list
+
 apt-get update && apt-get install -y -q \
     python-rosdep \
     python-rosinstall \
@@ -124,9 +115,6 @@ cuda-10.2 /usr/lib/local
 # ! Make sure cudnn_7.1 is in current directory (~/vm-singularity)
 %files
 cudnn-7.1 /usr/lib/local
-
-# ---- End ----
-apt -y -q upgrade
 
 
 

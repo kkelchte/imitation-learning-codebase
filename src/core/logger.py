@@ -1,3 +1,3 @@
-"""Modified logger to store easy-extractable log files
+"""Modified logger to store easy-extractable log files.
 
 """

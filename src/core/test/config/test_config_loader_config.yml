@@ -1,5 +1,6 @@
 model_config:
   model_path: '/path/to/model'
+  model_checkpoint: '/path/to/checkpoint'
 environment_config:
   environment_name: 'gym'
   number_of_runs: 10

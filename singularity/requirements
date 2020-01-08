@@ -19,3 +19,4 @@ frozendict
 gym==0.10.*
 box2d-py==2.3.8
 pyglet==1.3.2
+dataclasses-json
