@@ -28,12 +28,14 @@ image.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
 	fi
 
 update-image:
-	for image in *.sif ; do \
-		if [ $$image != ros-gazebo-cuda_${version}.sif ] ; then \
-			echo "cleaned up: $$image"; \
-			rm $$image; \
-		fi ; \
-	done
+	if [ -e *.sif ] ; then \
+		for image in *.sif ; do \
+			if [ $$image != ros-gazebo-cuda_${version}.sif ] ; then \
+				echo "cleaned up: $$image"; \
+				rm $$image; \
+			fi ; \
+		done ; \
+	fi
 	if [ ! -e ./ros-gazebo-cuda_${version}.sif ] ; then \
 		singularity pull library://kkelchte/default/ros-gazebo-cuda:${version} && \
 		echo "Successfully pulled singularity-image"; \
@@ -42,7 +44,7 @@ update-image:
 	fi
 
 CODEDIR = ..
-test: $(CODEDIR)/singularity/*.sif test/singularity_sanity_check.py
+test-image: *.sif test/singularity_sanity_check.py
 	cd $(CODEDIR) && \
 	singularity run --nv singularity/*.sif \
 	./launch.sh 'python3.7 singularity/test/singularity_sanity_check.py'

@@ -1,0 +1,7 @@
+model_config:
+  model_path: '/path/to/model'
+environment_config:
+  environment_name: 'gym'
+  number_of_runs: 10
+store_data: True
+output_path: '/path/to/output'
