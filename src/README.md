@@ -1,8 +1,8 @@
-# Source code for imitation-learning code base
+# Imitation learning code base
 
 The subdirectories have the following structure:
 
-- _core_ : contains basic helper functions, has no other code-base dependencies except within core.
+- _core_ : contains basic helper functions, has no other code dependencies except within core.
 - _sim_ : contains code relevant for each simulated environment:
     - _gazebo_ : interfaces and helper functions for ROS-gazebo
         - _messages_ : define topics and message types for sensors and actions
