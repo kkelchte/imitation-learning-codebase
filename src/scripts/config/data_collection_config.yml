@@ -1,5 +1,10 @@
 output_path: '/tmp'
-environment_config:
-  max_number_episode_steps: 100
+runner_config:
+  number_of_episodes: 2
+  environment_config:
+    name: 'esat'
+    environment_type: 1 # Gym = 0, Gazebo = 1, Real = 2
+    max_number_episode_steps: 100
   actor_config:
-    name: 'expert'
+    actor_type: 1 # Model = 0, Expert = 1
+    tag: 'expert'

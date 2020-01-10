@@ -1,9 +1,8 @@
 
-from dataclasses import dataclass
-
 from src.core.object_factory import ObjectFactory
 from src.sim.gym.gym_environment import GymEnvironment
 from src.sim.gazebo.gazebo_environment import GazeboEnvironment
+
 """Pick correct environment class according to environment type name.
 
 """

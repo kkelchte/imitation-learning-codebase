@@ -3,15 +3,16 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
-from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import Action, State
+from src.sim.common.data_types import Action, State, EnvironmentType
+from src.sim.common.actors import Actor
 
 
 @dataclass_json
 @dataclass
 class EnvironmentConfig(Config):
-    actor_config: ActorConfig
-    max_number_episode_steps: int = 100
+    name: str = None
+    environment_type: EnvironmentType = None
+    max_number_of_steps: int = 100
 
 
 class Environment:
@@ -23,4 +24,7 @@ class Environment:
         pass
 
     def reset(self) -> State:
+        pass
+
+    def get_actor(self) -> Actor:
         pass
