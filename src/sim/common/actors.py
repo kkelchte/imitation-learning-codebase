@@ -3,7 +3,6 @@ import numpy as np
 
 from src.sim.common.data_types import Action, ActorType
 from src.ai.architectures.models.model import BaseModel
-from src.data.io_adapter import IOAdapterConfig, IOAdapter
 
 
 """Base actor class and dnn actor class
@@ -14,20 +13,20 @@ Depends on ai/architectures/models to call forward pass.
 
 @dataclass
 class ActorConfig:
-    name: str = None
+    description: str = None
     actor_type: ActorType = None
 
 
 class Actor:
 
     def __init__(self, config: ActorConfig):
-        self._name = config.name
+        self._description = config.description
 
     def get_action(self, raw_state: np.array, visualize: bool = False, verbose: bool = False) -> Action:
         pass
 
-    def get_name(self):
-        return self._name
+    def get_description(self):
+        return self._description
 
 
 @dataclass

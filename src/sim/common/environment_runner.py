@@ -31,8 +31,7 @@ class EnvironmentRunner:
                             quite=False)
         logger.info(f'Initiate.')
         self._data_saver = data_saver
-        self._environment = EnvironmentFactory().create(config.environment_config.environment_type,
-                                                        config.environment_config)
+        self._environment = EnvironmentFactory().create(config.environment_config)
         if self._config.actor_config.actor_type == ActorType.Model:
             self._actor = DNNActor(config=config.actor_config)
         else:

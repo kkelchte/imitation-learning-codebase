@@ -78,6 +78,11 @@ class TestConfigLoader(unittest.TestCase):
         print(config)
         self.assertEqual(config.environment_config.number_of_runs, 5)
 
+    def test_raise_unknown_value(self):
+        self.config_dict['new_key'] = 'new_value'
+        with self.assertRaises(Exception):
+            DummyDataCollectionConfig().create(config_dict=self.config_dict)
+
     def test_config_parser(self):
         config_file = 'src/core/test/config/test_config_loader_config.yml'
         arguments = Parser().parse_args(["--config", config_file])
@@ -90,8 +95,11 @@ class TestConfigLoader(unittest.TestCase):
         self.assertEqual(config.output_path, config.environment_config.output_path)
 
     def test_saved_config_in_output_path(self):
-        DummyDataCollectionConfig().create(config_dict=self.config_dict)
-        self.assertTrue(os.path.isfile(os.path.join(self.TEST_DIR, 'configs', 'dummy_data_collection_config.yml')))
+        config = DummyDataCollectionConfig().create(config_dict=self.config_dict)
+        new_config_file = os.path.join(self.TEST_DIR, 'configs', 'dummy_data_collection_config.yml')
+        self.assertTrue(os.path.isfile(new_config_file))
+        restored_config = DummyDataCollectionConfig().create(config_file=new_config_file)
+        self.assertEqual(restored_config, config)
 
     def tearDown(self):
         shutil.rmtree(self.TEST_DIR, ignore_errors=True)

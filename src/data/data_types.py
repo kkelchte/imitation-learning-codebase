@@ -5,6 +5,8 @@ import numpy as np
 from dataclasses import dataclass
 import torch
 
+from src.sim.common.data_types import SensorType
+
 """Data types required for defining dataset frames and torch dataset samples.
 
 Mainly used by data_saver for storing states as dataset frames
@@ -21,8 +23,8 @@ class OutcomeType(IntEnum):
 
 @dataclass
 class Frame:
-    sensor: str = None
-    time_stamp: int = None
+    sensor_type: SensorType = None
+    time_stamp_us: int = None
     data: np.array = None
 
 
@@ -46,8 +48,8 @@ class Sample:
     label: torch.Tensor = None
     input: torch.Tensor = None
     reward: torch.Tensor = None
-    auxiliary_input: Dict[torch.Tensor] = None
-    auxiliary_output: Dict[torch.Tensor] = None
+    auxiliary_input: Dict[str, torch.Tensor] = None
+    auxiliary_output: Dict[str, torch.Tensor] = None
 
 
 @dataclass

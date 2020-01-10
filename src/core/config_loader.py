@@ -3,7 +3,7 @@ import argparse
 
 import yaml
 from dataclasses import dataclass
-from dataclasses_json import dataclass_json
+from dataclasses_json import dataclass_json, Undefined
 
 from src.core.utils import camelcase_to_snake_format
 
@@ -17,7 +17,7 @@ def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
     return dictionary
 
 
-@dataclass_json
+@dataclass_json(undefined=Undefined.RAISE)
 @dataclass
 class Config:
     output_path: str = None
@@ -63,8 +63,17 @@ class Config:
             os.makedirs(os.path.join(self.output_path, 'configs'))
         with open(os.path.join(self.output_path, 'configs',
                                camelcase_to_snake_format(self.__class__.__name__) + '.yml'), 'w') as f:
-            yaml.dump(data=self.__dict__,
+            yaml.dump(data=self.yaml_approved_dict(),
                       stream=f)
+
+    def yaml_approved_dict(self) -> dict:
+        output_dict = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, Config):
+                output_dict[key] = value.yaml_approved_dict()
+            else:
+                output_dict[key] = value
+        return output_dict
 
 
 class Parser(argparse.ArgumentParser):

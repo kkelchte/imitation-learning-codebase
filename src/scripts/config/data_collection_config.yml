@@ -1,11 +1,16 @@
-data_saver_config:
-  output_path: '/tmp'
+output_path: '/esat/opal/kkelchte/test_experiments/data_collection'
 runner_config:
-  number_of_episodes: 2
   environment_config:
-    name: 'esat'
-    environment_type: 1 # Gym = 0, Gazebo = 1, Real = 2
-    max_number_episode_steps: 100
+    factory_key: 1 # Gym = 0, Gazebo = 1, Real = 2
+    robot_name: 'turtle'
+    world_name: 'esat'
+    max_number_of_steps: 100
   actor_config:
     actor_type: 1 # Model = 0, Expert = 1
-    tag: 'default-expert'
+    description: 'default-expert'
+  number_of_episodes: 2
+data_saver_config:
+  saving_directory: 'dataset'
+  sensors:
+    - 0
+    - 1

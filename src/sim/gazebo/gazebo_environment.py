@@ -1,6 +1,8 @@
 
-from src.sim.common.environment import Environment
+from src.sim.common.environment import EnvironmentConfig, Environment
 
 
 class GazeboEnvironment(Environment):
-    pass
+
+    def __init__(self, config: EnvironmentConfig):
+        super().__init__(config)

@@ -1,25 +1,14 @@
+from typing import Dict
 from enum import IntEnum
 
+import numpy as np
 from dataclasses import dataclass
 
 
-@dataclass
-class Action:
-    pass
-
-
-@dataclass
 class TerminalType(IntEnum):
     NotDone = 0
     Success = 1
     Failure = 2
-
-
-@dataclass
-class State:
-    terminal: TerminalType = None
-    sensor_data: dict = None
-    time_stamp: int = 0
 
 
 class EnvironmentType(IntEnum):
@@ -31,3 +20,21 @@ class EnvironmentType(IntEnum):
 class ActorType(IntEnum):
     Model = 0
     Expert = 1
+
+
+class SensorType(IntEnum):
+    RGB = 0
+    Depth = 1
+
+
+@dataclass
+class Action:
+    actor_type: ActorType = None
+    value: np.ndarray = None
+
+
+@dataclass
+class State:
+    terminal: TerminalType = None
+    sensor_data: Dict[SensorType, np.ndarray] = None
+    time_stamp_us: int = 0
