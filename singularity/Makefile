@@ -10,7 +10,7 @@ Vagrantfile:
 
 clean-vm:
 	vagrant destroy
-	rm image.sif
+	rm *.sif
 	rm Vagrantfile
 	rm -r .vagrant
 
@@ -26,6 +26,9 @@ clean-vm:
 	else \
 		echo "ERROR: Could not found cuda folder."; \
 	fi
+
+push-image:
+	vagrant ssh -- -t ${BUILDCOMMAND}
 
 update-image:
 	if [ -e *.sif ] ; then \
@@ -48,3 +51,4 @@ test-image: *.sif test/singularity_sanity_check.py
 	cd $(CODEDIR) && \
 	singularity run --nv singularity/*.sif \
 	./launch.sh 'python3.7 singularity/test/singularity_sanity_check.py'
+
