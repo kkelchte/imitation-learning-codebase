@@ -5,6 +5,7 @@ import shutil
 from datetime import datetime
 
 import src.core.logger as logger
+from src.core.utils import camelcase_to_snakeformat
 
 
 class TestLogger(unittest.TestCase):

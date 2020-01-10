@@ -139,3 +139,6 @@ singularity/*.sif
 
 # Virtualenv files
 virtualenvironment/venv
+
+# Accidental test folders left from failed tests
+test*

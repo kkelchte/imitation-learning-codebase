@@ -5,6 +5,8 @@ import yaml
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
+from src.core.utils import camelcase_to_snake_format
+
 
 def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
     if 'output_path' not in dictionary.keys():
@@ -40,11 +42,7 @@ class Config:
         instant = self.from_dict(config_dict)
         instant.iterative_add_output_path(output_path=instant.output_path)
         instant.iterative_check_for_none()
-        # instant = iterative_add_output_path(instant, output_path=instant.output_path)
-        # iterative_check_for_none_values(instant)
-        # instant = self.from_dict(
-        #     iterative_add_output_path(instant.__dict__, output_path=instant.output_path)
-        # )
+        instant.save_config_file()
         return instant
 
     def iterative_check_for_none(self) -> None:
@@ -54,13 +52,19 @@ class Config:
             if isinstance(value, Config):
                 value.iterative_check_for_none()
 
-    def iterative_add_output_path(self, output_path: str):
+    def iterative_add_output_path(self, output_path: str) -> None:
         self.output_path = output_path
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 value.iterative_add_output_path(output_path)
 
-
+    def save_config_file(self) -> None:
+        if not os.path.isdir(os.path.join(self.output_path, 'configs')):
+            os.makedirs(os.path.join(self.output_path, 'configs'))
+        with open(os.path.join(self.output_path, 'configs',
+                               camelcase_to_snake_format(self.__class__.__name__) + '.yml'), 'w') as f:
+            yaml.dump(data=self.__dict__,
+                      stream=f)
 
 
 class Parser(argparse.ArgumentParser):

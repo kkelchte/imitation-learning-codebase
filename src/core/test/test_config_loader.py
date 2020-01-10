@@ -1,7 +1,9 @@
 import unittest
 import os
+import shutil
 
 import yaml
+from datetime import datetime
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -33,14 +35,19 @@ class DummyDataCollectionConfig(Config):
 
 class TestConfigLoader(unittest.TestCase):
 
-    def test_load_from_dict(self):
-        config_file = 'src/core/test/config/test_config_loader_config.yml'
-        if not os.path.exists(config_file):
+    def setUp(self) -> None:
+        self.TEST_DIR = f'test-{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}'
+        if not os.path.exists(self.TEST_DIR):
+            os.makedirs(self.TEST_DIR)
+        self.config_file = 'src/core/test/config/test_config_loader_config.yml'
+        if not os.path.exists(self.config_file):
             raise FileNotFoundError('Are you in the code root directory?')
-        with open(config_file, 'r') as f:
-            config_dict = yaml.load(f, Loader=yaml.FullLoader)
+        with open(self.config_file, 'r') as f:
+            self.config_dict = yaml.load(f, Loader=yaml.FullLoader)
+        self.config_dict['output_path'] = self.TEST_DIR
 
-        config = DummyDataCollectionConfig().create(config_dict=config_dict)
+    def test_load_from_dict(self):
+        config = DummyDataCollectionConfig().create(config_dict=self.config_dict)
 
         print(config)
         self.assertEqual(config.store_data, True)
@@ -48,8 +55,7 @@ class TestConfigLoader(unittest.TestCase):
         self.assertTrue(isinstance(config.model_config, DummyModelConfig))
 
     def test_load_from_file(self):
-        config_file = 'src/core/test/config/test_config_loader_config.yml'
-        config = DummyDataCollectionConfig().create(config_file=config_file)
+        config = DummyDataCollectionConfig().create(config_file=self.config_file)
 
         print(config)
         self.assertEqual(config.store_data, True)
@@ -57,30 +63,18 @@ class TestConfigLoader(unittest.TestCase):
         self.assertTrue(isinstance(config.model_config, DummyModelConfig))
 
     def test_error_for_none_value(self):
-        config_file = 'src/core/test/config/test_config_loader_config.yml'
-        if not os.path.exists(config_file):
-            raise FileNotFoundError('Are you in the code root directory?')
-        with open(config_file, 'r') as f:
-            config_dict = yaml.load(f, Loader=yaml.FullLoader)
-
-        del config_dict['store_data']
+        del self.config_dict['store_data']
         with self.assertRaises(Exception):
-            DummyDataCollectionConfig().create(config_dict=config_dict)
+            DummyDataCollectionConfig().create(config_dict=self.config_dict)
 
-        del config_dict['environment_config']['environment_name']
+        del self.config_dict['environment_config']['environment_name']
         with self.assertRaises(Exception):
-            DummyDataCollectionConfig().create(config_dict=config_dict)
+            DummyDataCollectionConfig().create(config_dict=self.config_dict)
 
     def test_usage_of_default_value(self):
-        config_file = 'src/core/test/config/test_config_loader_config.yml'
-        if not os.path.exists(config_file):
-            raise FileNotFoundError('Are you in the code root directory?')
-        with open(config_file, 'r') as f:
-            config_dict = yaml.load(f, Loader=yaml.FullLoader)
+        del self.config_dict['environment_config']['number_of_runs']
 
-        del config_dict['environment_config']['number_of_runs']
-
-        config = DummyDataCollectionConfig().create(config_dict=config_dict)
+        config = DummyDataCollectionConfig().create(config_dict=self.config_dict)
         print(config)
         self.assertEqual(config.environment_config.number_of_runs, 5)
 
@@ -91,10 +85,16 @@ class TestConfigLoader(unittest.TestCase):
         print(config)
 
     def test_config_output_path(self):
-        config_file = 'src/core/test/config/test_config_loader_config.yml'
-        config = DummyDataCollectionConfig().create(config_file=config_file)
+        config = DummyDataCollectionConfig().create(config_dict=self.config_dict)
         self.assertEqual(config.output_path, config.model_config.output_path)
         self.assertEqual(config.output_path, config.environment_config.output_path)
+
+    def test_saved_config_in_output_path(self):
+        DummyDataCollectionConfig().create(config_dict=self.config_dict)
+        self.assertTrue(os.path.isfile(os.path.join(self.TEST_DIR, 'configs', 'dummy_data_collection_config.yml')))
+
+    def tearDown(self):
+        shutil.rmtree(self.TEST_DIR, ignore_errors=True)
 
 
 if __name__ == '__main__':

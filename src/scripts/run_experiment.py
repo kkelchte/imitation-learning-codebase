@@ -1,7 +1,9 @@
+
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config, Parser
+from src.core.logger import get_logger
 from src.sim.common.environment_runner import EnvironmentRunnerConfig, EnvironmentRunner
 from src.data.dataset_saver import DataSaverConfig, DataSaver
 
@@ -21,6 +23,10 @@ class ExperimentConfig(Config):
 def main():
     config_file = Parser().parse_args().config
     config = ExperimentConfig().create(config_file=config_file)
+    logger = get_logger(name=__name__,
+                        output_path=config.output_path,
+                        quite=False)
+    logger.info(f'Started.')
     data_saver = DataSaver(config=config.data_saver_config)
     environment_runner = EnvironmentRunner(config=config.runner_config,
                                            data_saver=data_saver)

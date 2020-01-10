@@ -26,6 +26,10 @@ class EnvironmentRunner:
     """
     def __init__(self, config: EnvironmentRunnerConfig, data_saver: DataSaver):
         self._config = config
+        logger = get_logger(name=__name__,
+                            output_path=config.output_path,
+                            quite=False)
+        logger.info(f'Initiate.')
         self._data_saver = data_saver
         self._environment = EnvironmentFactory().create(config.environment_config.environment_type,
                                                         config.environment_config)
