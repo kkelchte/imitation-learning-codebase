@@ -15,7 +15,6 @@ class DummyModelConfig(Config):
     model_path: str = None
 
 
-
 @dataclass_json
 @dataclass
 class DummyEnvironmentConfig(Config):
@@ -29,7 +28,7 @@ class DummyDataCollectionConfig(Config):
     output_path: str = None
     model_config: DummyModelConfig = None
     environment_config: DummyEnvironmentConfig = None
-    store_data: bool = True
+    store_data: bool = None
 
 
 class TestConfigLoader(unittest.TestCase):
@@ -64,7 +63,11 @@ class TestConfigLoader(unittest.TestCase):
         with open(config_file, 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-        del config_dict['output_path']
+        del config_dict['store_data']
+        with self.assertRaises(Exception):
+            DummyDataCollectionConfig().create(config_dict=config_dict)
+
+        del config_dict['environment_config']['environment_name']
         with self.assertRaises(Exception):
             DummyDataCollectionConfig().create(config_dict=config_dict)
 
@@ -85,6 +88,13 @@ class TestConfigLoader(unittest.TestCase):
         config_file = 'src/core/test/config/test_config_loader_config.yml'
         arguments = Parser().parse_args(["--config", config_file])
         config = DummyDataCollectionConfig().create(config_file=arguments.config)
+        print(config)
+
+    def test_config_output_path(self):
+        config_file = 'src/core/test/config/test_config_loader_config.yml'
+        config = DummyDataCollectionConfig().create(config_file=config_file)
+        self.assertEqual(config.output_path, config.model_config.output_path)
+        self.assertEqual(config.output_path, config.environment_config.output_path)
 
 
 if __name__ == '__main__':

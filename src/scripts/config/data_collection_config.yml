@@ -1,4 +1,5 @@
-output_path: '/tmp'
+data_saver_config:
+  output_path: '/tmp'
 runner_config:
   number_of_episodes: 2
   environment_config:
@@ -7,4 +8,4 @@ runner_config:
     max_number_episode_steps: 100
   actor_config:
     actor_type: 1 # Model = 0, Expert = 1
-    tag: 'expert'
+    tag: 'default-expert'

@@ -9,7 +9,7 @@ class Action:
 
 
 @dataclass
-class OutcomeType(IntEnum):
+class TerminalType(IntEnum):
     NotDone = 0
     Success = 1
     Failure = 2
@@ -17,7 +17,9 @@ class OutcomeType(IntEnum):
 
 @dataclass
 class State:
-    outcome: OutcomeType = None
+    terminal: TerminalType = None
+    sensor_data: dict = None
+    time_stamp: int = 0
 
 
 class EnvironmentType(IntEnum):
