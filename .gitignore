@@ -141,4 +141,4 @@ singularity/*.sif
 virtualenvironment/venv
 
 # Accidental test folders left from failed tests
-test*
+./test*
