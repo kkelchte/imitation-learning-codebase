@@ -72,7 +72,9 @@ rosdep update
 
 apt-get update && apt-get install -y -q -–no-install-recommends\
     ros-kinetic-ros-core \
-    ros-kinetic-gazebo-ros-pkgs ros-kinetic-gazebo-ros-control \
+    ros-kinetic-desktop \
+    ros-kinetic-gazebo-ros-pkgs \
+    ros-kinetic-gazebo-ros-control \
     ros-kinetic-tf2-geometry-msgs \
     ros-kinetic-hector-pose-estimation \
     libignition-math2-dev \
