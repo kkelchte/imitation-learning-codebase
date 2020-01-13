@@ -17,8 +17,19 @@ class EnvironmentConfig(Config):
     """
     factory_key: EnvironmentType = None
     max_number_of_steps: int = 100
-    robot_name: str = 'turtle'
-    world_name: str = 'esat'
+    # Gazebo specific environment settings
+    robot_name: str = None
+    world_name: str = None
+    # Gym specific environment settings
+    game_name: str = None
+
+    def __post_init__(self):
+        # Avoid None value error by deleting irrelevant fields
+        if self.factory_key == EnvironmentType.Gazebo:
+            del self.game_name
+        elif self.factory_key == EnvironmentType.Gym:
+            del self.robot_name
+            del self.world_name
 
 
 class Environment:

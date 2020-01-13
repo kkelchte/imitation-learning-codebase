@@ -1,4 +1,4 @@
-output_path: '/esat/opal/kkelchte/test_experiments/data_collection'
+output_path: '/tmp' #'/esat/opal/kkelchte/test_experiments/data_collection'
 runner_config:
   environment_config:
     factory_key: 1 # Gym = 0, Gazebo = 1, Real = 2
