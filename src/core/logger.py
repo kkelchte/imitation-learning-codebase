@@ -40,3 +40,10 @@ def get_logger(name: str,
     logger.setLevel(logging.DEBUG)
 
     return logger
+
+
+def cprint(message: str, logger: logging.Logger = None) -> None:
+    if logger is None:
+        print(message)
+    else:
+        logger.info(message)

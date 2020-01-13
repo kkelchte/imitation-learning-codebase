@@ -1,17 +1,20 @@
 import asyncio
+import logging
+
+from src.core.logger import cprint
 
 
-async def run(cmd, max_time: int = -1) -> (str, str):
-    proc = await asyncio.create_subprocess_shell(
+async def run(cmd, logger: logging.Logger = None) -> (str, str):
+    process = await asyncio.create_subprocess_shell(
         cmd,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
-    stdout, stderr = await proc.communicate()
+    stdout, stderr = await process.communicate()
 
-    print(f'[{cmd!r} exited with {proc.returncode}]')
+    cprint(f'[{cmd!r} exited with {process.returncode}]', logger)
     if stdout:
-        print(f'[stdout]\n{stdout.decode()}')
+        cprint(f'[stdout]\n{stdout.decode()}', logger)
     if stderr:
-        print(f'[stderr]\n{stderr.decode()}')
+        cprint(f'[stderr]\n{stderr.decode()}', logger)
     return stdout, stderr
