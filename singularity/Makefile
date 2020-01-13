@@ -52,3 +52,6 @@ test-image: *.sif test/singularity_sanity_check.py
 	singularity run --nv singularity/*.sif \
 	./launch.sh 'python3.7 singularity/test/singularity_sanity_check.py'
 
+singularity-shell:
+	cd $(CODEDIR) && \
+	singularity shell --nv singularity/*.sif
