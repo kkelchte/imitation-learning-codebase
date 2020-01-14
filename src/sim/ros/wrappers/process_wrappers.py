@@ -1,3 +1,4 @@
+import shutil
 import time
 from enum import IntEnum
 import os
@@ -96,17 +97,12 @@ class XpraWrapper(ProcessWrapper):
             self._set_terminate_state()
         else:
             self._state = ProcessState.Unknown
-        self.cleanup()
+        self._cleanup()
         return self._state
 
-    def _cleanup(self):
-        os.remove('.Xauthority')
-        os.remove('.xsession-errors')
-        os.remove('.xpra/:100.log.old')
-        os.remove('.xpra/Xorg-:100.log.old')
-        os.remove('.xpra/run-xpra')
-        os.remove('.config/user-dirs.dirs')
-        os.remove('.config/user-dirs.locale')
+    @staticmethod
+    def _cleanup():
+        shutil.rmtree('.xpra', ignore_errors=True)
 
 
 def add_config(config: dict) -> str:

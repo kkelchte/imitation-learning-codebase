@@ -54,4 +54,6 @@ test-image: *.sif test/singularity_sanity_check.py
 
 singularity-shell:
 	cd $(CODEDIR) && \
+	echo "DO NOT FORGET TO SOURCE ENVIRONMENT:" && \
+	echo "source entrypoint.sh" && \
 	singularity shell --nv singularity/*.sif

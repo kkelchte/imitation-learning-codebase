@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+devel/
 develop-eggs/
 dist/
 downloads/
@@ -142,3 +143,15 @@ virtualenvironment/venv
 
 # Accidental test folders left from failed tests
 ./test*
+
+# xpra config
+.config/
+.xpra/
+.xsession-errors
+.Xauthority
+
+# ros variables
+.catkin*
+.ros
+/src/sim/ros/catkin_ws/src/CMakeLists.txt
+/.python_history
