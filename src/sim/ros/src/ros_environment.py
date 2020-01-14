@@ -1,9 +1,9 @@
 
 from src.sim.common.environment import EnvironmentConfig, Environment
-from src.sim.ros.wrappers.process_wrappers import XpraWrapper, RosWrapper
+from src.sim.ros.src.process_wrappers import XpraWrapper, RosWrapper
 
 
-class GazeboEnvironment(Environment):
+class RosEnvironment(Environment):
 
     def __init__(self, config: EnvironmentConfig):
         super().__init__(config)

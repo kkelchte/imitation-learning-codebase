@@ -20,7 +20,8 @@ class EnvironmentConfig(Config):
     # Gazebo specific environment settings
     robot_name: str = None
     world_name: str = None
-    ros_config: dict = None
+    generated: bool = False
+    fsm_config: str = None
     # Gym specific environment settings
     game_name: str = None
 
@@ -31,6 +32,8 @@ class EnvironmentConfig(Config):
         elif self.factory_key == EnvironmentType.Gym:
             del self.robot_name
             del self.world_name
+            del self.ros_config
+            del self.ros_config_file
 
 
 class Environment:

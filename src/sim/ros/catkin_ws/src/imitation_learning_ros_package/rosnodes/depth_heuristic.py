@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import roslibpy
+import rospy
 
 # OpenCV2 for saving an image
 from cv_bridge import CvBridge, CvBridgeError

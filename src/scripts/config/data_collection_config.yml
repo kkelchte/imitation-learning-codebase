@@ -1,10 +1,12 @@
 output_path: '/tmp' #'/esat/opal/kkelchte/test_experiments/data_collection'
 runner_config:
   environment_config:
-    factory_key: 1 # Gym = 0, Gazebo = 1, Real = 2
-    robot_name: 'turtle'
-    world_name: 'esat'
     max_number_of_steps: 100
+    factory_key: 0 # Ros = 0, Gym = 1, Carla = 2
+    robot_name: 'sim_turtle'
+    world_name: 'esat_v0'
+    generated: False
+    fsm_config: 'demonstration'
   actor_config:
     actor_type: 1 # Model = 0, Expert = 1
     description: 'default-expert'

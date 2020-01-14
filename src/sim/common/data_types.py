@@ -12,8 +12,8 @@ class TerminalType(IntEnum):
 
 
 class EnvironmentType(IntEnum):
-    Gym = 0
-    Gazebo = 1
+    Ros = 0
+    Gym = 1
     Real = 2
 
 
