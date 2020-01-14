@@ -31,7 +31,7 @@ class ProcessWrapper:
     def get_state(self) -> ProcessState:
         return self._state
 
-    def _terminate(self) -> None:
+    def _set_terminate_state(self) -> None:
         self._state = ProcessState.Terminated
 
     def _check_running_process_with_ps(self, control_string: str = '') -> bool:
@@ -93,10 +93,20 @@ class XpraWrapper(ProcessWrapper):
 
     def terminate(self) -> ProcessState:
         if self._terminate_by_name():
-            self._terminate()
+            self._set_terminate_state()
         else:
             self._state = ProcessState.Unknown
+        self.cleanup()
         return self._state
+
+    def _cleanup(self):
+        os.remove('.Xauthority')
+        os.remove('.xsession-errors')
+        os.remove('.xpra/:100.log.old')
+        os.remove('.xpra/Xorg-:100.log.old')
+        os.remove('.xpra/run-xpra')
+        os.remove('.config/user-dirs.dirs')
+        os.remove('.config/user-dirs.locale')
 
 
 def add_config(config: dict) -> str:
