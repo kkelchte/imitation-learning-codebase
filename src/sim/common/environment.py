@@ -20,6 +20,7 @@ class EnvironmentConfig(Config):
     # Gazebo specific environment settings
     robot_name: str = None
     world_name: str = None
+    ros_config: dict = None
     # Gym specific environment settings
     game_name: str = None
 

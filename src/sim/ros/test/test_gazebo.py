@@ -1,27 +1,21 @@
 import unittest
 
-import asyncio
-from asyncio import subprocess
-
-from src.sim.gazebo.wrappers.process_wrappers import XpraWrapper, ProcessState
-
-
-async def launch_subprocess_shell(cmd: str) -> subprocess.Process:
-    return await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
+from src.sim.ros.wrappers.process_wrappers import XpraWrapper, ProcessState, RosWrapper
 
 
 class TestGazebo(unittest.TestCase):
 
     def test_launch_and_terminate_xpra(self):
         xpra_process = XpraWrapper()
-        asyncio.sleep(5)
         self.assertEqual(xpra_process.get_state(), ProcessState.Running)
         xpra_process.terminate()
         self.assertEqual(xpra_process.get_state(), ProcessState.Terminated)
+
+    def test_launch_and_terminate_ros(self):
+        ros_process = RosWrapper(config={})
+        self.assertEqual(ros_process.get_state(), ProcessState.Running)
+        ros_process.terminate()
+        self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
-import asyncio
 import logging
+import asyncio
 
 from src.core.logger import cprint
 
