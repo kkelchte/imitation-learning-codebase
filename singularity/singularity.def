@@ -55,9 +55,11 @@ python3.7 -m pip install -r /requirements
 # ---- ROS ----
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
-echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros1-latest.list
+echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list
+apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
 apt-get update && apt-get install -y -q \
+    ros-kinetic-desktop-full \
     python-rosdep \
     python-rosinstall \
     python-vcstools \
@@ -71,8 +73,6 @@ rosdep update
 #apt-get -y -q dist-upgrade
 
 apt-get update && apt-get install -y -q -–no-install-recommends\
-    ros-kinetic-ros-core \
-    ros-kinetic-desktop \
     ros-kinetic-gazebo-ros-pkgs \
     ros-kinetic-gazebo-ros-control \
     ros-kinetic-tf2-geometry-msgs \
@@ -81,18 +81,18 @@ apt-get update && apt-get install -y -q -–no-install-recommends\
     ros-kinetic-turtlebot \
     ros-kinetic-turtlebot-gazebo \
     ros-kinetic-turtlebot3 \
+    ros-kinetic-parrot-arsdk \
+    ros-kinetic-hector-sensors-description \
+    ros-kinetic-hector-localization \
+    ros-kinetic-hector-models \
+    ros-kinetic-teleop-twist-keyboard \
+    ros-kinetic-hector-mapping \
+    ros-kinetic-hector-gazebo \
+    ros-kinetic-hector-gazebo-plugins \
+    ros-kinetic-hector-sensors-description \
+    ros-kinetic-hector-sensors-gazebo \
     && rm -rf /var/lib/apt/lists/*
-#    ros-kinetic-parrot-arsdk
-#    ros-kinetic-hector-sensors-description \
-#    ros-kinetic-hector-sensors-description \
-#    ros-kinetic-hector-localization \
-#    ros-kinetic-hector-models \
-#    ros-kinetic-teleop-twist-keyboard \
-#    ros-kinetic-hector-mapping \
-#    ros-kinetic-hector-gazebo \
-#    ros-kinetic-hector-gazebo-plugins \
-#    ros-kinetic-hector-sensors-description \
-#    ros-kinetic-hector-sensors-gazebo \
+
 
 
 # ---- GAZEBO ----
