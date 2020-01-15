@@ -3,21 +3,20 @@
     <arg name="random_seed" default="1234"/>
     <param name="random_seed" value="$(arg random_seed)"/>
 
-<!--    <arg name="robot_name" default=""/>-->
-<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name)" />-->
 <!--    <arg name="world_name" default=""/>-->
-<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name)"/>-->
-<!--    <arg name="gazebo" default="false"/>-->
-<!--    <param name="gazebo_evaluated_true" value="$(arg gazebo)"/>-->
-<!--    <group if="$(arg gazebo)">-->
-        <include file="$(find gazebo_ros)/launch/empty_world.launch">
-<!--            <arg name="world_name" value="$(param world_file)"/>-->
+<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml"/>-->
 
+    <arg name="gazebo" default="false"/>
+    <group if="$(arg gazebo)">
+        <include file="$(find gazebo_ros)/launch/empty_world.launch">
+<!--            <arg name="world_name" value="$(env HOME)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>-->
             <arg name="gui" value="false"/>
-            <arg name="gui" value="$(arg graphics)"/>
             <arg name="headless" default="true"/>
         </include>
-<!--    </group>-->
+    </group>
 <!--    <arg name="fsm_config" default="demonstration.yml"/>-->
 <!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config)"/>-->
+
+<!--    <arg name="robot_name" default=""/>-->
+<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name)" />-->
 </launch>

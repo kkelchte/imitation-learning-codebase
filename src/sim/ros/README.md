@@ -1,3 +1,34 @@
+# Structure:
+
+_catkin_ws_
+All ROS nodes and launch files are stored in the catkin_ws/src/imitation_learning_ros_package,
+ as well as other ROS dependencies which are not installed system wide.
+The nodes are written in python2.7 and serve as backend.
+Corresponding tests are found in catkin_ws/src/imitation_learning_ros_package/test and should be run with python2.7 
+in a singularity - ros environment.
+
+_config_
+The config directory contains all ros-node-specific configurations which are loaded as ros params at roslaunch.
+
+_gazebo_
+This directory contains all gazebo assets: models and world files.
+
+_scripts_
+Contain specific shell scripts used to by launched in subprocesses by process_wrappers.py:
+
+- One for launching xpra with no configuration.
+- One for launching ros and gazebo with related configuration defined by the arguments of load_ros.launch. Launch configuration specifies:
+       - booleans related to whether these rosnodes should be loaded: e.g. gazebo, ...
+       - world_name: defines both loaded world_config from config/world as gazebo world file in gazebo/world
+       - robot_name: defines robot_config 
+
+_src_
+Contains all frontend python3.7 code containing ros_environment.py as well as helper functions,
+ such as environment generators.
+
+_test_
+Contains integrated frontend tests to be run in python3.7 singularity environment.
+
 # Installation:
 
 Source ROS environment, assuming you're in a singularity image.

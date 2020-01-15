@@ -156,3 +156,5 @@ virtualenvironment/venv
 /src/sim/ros/catkin_ws/src/CMakeLists.txt
 /.python_history
 /.bash_history
+/.gitconfig
+/.nv

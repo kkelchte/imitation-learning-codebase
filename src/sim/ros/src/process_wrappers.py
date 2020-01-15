@@ -45,7 +45,9 @@ class ProcessWrapper:
                                         stdin=ps_process.stdout,
                                         stdout=subprocess.PIPE)
         output_string = str(grep_process.communicate()[0])
-        return output_string.count('\\n') > 1
+        processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
+                                   and 'test' not in line and len(line) > len(grep_str)]
+        return len(processed_output_string) >= 1
 
     def _run(self, command: str, strict_check: bool = False, shell: bool = False, background: bool = True) -> bool:
         if shell:
@@ -129,7 +131,10 @@ class XpraWrapper(ProcessWrapper):
 def adapt_launch_config(config: dict) -> str:
     config_str = ''
     for key, value in config.items():
-        config_str += f' {key}:={value}'
+        if isinstance(value, str):
+            config_str += f" {key}:=\'{value}\'"
+        else:
+            config_str += f' {key}:={value}'
     return config_str
 
 

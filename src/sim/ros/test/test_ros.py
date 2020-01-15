@@ -2,18 +2,20 @@ import unittest
 import time
 
 import subprocess
-import roslibpy
 
 from src.sim.ros.src.process_wrappers import XpraWrapper, ProcessState, RosWrapper
 
 
-def grep_name(grep_str: str) -> str:
+def count_grep_name(grep_str: str) -> int:
     ps_process = subprocess.Popen(["ps", "-ef"],
                                   stdout=subprocess.PIPE)
     grep_process = subprocess.Popen(["grep", grep_str],
                                     stdin=ps_process.stdout,
                                     stdout=subprocess.PIPE)
-    return str(grep_process.communicate()[0])
+    output_string = str(grep_process.communicate()[0])
+    processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
+                               and 'test' not in line and len(line) > len(grep_str)]
+    return len(processed_output_string)
 
 
 class TestRos(unittest.TestCase):
@@ -36,17 +38,17 @@ class TestRos(unittest.TestCase):
         random_seed = 123
         config = {
             'random_seed': random_seed,
-            # 'gazebo': 'true',
+            'gazebo': 'true',
         }
         ros_process = RosWrapper(launch_file='load_ros.launch',
                                  config=config)
         self.assertEqual(ros_process.get_state(), ProcessState.Running)
-        time.sleep(10)
-        self.assertTrue(grep_name('gzserver').count('\\n') > 1)
+        time.sleep(5)
+        self.assertTrue(count_grep_name('gzserver') >= 1)
         ros_process.terminate()
         xpra_process.terminate()
         self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
-        self.assertTrue(grep_name('gzserver').count('\\n') == 1)
+        self.assertTrue(count_grep_name('gzserver') == 0)
 
 
 if __name__ == '__main__':
