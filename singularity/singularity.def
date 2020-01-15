@@ -1,5 +1,5 @@
-Bootstrap: library
-From: ubuntu:16.04
+Bootstrap: docker
+From: ros:melodic-ros-base-bionic
 
 %help
 This is a container with ROS, Gazebo, XPRA, CUDA and Torch for imitation learning.
@@ -12,29 +12,45 @@ export LC_ALL=C
     Version 0.0.1
 
 %post
-# ---- General packages ----
-apt -y update && \
-export DEBIAN_FRONTEND=noninteractive && apt install -q -y \
-		dialog \
-		apt-utils \
-		xvfb \
-		udev \
-	    dirmngr \
-	    gnupg2 \
-	    python-pip \
-	    python3-pip \
-	    vim \
-	    less \
-	    wget \
-	    libxml2 \
-	    openbox \
-	    xorg \
-	    xserver-xorg-video-dummy \
-	    xpra \
-	    && rm -rf /var/lib/apt/lists/*
+apt-get update && \
+ export DEBIAN_FRONTEND=noninteractive && apt-get install -yq\
+    dialog \
+    apt-utils \
+    xvfb \
+    udev \
+    dirmngr \
+    gnupg2 \
+    python-pip \
+    python3-pip \
+    vim \
+    less \
+    wget \
+    libxml2 \
+    openbox \
+    xorg \
+    xserver-xorg-video-dummy \
+    xpra \
+    && rm -rf /var/lib/apt/lists/*
 
-apt -y -q upgrade
+rosdep update
 
+# ---- GAZEBO ----
+echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable bionic main" > /etc/apt/sources.list.d/gazebo-stable.list
+wget http://packages.osrfoundation.org/gazebo.key -O - | apt-key add -
+
+apt-get update && apt-get install -q -y \
+    gazebo9 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---- EXTRA ROS PACKAGES ----
+apt-get update && apt-get install -yq\
+    ros-melodic-turtlebot3 \
+    ros-melodic-gazebo-ros-control \
+    libignition-math2-dev \
+    ros-melodic-parrot-arsdk \
+    ros-melodic-parrot-arsdk-dbgsym \
+    ros-melodic-teleop-twist-keyboard \
+    && rm -rf /var/lib/apt/lists/*
 # ---- PYTHON3 ---
 %post
 apt update && \
@@ -52,58 +68,6 @@ requirements /
 python3.7 -m pip install --user --upgrade pip
 python3.7 -m pip install -r /requirements
 
-# ---- ROS ----
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-
-echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list
-apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-
-apt-get update && apt-get install -y -q \
-    ros-kinetic-desktop-full \
-    python-rosdep \
-    python-rosinstall \
-    python-vcstools \
-    && rm -rf /var/lib/apt/lists/*
-
-rosdep init
-rosdep update
-
-#wget -O enable_kernel_sources.sh https://raw.githubusercontent.com/IntelRealSense/librealsense/rosdebian/scripts/enable_kernel_sources.sh
-#bash ./enable_kernel_sources.sh
-#apt-get -y -q dist-upgrade
-
-apt-get update && apt-get install -y -q -–no-install-recommends\
-    ros-kinetic-gazebo-ros-pkgs \
-    ros-kinetic-gazebo-ros-control \
-    ros-kinetic-tf2-geometry-msgs \
-    ros-kinetic-hector-pose-estimation \
-    libignition-math2-dev \
-    ros-kinetic-turtlebot \
-    ros-kinetic-turtlebot-gazebo \
-    ros-kinetic-turtlebot3 \
-    ros-kinetic-parrot-arsdk \
-    ros-kinetic-hector-sensors-description \
-    ros-kinetic-hector-localization \
-    ros-kinetic-hector-models \
-    ros-kinetic-teleop-twist-keyboard \
-    ros-kinetic-hector-mapping \
-    ros-kinetic-hector-gazebo \
-    ros-kinetic-hector-gazebo-plugins \
-    ros-kinetic-hector-sensors-description \
-    ros-kinetic-hector-sensors-gazebo \
-    && rm -rf /var/lib/apt/lists/*
-
-
-
-# ---- GAZEBO ----
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys D2486D2DD83DB69272AFE98867170598AF249743
-. /etc/os-release \
- && echo "deb http://packages.osrfoundation.org/gazebo/$ID-stable `lsb_release -sc` main" > /etc/apt/sources.list.d/gazebo-latest.list
-
-apt-get update && apt-get install -q -y \
-    gazebo7 \
-    && rm -rf /var/lib/apt/lists/*
-
 # ---- CUDA ----
 %files
 cuda-10.2 /usr/lib/local
@@ -118,8 +82,5 @@ cuda-10.2 /usr/lib/local
 %files
 cudnn-7.1 /usr/lib/local
 
-
-
-
-
-
+%post
+apt -y -q upgrade
