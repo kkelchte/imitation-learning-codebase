@@ -3,20 +3,35 @@
     <arg name="random_seed" default="1234"/>
     <param name="random_seed" value="$(arg random_seed)"/>
 
-<!--    <arg name="world_name" default=""/>-->
-<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml"/>-->
-
+    <arg name="world_name" default="debug"/>
+    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml"/>
     <arg name="gazebo" default="false"/>
     <group if="$(arg gazebo)">
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
-<!--            <arg name="world_name" value="$(env HOME)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>-->
+            <arg name="world_name" value="$(env HOME)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
             <arg name="gui" value="false"/>
             <arg name="headless" default="true"/>
         </include>
     </group>
-<!--    <arg name="fsm_config" default="demonstration.yml"/>-->
-<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config)"/>-->
 
-<!--    <arg name="robot_name" default=""/>-->
-<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name)" />-->
+    <arg name="fsm_config" default="debug"/>
+    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config).yml"/>
+
+    <arg name="robot_name" default="debug"/>
+    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name).yml" />
+    <arg name="x_pos" default="0"/>
+    <arg name="y_pos" default="0"/>
+    <arg name="z_pos" default="0.5"/>
+    <arg name="y_or" default="1.57"/>
+    <group if="$(arg turtlebot_sim)">
+          <param name="robot_description"
+                 command="$(find xacro)/xacro --inorder $(env HOME)/src/sim/ros/gazebo/urdf/turtlebot3_burger.urdf.xacro"/>
+          <node pkg="gazebo_ros"
+                type="spawn_model"
+                name="spawn_urdf"
+                args="-urdf -model turtlebot3_burger -x $(arg x_pos) -y $(arg y_pos)
+                -Y $(arg y_or) -z $(arg z_pos) -param robot_description" />
+    </group>
+
+
 </launch>

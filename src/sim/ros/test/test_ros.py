@@ -39,6 +39,27 @@ class TestRos(unittest.TestCase):
         config = {
             'random_seed': random_seed,
             'gazebo': 'true',
+            'world_name': 'empty_world'
+        }
+        ros_process = RosWrapper(launch_file='load_ros.launch',
+                                 config=config)
+        self.assertEqual(ros_process.get_state(), ProcessState.Running)
+        time.sleep(5)
+        self.assertTrue(count_grep_name('gzserver') >= 1)
+        ros_process.terminate()
+        xpra_process.terminate()
+        self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
+        self.assertTrue(count_grep_name('gzserver') == 0)
+
+    def test_launch_and_terminate_turtlebot(self):
+        xpra_process = XpraWrapper()
+        random_seed = 123
+        config = {
+            'random_seed': random_seed,
+            'gazebo': 'true',
+            'world_name': 'empty_world',
+            'robot_name': 'turtlebot_sim',
+            'turtlebot_sim': 'true'
         }
         ros_process = RosWrapper(launch_file='load_ros.launch',
                                  config=config)

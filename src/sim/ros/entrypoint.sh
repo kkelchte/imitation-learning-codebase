@@ -1,5 +1,6 @@
+export PYTHONPATH=''
 source /opt/ros/kinetic/setup.bash
-export PYTHONPATH=$PYTHONPATH:/usr/lib/python2.7/dist-packages
+export PYTHONPATH=/usr/lib/python2.7/dist-packages:$PYTHONPATH
 
 # potentially perform catkin make if source files have changed.
 cd "${HOME}/src/sim/ros" || exit 1
