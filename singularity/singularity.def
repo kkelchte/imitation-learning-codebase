@@ -45,11 +45,19 @@ apt-get update && apt-get install -q -y \
 # ---- EXTRA ROS PACKAGES ----
 apt-get update && apt-get install -yq\
     ros-melodic-turtlebot3 \
-    ros-melodic-gazebo-ros-control \
+    ros-melodic-turtlebot3-gazebo \
+    ros-melodic-hector-gazebo \
+    ros-melodic-gazebo-ros \
     libignition-math2-dev \
     ros-melodic-parrot-arsdk \
     ros-melodic-parrot-arsdk-dbgsym \
     ros-melodic-teleop-twist-keyboard \
+    rviz \
+    ros-melodic-rqt \
+    ros-melodic-rqt-msg \
+    ros-melodic-rqt-publisher \
+    ros-melodic-rqt-image-view \
+    ros-melodic-rqt-graph \
     && rm -rf /var/lib/apt/lists/*
 # ---- PYTHON3 ---
 %post

@@ -4,14 +4,19 @@ LOGINCOMMAND="/bin/bash /vagrant/login_remote.sh"
 BUILDCOMMAND="/bin/bash /vagrant/create_image.sh ${version}"
 
 Vagrantfile:
-	vagrant init ${VM}
+	vagrant init ${VM} && \
+	echo 'Adjust memory in Vagrantfile'
+
+spinoff-vagrant: Vagrantfile
 	vagrant up
 	vagrant ssh -- -t ${LOGINCOMMAND}
+
+shutdown-vagrant:
+	vagrant halt
 
 clean-vm:
 	vagrant destroy
 	rm *.sif
-	rm Vagrantfile
 	rm -r .vagrant
 
 *.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
