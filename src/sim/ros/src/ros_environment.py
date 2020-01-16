@@ -1,7 +1,4 @@
-from dataclasses import dataclass
-from dataclasses_json import dataclass_json
 
-from src.core.config_loader import Config
 from src.sim.common.actors import Actor
 from src.sim.common.data_types import Action, State
 from src.sim.common.environment import EnvironmentConfig, Environment

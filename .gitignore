@@ -158,4 +158,5 @@ virtualenvironment/venv
 /.bash_history
 /.gitconfig
 /.nv
-
+/.gazebo
+/.ignition

@@ -1,2 +1,1 @@
-x: 10
-y: 20
+command_topic: '/cmd_vel'
