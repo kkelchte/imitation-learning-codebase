@@ -132,8 +132,8 @@ dmypy.json
 # Singularity build files
 singularity/cu*
 singularity/.*
-singularity/Vagrantfile
 singularity/*.sif
+/singularity/writable_image
 
 # Pycharm files
 .idea
@@ -158,3 +158,4 @@ virtualenvironment/venv
 /.bash_history
 /.gitconfig
 /.nv
+

@@ -6,25 +6,46 @@
 make launch-image
 ```
 
+### Writable image (sandbox)
 
-### Launch VM to create singularity image on Mac
+__Create__
 
-_Using Makefile_
+```bash
+vagrant up
+vagrant ssh
+$ sudo singularity build --sandbox writable_image/ /vagrant/*.sif
+```
+
+__Add package__
+
+```bash
+vagrant up
+vagrant ssh
+$ sudo singularity shell --writable writable_image
+> sudo su
+# apt update
+# apt-cache search ros-melodic | grep ${PACKAGE-TAG}
+# apt install -qy ${PACKAGE}
+CTR+D
+> CTR+D
+$ sudo singularity build /vagrant/image-${VERSION}.sif writable_image
+CTR+D
+```
+
+
+### Create singularity image on Mac from scratch
+
+__Makefile__
 
 Create Vagrant environment, build singularity image and push it to singularity library.
 Dependency: cudnn-* and cuda-* libraries should be in current directory.
 
 ```bash
-make build-image
+make *.sif
 ```
 
-Cleanup directory:
 
-```bash
-make clean-vm
-```
-
-_Manually_
+__Manually__
 
 ```bash
 # copy singularity build file 
@@ -36,6 +57,14 @@ sudo singularity build image.sif singularity.def
 # push image online
 singularity sign image.sif
 singularity push -U image.sif library://kkelchte/default/ros-gazebo-cuda:v0.0.1
+```
+
+__Cleanup directory__
+
+Should only be done if vagrant VM should be destroyed.
+
+```bash
+make clean-vm
 ```
 
 
