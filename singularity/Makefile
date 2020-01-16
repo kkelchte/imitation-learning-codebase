@@ -2,6 +2,11 @@ VM=sylabs/singularity-3.2-ubuntu-bionic64
 version=$(shell cat VERSION)
 LOGINCOMMAND="/bin/bash /vagrant/login_remote.sh"
 BUILDCOMMAND="/bin/bash /vagrant/create_image.sh ${version}"
+WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
+
+writable_image: *.sif
+	vagrant up
+	vagrant ssh -- -t 'sudo singularity build --sandbox writable_image /vagrant/*.sif'
 
 Vagrantfile:
 	vagrant init ${VM} && \
@@ -25,6 +30,7 @@ clean-vm:
 		if [ -e cudnn-* ] ; then \
 			echo "Found cudnn folder: $(echo cudnn-*)"; \
 			vagrant ssh -- -t ${BUILDCOMMAND}; \
+			cd .. && commit -am "new image ${version}" && git push; \
 		else \
 			echo "ERROR: Could not found cudnn folder."; \
 		fi ; \
