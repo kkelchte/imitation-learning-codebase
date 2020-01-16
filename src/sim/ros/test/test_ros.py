@@ -14,7 +14,7 @@ def count_grep_name(grep_str: str) -> int:
                                     stdout=subprocess.PIPE)
     output_string = str(grep_process.communicate()[0])
     processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
-                               and 'test' not in line and len(line) > len(grep_str)]
+                               and 'test' not in line and len(line) > len(grep_str) and 'pycharm' not in line]
     return len(processed_output_string)
 
 
@@ -30,6 +30,7 @@ class TestRos(unittest.TestCase):
         ros_process = RosWrapper(launch_file='empty_ros.launch',
                                  config={})
         self.assertEqual(ros_process.get_state(), ProcessState.Running)
+        self.assertTrue(count_grep_name('ros') > 0)
         ros_process.terminate()
         self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
 
@@ -61,8 +62,8 @@ class TestRos(unittest.TestCase):
             'robot_name': 'turtlebot_sim',
             'turtlebot_sim': 'true'
         }
-        ros_process = RosWrapper(launch_file='load_ros.launch',
-                                 config=config)
+        ros_process = RosWrapper(config=config,
+                                 launch_file='load_ros.launch')
         self.assertEqual(ros_process.get_state(), ProcessState.Running)
         time.sleep(5)
         self.assertTrue(count_grep_name('gzserver') >= 1)

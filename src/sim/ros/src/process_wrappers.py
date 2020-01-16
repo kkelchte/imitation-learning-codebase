@@ -46,7 +46,7 @@ class ProcessWrapper:
                                         stdout=subprocess.PIPE)
         output_string = str(grep_process.communicate()[0])
         processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
-                                   and 'test' not in line and len(line) > len(grep_str)]
+                                   and 'test' not in line and len(line) > len(grep_str) and 'pycharm' not in line]
         return len(processed_output_string) >= 1
 
     def _run(self, command: str, strict_check: bool = False, shell: bool = False, background: bool = True) -> bool:
@@ -63,6 +63,7 @@ class ProcessWrapper:
             if strict_check:
                 assert process.returncode == 0
                 assert process.stderr == b''
+        time.sleep(1)
         if self._check_running_process_with_ps():
             self._state = ProcessState.Running
             return True
@@ -140,7 +141,7 @@ def adapt_launch_config(config: dict) -> str:
 
 class RosWrapper(ProcessWrapper):
 
-    def __init__(self, launch_file: str, config: dict, visible: bool = False):
+    def __init__(self, config: dict, launch_file: str = 'load_ros.launch', visible: bool = False):
         super().__init__(name='ros')
         executable = 'src/sim/ros/scripts/ros.sh'
         launch_file = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'catkin_ws', 'src',

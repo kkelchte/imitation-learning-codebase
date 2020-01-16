@@ -4,11 +4,13 @@ runner_config:
     max_number_of_steps: 100
     factory_key: 0 # Ros = 0, Gym = 1, Carla = 2
     ros_config:
-      random_seed: 123
-      gazebo: true
-      world_name: empty_world
-      robot_name: turtlebot_sim
-      turtlebot_sim: true
+      headless: False
+      ros_launch_config:
+        random_seed: 123
+        gazebo: True
+        world_name: empty_world
+        robot_name: turtlebot_sim
+        turtlebot_sim: True
   actor_config:
     actor_type: 1 # Model = 0, Expert = 1
     description: 'default-expert'

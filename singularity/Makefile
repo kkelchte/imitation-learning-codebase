@@ -34,8 +34,9 @@ update-image:
 	if [ -e *.sif ] ; then \
 		for image in *.sif ; do \
 			if [ $$image != ros-gazebo-cuda_${version}.sif ] ; then \
-				echo "cleaned up: $$image"; \
+				echo "clean up: $$image"; \
 				rm $$image; \
+				singularity cache clean --name $$image; \
 			fi ; \
 		done ; \
 	fi

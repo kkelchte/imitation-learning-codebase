@@ -9,6 +9,38 @@ from src.sim.common.actors import Actor
 
 @dataclass_json
 @dataclass
+class GymConfig(Config):
+    """
+    Configuration specific for Gym environment,
+    specified here to avoid circular dependencies environment <> gym_environment
+    """
+    random_seed: int = 123
+    world_name: str = None
+
+
+@dataclass_json
+@dataclass
+class RosLaunchConfig(Config):
+    random_seed: int = 123
+    gazebo: bool = False
+    world_name: str = None
+    robot_name: str = None
+    turtlebot_sim: bool = False
+
+
+@dataclass_json
+@dataclass
+class RosConfig(Config):
+    """
+    Configuration specific for ROS environment,
+    specified here to avoid circular dependencies environment <> ros_environment
+    """
+    headless: bool = False
+    ros_launch_config: RosLaunchConfig = None
+
+
+@dataclass_json
+@dataclass
 class EnvironmentConfig(Config):
     """
     Serves as configuration for all environment types.
@@ -18,22 +50,16 @@ class EnvironmentConfig(Config):
     factory_key: EnvironmentType = None
     max_number_of_steps: int = 100
     # Gazebo specific environment settings
-    robot_name: str = None
-    world_name: str = None
-    generated: bool = False
-    fsm_config: str = None
+    ros_config: RosConfig = None
     # Gym specific environment settings
-    game_name: str = None
+    gym_config: GymConfig = None
 
     def __post_init__(self):
         # Avoid None value error by deleting irrelevant fields
-        if self.factory_key == EnvironmentType.Gazebo:
-            del self.game_name
+        if self.factory_key == EnvironmentType.Ros:
+            del self.gym_config
         elif self.factory_key == EnvironmentType.Gym:
-            del self.robot_name
-            del self.world_name
             del self.ros_config
-            del self.ros_config_file
 
 
 class Environment:

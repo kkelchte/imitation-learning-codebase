@@ -14,6 +14,6 @@ class EnvironmentFactory(ObjectFactory):
     def __init__(self):
         self._class_dict = {
             EnvironmentType.Gym: GymEnvironment,
-            EnvironmentType.Gazebo: RosEnvironment
+            EnvironmentType.Ros: RosEnvironment
         }
         super().__init__(self._class_dict)

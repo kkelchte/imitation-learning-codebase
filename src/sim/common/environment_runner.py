@@ -24,7 +24,7 @@ class EnvironmentRunner:
 
     Spawns environment, loops over episodes, loops over steps in episodes.
     """
-    def __init__(self, config: EnvironmentRunnerConfig, data_saver: DataSaver):
+    def __init__(self, config: EnvironmentRunnerConfig, data_saver: DataSaver = None):
         self._config = config
         logger = get_logger(name=__name__,
                             output_path=config.output_path,
@@ -42,9 +42,11 @@ class EnvironmentRunner:
         while state.State == TerminalType.NotDone:
             action = self._actor(state)
             state = self._environment.step(action)
-            self._data_saver.save(state=state,
-                                  action=action)
-        self._data_saver.save(state=state)
+            if self._data_saver is not None:
+                self._data_saver.save(state=state,
+                                      action=action)
+        if self._data_saver is not None:
+            self._data_saver.save(state=state)
 
     def run(self):
         for self._run_index in range(self._config.number_of_episodes):

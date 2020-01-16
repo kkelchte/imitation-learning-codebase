@@ -3,6 +3,9 @@
     <arg name="random_seed" default="1234"/>
     <param name="random_seed" value="$(arg random_seed)"/>
 
+    <arg name="output_path" default="/tmp"/>
+    <param name="output_path" value="$(arg output_path)"/>
+
     <arg name="world_name" default="debug"/>
     <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml"/>
     <arg name="gazebo" default="false"/>
@@ -32,6 +35,12 @@
                 args="-urdf -model turtlebot3_burger -x $(arg x_pos) -y $(arg y_pos)
                 -Y $(arg y_or) -z $(arg z_pos) -param robot_description" />
     </group>
+
+<!--    <arg name="keyboard" default="false"/>-->
+<!--    <group if="$(arg keyboard)">-->
+<!--        <rosparam command="load" file="$(env HOME)/src/sim/ros/config/console/keyboard.yml" />-->
+<!--        add rosnode for keyboard-->
+<!--    </group>-->
 
 
 </launch>
