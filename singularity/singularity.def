@@ -29,6 +29,7 @@ apt-get update && \
     openbox \
     xorg \
     xterm \
+    openbox \
     xserver-xorg-video-dummy \
     xpra \
     && rm -rf /var/lib/apt/lists/*
