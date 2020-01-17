@@ -6,31 +6,29 @@ WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
 
 writable_image: *.sif
 	vagrant up
-	vagrant ssh -- -t 'sudo singularity build --sandbox writable_image /vagrant/*.sif'
+	vagrant ssh -- -t 'sudo singularity build --sandbox /usr/data/writable_image /vagrant/*.sif'
 
 Vagrantfile:
 	vagrant init ${VM} && \
 	echo 'Adjust memory in Vagrantfile'
 
 spinoff-vagrant: Vagrantfile
-	vagrant up
+	vagrant up && \
 	vagrant ssh -- -t ${LOGINCOMMAND}
 
 shutdown-vagrant:
 	vagrant halt
 
-clean-vm:
-	vagrant destroy
-	rm *.sif
+remove-vagrant:
+	vagrant destroy && \
 	rm -r .vagrant
 
 *.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
+	vagrant up && \
 	if [ -e cuda-* ] ; then \
 		echo "Found cuda folder: $(echo cuda-*)"; \
 		if [ -e cudnn-* ] ; then \
 			echo "Found cudnn folder: $(echo cudnn-*)"; \
-			vagrant ssh -- -t ${BUILDCOMMAND}; \
-			cd .. && commit -am "new image ${version}" && git push; \
 		else \
 			echo "ERROR: Could not found cudnn folder."; \
 		fi ; \
@@ -39,8 +37,10 @@ clean-vm:
 	fi
 
 push-image:
+	vagrant up && \
 	vagrant ssh -- -t ${BUILDCOMMAND}
 
+# Following commands are for on linux machines without vagrant.
 update-image:
 	if [ -e *.sif ] ; then \
 		for image in *.sif ; do \
@@ -58,7 +58,6 @@ update-image:
 		echo "Singularity image already there"; \
 	fi
 
-CODEDIR = ..
 test-image: *.sif test/singularity_sanity_check.py
 	cd $(CODEDIR) && \
 	singularity run --nv singularity/*.sif \
