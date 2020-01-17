@@ -40,7 +40,8 @@ update-image:
 		for image in *.sif ; do \
 			if [ $$image != ros-gazebo-cuda_${version}.sif ] ; then \
 				echo "clean up: $$image"; \
-				rm $$image; \
+				mv $$image /esat/opal/kkelchte/singularity_images; \
+#				rm $$image; \
 				singularity cache clean --name $$image; \
 			fi ; \
 		done ; \
