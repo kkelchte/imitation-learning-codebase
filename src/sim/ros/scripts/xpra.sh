@@ -10,4 +10,5 @@ export LD_LIBRARY_PATH=''
 xpra --xvfb="Xorg -noreset -nolisten tcp
     -config /etc/xpra/xorg.conf
     -logfile ${HOME}/.xpra/Xorg-${DISPLAY}.log" \
-    start $DISPLAY > /dev/null 2>&1 &
+    start $DISPLAY
+#    > /dev/null 2>&1 &
