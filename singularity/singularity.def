@@ -29,9 +29,7 @@ apt-get update && \
     openbox \
     xorg \
     xterm \
-    openbox \
     xserver-xorg-video-dummy \
-    xpra \
     && rm -rf /var/lib/apt/lists/*
 
 rosdep update
@@ -46,6 +44,7 @@ apt-get update && apt-get install -q -y \
 
 # ---- EXTRA ROS PACKAGES ----
 apt-get update && apt-get install -yq\
+    ros-melodic-rosbridge-suite \
     ros-melodic-turtlebot3 \
     ros-melodic-turtlebot3-gazebo \
     ros-melodic-hector-gazebo \
