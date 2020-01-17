@@ -22,3 +22,5 @@ pyglet==1.3.2
 dataclasses-json
 datetime
 ipdb
+rospkg
+catkin_pkg

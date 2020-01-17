@@ -4,9 +4,9 @@ LOGINCOMMAND="/bin/bash /vagrant/login_remote.sh"
 BUILDCOMMAND="/bin/bash /vagrant/create_image.sh ${version}"
 WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
 
-writable_image: *.sif
+writable_image: #*.sif
 	vagrant up
-	vagrant ssh -- -t 'sudo singularity build --sandbox /usr/data/writable_image /vagrant/*.sif'
+	vagrant ssh -- -t ${WRITABLECOMMAND}
 
 Vagrantfile:
 	vagrant init ${VM} && \
@@ -20,15 +20,17 @@ shutdown-vagrant:
 	vagrant halt
 
 remove-vagrant:
+	vagrant halt && \
 	vagrant destroy && \
 	rm -r .vagrant
 
-*.sif: Vagrantfile VERSION requirements create_image.sh singularity.def
-	vagrant up && \
+*.sif: Vagrantfile VERSION requirements create_image.sh singularity.def spinoff-vagrant
 	if [ -e cuda-* ] ; then \
 		echo "Found cuda folder: $(echo cuda-*)"; \
 		if [ -e cudnn-* ] ; then \
 			echo "Found cudnn folder: $(echo cudnn-*)"; \
+			vagrant ssh -- -t ${BUILDCOMMAND} && \
+			git commit -am "new image ${version}" && git push; \
 		else \
 			echo "ERROR: Could not found cudnn folder."; \
 		fi ; \
@@ -36,8 +38,7 @@ remove-vagrant:
 		echo "ERROR: Could not found cuda folder."; \
 	fi
 
-push-image:
-	vagrant up && \
+push-image: spinoff-vagrant
 	vagrant ssh -- -t ${BUILDCOMMAND}
 
 # Following commands are for on linux machines without vagrant.
