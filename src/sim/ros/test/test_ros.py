@@ -6,9 +6,11 @@ import subprocess
 import roslib
 import numpy as np
 
+from src.sim.common.actors import ActorConfig
 from src.sim.common.data_types import TerminalType, EnvironmentType, Action, ActorType, State
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
 from src.sim.ros.src.process_wrappers import ProcessState, RosWrapper
+from src.sim.ros.src.ros_actors import RosExpert
 from src.sim.ros.src.ros_environment import RosEnvironment
 roslib.load_manifest('imitation_learning_ros_package')
 import rospy
@@ -124,6 +126,8 @@ class TestRos(unittest.TestCase):
         # take a 10 steps
         state = environment.reset()
         while state.terminal == TerminalType.NotDone:
+            print(f'State: {state.terminal}: {state.time_stamp_us} \n'
+                  f'depth: {state.sensor_data["depth_scan"]}')
             if True:
                 import matplotlib.pyplot as plt
                 plt.imshow(state.sensor_data['forward_camera'])
@@ -133,6 +137,23 @@ class TestRos(unittest.TestCase):
                 value=np.array((1, 0, 0, 0, 0, 1))
             )
             state = environment.step(action)
+
+    def test_ros_actor(self):
+        config = ActorConfig(
+            description='basic expert',
+            actor_type=ActorType.Expert,
+            actor_specs={
+                'sensor_name': 'depth_scan'
+            }
+        )
+        actor = RosExpert(config=config)
+        sensor_data = {
+            'forward_camera': np.zeros((128, 128, 3)),
+            'depth_scan': np.zeros((90, 1))
+        }
+        action = actor.get_action(sensor_data=sensor_data)
+        self.assertTrue(isinstance(action, Action))
+
 
 
 if __name__ == '__main__':

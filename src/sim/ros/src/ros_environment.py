@@ -95,7 +95,7 @@ class RosEnvironment(Environment):
             terminal=self._terminal_state,
             sensor_data={
                 # TODO make await with asyncio to multitask awaiting different sensors.
-                sensor_name: await self._await_new_data(sensor_name) for sensor_name in self._sensor_values.keys()
+                sensor_name: self._await_new_data(sensor_name) for sensor_name in self._sensor_values.keys()
             },
             time_stamp_us=int(rospy.get_time() * 10**6)
         )

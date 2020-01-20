@@ -39,8 +39,8 @@ class EnvironmentRunner:
 
     def _run_episode(self):
         state = self._environment.reset()
-        while state.State == TerminalType.NotDone:
-            action = self._actor(state)
+        while state.terminal == TerminalType.NotDone:
+            action = self._actor(state.sensor_data)
             state = self._environment.step(action)
             if self._data_saver is not None:
                 self._data_saver.save(state=state,

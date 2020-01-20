@@ -15,32 +15,28 @@ Depends on ai/architectures/models to call forward pass.
 class ActorConfig:
     description: str = None
     actor_type: ActorType = None
+    actor_specs: dict = None
 
 
 class Actor:
 
     def __init__(self, config: ActorConfig):
+        self._config = config
         self._description = config.description
 
-    def get_action(self, raw_state: np.array, visualize: bool = False, verbose: bool = False) -> Action:
+    def get_action(self, sensor_data: dict) -> Action:
         pass
 
     def get_description(self):
         return self._description
 
 
-@dataclass
-class DNNActorConfig(ActorConfig):
-    model_trace_path: str = None
-
-
 class DNNActor(Actor):
 
-    def __init__(self, config: DNNActorConfig):
-        super(DNNActor, self).__init__(config)
-        self._config = config
-        self._dnn = BaseModel.load_from_trace_path(self._config.model_trace_path)
+    def __init__(self, config: ActorConfig):
+        super().__init__(config)
+        self._dnn = BaseModel.load_from_trace_path(self._config.actor_specs['model_trace_path'])
 
-    def get_action(self, raw_state: np.array, visualize: bool = False, verbose: bool = False) -> Action:
-        processed_state = self.io_adapter.from_raw_to_(raw_state)
+    def get_action(self, sensor_data: dict) -> Action:
+        processed_state = self.io_adapter.from_raw_to_(sensor_data)
         return Action(self._dnn.forward(processed_state))
