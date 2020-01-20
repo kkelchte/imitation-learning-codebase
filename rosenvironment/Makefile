@@ -2,7 +2,7 @@
 catkin_ws/src:
 	mkdir -p catkin_ws/src
 
-catkin_ws/devel/setup.bash: $(wildcard catkin_ws/src/**/*)
+catkin_ws/devel/setup.bash: #$(wildcard catkin_ws/src/**/*)
 	cd catkin_ws && \
 	catkin_make
 

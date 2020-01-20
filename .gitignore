@@ -130,9 +130,9 @@ dmypy.json
 .pyre/
 
 # Singularity build files
-singularity/cu*
-singularity/.*
-singularity/*.sif
+rosenvironment/singularity/cu*
+rosenvironment/singularity/.*
+rosenvironment/singularity/*.sif
 /singularity/writable_image
 
 # Pycharm files
