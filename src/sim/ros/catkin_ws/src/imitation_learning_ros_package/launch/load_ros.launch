@@ -11,7 +11,7 @@
     <arg name="graphics" default="false"/>
     <arg name="gazebo" default="false"/>
     <group if="$(arg gazebo)">
-        <include file="gazebo.launch">
+        <include file="$(find imitation_learning_ros_package)/launch/gazebo.launch">
             <arg name="world_name" value="$(env HOME)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
             <arg name="gui" value="$(arg graphics)"/>
             <arg name="headless" default="true"/>
@@ -26,6 +26,7 @@
     <arg name="z_pos" default="0.5"/>
     <arg name="y_or" default="1.57"/>
 
+    <arg name="turtlebot_sim" default="false"/>
     <group if="$(arg turtlebot_sim)">
           <param name="robot_description"
                  command="$(find xacro)/xacro --inorder $(env HOME)/src/sim/ros/gazebo/urdf/turtlebot3_burger.urdf.xacro"/>

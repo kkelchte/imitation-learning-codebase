@@ -1,5 +1,6 @@
 VM=sylabs/singularity-3.2-ubuntu-bionic64
 version=$(shell cat VERSION)
+CODEDIR=../..
 LOGINCOMMAND="/bin/bash /vagrant/login_remote.sh"
 BUILDCOMMAND="/bin/bash /vagrant/create_image.sh ${version}"
 WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
@@ -30,6 +31,7 @@ remove-vagrant:
 		if [ -e cudnn-* ] ; then \
 			echo "Found cudnn folder: $(echo cudnn-*)"; \
 			vagrant ssh -- -t ${BUILDCOMMAND} && \
+			cd $(CODEDIR) && \
 			git commit -am "new image ${version}" && git push; \
 		else \
 			echo "ERROR: Could not found cudnn folder."; \
@@ -47,7 +49,8 @@ update-image:
 		for image in *.sif ; do \
 			if [ $$image != ros-gazebo-cuda_${version}.sif ] ; then \
 				echo "clean up: $$image"; \
-				rm $$image; \
+				mv $$image /esat/opal/kkelchte/singularity_images; \
+#				rm $$image; \
 				singularity cache clean --name $$image; \
 			fi ; \
 		done ; \
@@ -61,11 +64,11 @@ update-image:
 
 test-image: *.sif test/singularity_sanity_check.py
 	cd $(CODEDIR) && \
-	singularity run --nv singularity/*.sif \
-	./launch.sh 'python3.7 singularity/test/singularity_sanity_check.py'
+	singularity run --nv rosenvironment/singularity/*.sif \
+	./rosenvironment/entrypoint.sh 'python3.7 rosenvironment/singularity/test/singularity_sanity_check.py'
 
 singularity-shell:
 	cd $(CODEDIR) && \
 	echo "DO NOT FORGET TO SOURCE ENVIRONMENT:" && \
 	echo "source entrypoint.sh" && \
-	singularity shell --nv singularity/*.sif
+	singularity shell --nv rosenvironment/singularity/*.sif

@@ -2,4 +2,4 @@
 
 # shellcheck disable=SC1090
 source "${HOME}"/src/sim/ros/entrypoint.sh
-roslaunch "$@"
+xvfb-run -a roslaunch "$@"

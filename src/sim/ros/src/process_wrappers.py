@@ -41,10 +41,14 @@ class ProcessWrapper:
         grep_str = grep_str if grep_str else self._grep_str
         ps_process = subprocess.Popen(["ps", "-ef"],
                                       stdout=subprocess.PIPE)
-        grep_process = subprocess.Popen(["grep", grep_str],
-                                        stdin=ps_process.stdout,
-                                        stdout=subprocess.PIPE)
-        output_string = str(grep_process.communicate()[0])
+        with ps_process.stdout:
+            grep_process = subprocess.Popen(["grep", grep_str],
+                                            stdin=ps_process.stdout,
+                                            stdout=subprocess.PIPE)
+            with grep_process.stdout:
+                output_string = str(grep_process.communicate()[0])
+        self._terminate_by_pid(process=ps_process)
+        self._terminate_by_pid(process=grep_process)
         processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
                                    and 'test' not in line and len(line) > len(grep_str) and 'pycharm' not in line]
         return len(processed_output_string) >= 1
@@ -93,10 +97,11 @@ class ProcessWrapper:
         else:
             return True
 
-    def _terminate_by_pid(self):
-        if self._process_popen.poll() is None:
-            self._process_popen.terminate()
-            self._process_popen.wait()
+    def _terminate_by_pid(self, process: subprocess.Popen = None):
+        process = process if process is not None else self._process_popen
+        if process.poll() is None:
+            process.terminate()
+            process.wait()
 
     def terminate(self) -> ProcessState:
         if self._terminate_by_name():
@@ -149,8 +154,10 @@ class RosWrapper(ProcessWrapper):
         assert os.path.isfile(launch_file)
         executable += ' ' + launch_file
         executable += adapt_launch_config(config)
-        command = f'xterm -iconic -l -lf "{os.environ["HOME"]}/.ros/ '\
-                  f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H:%M:%S")}_xterm_output" '\
+        if not os.path.isdir(f'{os.environ["HOME"]}/.ros/'):
+            os.makedirs(f'{os.environ["HOME"]}/.ros/')
+        command = f'xterm -iconic -l -lf "{os.environ["HOME"]}/.ros/'\
+                  f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H:%M:%S")}_xterm_output.log" '\
                   f'-hold -e {executable}'
         if not visible:
             command = f'xvfb-run -a {command}'

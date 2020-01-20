@@ -1,7 +1,7 @@
 # imitation-learning-codebase
 integrated code base for future imitation learning projects
 
-### /singularity 
+### /rosenvironment 
 Directory contains the definition file of the singularity container as well as the build instructions in the make file, 
 assuming a build on a macbook.
 
