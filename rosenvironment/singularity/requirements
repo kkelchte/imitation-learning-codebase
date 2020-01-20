@@ -24,3 +24,4 @@ datetime
 ipdb
 rospkg
 catkin_pkg
+opencv-python
