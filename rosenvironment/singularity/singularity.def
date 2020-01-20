@@ -2,7 +2,7 @@ Bootstrap: docker
 From: ros:melodic-ros-base-bionic
 
 %help
-This is a container with ROS, Gazebo, XPRA, CUDA and Torch for imitation learning.
+This is a container with ROS, Gazebo, CUDA and Torch for imitation learning.
 
 %environment
 export LC_ALL=C
@@ -73,9 +73,8 @@ apt-get update && apt-get install -yq\
     ros-melodic-teleop-twist-keyboard \
     rviz \
     ros-melodic-rqt \
-    ros-melodic-rqt--rqt-common-plugins \
+    ros-melodic-rqt-common-plugins \
     && rm -rf /var/lib/apt/lists/*
-
 
 # ---- CUDA ----
 %files
