@@ -15,7 +15,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
 catkin_package()
-catkin_python_setup()
+
 include_directories(
   rosnodes
 )

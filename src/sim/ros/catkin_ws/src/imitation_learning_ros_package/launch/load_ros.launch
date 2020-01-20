@@ -2,9 +2,10 @@
 <launch>
     <arg name="random_seed" default="1234"/>
     <param name="random_seed" value="$(arg random_seed)"/>
-
     <arg name="output_path" default="/tmp"/>
     <param name="output_path" value="$(arg output_path)"/>
+
+    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/general/default.yml" />
 
     <arg name="world_name" default="debug"/>
     <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml"/>

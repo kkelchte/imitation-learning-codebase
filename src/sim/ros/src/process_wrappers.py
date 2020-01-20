@@ -139,6 +139,8 @@ def adapt_launch_config(config: dict) -> str:
     for key, value in config.items():
         if isinstance(value, str):
             config_str += f" {key}:=\'{value}\'"
+        elif isinstance(value, bool):
+            config_str += f" {key}:=\'true\'" if value else f" {key}:=\'false\'"
         else:
             config_str += f' {key}:={value}'
     return config_str
@@ -148,7 +150,9 @@ class RosWrapper(ProcessWrapper):
 
     def __init__(self, config: dict, launch_file: str = 'load_ros.launch', visible: bool = False):
         super().__init__(name='ros')
-        executable = 'src/sim/ros/scripts/ros.sh'
+        executable = 'roslaunch '
+        if not visible:
+            executable = f'xvfb-run -a {executable}'
         launch_file = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'catkin_ws', 'src',
                                    'imitation_learning_ros_package', 'launch', launch_file)
         assert os.path.isfile(launch_file)
@@ -175,7 +179,8 @@ class RosWrapper(ProcessWrapper):
     def terminate(self) -> ProcessState:
         self._terminate_by_pid()
         if self._terminate_by_name(command_name='gz') and \
-            self._terminate_by_name(command_name='xterm'):
+            self._terminate_by_name(command_name='xterm') and \
+                self._terminate_by_name(command_name='xvfb'):
             self._state = ProcessState.Terminated
         else:
             self._state = ProcessState.Unknown
