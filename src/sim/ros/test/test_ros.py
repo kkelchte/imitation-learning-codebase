@@ -22,7 +22,7 @@ def count_grep_name(grep_str: str) -> int:
 
 class TestRos(unittest.TestCase):
 
-    # def test_launch_and_terminate_xpra(self):
+    # def test_launch_and_terminate_xpra_DEPRECATED(self):
     #     xpra_process = XpraWrapper()
     #     self.assertEqual(xpra_process.get_state(), ProcessState.Running)
     #     xpra_process.terminate()
@@ -92,6 +92,8 @@ class TestRos(unittest.TestCase):
         ros_process.terminate()
         self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
         self.assertTrue(count_grep_name('gzserver') == 0)
+
+
 
 
 if __name__ == '__main__':

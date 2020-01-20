@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 2.8.3)
-LOCAL_ROS_DIR=src/sim/ros
 
 project(imitation_learning_ros_package)
 find_package(catkin REQUIRED COMPONENTS
@@ -18,13 +17,13 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
 catkin_package()
 catkin_python_setup()
 include_directories(
-  ${LOCAL_ROS_DIR}/rosnodes
+  rosnodes
 )
 
 catkin_install_python(PROGRAMS
-  ${LOCAL_ROS_DIR}/rosnodes/teleop_twist_keyboard.py
+  rosnodes/teleop_twist_keyboard.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
-install(DIRECTORY ${LOCAL_ROS_DIR}/launch
+install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
   PATTERN ".svn" EXCLUDE)
