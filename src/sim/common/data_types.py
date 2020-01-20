@@ -36,5 +36,5 @@ class Action:
 @dataclass
 class State:
     terminal: TerminalType = None
-    sensor_data: Dict[SensorType, np.ndarray] = None
+    sensor_data: Dict[str, np.ndarray] = None
     time_stamp_us: int = 0

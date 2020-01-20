@@ -35,7 +35,7 @@ class RosConfig(Config):
     Configuration specific for ROS environment,
     specified here to avoid circular dependencies environment <> ros_environment
     """
-    headless: bool = False
+    visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None
 
 
