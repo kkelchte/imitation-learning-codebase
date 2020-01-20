@@ -7,19 +7,20 @@ import time
 import numpy as np
 
 from src.core.utils import camelcase_to_snake_format
-from src.sim.common.actors import Actor
-from src.sim.common.data_types import Action, State, SensorType, TerminalType
+from src.sim.common.actors import ActorConfig
+from src.sim.common.data_types import Action, State, TerminalType
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import adapt_action_to_twist, process_compressed_image, process_image, process_laser_scan
+from src.sim.ros.src.utils import adapt_action_to_twist, process_compressed_image, process_image, process_laser_scan, \
+    adapt_twist_to_action
 
 roslib.load_manifest('imitation_learning_ros_package')
 from cv_bridge import CvBridge
 import rospy
 
-from sensor_msgs.msg import CompressedImage, Image, LaserScan  # do NOT remove, used in eval() expression
+from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Empty, String
+from std_msgs.msg import String
 
 from std_srvs.srv import Empty as Emptyservice
 
@@ -29,6 +30,11 @@ bridge = CvBridge()
 class RosEnvironment(Environment):
 
     def __init__(self, config: EnvironmentConfig):
+        # TODO: for each actor config with specs:
+        # TODO:     > add node in ros_launch config automatically
+        # TODO:     > configs could be automatically saved as yml and loaded as ros_params?
+        # TODO:     ! Make sure rosparams are defined on time !
+
         super().__init__(config)
         self._ros = RosWrapper(
             config=config.ros_config.ros_launch_config.__dict__,
@@ -38,6 +44,7 @@ class RosEnvironment(Environment):
         # Fields
         self._terminal_state = TerminalType.NotDone
         self._sensor_values = {}
+        self._actor_values = {}
         self._step = 0
 
         # Services
@@ -64,17 +71,30 @@ class RosEnvironment(Environment):
                              callback_args=(sensor_name, sensor_args))
             self._sensor_values[sensor_name] = None
 
+        for actor_config in self._config.actor_configs:
+            self._actor_values[actor_config.name] = None
+            rospy.Subscriber(name=f'/cmd_vel_{actor_config.name}',
+                             data_class=Twist,
+                             callback=self._set_action,
+                             callback_args=actor_config)
         # Publishers
         self._action_pub = rospy.Publisher(rospy.get_param('command_topic'),
                                            Twist, queue_size=1)
 
-    def _set_compressed_image(self, msg, sensor_name: str, sensor_stats: dict) -> None:
+    def _set_action(self, msg: Twist, actor_config: ActorConfig) -> None:
+        action = Action(actor_name=actor_config.name,
+                        actor_type=actor_config.type,
+                        value=adapt_twist_to_action(msg).value
+                        )
+        self._actor_values[actor_config.name] = action
+
+    def _set_compressed_image(self, msg: CompressedImage, sensor_name: str, sensor_stats: dict) -> None:
         self._sensor_values[sensor_name] = process_compressed_image(msg, sensor_stats)
 
-    def _set_image(self, msg, sensor_name: str, sensor_stats: dict) -> None:
+    def _set_image(self, msg: Image, sensor_name: str, sensor_stats: dict) -> None:
         self._sensor_values[sensor_name] = process_image(msg, sensor_stats)
 
-    def _set_laser_scan(self, msg, sensor_name: str, sensor_stats: dict) -> None:
+    def _set_laser_scan(self, msg: LaserScan, sensor_name: str, sensor_stats: dict) -> None:
         self._sensor_values[sensor_name] = process_laser_scan(msg, sensor_stats)
 
     def _set_terminal_state(self, terminal_msg=None) -> None:
@@ -119,9 +139,6 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_physics_client()
         return state
-
-    def get_actor(self) -> Actor:
-        pass
 
     def _await_new_data(self, sensor_name: str) -> np.ndarray:
         self._sensor_values[sensor_name] = None

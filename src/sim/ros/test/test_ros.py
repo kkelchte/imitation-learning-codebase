@@ -140,7 +140,7 @@ class TestRos(unittest.TestCase):
 
     def test_ros_actor(self):
         config = ActorConfig(
-            description='basic expert',
+            name='expert',
             actor_type=ActorType.Expert,
             actor_specs={
                 'sensor_name': 'depth_scan'

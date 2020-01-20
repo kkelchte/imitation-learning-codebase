@@ -14,6 +14,21 @@ from cv_bridge import CvBridge
 bridge = CvBridge()
 
 
+def adapt_twist_to_action(msg: Twist) -> Action:
+    return Action(
+        value=np.ndarray(
+            (
+                msg.linear.x,
+                msg.linear.y,
+                msg.linear.z,
+                msg.angular.x,
+                msg.angular.y,
+                msg.angular.z
+            )
+        )
+    )
+
+
 def adapt_action_to_twist(action: Action) -> Twist:
     twist = Twist()
     twist.linear.x, twist.linear.y, twist.linear.z, \

@@ -13,22 +13,23 @@ Depends on ai/architectures/models to call forward pass.
 
 @dataclass
 class ActorConfig:
-    description: str = None
-    actor_type: ActorType = None
-    actor_specs: dict = None
+    name: str = None
+    type: ActorType = None
+    specs: dict = None
 
 
 class Actor:
 
     def __init__(self, config: ActorConfig):
-        self._config = config
-        self._description = config.description
+        self._name = config.name
+        self._type = config.type
+        self._specs = config.specs
 
     def get_action(self, sensor_data: dict) -> Action:
         pass
 
-    def get_description(self):
-        return self._description
+    def get_name(self):
+        return self._name
 
 
 class DNNActor(Actor):

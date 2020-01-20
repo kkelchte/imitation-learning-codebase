@@ -1,10 +1,12 @@
 
 from dataclasses import dataclass
+from typing import List
+
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
 from src.sim.common.data_types import Action, State, EnvironmentType
-from src.sim.common.actors import Actor
+from src.sim.common.actors import Actor, ActorConfig
 
 
 @dataclass_json
@@ -49,6 +51,7 @@ class EnvironmentConfig(Config):
     """
     factory_key: EnvironmentType = None
     max_number_of_steps: int = 100
+    actor_configs: List[ActorConfig] = None
     # Gazebo specific environment settings
     ros_config: RosConfig = None
     # Gym specific environment settings

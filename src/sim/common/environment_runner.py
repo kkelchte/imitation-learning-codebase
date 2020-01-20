@@ -15,7 +15,7 @@ from src.data.dataset_saver import DataSaver
 @dataclass
 class EnvironmentRunnerConfig(Config):
     environment_config: EnvironmentConfig = None
-    actor_config: ActorConfig = None
+    actor_name: str = None
     number_of_episodes: int = None
 
 
@@ -32,15 +32,12 @@ class EnvironmentRunner:
         logger.info(f'Initiate.')
         self._data_saver = data_saver
         self._environment = EnvironmentFactory().create(config.environment_config)
-        if self._config.actor_config.actor_type == ActorType.Model:
-            self._actor = DNNActor(config=config.actor_config)
-        else:
-            self._actor = self._environment.get_actor(actor_config=self._config.actor_config)
 
     def _run_episode(self):
         state = self._environment.reset()
         while state.terminal == TerminalType.NotDone:
-            action = self._actor(state.sensor_data)
+            action = state.actor_data[self._config.actor_config.name]
+            # action = self._actor(state.sensor_data)
             state = self._environment.step(action)
             if self._data_saver is not None:
                 self._data_saver.save(state=state,

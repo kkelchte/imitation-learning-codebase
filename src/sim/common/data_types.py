@@ -22,19 +22,16 @@ class ActorType(IntEnum):
     Expert = 1
 
 
-class SensorType(IntEnum):
-    RGB = 0
-    Depth = 1
-
-
 @dataclass
 class Action:
     actor_type: ActorType = None
+    actor_name: str = None
     value: np.ndarray = None
 
 
 @dataclass
 class State:
     terminal: TerminalType = None
+    actor_data: Dict[str, Action] = None
     sensor_data: Dict[str, np.ndarray] = None
     time_stamp_us: int = 0
