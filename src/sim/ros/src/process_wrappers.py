@@ -151,6 +151,7 @@ class RosWrapper(ProcessWrapper):
     def __init__(self, config: dict, launch_file: str = 'load_ros.launch', visible: bool = False):
         super().__init__(name='ros')
         post_init_delay = 4
+        # executable = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'scripts', 'ros_DEPRECATED.sh')
         executable = 'roslaunch '
         if not visible:
             executable = f'xvfb-run -a {executable}'
@@ -161,7 +162,7 @@ class RosWrapper(ProcessWrapper):
         executable += adapt_launch_config(config)
         if not os.path.isdir(f'{os.environ["HOME"]}/.ros/'):
             os.makedirs(f'{os.environ["HOME"]}/.ros/')
-        command = f'xterm -iconic -l -lf "{os.environ["HOME"]}/.ros/'\
+        command = f'env -u SESSION_MANAGER xterm -iconic -l -lf "{os.environ["HOME"]}/.ros/'\
                   f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H:%M:%S")}_xterm_output.log" '\
                   f'-hold -e {executable}'
         if not visible:

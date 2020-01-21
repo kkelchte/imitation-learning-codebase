@@ -106,6 +106,7 @@ class TestRos(unittest.TestCase):
         self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
         self.assertTrue(count_grep_name('gzserver') == 0)
 
+    @unittest.skip
     def test_ros_environment(self):
         # spinoff RosEnvironment with config containing turtlebot and images
         config = EnvironmentConfig(
@@ -128,16 +129,14 @@ class TestRos(unittest.TestCase):
         while state.terminal == TerminalType.NotDone:
             print(f'State: {state.terminal}: {state.time_stamp_us} \n'
                   f'depth: {state.sensor_data["depth_scan"]}')
-            if True:
-                import matplotlib.pyplot as plt
-                plt.imshow(state.sensor_data['forward_camera'])
-                plt.show()
             action = Action(
                 actor_type=ActorType.Expert,
                 value=np.array((1, 0, 0, 0, 0, 1))
             )
             state = environment.step(action)
+        environment.remove()
 
+    @unittest.skip
     def test_ros_actor(self):
         config = ActorConfig(
             name='expert',
@@ -153,7 +152,6 @@ class TestRos(unittest.TestCase):
         }
         action = actor.get_action(sensor_data=sensor_data)
         self.assertTrue(isinstance(action, Action))
-
 
 
 if __name__ == '__main__':

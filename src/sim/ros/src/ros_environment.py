@@ -1,5 +1,6 @@
 #!/usr/bin/python3.7
 import asyncio
+import warnings
 import sys
 from typing import Union, Tuple
 
@@ -23,7 +24,7 @@ from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 
-from std_srvs.srv import Empty as Emptyservice
+from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 bridge = CvBridge()
 
@@ -49,10 +50,9 @@ class RosEnvironment(Environment):
         self._step = 0
 
         # Services
-        if config.ros_config.ros_launch_config.gazebo:
-            self._pause_physics_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
-            self._pause = rospy.wait_for_service()
-            self._unpause_physics_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
+        if self._config.ros_config.ros_launch_config.gazebo:
+            self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
+            self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
 
         # Subscribers
         rospy.get_param('terminal_topic')
@@ -101,15 +101,14 @@ class RosEnvironment(Environment):
 
     def _set_image(self, msg: Image, args: Tuple) -> None:
         sensor_name, sensor_stats = args
-        # self._sensor_values[sensor_name] = process_image(msg, sensor_stats)
-        self._sensor_values[sensor_name] = np.zeros((128,128,3))
+        self._sensor_values[sensor_name] = process_image(msg, sensor_stats)
 
     def _set_laser_scan(self, msg: LaserScan, args: Tuple) -> None:
         sensor_name, sensor_stats = args
-        # self._sensor_values[sensor_name] = process_laser_scan(msg, sensor_stats)
-        self._sensor_values[sensor_name] = np.zeros((128, 128, 3))
+        self._sensor_values[sensor_name] = process_laser_scan(msg, sensor_stats)
 
     def _set_terminal_state(self, terminal_msg=None) -> None:
+        print('_set_terminal_state ! ')
         terminal_translator = {
             'success': TerminalType.Success,
             'failure': TerminalType.Failure
@@ -120,19 +119,32 @@ class RosEnvironment(Environment):
             self._terminal_state = TerminalType.NotDone if self._step < self._config.max_number_of_steps \
                 else TerminalType.Success
 
+    def _pause_gazebo(self):
+        assert self._config.ros_config.ros_launch_config.gazebo
+        with warnings.catch_warnings():
+            warnings.simplefilter('always')
+            self._pause_client.call(EmptyRequest())
+
+    def _unpause_gazebo(self):
+        assert self._config.ros_config.ros_launch_config.gazebo
+        with warnings.catch_warnings():
+            warnings.simplefilter('always')
+            self._unpause_client.call(EmptyRequest())
+
     def reset(self) -> State:
         if self._config.ros_config.ros_launch_config.gazebo:
-            self._unpause_physics_client()
+            self._unpause_gazebo()
         state = State(
             terminal=self._terminal_state,
             sensor_data={
                 # TODO make await with asyncio to multitask awaiting different sensors.
-                sensor_name: asyncio.run(self._await_new_data(sensor_name)) for sensor_name in self._sensor_values.keys()
+                sensor_name: self._await_new_data(sensor_name)
+                for sensor_name in self._sensor_values.keys()
             },
             time_stamp_us=int(rospy.get_time() * 10**6)
         )
         if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_physics_client()
+            self._pause_gazebo()
         return state
 
     def step(self, action: Action) -> State:
@@ -140,7 +152,7 @@ class RosEnvironment(Environment):
         self._step += 1
         self._set_terminal_state()
         if self._config.ros_config.ros_launch_config.gazebo:
-            self._unpause_physics_client()
+            self._unpause_gazebo()
         state = State(
             terminal=self._terminal_state,
             sensor_data={
@@ -149,11 +161,17 @@ class RosEnvironment(Environment):
             time_stamp_us=int(rospy.get_time() * 10**6)
         )
         if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_physics_client()
+            self._pause_gazebo()
         return state
 
-    async def _await_new_data(self, sensor_name: str) -> np.ndarray:
+    def _await_new_data(self, sensor_name: str) -> np.ndarray:
         self._sensor_values[sensor_name] = None
         while self._sensor_values[sensor_name] is None:
-            await asyncio.sleep(0.05)
+            # await asyncio.sleep(0.05)
+            time.sleep(0.05)
         return self._sensor_values[sensor_name]
+
+    def remove(self):
+        self._ros.terminate()
+
+

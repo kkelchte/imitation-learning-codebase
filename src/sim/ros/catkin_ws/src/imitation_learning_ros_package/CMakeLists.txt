@@ -6,13 +6,13 @@ find_package(catkin REQUIRED COMPONENTS
     rospy
     std_msgs
     gazebo_ros
-    #cv_bridge
+    cv_bridge
     image_transport
 )
 find_package(Boost REQUIRED COMPONENTS system signals thread)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
-                           #${OpenCV_INCLUDE_DIRS}
+                           ${OpenCV_INCLUDE_DIRS}
 )
 catkin_package()
 
