@@ -108,7 +108,6 @@ class RosEnvironment(Environment):
         self._sensor_values[sensor_name] = process_laser_scan(msg, sensor_stats)
 
     def _set_terminal_state(self, terminal_msg=None) -> None:
-        print('_set_terminal_state ! ')
         terminal_translator = {
             'success': TerminalType.Success,
             'failure': TerminalType.Failure

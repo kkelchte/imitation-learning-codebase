@@ -111,7 +111,7 @@ class TestRos(unittest.TestCase):
         # spinoff RosEnvironment with config containing turtlebot and images
         config = EnvironmentConfig(
             factory_key=EnvironmentType.Ros,
-            max_number_of_steps=10,
+            max_number_of_steps=3,
             ros_config=RosConfig(
                 visible_xterm=True,
                 ros_launch_config=RosLaunchConfig(
@@ -124,11 +124,12 @@ class TestRos(unittest.TestCase):
             )
         )
         environment = RosEnvironment(config=config)
-        # take a 10 steps
+        # take a few steps
         state = environment.reset()
         while state.terminal == TerminalType.NotDone:
             print(f'State: {state.terminal}: {state.time_stamp_us} \n'
-                  f'depth: {state.sensor_data["depth_scan"]}')
+                  f'depth: {state.sensor_data["depth_scan"]} \n'
+                  f'image: {state.sensor_data["forward_camera"]} \n')
             action = Action(
                 actor_type=ActorType.Expert,
                 value=np.array((1, 0, 0, 0, 0, 1))
