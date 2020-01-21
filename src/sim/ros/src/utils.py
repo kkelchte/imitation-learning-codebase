@@ -63,17 +63,17 @@ def process_compressed_image(msg, sensor_stats: dict = None) -> np.ndarray:
 
 
 def process_laser_scan(msg, sensor_stats: dict = None) -> np.ndarray:
-    field_of_view = sensor_stats['field_of_view'] if 'field_of_view' in sensor_stats.keys() else 90
-    num_smooth_bins = sensor_stats['num_smooth_bins'] if 'num_smooth_bins' in sensor_stats.keys() else 4
-    max_depth = sensor_stats['max_depth'] if 'max_depth' in sensor_stats.keys() else 4
-    min_depth = sensor_stats['min_depth'] if 'min_depth' in sensor_stats.keys() else 0.1
+    field_of_view = int(sensor_stats['field_of_view']) if 'field_of_view' in sensor_stats.keys() else 90
+    num_smooth_bins = int(sensor_stats['num_smooth_bins']) if 'num_smooth_bins' in sensor_stats.keys() else 4
+    max_depth = float(sensor_stats['max_depth']) if 'max_depth' in sensor_stats.keys() else 4
+    min_depth = float(sensor_stats['min_depth']) if 'min_depth' in sensor_stats.keys() else 0.1
 
     # clip at 4 and ignore 0's
     ranges = [max_depth if r > max_depth or r < min_depth else r for r in msg.ranges]
 
     # clip left field-of-view degree range from 0:45 reversed with right 45degree range from the last 45:
-    ranges = list(reversed(ranges[:field_of_view / 2])) + list(
-        reversed(ranges[-field_of_view / 2:]))
+    ranges = list(reversed(ranges[:int(field_of_view / 2)])) + list(
+        reversed(ranges[-int(field_of_view / 2):]))
     # add some smoothing by averaging over 4 neighboring bins
     ranges = [sum(ranges[i * num_smooth_bins: (i + 1) * num_smooth_bins]) / num_smooth_bins
               for i in range(int(len(ranges) / num_smooth_bins))]

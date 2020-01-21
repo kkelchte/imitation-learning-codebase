@@ -150,6 +150,7 @@ class RosWrapper(ProcessWrapper):
 
     def __init__(self, config: dict, launch_file: str = 'load_ros.launch', visible: bool = False):
         super().__init__(name='ros')
+        post_init_delay = 4
         executable = 'roslaunch '
         if not visible:
             executable = f'xvfb-run -a {executable}'
@@ -169,6 +170,10 @@ class RosWrapper(ProcessWrapper):
                          strict_check=False,
                          shell=False,
                          background=True)
+        if config['gazebo'] == 'true':
+            while not self._check_running_process_with_ps('gzserver'):
+                time.sleep(1)
+        time.sleep(post_init_delay)
         # TODO pipe stderr of ROS to logger debug.
 
     @staticmethod
