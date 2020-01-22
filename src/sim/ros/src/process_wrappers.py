@@ -111,7 +111,8 @@ class ProcessWrapper:
         self._cleanup()
         return self._state
 
-    def _cleanup(self):
+    @staticmethod
+    def _cleanup():
         pass
 
 
@@ -187,11 +188,9 @@ class RosWrapper(ProcessWrapper):
         if self._terminate_by_name(command_name='gz') and \
             self._terminate_by_name(command_name='xterm') and \
                 self._terminate_by_name(command_name='xvfb') and \
-                    self._terminate_by_name(command_name='ros'):
+                self._terminate_by_name(command_name='ros'):
             self._state = ProcessState.Terminated
         else:
             self._state = ProcessState.Unknown
         self._cleanup()
         return self._state
-
-

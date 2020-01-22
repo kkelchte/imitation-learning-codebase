@@ -3,13 +3,6 @@ import time
 from enum import IntEnum
 
 import numpy as np
-import roslib
-
-from src.core.logger import get_logger, cprint
-from src.sim.common.data_types import TerminalType
-from src.sim.ros.src.utils import process_image, process_laser_scan
-
-roslib.load_manifest('imitation_learning_ros_package')
 import rospy
 
 from geometry_msgs.msg import WrenchStamped
@@ -20,6 +13,10 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
 from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
+from src.core.logger import get_logger, cprint
+from src.sim.common.data_types import TerminalType
+from src.sim.ros.src.utils import process_image, process_laser_scan
+
 
 bridge = CvBridge()
 
@@ -181,8 +178,8 @@ class Fsm:
     def _update_state(self) -> bool:
         duration_s = self._check_time()
         return self._state is FsmState.Running \
-               and not self._is_shuttingdown \
-               and duration_s > self._delay_evaluation
+            and not self._is_shuttingdown \
+            and duration_s > self._delay_evaluation
 
     def _check_depth(self, data: np.ndarray) -> None:
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
