@@ -1,1 +1,3 @@
-world_param: 0
+max_duration: 100
+starting_height: 1.8
+delay_evaluation: 1

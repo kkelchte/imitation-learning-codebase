@@ -8,7 +8,7 @@
     <rosparam command="load" file="$(env HOME)/src/sim/ros/config/general/default.yml" />
 
     <arg name="world_name" default="debug"/>
-    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml"/>
+    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
     <arg name="graphics" default="false"/>
     <arg name="gazebo" default="false"/>
     <group if="$(arg gazebo)">
@@ -20,7 +20,7 @@
     </group>
 
     <arg name="robot_name" default="debug"/>
-    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name).yml" />
+    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
 
     <arg name="x_pos" default="0"/>
     <arg name="y_pos" default="0"/>
@@ -49,7 +49,14 @@
               output="screen"/>
     </group>
 
-<!--    <arg name="fsm_config" default="debug"/>-->
-<!--    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config).yml"/>-->
+    <arg name="fsm" default="true"/>
+    <group if="$(arg fsm)">
+        <arg name="fsm_config" default="debug"/>
+        <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
+        <node pkg="imitation_learning_ros_package"
+              name="fsm"
+              type="fsm.py"
+              output="screen"/>
+    </group>
 
 </launch>

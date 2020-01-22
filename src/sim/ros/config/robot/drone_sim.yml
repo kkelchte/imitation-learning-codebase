@@ -18,3 +18,4 @@ depth_scan_stats:
 collision_depth: 0.5
 pose_estimation_topic: '/odom'
 pose_estimation_type: 'Odometry'
+wrench_topic: /command/wrench

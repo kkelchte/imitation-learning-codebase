@@ -1,13 +1,16 @@
 #!/usr/bin/python3.7
-import asyncio
 import warnings
-import sys
-from typing import Union, Tuple
+from typing import Tuple
 
-import roslib
 import time
 import numpy as np
+import rospy
+from sensor_msgs.msg import CompressedImage, Image, LaserScan
+from geometry_msgs.msg import Twist
+from std_msgs.msg import String
+from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
+from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
 from src.sim.common.actors import ActorConfig
 from src.sim.common.data_types import Action, State, TerminalType
@@ -15,16 +18,6 @@ from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import adapt_action_to_twist, process_compressed_image, process_image, process_laser_scan, \
     adapt_twist_to_action
-
-roslib.load_manifest('imitation_learning_ros_package')
-from cv_bridge import CvBridge
-import rospy
-
-from sensor_msgs.msg import CompressedImage, Image, LaserScan
-from geometry_msgs.msg import Twist
-from std_msgs.msg import String
-
-from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 bridge = CvBridge()
 
@@ -44,7 +37,7 @@ class RosEnvironment(Environment):
             visible=config.ros_config.visible_xterm
         )
         # Fields
-        self._terminal_state = TerminalType.NotDone
+        self._terminal_state = TerminalType.Unknown
         self._sensor_values = {}
         self._actor_values = {}
         self._step = 0
@@ -55,7 +48,6 @@ class RosEnvironment(Environment):
             self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
 
         # Subscribers
-        rospy.get_param('terminal_topic')
         rospy.Subscriber(rospy.get_param('terminal_topic'),
                          String,
                          self._set_terminal_state)
@@ -72,11 +64,11 @@ class RosEnvironment(Environment):
                              data_class=eval(sensor_type),
                              callback=eval(f'self.{sensor_callback}'),
                              callback_args=(sensor_name, sensor_args))
-            self._sensor_values[sensor_name] = None
+            self._sensor_values[sensor_name]: np.ndarray = None
 
         if self._config.actor_configs is not None:
             for actor_config in self._config.actor_configs:
-                self._actor_values[actor_config.name] = None
+                self._actor_values[actor_config.name]: Action = None
                 rospy.Subscriber(name=f'/cmd_vel_{actor_config.name}',
                                  data_class=Twist,
                                  callback=self._set_action,
@@ -108,12 +100,12 @@ class RosEnvironment(Environment):
         self._sensor_values[sensor_name] = process_laser_scan(msg, sensor_stats)
 
     def _set_terminal_state(self, terminal_msg=None) -> None:
-        terminal_translator = {
-            'success': TerminalType.Success,
-            'failure': TerminalType.Failure
-        }
+        # terminal_translator = {
+        #     TerminalType.Unknown.: TerminalType.Success,
+        #     'failure': TerminalType.Failure
+        # }
         if terminal_msg is not None:
-            self._terminal_state = terminal_translator[terminal_msg]
+            self._terminal_state = TerminalType(terminal_msg)
         else:
             self._terminal_state = TerminalType.NotDone if self._step < self._config.max_number_of_steps \
                 else TerminalType.Success

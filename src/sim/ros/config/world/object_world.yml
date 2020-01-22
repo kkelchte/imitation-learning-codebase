@@ -1,0 +1,13 @@
+max_duration: 100
+starting_height: 1.8
+delay_evaluation: 4
+goal:
+  x:
+    min: 10
+    max: 11
+  y:
+    min: 10
+    max: 11
+  z:
+    min: 0
+    max: 2

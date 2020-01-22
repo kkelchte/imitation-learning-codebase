@@ -1,0 +1,7 @@
+fsm_mode: 2
+terminal_topic: '/terminal_outcome'
+state_topic: '/fsm/state'
+go_topic: '/fsm/go'
+overtake_topic: '/fsm/overtake'
+finish_topic: '/fsm/finish'
+reset_topic: '/fsm/reset'

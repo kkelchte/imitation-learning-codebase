@@ -5,11 +5,12 @@ import numpy as np
 import roslib
 import skimage.transform as sm
 
+from src.core.logger import cprint, get_logger
 from src.sim.common.data_types import Action
 
 roslib.load_manifest('imitation_learning_ros_package')
 from geometry_msgs.msg import Twist
-from cv_bridge import CvBridge
+from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 
 bridge = CvBridge()
 
@@ -52,9 +53,18 @@ def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
 
 
 def process_image(msg, sensor_stats: dict = None) -> np.ndarray:
-    num_channels = sensor_stats['depth']
-    img = bridge.imgmsg_to_cv2(msg, 'rgb8' if num_channels == 3 else 'passthrough')
-    return resize_image(img, sensor_stats)
+    if sensor_stats['depth'] == 1:
+        img = bridge.imgmsg_to_cv2(msg, 'passthrough')
+        max_depth = float(sensor_stats['max_depth']) if 'max_depth' in sensor_stats.keys() else 4
+        min_depth = float(sensor_stats['min_depth']) if 'min_depth' in sensor_stats.keys() else 0.1
+        img = np.clip(img, min_depth, max_depth)
+        # TODO add image resize and smoothing option
+        print('WARNING: utils.py: depth image is not resized.')
+        return img
+    else:
+        img = bridge.imgmsg_to_cv2(msg, 'rgb8')
+        # TODO make automatic scale optional
+        return resize_image(img, sensor_stats)
 
 
 def process_compressed_image(msg, sensor_stats: dict = None) -> np.ndarray:

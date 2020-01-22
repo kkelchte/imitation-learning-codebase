@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 
 class TerminalType(IntEnum):
+    Unknown = -1
     NotDone = 0
     Success = 1
     Failure = 2

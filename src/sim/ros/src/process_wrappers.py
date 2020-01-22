@@ -26,7 +26,7 @@ class ProcessWrapper:
     def __init__(self,
                  name: str = '',
                  grep_str: str = ''):
-        self._grace_period = 3
+        self._grace_period = 1  # 3
         self._name = name if name else 'default'
         self._state = ProcessState.Initializing
         self._grep_str = grep_str if grep_str else self._name
@@ -171,7 +171,7 @@ class RosWrapper(ProcessWrapper):
                          strict_check=False,
                          shell=False,
                          background=True)
-        if config['gazebo'] == 'true':
+        if 'gazebo' in config.keys() and config['gazebo'] == 'true':
             while not self._check_running_process_with_ps('gzserver'):
                 time.sleep(1)
         time.sleep(post_init_delay)
@@ -186,7 +186,8 @@ class RosWrapper(ProcessWrapper):
         self._terminate_by_pid()
         if self._terminate_by_name(command_name='gz') and \
             self._terminate_by_name(command_name='xterm') and \
-                self._terminate_by_name(command_name='xvfb'):
+                self._terminate_by_name(command_name='xvfb') and \
+                    self._terminate_by_name(command_name='ros'):
             self._state = ProcessState.Terminated
         else:
             self._state = ProcessState.Unknown

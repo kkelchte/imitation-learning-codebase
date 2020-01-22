@@ -3,7 +3,6 @@
   <version>0.0.0</version>
   <description>Ros nodes required for imitation learning in with ROS robots.</description>
   <maintainer email="kkelchte@esat.kuleuven.be">Klaas Kelchtermans</maintainer>
-
   <license>BSD</license>
 
   <author email="kkelchte@esat.kuleuven.be">Klaas Kelchtermans</author>

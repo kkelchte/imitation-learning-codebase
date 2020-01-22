@@ -3,7 +3,7 @@ import unittest
 import time
 
 import subprocess
-import roslib
+import rospy
 import numpy as np
 
 from src.sim.common.actors import ActorConfig
@@ -12,8 +12,6 @@ from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchCo
 from src.sim.ros.src.process_wrappers import ProcessState, RosWrapper
 from src.sim.ros.src.ros_actors import RosExpert
 from src.sim.ros.src.ros_environment import RosEnvironment
-roslib.load_manifest('imitation_learning_ros_package')
-import rospy
 
 
 def count_grep_name(grep_str: str) -> int:
@@ -75,12 +73,14 @@ class TestRos(unittest.TestCase):
             'graphics': 'true',
             'world_name': 'empty_world',
             'robot_name': 'turtlebot_sim',
-            'turtlebot_sim': 'true'
+            'turtlebot_sim': 'true',
+            'keyboard': 'true'
         }
         ros_process = RosWrapper(config=config)
         self.assertEqual(ros_process.get_state(), ProcessState.Running)
         time.sleep(int(duration_min * 60))
-        self.assertEqual(rospy.get_param('command_topic'), '/cmd_vel')
+        self.assertTrue(rospy.has_param('keyboard_config'))
+        self.assertEqual(rospy.get_param('/robot/command_topic'), '/cmd_vel')
         self.assertTrue(count_grep_name('gzserver') >= 1)
         ros_process.terminate()
         self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
@@ -107,6 +107,18 @@ class TestRos(unittest.TestCase):
         self.assertTrue(count_grep_name('gzserver') == 0)
 
     @unittest.skip
+    def test_load_params(self):
+        config = {
+            'robot_name': 'turtlebot_sim',
+            'fsm': False
+        }
+        ros_process = RosWrapper(launch_file='load_ros.launch',
+                                 config=config,
+                                 visible=True)
+        self.assertEqual(rospy.get_param('/robot/forward_camera_topic'), '/wa/camera/image_raw')
+        ros_process.terminate()
+
+    @unittest.skip
     def test_ros_environment(self):
         # spinoff RosEnvironment with config containing turtlebot and images
         config = EnvironmentConfig(
@@ -126,7 +138,7 @@ class TestRos(unittest.TestCase):
         environment = RosEnvironment(config=config)
         # take a few steps
         state = environment.reset()
-        while state.terminal == TerminalType.NotDone:
+        while state.terminal != TerminalType.Success and state.terminal != TerminalType.Failure:
             print(f'State: {state.terminal}: {state.time_stamp_us} \n'
                   f'depth: {state.sensor_data["depth_scan"]} \n'
                   f'image: {state.sensor_data["forward_camera"]} \n')

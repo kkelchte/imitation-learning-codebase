@@ -22,6 +22,7 @@ include_directories(
 
 catkin_install_python(PROGRAMS
   rosnodes/teleop_twist_keyboard.py
+  rosnodes/fsm.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch
