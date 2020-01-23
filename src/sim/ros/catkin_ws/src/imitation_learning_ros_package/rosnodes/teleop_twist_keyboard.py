@@ -26,7 +26,9 @@ if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
     rospy.init_node('teleop_twist_keyboard')
 
-    command_topic = rospy.get_param("command_topic", "/cmd_vel")
+    # command_topic = rospy.get_param("command_topic", "/cmd_vel")
+    command_topic = "/actor/keyboard"
+
     pub = rospy.Publisher(command_topic, Twist, queue_size=1)
     print("publishing on {0}".format(command_topic))
 

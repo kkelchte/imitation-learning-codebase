@@ -15,7 +15,6 @@ from src.data.dataset_saver import DataSaver
 @dataclass
 class EnvironmentRunnerConfig(Config):
     environment_config: EnvironmentConfig = None
-    actor_name: str = None
     number_of_episodes: int = None
 
 
@@ -32,13 +31,13 @@ class EnvironmentRunner:
         logger.info(f'Initiate.')
         self._data_saver = data_saver
         self._environment = EnvironmentFactory().create(config.environment_config)
+        self._actor = None  # actor is not used for ros-gazebo environments.
 
     def _run_episode(self):
         state = self._environment.reset()
         while state.terminal == TerminalType.NotDone:
-            action = state.actor_data[self._config.actor_config.name]
-            # action = self._actor(state.sensor_data)
-            state = self._environment.step(action)
+            action = self._actor.get_action(state.sensor_data) if self._actor is not None else None
+            state = self._environment.step(action)  # action is not used for ros-gazebo environments.
             if self._data_saver is not None:
                 self._data_saver.save(state=state,
                                       action=action)

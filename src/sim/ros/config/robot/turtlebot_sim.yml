@@ -2,6 +2,7 @@ command_topic: '/cmd_vel'
 sensors:
   - 'forward_camera'
   - 'depth_scan'
+  - 'pose_estimation'
 forward_camera_topic: '/wa/camera/image_raw'
 forward_camera_type: 'Image'
 forward_camera_stats:
@@ -13,7 +14,7 @@ depth_scan_type: 'LaserScan'
 depth_scan_stats:
   field_of_view: 120
   num_smooth_bins: 4
-  max_depth: 1
+  max_depth: 4
   min_depth: 0.1
 collision_depth: 0.5
 pose_estimation_topic: '/odom'

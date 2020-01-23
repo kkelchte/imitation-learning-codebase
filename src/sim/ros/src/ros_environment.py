@@ -26,9 +26,9 @@ class RosEnvironment(Environment):
 
     def __init__(self, config: EnvironmentConfig):
         # TODO: for each actor config with specs:
-        # TODO:     > add node in ros_launch config automatically
-        # TODO:     > configs could be automatically saved as yml and loaded as ros_params?
-        # TODO:     ! Make sure rosparams are defined on time !
+        # TODO:     > add node in ros_launch config automatically with file path to actor config as argument:
+        #           expert_config_file_path_with_extension
+        #           (!) complain if no config.file is provided or when specs != None
 
         super().__init__(config)
         self._ros = RosWrapper(
@@ -58,34 +58,40 @@ class RosEnvironment(Environment):
             sensor_topic = rospy.get_param(f'{sensor}_topic')
             sensor_type = rospy.get_param(f'{sensor}_type')
             sensor_callback = f'_set_{camelcase_to_snake_format(sensor_type)}'
-            assert sensor_callback in self.__dir__(), f'Could not find {sensor_callback} in {self.__module__}'
+            if not hasattr(self, sensor_callback):
+                continue
+            # assert sensor_callback in self.__dir__(), f'Could not find {sensor_callback} in {self.__module__}'
             sensor_args = rospy.get_param(f'{sensor}_stats') if rospy.has_param(f'{sensor}_stats') else {}
             rospy.Subscriber(name=sensor_topic,
                              data_class=eval(sensor_type),
                              callback=eval(f'self.{sensor_callback}'),
                              callback_args=(sensor_name, sensor_args))
-            self._sensor_values[sensor_name]: np.ndarray = None
+            self._sensor_values[sensor_name]: np.ndarray = np.zeros((1,))
+            # TODO: save sensor_stats to config
 
         if self._config.actor_configs is not None:
             for actor_config in self._config.actor_configs:
-                self._actor_values[actor_config.name]: Action = None
-                rospy.Subscriber(name=f'/cmd_vel_{actor_config.name}',
+                self._actor_values[actor_config.name]: Action = Action()
+                rospy.Subscriber(name=f'{actor_config.name.specs["command_topic"]}',
                                  data_class=Twist,
                                  callback=self._set_action,
                                  callback_args=actor_config)
         # Publishers
-        self._action_pub = rospy.Publisher(rospy.get_param('command_topic'),
-                                           Twist, queue_size=1)
+        # Actions are taken directly by control_mapping node from various actor-topics
+        # to avoid slow data saving action in the main process
+        # This does mean that control is published to robot at a faster rate than it is stored.
+        # self._action_pub = rospy.Publisher(rospy.get_param('command_topic'),
+        #                                    Twist, queue_size=1)
+
         # Start ROS node:
         rospy.init_node('ros_python_interface', anonymous=True)
 
     def _set_action(self, msg: Twist, args: Tuple) -> None:
-        actor_config = args[0]
-        action = Action(actor_name=actor_config.name,
-                        actor_type=actor_config.type,
+        action = Action(actor_name=args[0],
+                        actor_type=args[1],
                         value=adapt_twist_to_action(msg).value
                         )
-        self._actor_values[actor_config.name] = action
+        self._actor_values[args[0]] = action
 
     def _set_compressed_image(self, msg: CompressedImage, args: Tuple) -> None:
         sensor_name, sensor_stats = args
@@ -100,10 +106,6 @@ class RosEnvironment(Environment):
         self._sensor_values[sensor_name] = process_laser_scan(msg, sensor_stats)
 
     def _set_terminal_state(self, terminal_msg=None) -> None:
-        # terminal_translator = {
-        #     TerminalType.Unknown.: TerminalType.Success,
-        #     'failure': TerminalType.Failure
-        # }
         if terminal_msg is not None:
             self._terminal_state = TerminalType(terminal_msg)
         else:

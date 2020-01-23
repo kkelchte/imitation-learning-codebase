@@ -85,8 +85,9 @@ def process_laser_scan(msg, sensor_stats: dict = None) -> np.ndarray:
     ranges = list(reversed(ranges[:int(field_of_view / 2)])) + list(
         reversed(ranges[-int(field_of_view / 2):]))
     # add some smoothing by averaging over 4 neighboring bins
-    ranges = [sum(ranges[i * num_smooth_bins: (i + 1) * num_smooth_bins]) / num_smooth_bins
-              for i in range(int(len(ranges) / num_smooth_bins))]
+    if num_smooth_bins != 1:
+        ranges = [sum(ranges[i * num_smooth_bins: (i + 1) * num_smooth_bins]) / num_smooth_bins
+                  for i in range(int(len(ranges) / num_smooth_bins))]
 
     # make it a numpy array
     return np.asarray(ranges).reshape((1, -1))

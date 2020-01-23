@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
+import yaml
 
 from src.sim.common.data_types import Action, ActorType
 from src.ai.architectures.models.model import BaseModel
@@ -16,6 +17,12 @@ class ActorConfig:
     name: str = None
     type: ActorType = None
     specs: dict = None
+    file: str = None
+
+    def __post_init__(self):
+        if self.specs is None and self.file is not None:
+            with open(self.file, 'r') as f:
+                self.specs = yaml.load(f, Loader=yaml.FullLoader)
 
 
 class Actor:
@@ -24,8 +31,9 @@ class Actor:
         self._name = config.name
         self._type = config.type
         self._specs = config.specs
+        self._config_file = config.file
 
-    def get_action(self, sensor_data: dict) -> Action:
+    def get_action(self, sensor_data: dict = None) -> Action:
         pass
 
     def get_name(self):

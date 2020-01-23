@@ -59,4 +59,29 @@
               output="screen"/>
     </group>
 
+    <arg name="control_mapping" default="true"/>
+    <group if="$(arg control_mapping)">
+        <arg name="control_mapping_config" default="default"/>
+        <rosparam command="load"
+                  file="$(env HOME)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
+                  ns="control_mapping"/>
+        <node pkg="imitation_learning_ros_package"
+              name="control_mapping"
+              type="control_mapping.py"
+              output="screen"/>
+    </group>
+
+    <arg name="ros_expert" default="true"/>
+    <group if="$(arg ros_expert)">
+        <arg name="expert_config_file_path_with_extension"
+             default="src/sim/ros/config/actor/scan_collision_avoidance.yml"/>
+        <rosparam command="load"
+                  file="$(env HOME)/$(arg expert_config_file_path_with_extension)"
+                  ns="/actor/ros_expert/specs"/>
+        <node pkg="imitation_learning_ros_package"
+              name="ros_expert"
+              type="ros_expert.py"
+              output="screen"/>
+    </group>
+
 </launch>
