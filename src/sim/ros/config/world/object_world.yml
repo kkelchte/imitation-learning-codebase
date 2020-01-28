@@ -1,19 +1,19 @@
-max_duration: 100
+max_duration: -1
 starting_height: 0
 delay_evaluation: 3
 goal:
   x:
-    min: 10
-    max: 11
+    min: 1.7
+    max: 2.2
   y:
-    min: 10
-    max: 11
+    min: 1.7
+    max: 2.2
   z:
     min: 0
-    max: 2
+    max: 1
 waypoints:
-  - 0, 5
-  - 5, 5
-  - 11, 5
-  - 11, 11
+  - 0, 1
+  - 1, 1
+  - 1, 2
+  - 2, 2
 waypoint_reached_distance: 0.2

@@ -6,7 +6,7 @@ ros_config:
     control_mapping: true
     control_mapping_config: test_ros_environment
     fsm: true
-    fsm_config: takeover_run
+    fsm_config: single_run
     gazebo: true
     random_seed: 123
     robot_name: turtlebot_sim
