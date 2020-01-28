@@ -10,6 +10,8 @@ from geometry_msgs.msg import *  # Do not remove!
 
 from imitation_learning_ros_package.msg import *
 
+from src.sim.ros.src.utils import adapt_odometry_to_vector
+
 
 @dataclass
 class TopicConfig:
@@ -47,7 +49,14 @@ class TestPublisherSubscriber:
                 self.last_received_sensor_readings = msg.sensors[:]
 
 
+def compare_odometry(first_msg: Odometry, second_msg: Odometry) -> bool:
+    first_odom = adapt_odometry_to_vector(first_msg)
+    second_odom = adapt_odometry_to_vector(second_msg)
+    return sum(first_odom - second_odom) < 0.1
+
+
 def get_fake_image():
+    # DEPRECATED
     image = Image()
     image.data = [int(5)]*300*600*3
     image.height = 600
@@ -57,12 +66,13 @@ def get_fake_image():
 
 
 def get_fake_laser_scan(ranges=None):
+    # DEPRECATED
     scan = LaserScan()
     scan.ranges = [1.5]*360 if ranges is None else ranges
     return scan
 
 
-def get_fake_odometry(x: float = 0., y: float = 0., z: float = 0.):
+def get_fake_odometry(x: float = -5., y: float = 100., z: float = 8.):
     odometry = Odometry()
     odometry.pose.pose.position.x = x
     odometry.pose.pose.position.y = y

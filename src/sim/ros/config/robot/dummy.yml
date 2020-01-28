@@ -1,12 +1,14 @@
+# Used by test_empty_config in test_ros_environment
 command_topic: '/cmd_vel'
 sensors:
-  - 'forward_camera'
-forward_camera_topic: '/wa/camera/image_raw'
-forward_camera_type: 'Image'
-forward_camera_stats:
-  height: 128
-  width: 128
-  depth: 3
+#  - 'forward_camera'
+#forward_camera_topic: '/wa/camera/image_raw'
+#forward_camera_type: 'Image'
+#forward_camera_stats:
+#  height: 128
+#  width: 128
+#  depth: 3
+  - 'odometry'
 #  - 'depth_scan'
 #depth_scan_topic: '/scan'
 #depth_scan_type: 'LaserScan'
@@ -15,7 +17,5 @@ forward_camera_stats:
 #  num_smooth_bins: 4
 #  max_depth: 4
 #  min_depth: 0.1
-
-#  - 'odometry'
-#odometry_topic: '/odom'
-#odometry_type: 'Odometry'
+odometry_topic: '/odom'
+odometry_type: 'Odometry'

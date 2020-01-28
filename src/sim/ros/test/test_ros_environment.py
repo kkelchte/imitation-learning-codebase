@@ -22,14 +22,13 @@ from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm impor
 from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig, \
-    get_fake_image, get_fake_odometry, get_fake_laser_scan
+    get_fake_odometry, compare_odometry
 from src.core.utils import camelcase_to_snake_format
 
 """
 test starting ros_environment in subprocess and interact with it through publishing & subscribing topics
+validate by checking ros_environment/state topic
 """
-
-# warnings.filterwarnings("ignore")
 
 
 class TestRosEnvironment(unittest.TestCase):
@@ -101,11 +100,11 @@ class TestRosEnvironment(unittest.TestCase):
             publish_topics=publish_topics
         )
 
-    @unittest.skip
-    def test_ros_launch_in_popen(self):
-        self.start_test(config_file='test_empty_config')
-        self.assertTrue(self._ros_environment_process.poll() is None)
-        time.sleep(10)
+    # @unittest.skip
+    # def test_ros_launch_in_popen(self):
+    #     self.start_test(config_file='test_empty_config')
+    #     self.assertTrue(self._ros_environment_process.poll() is None)
+    #     time.sleep(10)
 
     def test_ros_environment_barebones_gazebo(self):
         self.start_test(config_file='test_empty_config')
@@ -121,10 +120,12 @@ class TestRosEnvironment(unittest.TestCase):
             self.ros_topic.publishers[sensor_topic].publish(msg)
             # time.sleep(5)  # should be enough to take one step but not two at a rate of 10fps
             while len(self.ros_topic.last_received_sensor_readings) == 0:
-                time.sleep(0.01)
-            sensor_data = self.ros_topic.last_received_sensor_readings[0]
-            sensor_msg = eval(f'sensor_data.{camelcase_to_snake_format(sensor_type)}')
+                time.sleep(0.1)
+            sensor_data = self.ros_topic.last_received_sensor_readings
+            self.assertEqual(len(sensor_data), 1)
+            sensor_msg = eval(f'sensor_data[0].{camelcase_to_snake_format(sensor_type)}')
             self.assertTrue(isinstance(sensor_msg, eval(sensor_type)))
+            self.assertTrue(eval(f'compare_{camelcase_to_snake_format(sensor_type)}(msg, sensor_msg)'))
 
     def tearDown(self) -> None:
         self._ros_environment_process.terminate()

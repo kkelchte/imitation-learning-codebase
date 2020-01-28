@@ -1,8 +1,6 @@
 #!/usr/bin/python3.7
-import warnings
 from typing import Tuple
 
-import time
 import numpy as np
 import rospy
 from nav_msgs.msg import Odometry
@@ -11,7 +9,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
-from imitation_learning_ros_package.msg import RosState, RosSensor, RosAction
+from imitation_learning_ros_package.msg import RosState
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
@@ -19,9 +17,9 @@ from src.sim.common.actors import ActorConfig
 from src.sim.common.data_types import Action, State, TerminalType, ActorType
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
-from src.sim.ros.src.utils import adapt_action_to_twist, process_compressed_image, process_image, process_laser_scan, \
-    adapt_twist_to_action, adapt_sensor_to_ros_message, get_type_from_topic_and_actor_configs, adapt_odometry_to_vector, \
-    adapt_action_to_ros_message
+from src.sim.ros.src.utils import process_compressed_image, process_image, process_laser_scan, \
+    adapt_twist_to_action, get_type_from_topic_and_actor_configs, adapt_odometry_to_vector, \
+    adapt_action_to_ros_message, adapt_action_to_twist, adapt_sensor_to_ros_message
 
 bridge = CvBridge()
 
@@ -121,7 +119,7 @@ class RosEnvironment(Environment):
                              callback=self._set_action,
                              callback_args=actor_config)
         # Publishers
-        # Publish state at each step
+        # Publish state at each step (all except RGB info)
         self._state_publisher = rospy.Publisher(name='/ros_environment/state',
                                                 data_class=RosState,
                                                 queue_size=10)
@@ -209,7 +207,6 @@ class RosEnvironment(Environment):
         }
 
     def step(self, action: Action = None) -> State:
-        # self._action_pub.publish(adapt_action_to_twist(action))
         self._step += 1
         self._check_max_number_of_steps()
         self._clear_sensor_and_actor_values()
@@ -228,23 +225,24 @@ class RosEnvironment(Environment):
             },
             time_stamp_us=int(rospy.get_time() * 10**6)
         )
-        # self._publish_state()
+        self._publish_state()
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_gazebo()
         return self._state
 
-    # def _publish_state(self):
-    #     ros_state = RosState()
-    #     ros_state.robot_name = self._config.ros_config.ros_launch_config.robot_name
-    #     ros_state.time_stamp_us = int(self._state.time_stamp_us)
-    #     ros_state.terminal = self._state.terminal.name
-    #     ros_state.actions = [adapt_action_to_ros_message(self._state.actor_data[actor_name])
-    #                          for actor_name in self._state.actor_data.keys()
-    #                          if adapt_action_to_twist(self._state.actor_data[actor_name]) is not None]
-    #     ros_state.sensors = [adapt_sensor_to_ros_message(self._state.sensor_data[sensor_name], sensor_name)
-    #                          for sensor_name in self._state.sensor_data.keys()
-    #                          if self._state.sensor_data[sensor_name].shape != self._default_sensor_value.shape]
-    #     self._state_publisher.publish(ros_state)
+    def _publish_state(self):
+        ros_state = RosState()
+        ros_state.robot_name = self._config.ros_config.ros_launch_config.robot_name
+        ros_state.time_stamp_us = int(self._state.time_stamp_us)
+        ros_state.terminal = self._state.terminal.name
+        ros_state.actions = [adapt_action_to_ros_message(self._state.actor_data[actor_name])
+                             for actor_name in self._state.actor_data.keys()
+                             if adapt_action_to_twist(self._state.actor_data[actor_name]) is not None]
+        ros_state.sensors = [adapt_sensor_to_ros_message(self._state.sensor_data[sensor_name], sensor_name)
+                             for sensor_name in self._state.sensor_data.keys()
+                             if self._state.sensor_data[sensor_name].shape != self._default_sensor_value.shape
+                             and 'camera' not in sensor_name and 'image' not in sensor_name]
+        self._state_publisher.publish(ros_state)
 
     def remove(self) -> ProcessState:
         return self._ros.terminate()
