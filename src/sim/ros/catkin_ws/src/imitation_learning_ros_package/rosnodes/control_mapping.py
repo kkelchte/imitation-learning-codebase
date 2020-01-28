@@ -30,6 +30,8 @@ import rospy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+
 
 class ControlMapper:
 
@@ -37,6 +39,10 @@ class ControlMapper:
         while not rospy.has_param('/control_mapping/mapping'):
             time.sleep(0.01)
         self._mapping = rospy.get_param('/control_mapping/mapping')
+        for key in FsmState.members():
+            if key not in self._mapping.keys():
+                self._mapping[key] = {}
+        self._fsm_state = FsmState.Unknown
 
         self._publishers = {
             'command': rospy.Publisher(rospy.get_param('/robot/command_topic'), Twist, queue_size=10),
@@ -53,25 +59,27 @@ class ControlMapper:
         actor_topics = []
         for state, mode in self._mapping.items():
             if 'command' in mode.keys():
-                actor_topics.append(mode['command'])
+                # if param (mode[command]) does not exist, assume mode[command] is the topic
+                actor_topics.append(rospy.get_param(mode['command'], mode['command']))
             if 'supervision' in mode.keys():
-                actor_topics.append(mode['supervision'])
+                # if param (mode[supervision]) does not exist, assume mode[supervision] is the topic
+                actor_topics.append(rospy.get_param(mode['supervision'], mode['supervision']))
         actor_topics = set(actor_topics)
         for topic in actor_topics:
             rospy.Subscriber(topic, Twist, self._control_callback, callback_args=topic)
 
     def _fsm_state_update(self, msg: String):
-        self._fsm_state = msg.data
-        if self._fsm_state not in self._mapping.keys():
+        self._fsm_state = FsmState[msg.data]
+        if self._fsm_state.name not in self._mapping.keys():
             raise KeyError(f'Unrecognised Fsm state {self._fsm_state}.\n Not in current mapping: {self._mapping}.\n'
                            f'Ensure all FSM States are specified in config/control_mapper/*.yml.')
 
     def _control_callback(self, msg: Twist, topic_name):
-        if 'command' in self._mapping[self._fsm_state].keys() \
-                and topic_name == self._mapping[self._fsm_state]['command']:
+        if 'command' in self._mapping[self._fsm_state.name].keys() \
+                and topic_name == self._mapping[self._fsm_state.name]['command']:
             self._publishers['command'].publish(msg)
-        if 'supervision' in self._mapping[self._fsm_state].keys() \
-                and topic_name == self._mapping[self._fsm_state]['supervision']:
+        if 'supervision' in self._mapping[self._fsm_state.name].keys() \
+                and topic_name == self._mapping[self._fsm_state.name]['supervision']:
             self._publishers['supervision'].publish(msg)
 
 

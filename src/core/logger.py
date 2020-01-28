@@ -2,6 +2,7 @@ import logging
 import os
 
 from datetime import datetime
+from enum import IntEnum
 
 """Modified logger to store easy-extractable log files.
 
@@ -42,8 +43,17 @@ def get_logger(name: str,
     return logger
 
 
-def cprint(message: str, logger: logging.Logger = None) -> None:
+class MessageType(IntEnum):
+    info = 0
+    error = 1
+    warning = 2
+    debug = 3
+
+
+def cprint(message: str,
+           logger: logging.Logger = None,
+           msg_type: MessageType = MessageType.info) -> None:
     if logger is None:
-        print(message)
+        print(f'{msg_type.name}: {message}')
     else:
-        logger.info(message)
+        eval(f'logger.{msg_type.name}(message)')

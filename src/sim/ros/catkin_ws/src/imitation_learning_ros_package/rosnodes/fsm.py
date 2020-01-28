@@ -51,6 +51,10 @@ class FsmState(IntEnum):
     TakeOff = 10
     DriveBack = 20
 
+    @classmethod
+    def members(cls):
+        return list(cls.__members__.keys())
+
 
 class FsmMode(IntEnum):
     SingleRun = 0
@@ -182,6 +186,7 @@ class Fsm:
             and duration_s > self._delay_evaluation
 
     def _check_depth(self, data: np.ndarray) -> None:
+
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
             cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
             self._shutdown_run(outcome=TerminalType.Failure)
@@ -198,8 +203,6 @@ class Fsm:
         self._check_depth(processed_image)
 
     def _check_laser_scan(self, msg: LaserScan) -> None:
-        print('Received scan')
-        print(f'update: {self._update_state()}')
         if not self._update_state():
             return
         sensor_stats = {

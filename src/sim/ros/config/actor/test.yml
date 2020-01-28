@@ -1,0 +1,10 @@
+specs:
+  field_of_view: 100
+  front_width: 40
+  speed: 1
+  noise: 0
+  aggressiveness: 0
+  collision_avoidance_weight: 1
+  waypoint_following_weight: 1
+  waypoint_reached_distance: 0.5
+  max_yaw_deviation_waypoint: 5

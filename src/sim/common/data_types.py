@@ -19,8 +19,10 @@ class EnvironmentType(IntEnum):
 
 
 class ActorType(IntEnum):
+    Unknown = -1
     Model = 0
     Expert = 1
+    User = 2
 
 
 @dataclass

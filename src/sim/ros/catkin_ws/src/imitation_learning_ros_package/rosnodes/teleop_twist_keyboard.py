@@ -26,26 +26,25 @@ if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
     rospy.init_node('teleop_twist_keyboard')
 
-    # command_topic = rospy.get_param("command_topic", "/cmd_vel")
-    command_topic = "/actor/keyboard"
+    command_topic = rospy.get_param("/actor/keyboard/command_topic")
 
     pub = rospy.Publisher(command_topic, Twist, queue_size=1)
     print("publishing on {0}".format(command_topic))
 
-    speed = rospy.get_param("~speed", 0.5)
-    turn = rospy.get_param("~turn", 1.0)
+    speed = rospy.get_param("/actor/keyboard/speed", 0.5)
+    turn = rospy.get_param("/actor/keyboard/turn", 1.0)
     x = 0
     y = 0
     z = 0
     th = 0
     status = 0
 
-    config_file = rospy.get_param("keyboard_config")
-    with open(config_file, 'r') as f:
-        config = yaml.load(f)
-    message = config['message']
-    moveBindings = config['moveBindings']
-    speedBindings = config['speedBindings']
+    # config_file = rospy.get_param("keyboard_config")
+    # with open(config_file, 'r') as f:
+    #     config = yaml.load(f)
+    message = rospy.get_param('/actor/keyboard/message', '### Could not find config message.')
+    moveBindings = rospy.get_param('/actor/keyboard/moveBindings')
+    speedBindings = rospy.get_param('/actor/keyboard/speedBindings')
 
     try:
         print(message)

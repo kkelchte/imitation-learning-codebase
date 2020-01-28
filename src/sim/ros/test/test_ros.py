@@ -1,4 +1,5 @@
 #!/usr/bin/python3.7
+import os
 import unittest
 import time
 
@@ -118,53 +119,7 @@ class TestRos(unittest.TestCase):
         self.assertEqual(rospy.get_param('/robot/forward_camera_topic'), '/wa/camera/image_raw')
         ros_process.terminate()
 
-    @unittest.skip
-    def test_ros_environment(self):
-        # spinoff RosEnvironment with config containing turtlebot and images
-        config = EnvironmentConfig(
-            factory_key=EnvironmentType.Ros,
-            max_number_of_steps=3,
-            ros_config=RosConfig(
-                visible_xterm=True,
-                ros_launch_config=RosLaunchConfig(
-                    random_seed=123,
-                    gazebo=True,
-                    world_name='object_world',
-                    robot_name='turtlebot_sim',
-                    turtlebot_sim=True
-                )
-            )
-        )
-        environment = RosEnvironment(config=config)
-        # take a few steps
-        state = environment.reset()
-        while state.terminal != TerminalType.Success and state.terminal != TerminalType.Failure:
-            print(f'State: {state.terminal}: {state.time_stamp_us} \n'
-                  f'depth: {state.sensor_data["depth_scan"]} \n'
-                  f'image: {state.sensor_data["forward_camera"]} \n')
-            action = Action(
-                actor_type=ActorType.Expert,
-                value=np.array((1, 0, 0, 0, 0, 1))
-            )
-            state = environment.step(action)
-        environment.remove()
 
-    @unittest.skip
-    def test_ros_actor(self):
-        config = ActorConfig(
-            name='expert',
-            type=ActorType.Expert,
-            specs={
-                'sensor_name': 'depth_scan'
-            }
-        )
-        actor = RosExpert(config=config)
-        sensor_data = {
-            'forward_camera': np.zeros((128, 128, 3)),
-            'depth_scan': np.zeros((90, 1))
-        }
-        action = actor.get_action(sensor_data=sensor_data)
-        self.assertTrue(isinstance(action, Action))
 
 
 if __name__ == '__main__':

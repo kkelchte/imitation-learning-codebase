@@ -22,7 +22,8 @@ class ActorConfig:
     def __post_init__(self):
         if self.specs is None and self.file is not None:
             with open(self.file, 'r') as f:
-                self.specs = yaml.load(f, Loader=yaml.FullLoader)
+                specs = yaml.load(f, Loader=yaml.FullLoader)
+                self.specs = specs['specs'] if 'specs' in specs.keys() else specs
 
 
 class Actor:

@@ -1,31 +1,31 @@
 <?xml version="1.0"?>
 <launch>
+    <!--######################## GENERAL ########################-->
     <arg name="random_seed" default="1234"/>
     <param name="random_seed" value="$(arg random_seed)"/>
     <arg name="output_path" default="/tmp"/>
     <param name="output_path" value="$(arg output_path)"/>
-
-    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/general/default.yml" />
-
     <arg name="world_name" default="debug"/>
     <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
-    <arg name="graphics" default="false"/>
+
+    <!--######################## GAZEBO ########################-->
     <arg name="gazebo" default="false"/>
     <group if="$(arg gazebo)">
         <include file="$(find imitation_learning_ros_package)/launch/gazebo.launch">
             <arg name="world_name" value="$(env HOME)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
-            <arg name="gui" value="$(arg graphics)"/>
+            <arg name="gui" value="false"/>
             <arg name="headless" default="true"/>
         </include>
     </group>
 
+    <!--######################## ROBOTS ########################-->
     <arg name="robot_name" default="debug"/>
     <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
 
     <arg name="x_pos" default="0"/>
     <arg name="y_pos" default="0"/>
     <arg name="z_pos" default="0.5"/>
-    <arg name="y_or" default="1.57"/>
+    <arg name="yaw_or" default="1.57"/>
 
     <arg name="turtlebot_sim" default="false"/>
     <group if="$(arg turtlebot_sim)">
@@ -35,20 +35,11 @@
                 type="spawn_model"
                 name="spawn_urdf"
                 args="-urdf -model turtlebot3_burger -x $(arg x_pos) -y $(arg y_pos)
-                -Y $(arg y_or) -z $(arg z_pos) -param robot_description"
+                -Y $(arg yaw_or) -z $(arg z_pos) -param robot_description"
                 output="log"/>
     </group>
 
-    <arg name="keyboard" default="false"/>
-    <group if="$(arg keyboard)">
-        <param name="keyboard_config"
-               value="$(env HOME)/src/sim/ros/config/keyboard/$(arg robot_name).yml"/>
-        <node pkg="imitation_learning_ros_package"
-              name="teleop_twist_keyboard"
-              type="teleop_twist_keyboard.py"
-              output="screen"/>
-    </group>
-
+    <!--######################## HELPER NODES ########################-->
     <arg name="fsm" default="true"/>
     <group if="$(arg fsm)">
         <arg name="fsm_config" default="debug"/>
@@ -71,17 +62,41 @@
               output="screen"/>
     </group>
 
-    <arg name="ros_expert" default="true"/>
+    <arg name="waypoint_indicator" default="true"/>
+    <group if="$(arg waypoint_indicator)">
+        <node pkg="imitation_learning_ros_package"
+              name="waypoint_indicator"
+              type="waypoint_indicator.py"
+              output="screen"/>
+    </group>
+
+    <!--######################## ACTOR NODES ########################-->
+    <arg name="keyboard" default="false"/>
+    <group if="$(arg keyboard)">
+        <arg name="keyboard_config_file_path_with_extension"
+             default="src/sim/ros/config/keyboard/turtlebot_sim.yml"/>
+        <rosparam command="load"
+                  file="$(env HOME)/$(arg keyboard_config_file_path_with_extension)"
+                  ns="/actor/keyboard"/>
+        <node pkg="imitation_learning_ros_package"
+              name="teleop_twist_keyboard"
+              type="teleop_twist_keyboard.py"
+              output="screen"
+              ns="/actor/keyboard"/>
+    </group>
+
+    <arg name="ros_expert" default="false"/>
     <group if="$(arg ros_expert)">
         <arg name="expert_config_file_path_with_extension"
-             default="src/sim/ros/config/actor/scan_collision_avoidance.yml"/>
+             default="src/sim/ros/config/actor/ros_expert.yml"/>
         <rosparam command="load"
                   file="$(env HOME)/$(arg expert_config_file_path_with_extension)"
-                  ns="/actor/ros_expert/specs"/>
+                  ns="/actor/ros_expert"/>
         <node pkg="imitation_learning_ros_package"
               name="ros_expert"
               type="ros_expert.py"
-              output="screen"/>
+              output="screen"
+              ns="/actor/ros_expert"/>
     </group>
 
 </launch>

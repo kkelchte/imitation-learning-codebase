@@ -1,0 +1,5 @@
+command_topic: '/cmd_vel'
+sensors:
+  - 'odometry'
+odometry_topic: '/odom'
+odometry_type: 'Odometry'

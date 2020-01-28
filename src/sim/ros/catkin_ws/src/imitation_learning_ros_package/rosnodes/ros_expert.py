@@ -1,3 +1,5 @@
+#!/usr/bin/python3.7
+import operator
 import os
 import time
 from collections import OrderedDict
@@ -5,24 +7,26 @@ from collections import OrderedDict
 import numpy as np
 import rospy
 import yaml
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
-from tf.transformations import euler_from_quaternion
 
 from src.core.logger import get_logger, cprint
 from src.sim.common.actors import Actor, ActorConfig
 from src.sim.common.data_types import ActorType, Action
-from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image
+from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion
 from src.core.utils import camelcase_to_snake_format
 
 
 class RosExpert(Actor):
 
     def __init__(self):
+        rospy.init_node('ros_expert')
         while not rospy.has_param('/actor/ros_expert/specs'):
             time.sleep(0.01)
         specs = rospy.get_param('/actor/ros_expert/specs')
+
         super().__init__(
             config=ActorConfig(
                 name='ros_expert',
@@ -40,41 +44,44 @@ class RosExpert(Actor):
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
         self._reference_height = rospy.get_param('/world/starting_height', -1)
-        self._waypoints = []
-        self._current_waypoint_index = -1
+        self._next_waypoint = []
 
-        self._publisher = rospy.Publisher('/actor/ros_expert', Twist, queue_size=10)
+        self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()
-        rospy.init_node('ros_expert')
 
     def _subscribe(self):
         # Robot sensors:
-        for sensor in ['depth_scan', 'pose_estimation']:
+        for sensor in ['/robot/depth_scan', '/robot/pose_estimation']:
             if rospy.has_param(f'{sensor}_topic'):
                 sensor_topic = rospy.get_param(f'{sensor}_topic')
-                sensor_type = eval(rospy.get_param(f'{sensor}_type'))
-                sensor_callback = f'self._process_{camelcase_to_snake_format(sensor_type)}'
-                if not hasattr(self, sensor_callback):
+                sensor_type = rospy.get_param(f'{sensor}_type')
+                sensor_callback = f'_process_{camelcase_to_snake_format(sensor_type)}'
+                if sensor_callback not in self.__dir__():
                     cprint(f'Could not find sensor_callback {sensor_callback}', self._logger)
                 sensor_stats = rospy.get_param(f'{sensor}_stats') if rospy.has_param(f'{sensor}_stats') else {}
                 rospy.Subscriber(name=sensor_topic,
-                                 data_class=sensor_type,
-                                 callback=eval(sensor_callback),
+                                 data_class=eval(sensor_type),
+                                 callback=eval(f'self.{sensor_callback}'),
                                  callback_args=(sensor_topic, sensor_stats))
+        # Listen to next waypoint
+        rospy.Subscriber(name='/waypoint_indicator/current_waypoint',
+                         data_class=Float32MultiArray,
+                         callback=self._update_waypoint)
 
     def _set_yaw_from_depth_map(self, depth_map: np.ndarray, field_of_view: float, front_width: float) -> None:
-        map_depth_to_direction = OrderedDict()
         left_boundary = int(field_of_view / 2 - front_width / 2)
         right_boundary = int(field_of_view / 2 + front_width / 2)
+        map_depth_to_direction = OrderedDict()
         map_depth_to_direction['straight'] = np.nanmin(depth_map[left_boundary: right_boundary])
         map_depth_to_direction['left'] = np.nanmin(depth_map[:left_boundary])
         map_depth_to_direction['right'] = np.nanmin(depth_map[right_boundary:])
-        compensations = {
+        direction_with_max_depth = max(map_depth_to_direction.items(), key=operator.itemgetter(1))[0]
+        compensating_yaw_values = {
             'straight': 0,
             'left': 1,
             'right': -1
         }
-        self._adjust_yaw_collision_avoidance = compensations[max(map_depth_to_direction)]
+        self._adjust_yaw_collision_avoidance = compensating_yaw_values[direction_with_max_depth]
 
     def _process_laser_scan(self, msg: LaserScan, args: tuple) -> None:
         sensor_topic, sensor_stats = args
@@ -85,11 +92,10 @@ class RosExpert(Actor):
         sensor_stats['num_smooth_bins'] = 1  # use full resolution
 
         processed_scan = process_laser_scan(msg, sensor_stats)
-        processed_scan[processed_scan == sensor_stats['max_depth']] = np.nan
-
-        self._set_yaw_from_depth_map(depth_map=processed_scan,
-                                     field_of_view=sensor_stats['field_of_view'],
-                                     front_width=self._specs['front_width'])
+        if len(processed_scan) != 0:
+            self._set_yaw_from_depth_map(depth_map=processed_scan,
+                                         field_of_view=sensor_stats['field_of_view'],
+                                         front_width=self._specs['front_width'])
 
     def _process_image(self, msg: Image, args: tuple) -> None:
         sensor_topic, sensor_stats = args
@@ -99,9 +105,11 @@ class RosExpert(Actor):
             sensor_stats['field_of_view'] = self._specs['field_of_view']
         sensor_stats['num_smooth_bins'] = 1  # use full resolution
         processed_depth_image = process_image(msg, sensor_stats)
-        self._set_yaw_from_depth_map(depth_map=processed_depth_image,
-                                     field_of_view=sensor_stats['field_of_view'],
-                                     front_width=self._specs['front_width'])
+        # TODO processed_depth_image has to be reduced to 1d array as yaw is calculated on first matrix array
+        if len(processed_depth_image) != 0:
+            self._set_yaw_from_depth_map(depth_map=processed_depth_image,
+                                         field_of_view=sensor_stats['field_of_view'],
+                                         front_width=self._specs['front_width'])
         # TODO set adjust_height from depth map < vertical field-of-view and vertical frontwidth
 
     def _set_height(self, z: float):
@@ -114,12 +122,14 @@ class RosExpert(Actor):
         else:
             self._adjust_height = 0
 
+    def _update_waypoint(self, msg: Float32MultiArray):
+        self._next_waypoint = msg.data
+
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         sensor_topic, sensor_stats = args
-
         self._set_height(z=msg.pose.pose.position.z)
 
-        if len(self._waypoints) == 0:
+        if not self._next_waypoint:
             return
 
         # adjust orientation towards current_waypoint
@@ -129,34 +139,31 @@ class RosExpert(Actor):
                       msg.pose.pose.orientation.w)
         _, _, yaw_drone = euler_from_quaternion(quaternion)
 
-        dy = (self._waypoints[self._current_waypoint_index][1] - msg.pose.pose.position.y)
-        dx = (self._waypoints[self._current_waypoint_index][0] - msg.pose.pose.position.x)
+        dx = (self._next_waypoint[0] - msg.pose.pose.position.x)
+        dy = (self._next_waypoint[1] - msg.pose.pose.position.y)
 
-        if np.sqrt(dx ** 2 + dy ** 2) < self._specs['waypoint_reached_distance']:
-            # update to next waypoint:
-            self._current_waypoint_index += 1
-            self._current_waypoint_index = self._current_waypoint_index % len(self._waypoints)
-            cprint(f"Reached waypoint: {self._current_waypoint_index-1}, "
-                   f"next waypoint @ {self._waypoints[self._current_waypoint_index]}.", self._logger)
-            self._adjust_yaw_waypoint_following = 0
-            return
+        # adjust for quadrants...
+        yaw_goal = np.arctan(dy / dx)
+        cprint(f'yaw_goal: {yaw_goal}', self._logger)
+        if np.sign(dx) == -1 and np.sign(dy) == +1:
+            yaw_goal += np.pi
+            cprint("adjusted yaw_goal to 2th quadrant: {0} > 0".format(yaw_goal), self._logger)
+        elif np.sign(dx) == -1 and np.sign(dy) == -1:
+            yaw_goal -= np.pi
+            cprint("adjusted yaw_goal to 3th quadrant: {0} < 0".format(yaw_goal), self._logger)
+        if np.abs(yaw_goal - yaw_drone) > self._specs['max_yaw_deviation_waypoint'] * np.pi / 180:
+            cprint(f"threshold reached: {np.abs(yaw_goal - yaw_drone)} >"
+                   f" {self._specs['max_yaw_deviation_waypoint'] * np.pi / 180}", self._logger)
+            self._adjust_yaw_waypoint_following = np.sign(yaw_goal - yaw_drone)
+            # if difference between alpha and beta is bigger than pi:
+            # swap direction because the other way is shorter.
+            if np.abs(yaw_goal - yaw_drone) > np.pi:
+                self._adjust_yaw_waypoint_following = -1 * self._adjust_yaw_waypoint_following
         else:
-            # adjust for quadrants...
-            yaw_goal = np.arctan(dy / dx)
-            if np.sign(dx) == -1 and np.sign(dy) == +1:
-                yaw_goal += np.pi
-                # print("adjusted yaw_goal to 2th quadrant: {0} > 0".format(yaw_goal))
-            elif np.sign(dx) == -1 and np.sign(dy) == -1:
-                yaw_goal -= np.pi
-                # print("adjusted yaw_goal to 3th quadrant: {0} < 0".format(yaw_goal))
-            if np.abs(yaw_goal - yaw_drone) > self._specs['max_yaw_deviation_waypoint'] * np.pi / 180:
-                adjust_yaw_goto = np.sign(yaw_goal - yaw_drone)
-                # if difference between alpha and beta is bigger than pi:
-                # swap direction because the other way is shorter.
-                if np.abs(yaw_goal - yaw_drone) > np.pi:
-                    self._adjust_yaw_waypoint_following = -1 * adjust_yaw_goto
-            else:
-                self._adjust_yaw_waypoint_following = 0
+            cprint(f"threshold NOT reached: {np.abs(yaw_goal - yaw_drone)} <"
+                   f" {self._specs['max_yaw_deviation_waypoint'] * np.pi / 180}", self._logger)
+            self._adjust_yaw_waypoint_following = 0
+        cprint(f'set adjust_yaw to {self._adjust_yaw_waypoint_following}')
 
     def _update_twist(self):
         twist = Twist()

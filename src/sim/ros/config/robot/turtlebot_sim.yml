@@ -2,7 +2,7 @@ command_topic: '/cmd_vel'
 sensors:
   - 'forward_camera'
   - 'depth_scan'
-  - 'pose_estimation'
+  - 'odometry'
 forward_camera_topic: '/wa/camera/image_raw'
 forward_camera_type: 'Image'
 forward_camera_stats:
@@ -17,5 +17,5 @@ depth_scan_stats:
   max_depth: 4
   min_depth: 0.1
 collision_depth: 0.5
-pose_estimation_topic: '/odom'
-pose_estimation_type: 'Odometry'
+odometry_topic: '/odom'
+odometry_type: 'Odometry'

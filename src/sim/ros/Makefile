@@ -4,6 +4,7 @@ catkin_ws/src:
 
 catkin_ws/devel/setup.bash: $(wildcard catkin_ws/src/**/*)
 	cd catkin_ws && \
+	for f in src/imitation_learning_ros_package/rosnodes/*.py ; do chmod u+x $$f; done && \
 	catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3.7 \
 	-DPYTHON_INCLUDE_DIR=/usr/include/python3.7m -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython3.7m.so
 

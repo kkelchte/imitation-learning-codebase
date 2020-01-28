@@ -1,6 +1,6 @@
 max_duration: 100
-starting_height: 1.8
-delay_evaluation: 4
+starting_height: 0
+delay_evaluation: 3
 goal:
   x:
     min: 10
@@ -11,3 +11,9 @@ goal:
   z:
     min: 0
     max: 2
+waypoints:
+  - 0, 5
+  - 5, 5
+  - 11, 5
+  - 11, 11
+waypoint_reached_distance: 0.2

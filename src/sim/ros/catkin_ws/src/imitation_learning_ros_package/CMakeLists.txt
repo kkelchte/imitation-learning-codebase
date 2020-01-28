@@ -7,15 +7,33 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     gazebo_ros
     cv_bridge
+    sensor_msgs
+    geometry_msgs
+    nav_msgs
     image_transport
+    message_generation
 )
 find_package(Boost REQUIRED COMPONENTS system signals thread)
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
                            ${catkin_INCLUDE_DIRS}
                            ${OpenCV_INCLUDE_DIRS}
 )
-catkin_package()
-
+add_message_files(
+    FILES
+    RosSensor.msg
+    RosAction.msg
+    RosState.msg
+)
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  sensor_msgs
+  geometry_msgs
+  nav_msgs
+)
+catkin_package(
+    CATKIN_DEPENDS message_runtime
+)
 include_directories(
   rosnodes
 )

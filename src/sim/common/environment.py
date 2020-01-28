@@ -1,11 +1,11 @@
-
+import os
 from dataclasses import dataclass
-from typing import List
+from typing import List, Union
 
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
-from src.sim.common.data_types import Action, State, EnvironmentType
+from src.sim.common.data_types import Action, State, EnvironmentType, ActorType
 from src.sim.common.actors import Actor, ActorConfig
 
 
@@ -25,9 +25,21 @@ class GymConfig(Config):
 class RosLaunchConfig(Config):
     random_seed: int = 123
     gazebo: bool = False
+    fsm: bool = True
+    fsm_config: str = 'single_run'
+    control_mapping: bool = True
+    control_mapping_config: str = 'default'
+    waypoint_indicator: bool = True
+    x_pos: float = 0.
+    y_pos: float = 0.
+    z_pos: float = 1.
+    yaw_or: float = 1.57
     world_name: str = None
     robot_name: str = None
-    turtlebot_sim: bool = False
+
+    def __post_init__(self):
+        assert os.path.isfile(f'src/sim/ros/config/fsm/{self.fsm_config}.yml')
+        assert os.path.isfile(f'src/sim/ros/config/control_mapping/{self.control_mapping_config}.yml')
 
 
 @dataclass_json
@@ -37,6 +49,7 @@ class RosConfig(Config):
     Configuration specific for ROS environment,
     specified here to avoid circular dependencies environment <> ros_environment
     """
+    step_rate_fps: float = 10.
     visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None
 
@@ -76,5 +89,5 @@ class Environment:
     def reset(self) -> State:
         pass
 
-    def get_actor(self) -> Actor:
+    def get_actor(self) -> Union[Actor, ActorType]:
         pass
