@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python3.7
 from __future__ import print_function
 import sys
 import select
@@ -31,6 +31,7 @@ if __name__ == "__main__":
     pub = rospy.Publisher(command_topic, Twist, queue_size=1)
     print("publishing on {0}".format(command_topic))
 
+    rate_fps = rospy.get_param('/actor/keyboard/rate_fps', 20)
     speed = rospy.get_param("/actor/keyboard/speed", 0.5)
     turn = rospy.get_param("/actor/keyboard/turn", 1.0)
     x = 0
@@ -45,11 +46,20 @@ if __name__ == "__main__":
     message = rospy.get_param('/actor/keyboard/message', '### Could not find config message.')
     moveBindings = rospy.get_param('/actor/keyboard/moveBindings')
     speedBindings = rospy.get_param('/actor/keyboard/speedBindings')
-
+    topicBindings = rospy.get_param('/actor/keyboard/topicBindings')
+    publishers = {
+        key: rospy.Publisher(
+                name=rospy.get_param(topicBindings[key]),
+                data_class=Empty,
+                queue_size=10
+             ) for key in topicBindings.keys()
+    }
     try:
         print(message)
         while True:
             key = get_key()
+            if key in topicBindings.keys():
+                publishers[key].publish(Empty())
             if key in moveBindings.keys():
                 x = moveBindings[key][0]
                 y = moveBindings[key][1]
@@ -80,6 +90,7 @@ if __name__ == "__main__":
             twist.angular.z = th*turn
             pub.publish(twist)
 
+            rospy.sleep(1./rate_fps)
     except Exception as e:
         print(e)
 

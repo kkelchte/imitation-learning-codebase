@@ -44,6 +44,7 @@ class RosExpert(Actor):
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
         self._reference_height = rospy.get_param('/world/starting_height', -1)
+        self._rate_fps = specs['rate_fps'] if 'rate_fps' in specs.keys() else 20
         self._next_waypoint = []
 
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
@@ -181,7 +182,7 @@ class RosExpert(Actor):
         return action
 
     def run(self):
-        rate = rospy.Rate(100)
+        rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
             self._publisher.publish(self._update_twist())
             rate.sleep()

@@ -34,41 +34,10 @@ test starting ros_environment in subprocess and interact with it through publish
 
 class TestRosEnvironment(unittest.TestCase):
 
-    def start_test(self, gazebo: bool = False) -> None:
+    def start_test(self, config_file: str) -> None:
         self.output_dir = f'tmp_test_dir/{datetime.strftime(datetime.now(), format="%y-%m-%d_%H-%M-%S")}'
         os.makedirs(self.output_dir, exist_ok=True)
-        # config = EnvironmentConfig(
-        #     output_path=self.output_dir,
-        #     factory_key=EnvironmentType.Ros,
-        #     max_number_of_steps=300,
-        #     ros_config=RosConfig(
-        #         visible_xterm=True,
-        #         ros_launch_config=RosLaunchConfig(
-        #             random_seed=123,
-        #             gazebo=gazebo,
-        #             world_name='object_world',
-        #             robot_name='turtlebot_sim',
-        #             fsm=True,
-        #             fsm_config='single_run',
-        #             control_mapping=True,
-        #             control_mapping_config='test_ros_environment',
-        #         )
-        #     ),
-        #     actor_configs=[
-        #         ActorConfig(
-        #             name='keyboard',
-        #             type=ActorType.User,
-        #             file=f'src/sim/ros/config/keyboard/turtlebot_sim.yml'
-        #         ),
-        #         ActorConfig(
-        #             name='ros_expert',
-        #             type=ActorType.Expert,
-        #             file=f'src/sim/ros/config/actor/ros_expert.yml'
-        #         ),
-        #     ]
-        # )
-
-        with open('src/sim/ros/test/config/test_ros_environment.yml', 'r') as f:
+        with open(f'src/sim/ros/test/config/{config_file}.yml', 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         config['output_path'] = self.output_dir
         with open(os.path.join(self.output_dir, 'config.yml'), 'w') as f:
@@ -80,20 +49,18 @@ class TestRosEnvironment(unittest.TestCase):
             )
         )
 
-    @unittest.skip
-    def test_ros_launch_in_popen(self):
-        self.start_test()
-        self.assertTrue(self._ros_environment_process.poll() is None)
-        time.sleep(10)
+    def load_ros_topic_with_sensors_and_control_commands(self):
+        time.sleep(5)
+        while not rospy.has_param('/robot/command_topic'):
+            time.sleep(0.1)
 
-    def load_ros_topic_with_fake_sensors_and_control_commands(self):
         # fake command publish topics
         self.command_topic = rospy.get_param('/robot/command_topic')
-        self.supervision_topic = rospy.get_param('/control_mapping/supervision_topic')
+        # self.supervision_topic = rospy.get_param('/control_mapping/supervision_topic')
         subscribe_topics = [
             TopicConfig(topic_name=self.command_topic, msg_type="Twist"),
-            TopicConfig(topic_name=self.supervision_topic, msg_type="Twist"),
-            TopicConfig(topic_name=rospy.get_param('/fsm/state_topic'), msg_type="String"),
+            # TopicConfig(topic_name=self.supervision_topic, msg_type="Twist"),
+            # TopicConfig(topic_name=rospy.get_param('/fsm/state_topic'), msg_type="String"),
             TopicConfig(topic_name='/ros_environment/state', msg_type="RosState"),
         ]
         for sensor in rospy.get_param('/robot/sensors', []):
@@ -104,9 +71,9 @@ class TestRosEnvironment(unittest.TestCase):
             )
 
         # create publishers for all control topics < control_mapper/default.yml
-        self._mapping = rospy.get_param('/control_mapping/mapping')
+        self._mapping = rospy.get_param('/control_mapping/mapping', {})
         publish_topics = [
-            TopicConfig(topic_name=rospy.get_param('/fsm/state_topic'), msg_type='String')
+            # TopicConfig(topic_name=rospy.get_param('/fsm/state_topic'), msg_type='String')
         ]
         self._control_topics = []
         for state, mode in self._mapping.items():
@@ -134,33 +101,30 @@ class TestRosEnvironment(unittest.TestCase):
             publish_topics=publish_topics
         )
 
-    def publish_on_all_sensors(self, number_of_times: int = 1):
-        for _ in range(number_of_times):
-            for sensor_topic, sensor_type in self._sensor_topics:
-                self.ros_topic.publishers[sensor_topic].publish(
-                    eval(f'get_fake_{camelcase_to_snake_format(sensor_type)}()')
-                )
-            time.sleep(0.1)
+    @unittest.skip
+    def test_ros_launch_in_popen(self):
+        self.start_test(config_file='test_empty_config')
+        self.assertTrue(self._ros_environment_process.poll() is None)
+        time.sleep(10)
 
-    # @unittest.skip
-    def test_ros_environment_without_gazebo(self):
-        self.start_test(gazebo=False)
-        time.sleep(6)
-        self.load_ros_topic_with_fake_sensors_and_control_commands()
+    def test_ros_environment_barebones_gazebo(self):
+        self.start_test(config_file='test_empty_config')
+        self.load_ros_topic_with_sensors_and_control_commands()
 
-        # publish on sensor + actor topics => assert they are retrieved in state
-        self.ros_topic.publishers[rospy.get_param('/fsm/state_topic')].publish(f'{FsmState.Running.name}')
-        time.sleep(0.1)
-        self.publish_on_all_sensors(number_of_times=20)
-        time.sleep(1)
-        self.assertTrue('/ros_environment/state' in self.ros_topic.topic_values.keys())
-        print(self._sensor_topics)
+        # wait for the first publish ros_environment state message to know it has started correctly
+        while '/ros_environment/state' not in self.ros_topic.topic_values.keys():
+            time.sleep(0.01)
 
-        # publish fake collision => assert it is stopped with failure
-
-        # publish fake waypoints reached => assert waypoint changed => assert goal state is reached and stopped
-
-        # take a few steps
+        # for each sensor publish fake message and validate ros_environment/state, sleep 0.2s to ensure update
+        for sensor_topic, sensor_type in self._sensor_topics:
+            msg = eval(f'get_fake_{camelcase_to_snake_format(sensor_type)}()')
+            self.ros_topic.publishers[sensor_topic].publish(msg)
+            # time.sleep(5)  # should be enough to take one step but not two at a rate of 10fps
+            while len(self.ros_topic.last_received_sensor_readings) == 0:
+                time.sleep(0.01)
+            sensor_data = self.ros_topic.last_received_sensor_readings[0]
+            sensor_msg = eval(f'sensor_data.{camelcase_to_snake_format(sensor_type)}')
+            self.assertTrue(isinstance(sensor_msg, eval(sensor_type)))
 
     def tearDown(self) -> None:
         self._ros_environment_process.terminate()

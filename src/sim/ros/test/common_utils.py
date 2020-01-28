@@ -24,6 +24,7 @@ class TestPublisherSubscriber:
         self._subscribe(subscribe_topics)
         self._set_publishers(publish_topics)
         rospy.init_node(f'test_fsm', anonymous=True)
+        self.last_received_sensor_readings = []
 
     def _subscribe(self, subscribe_topics: List[TopicConfig]):
         for topic_config in subscribe_topics:
@@ -41,13 +42,17 @@ class TestPublisherSubscriber:
 
     def _store(self, msg, topic_name: str):
         self.topic_values[topic_name] = msg if not hasattr(msg, 'data') else msg.data
+        if isinstance(msg, RosState):
+            if len(msg.sensors) != 0:
+                self.last_received_sensor_readings = msg.sensors[:]
 
 
 def get_fake_image():
     image = Image()
-    image.data = [np.uint8(5)]*400
-    image.height = 40
-    image.width = 100
+    image.data = [int(5)]*300*600*3
+    image.height = 600
+    image.width = 300
+    image.encoding = 'rgb8'
     return image
 
 

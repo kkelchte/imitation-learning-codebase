@@ -19,6 +19,9 @@ message: "
            e/c: increase/decrease only angular speed by 10%
            CTRL-C to quit
        "
+speed: 0.5
+turn: 1.0
+rate_fps: 20
 moveBindings:
   i:
   - 1
@@ -129,3 +132,6 @@ speedBindings:
   c:
   - 1
   - .9
+topicBindings:
+  g: '/fsm/go_topic'
+  f: '/fsm/overtake_topic'

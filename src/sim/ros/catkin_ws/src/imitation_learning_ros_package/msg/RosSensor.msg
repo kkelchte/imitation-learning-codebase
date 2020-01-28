@@ -1,4 +1,4 @@
 string name
 sensor_msgs/Image image
-sensor_msgs/LaserScan scan
-nav_msgs/Odometry odom
+sensor_msgs/LaserScan laser_scan
+nav_msgs/Odometry odometry

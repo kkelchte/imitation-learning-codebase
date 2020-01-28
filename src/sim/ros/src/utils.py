@@ -2,7 +2,7 @@
 from typing import Union, List
 
 import numpy as np
-from imitation_learning_ros_package.msg import RosSensor
+from imitation_learning_ros_package.msg import RosSensor, RosAction
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
@@ -23,18 +23,34 @@ def get_type_from_topic_and_actor_configs(actor_configs: List[ActorConfig], topi
     return ActorType.Unknown
 
 
+def adapt_odometry_to_vector(msg: Odometry) -> np.ndarray:
+    return np.asarray([msg.pose.pose.position.x,
+                       msg.pose.pose.position.y,
+                       msg.pose.pose.position.z,
+                       msg.pose.pose.orientation.x,
+                       msg.pose.pose.orientation.y,
+                       msg.pose.pose.orientation.z,
+                       msg.pose.pose.orientation.w])
+
+
 def adapt_sensor_to_ros_message(data: np.ndarray, sensor_name: str) -> RosSensor:
     message = RosSensor()
     if 'scan' in sensor_name:
-        message.scan = LaserScan()
-        message.scan.ranges = data
-    if 'image' in sensor_name:
+        message.laser_scan = LaserScan()
+        message.laser_scan.ranges = data
+    if 'image' in sensor_name or 'camera' in sensor_name:
         message.image = Image()
-        message.image.data = data
+        # message.image.data = [int(d*255) for d in data.flatten()]
+        message.image.encoding = 'rgb8'
     if 'odom' in sensor_name:
-        message.odom = Odometry()
-        message.odom.pose.pose.position = data[0:3]
-        message.odom.pose.pose.orientation = data[3:]
+        message.odometry = Odometry()
+        message.odometry.pose.pose.position.x = data[0]
+        message.odometry.pose.pose.position.y = data[1]
+        message.odometry.pose.pose.position.z = data[2]
+        message.odometry.pose.pose.orientation.x = data[3]
+        message.odometry.pose.pose.orientation.y = data[4]
+        message.odometry.pose.pose.orientation.z = data[5]
+        message.odometry.pose.pose.orientation.w = data[6]
     return message
 
 
@@ -51,6 +67,14 @@ def adapt_twist_to_action(msg: Twist) -> Action:
             ]
         )
     )
+
+
+def adapt_action_to_ros_message(action: Action) -> RosAction:
+    msg = RosAction()
+    msg.value = adapt_action_to_twist(action)
+    msg.name = action.actor_name
+    msg.type = action.actor_type
+    return msg
 
 
 def adapt_action_to_twist(action: Action) -> Union[Twist, None]:

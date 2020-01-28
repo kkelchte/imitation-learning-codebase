@@ -27,12 +27,15 @@ def main():
     config = EnvironmentConfig().create(config_file=config_file)
 
     signal.signal(signal.SIGTERM, signal_handler)
-
+    # try:
     environment = RosEnvironment(config=config)
-    state = environment.reset(dont_wait=False)
+    state = environment.reset()
     while state.terminal != TerminalType.Success and state.terminal != TerminalType.Failure:
-        state = environment.step(dont_wait=False)
+        state = environment.step()
     environment.remove()
+    # except Exception as e:
+    #     print(f'{e}')
+    #     environment.remove()
 
 
 if __name__ == '__main__':
