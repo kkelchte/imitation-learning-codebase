@@ -10,7 +10,7 @@ from geometry_msgs.msg import *  # Do not remove!
 
 from imitation_learning_ros_package.msg import *
 
-from src.sim.ros.src.utils import adapt_odometry_to_vector
+from src.sim.ros.src.utils import process_odometry
 
 
 @dataclass
@@ -50,8 +50,8 @@ class TestPublisherSubscriber:
 
 
 def compare_odometry(first_msg: Odometry, second_msg: Odometry) -> bool:
-    first_odom = adapt_odometry_to_vector(first_msg)
-    second_odom = adapt_odometry_to_vector(second_msg)
+    first_odom = process_odometry(first_msg)
+    second_odom = process_odometry(second_msg)
     return sum(first_odom - second_odom) < 0.1
 
 

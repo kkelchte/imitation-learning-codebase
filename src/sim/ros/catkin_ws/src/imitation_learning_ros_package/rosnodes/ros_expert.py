@@ -15,7 +15,8 @@ from sensor_msgs.msg import LaserScan, Image
 from src.core.logger import get_logger, cprint
 from src.sim.common.actors import Actor, ActorConfig
 from src.sim.common.data_types import ActorType, Action
-from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion
+from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
+    get_output_path
 from src.core.utils import camelcase_to_snake_format
 
 
@@ -23,10 +24,11 @@ class RosExpert(Actor):
 
     def __init__(self):
         rospy.init_node('ros_expert')
-        while not rospy.has_param('/actor/ros_expert/specs'):
+        stime = time.time()
+        max_duration = 60
+        while not rospy.has_param('/actor/ros_expert/specs') and time.time() < stime + max_duration:
             time.sleep(0.01)
         specs = rospy.get_param('/actor/ros_expert/specs')
-
         super().__init__(
             config=ActorConfig(
                 name='ros_expert',
@@ -34,8 +36,8 @@ class RosExpert(Actor):
                 specs=specs
             )
         )
-        self._output_path = rospy.get_param('output_path', '/tmp')
-        self._logger = get_logger('ros_expert', self._output_path)
+        self._output_path = get_output_path()
+        self._logger = get_logger(os.path.basename(__file__), self._output_path)
         cprint(f'&&&&&&&&&&&&&&&&&& \n {self._specs} \n &&&&&&&&&&&&&&&&&', self._logger)
         with open(os.path.join(self._output_path, 'ros_expert_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)
@@ -52,7 +54,7 @@ class RosExpert(Actor):
 
     def _subscribe(self):
         # Robot sensors:
-        for sensor in ['/robot/depth_scan', '/robot/pose_estimation']:
+        for sensor in ['/robot/depth_scan', '/robot/odometry']:
             if rospy.has_param(f'{sensor}_topic'):
                 sensor_topic = rospy.get_param(f'{sensor}_topic')
                 sensor_type = rospy.get_param(f'{sensor}_type')
@@ -145,26 +147,26 @@ class RosExpert(Actor):
 
         # adjust for quadrants...
         yaw_goal = np.arctan(dy / dx)
-        cprint(f'yaw_goal: {yaw_goal}', self._logger)
+        # cprint(f'yaw_goal: {yaw_goal}', self._logger)
         if np.sign(dx) == -1 and np.sign(dy) == +1:
             yaw_goal += np.pi
-            cprint("adjusted yaw_goal to 2th quadrant: {0} > 0".format(yaw_goal), self._logger)
+            # cprint("adjusted yaw_goal to 2th quadrant: {0} > 0".format(yaw_goal), self._logger)
         elif np.sign(dx) == -1 and np.sign(dy) == -1:
             yaw_goal -= np.pi
-            cprint("adjusted yaw_goal to 3th quadrant: {0} < 0".format(yaw_goal), self._logger)
+            # cprint("adjusted yaw_goal to 3th quadrant: {0} < 0".format(yaw_goal), self._logger)
         if np.abs(yaw_goal - yaw_drone) > self._specs['max_yaw_deviation_waypoint'] * np.pi / 180:
-            cprint(f"threshold reached: {np.abs(yaw_goal - yaw_drone)} >"
-                   f" {self._specs['max_yaw_deviation_waypoint'] * np.pi / 180}", self._logger)
+            # cprint(f"threshold reached: {np.abs(yaw_goal - yaw_drone)} >"
+            #        f" {self._specs['max_yaw_deviation_waypoint'] * np.pi / 180}", self._logger)
             self._adjust_yaw_waypoint_following = np.sign(yaw_goal - yaw_drone)
             # if difference between alpha and beta is bigger than pi:
             # swap direction because the other way is shorter.
             if np.abs(yaw_goal - yaw_drone) > np.pi:
                 self._adjust_yaw_waypoint_following = -1 * self._adjust_yaw_waypoint_following
         else:
-            cprint(f"threshold NOT reached: {np.abs(yaw_goal - yaw_drone)} <"
-                   f" {self._specs['max_yaw_deviation_waypoint'] * np.pi / 180}", self._logger)
+            # cprint(f"threshold NOT reached: {np.abs(yaw_goal - yaw_drone)} <"
+            #        f" {self._specs['max_yaw_deviation_waypoint'] * np.pi / 180}", self._logger)
             self._adjust_yaw_waypoint_following = 0
-        cprint(f'set adjust_yaw to {self._adjust_yaw_waypoint_following}')
+        # cprint(f'set adjust_yaw to {self._adjust_yaw_waypoint_following}')
 
     def _update_twist(self):
         twist = Twist()

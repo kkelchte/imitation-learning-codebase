@@ -6,6 +6,7 @@ Keep track of current position and next waypoint.
 extension 1:
 keep track of 2d (or 3d) poses to map trajectory in a topdown view.
 """
+import os
 import sys
 import time
 
@@ -16,15 +17,21 @@ from std_msgs.msg import Float32MultiArray
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import camelcase_to_snake_format
+from src.sim.ros.src.utils import get_output_path
 
 
 class WaypointIndicator:
 
     def __init__(self):
-        while not rospy.has_param('/robot/pose_estimation_topic'):
+        start_time = time.time()
+        max_duration = 60
+        while not rospy.has_param('/robot/odometry_topic') and time.time() < start_time + max_duration:
             time.sleep(0.1)
-        self._logger = get_logger('waypoint_indicator', rospy.get_param('output_path'))
+        self._output_path = get_output_path()
+        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+
         self._waypoints = rospy.get_param('/world/waypoints', [])
+        self._waypoints = [[float(coor) for coor in wp] for wp in self._waypoints]
         self._current_waypoint_index = 0
         # TODO extension: add automatic closest waypoint detection and start flying to there
         #  ==> this allows robot to be spawned anywhere on the trajectory.
@@ -34,16 +41,20 @@ class WaypointIndicator:
                    logger=self._logger,
                    msg_type=MessageType.error)
             sys.exit(0)
+        else:
+            cprint(f'waypoints: {self._waypoints}', self._logger)
+
         self._publisher = rospy.Publisher('/waypoint_indicator/current_waypoint', Float32MultiArray, queue_size=10)
-        pose_estimation_type = rospy.get_param('/robot/pose_estimation_type')
-        callback = f'_process_{camelcase_to_snake_format(pose_estimation_type)}'
+        odometry_type = rospy.get_param('/robot/odometry_type')
+        callback = f'_{camelcase_to_snake_format(odometry_type)}_callback'
         assert callback in self.__dir__()
-        rospy.Subscriber(name=rospy.get_param('/robot/pose_estimation_topic'),
-                         data_class=eval(pose_estimation_type),
+        rospy.Subscriber(name=rospy.get_param('/robot/odometry_topic'),
+                         data_class=eval(odometry_type),
                          callback=eval(f'self.{callback}'))
+
         rospy.init_node('waypoint_indicator')
 
-    def _process_odometry(self, msg: Odometry):
+    def _odometry_callback(self, msg: Odometry):
         # adjust orientation towards current_waypoint
         dy = (self._waypoints[self._current_waypoint_index][1] - msg.pose.pose.position.y)
         dx = (self._waypoints[self._current_waypoint_index][0] - msg.pose.pose.position.x)
@@ -57,7 +68,7 @@ class WaypointIndicator:
             self._adjust_yaw_waypoint_following = 0
 
     def run(self):
-        rate = rospy.Rate(20)
+        rate = rospy.Rate(50)
         while not rospy.is_shutdown():
             current_waypoint = self._waypoints[self._current_waypoint_index]
             multi_array = Float32MultiArray()

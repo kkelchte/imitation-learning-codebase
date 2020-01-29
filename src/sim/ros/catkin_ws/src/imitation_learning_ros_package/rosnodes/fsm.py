@@ -1,4 +1,5 @@
 #!/usr/bin/python3.7
+import os
 import time
 from enum import IntEnum
 
@@ -15,8 +16,7 @@ from std_msgs.msg import String
 from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.logger import get_logger, cprint
 from src.sim.common.data_types import TerminalType
-from src.sim.ros.src.utils import process_image, process_laser_scan
-
+from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path
 
 bridge = CvBridge()
 
@@ -67,11 +67,14 @@ class Fsm:
 
     def __init__(self):
         # wait for ROS to be ready
-        while not rospy.has_param('/fsm/fsm_mode'):
+        stime = time.time()
+        max_duration = 60
+        while not rospy.has_param('/fsm/fsm_mode') and time.time() < stime + max_duration:
             time.sleep(0.01)
-        self._logger = get_logger(name='FSM',
-                                  output_path=rospy.get_param('output_path'),
-                                  quite=False)
+
+        self._output_path = get_output_path()
+        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+
         self.mode = rospy.get_param('/fsm/fsm_mode')
         self._state_pub = rospy.Publisher(rospy.get_param('/fsm/state_topic'), String, queue_size=10)
         self._terminal_outcome_pub = rospy.Publisher(rospy.get_param('/fsm/terminal_topic'), String, queue_size=10)
@@ -95,9 +98,9 @@ class Fsm:
             rospy.Subscriber(rospy.get_param('/robot/depth_image_topic'),
                              eval(rospy.get_param('/robot/depth_image_type')),
                              self._check_depth_image)
-        if rospy.has_param('/robot/pose_estimation_topic'):
-            rospy.Subscriber(rospy.get_param('/robot/pose_estimation_topic'),
-                             eval(rospy.get_param('/robot/pose_estimation_type')),
+        if rospy.has_param('/robot/odometry_topic'):
+            rospy.Subscriber(rospy.get_param('/robot/odometry_topic'),
+                             eval(rospy.get_param('/robot/odometry_type')),
                              self._check_position)
         if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
             rospy.Subscriber(rospy.get_param('/fsm/go_topic', '/go'), Empty, self._running)
@@ -173,8 +176,7 @@ class Fsm:
 
     def _check_time(self) -> float:
         run_duration_s = rospy.get_time() - self._start_time if self._start_time != -1 else 0
-        if self._start_time != -1 and run_duration_s > self._max_duration \
-                and not self._is_shuttingdown:
+        if self._start_time != -1 and run_duration_s > self._max_duration != -1 and not self._is_shuttingdown:
             cprint(f'duration: {run_duration_s} > {self._max_duration}', self._logger)
             self._shutdown_run(outcome=TerminalType.Success)
         return run_duration_s
@@ -227,6 +229,7 @@ class Fsm:
                                         msg.pose.pose.position.z])
         if self.mode == FsmMode.TakeOffRun and self._current_pos[2] >= self.starting_height - 0.1:
             self._running()
+
         if not self._update_state():
             return
         self.travelled_distance += np.sqrt(np.sum((previous_pos - self._current_pos) ** 2))
@@ -256,9 +259,13 @@ class Fsm:
             cprint(f"found drag force: {msg.wrench.force.z}, so robot must be upside-down.", self._logger)
             self._shutdown_run(outcome=TerminalType.Failure)
 
+    def run(self):
+        rate = rospy.Rate(50)  # 10hz
+        while not rospy.is_shutdown():
+            self._state_pub.publish(self._state.name)
+            rate.sleep()
+
 
 if __name__ == "__main__":
-    Fsm()
-    rate = rospy.Rate(10)  # 10hz
-    while not rospy.is_shutdown():
-        rate.sleep()
+    fsm = Fsm()
+    fsm.run()

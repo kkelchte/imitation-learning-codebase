@@ -1,5 +1,7 @@
 #!/usr/bin/python3.7
 from __future__ import print_function
+
+import os
 import sys
 import select
 import termios
@@ -10,6 +12,9 @@ import roslib
 import rospy
 from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist
+
+from src.core.logger import get_logger, cprint
+from src.sim.ros.src.utils import get_output_path
 
 roslib.load_manifest('teleop_twist_keyboard')
 
@@ -26,10 +31,12 @@ if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
     rospy.init_node('teleop_twist_keyboard')
 
+    logger = get_logger(os.path.basename(__file__), get_output_path())
+
     command_topic = rospy.get_param("/actor/keyboard/command_topic")
 
     pub = rospy.Publisher(command_topic, Twist, queue_size=1)
-    print("publishing on {0}".format(command_topic))
+    # print("publishing on {0}".format(command_topic))
 
     rate_fps = rospy.get_param('/actor/keyboard/rate_fps', 20)
     speed = rospy.get_param("/actor/keyboard/speed", 0.5)
@@ -55,7 +62,7 @@ if __name__ == "__main__":
              ) for key in topicBindings.keys()
     }
     try:
-        print(message)
+        cprint(message, logger)
         while True:
             key = get_key()
             if key in topicBindings.keys():
@@ -69,10 +76,10 @@ if __name__ == "__main__":
                 speed = speed * speedBindings[key][0]
                 turn = turn * speedBindings[key][1]
 
-                print("currently:\tspeed %s\tturn %s " % (speed, turn))
-                if status == 14:
-                    print(message)
-                status = (status + 1) % 15
+                # print("currently:\tspeed %s\tturn %s " % (speed, turn))
+                # if status == 14:
+                #     print(message)
+                # status = (status + 1) % 15
             else:
                 x = 0
                 y = 0

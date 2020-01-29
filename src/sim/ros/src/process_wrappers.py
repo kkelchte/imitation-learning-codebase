@@ -139,7 +139,7 @@ def adapt_launch_config(config: dict) -> str:
     config_str = ''
     for key, value in config.items():
         if isinstance(value, str):
-            config_str += f" {key}:=\'{value}\'"
+            config_str += f" {key}:={value}"
         elif isinstance(value, bool):
             config_str += f" {key}:=\'true\'" if value else f" {key}:=\'false\'"
         else:

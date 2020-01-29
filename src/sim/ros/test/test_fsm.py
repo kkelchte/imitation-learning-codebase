@@ -173,6 +173,7 @@ class TestFsm(unittest.TestCase):
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Running.name)
         self.stop_test()
 
+    @unittest.skip
     def test_multiple_runs(self):
         config = {
             'robot_name': 'drone_sim',
@@ -192,6 +193,20 @@ class TestFsm(unittest.TestCase):
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Terminated.name)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Failure.name)
+        self.stop_test()
+
+    def test_success_by_reaching_goal(self):
+        config = {
+            'robot_name': 'drone_sim',
+            'fsm': True,
+            'fsm_config': 'single_run',
+            'world_name': 'object_world'
+        }
+        self.start_test(config=config)
+        time.sleep(rospy.get_param('/world/delay_evaluation'))
+        self.ros_topic.publish_fake_odom(x=2, y=2, z=0.5)
+        time.sleep(1)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Success.name)
         self.stop_test()
 
     def stop_test(self) -> None:

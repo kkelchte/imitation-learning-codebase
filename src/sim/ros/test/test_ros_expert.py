@@ -20,6 +20,7 @@ class TestRosExpert(unittest.TestCase):
             'fsm': False,
             'control_mapping': False,
             'ros_expert': True,
+            'output_path': 'test_ros_expert_output_path',
             'expert_config_file_path_with_extension': f'src/sim/ros/config/actor/{config}.yml'
         }
 
@@ -36,8 +37,8 @@ class TestRosExpert(unittest.TestCase):
         # create publishers for all relevant sensors < sensor expert
         self._depth_topic = rospy.get_param('/robot/depth_scan_topic')
         self._depth_type = rospy.get_param('/robot/depth_scan_type')
-        self._pose_topic = rospy.get_param('/robot/pose_estimation_topic')
-        self._pose_type = rospy.get_param('/robot/pose_estimation_type')
+        self._pose_topic = rospy.get_param('/robot/odometry_topic')
+        self._pose_type = rospy.get_param('/robot/odometry_type')
 
         publish_topics = [
             TopicConfig(topic_name=self._depth_topic, msg_type=self._depth_type),

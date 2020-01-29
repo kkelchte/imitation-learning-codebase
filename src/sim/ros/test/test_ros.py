@@ -120,7 +120,5 @@ class TestRos(unittest.TestCase):
         ros_process.terminate()
 
 
-
-
 if __name__ == '__main__':
     unittest.main()

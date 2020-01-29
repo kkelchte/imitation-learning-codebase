@@ -41,7 +41,20 @@ class TestLogger(unittest.TestCase):
         self.assertEqual(len(log_lines), 4)
         f.close()
 
+    def test_cprint(self):
+        current_logger = logger.get_logger(name=os.path.basename(__file__),
+                                           output_path=self.TEST_DIR,
+                                           quite=True)
+        logger.cprint('HELP', current_logger)
+
+        f = open(os.path.join(self.TEST_DIR, 'logfile'), 'r')
+        log_line = f.readlines()[0].strip()
+        print(log_line)
+        self.assertTrue('HELP' in log_line)
+        f.close()
+
     def tearDown(self):
+        os.remove(os.path.join(self.TEST_DIR, 'logfile'))
         shutil.rmtree(self.TEST_DIR, ignore_errors=True)
 
 

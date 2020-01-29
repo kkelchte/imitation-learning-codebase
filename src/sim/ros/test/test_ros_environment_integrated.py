@@ -4,8 +4,10 @@ import unittest
 
 from datetime import datetime
 
+import rospy
 import yaml
 
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.common.data_types import TerminalType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
@@ -24,17 +26,29 @@ class TestRosIntegrated(unittest.TestCase):
         config = EnvironmentConfig().create(
             config_file=os.path.join(self.output_dir, 'config.yml')
         )
-        # Step 1: check EnvironmentConfig
         self._environment = RosEnvironment(
             config=config
         )
 
-    def test_waypoint_in_object_world(self):
-        self.start_test('test_ros_environment.yml')
+    def test_waypoints_in_object_world(self):
+        self.start_test('test_ros_environment')
         # Step 2: start gzclient to see
+
         state = self._environment.reset()
-        while state.terminal != TerminalType.Success and state.terminal != TerminalType.Failure:
+        # wait delay evaluation time
+        while self._environment.fsm_state == FsmState.Unknown:
             state = self._environment.step()
+
+        waypoints = rospy.get_param('/world/waypoints')
+        self.assertEqual(waypoints[0], state.sensor_data['current_waypoint'].tolist())
+        for waypoint_index, waypoint in enumerate(waypoints):
+            while state.sensor_data['current_waypoint'].tolist() == waypoint:
+                state = self._environment.step()
+                self.assertTrue(state.terminal != TerminalType.Failure)
+            # assert transition to next waypoint occurs
+            self.assertEqual(state.sensor_data['current_waypoint'].tolist(),
+                             waypoints[(waypoint_index + 1) % len(waypoints)])
+        # all waypoints should be reached and environment should have reach success state
         self.assertEqual(state.terminal, TerminalType.Success)
 
     def tearDown(self) -> None:

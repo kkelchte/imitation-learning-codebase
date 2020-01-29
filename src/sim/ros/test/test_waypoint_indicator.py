@@ -34,8 +34,8 @@ class TestWaypointIndicator(unittest.TestCase):
             TopicConfig(topic_name=self._waypoint_topic, msg_type="Float32MultiArray"),
         ]
         # create publishers for all relevant sensors < sensor expert
-        self._pose_topic = rospy.get_param('/robot/pose_estimation_topic')
-        self._pose_type = rospy.get_param('/robot/pose_estimation_type')
+        self._pose_topic = rospy.get_param('/robot/odometry_topic')
+        self._pose_type = rospy.get_param('/robot/odometry_type')
 
         publish_topics = [
             TopicConfig(topic_name=self._pose_topic, msg_type=self._pose_type)
@@ -56,23 +56,28 @@ class TestWaypointIndicator(unittest.TestCase):
         return sum(np.asarray(a) - np.asarray(b)) < 10 ** -3
 
     def _test_first_waypoint(self):
-        waypoints = rospy.get_param('/world/waypoints')
         odom = Odometry()
         odom.pose.pose.position.x = -31
         odom.pose.pose.position.y = -5
         received_waypoint = self.send_odom_and_read_next_waypoint(odom=odom)
-        self.assertTrue(self.compare_vectors(received_waypoint, waypoints[0]))
+        self.assertTrue(self.compare_vectors(received_waypoint, self.waypoints[0]))
 
     def _test_transition_of_waypoint(self):
-        waypoints = rospy.get_param('/world/waypoints')
         odom = Odometry()
-        odom.pose.pose.position.x = waypoints[0][0]
-        odom.pose.pose.position.y = waypoints[0][1]
+        odom.pose.pose.position.x = self.waypoints[0][0]
+        odom.pose.pose.position.y = self.waypoints[0][1]
         received_waypoint = self.send_odom_and_read_next_waypoint(odom=odom)
-        self.assertTrue(self.compare_vectors(received_waypoint, waypoints[1]))
+        self.assertTrue(self.compare_vectors(received_waypoint, self.waypoints[1]))
 
     def test_waypoint_indicator(self):
         self.start_test()
+        self.waypoints = rospy.get_param('/world/waypoints')
+        print(f'WAYPOINTS: {self.waypoints}')
+        stime = time.time()
+        max_duration = 100
+        while time.time() < stime + max_duration \
+                and '/waypoint_indicator/current_waypoint' not in self.ros_topic.topic_values.keys():
+            time.sleep(0.1)
         self._test_first_waypoint()
         self._test_transition_of_waypoint()
 

@@ -16,6 +16,6 @@ depth_scan_stats:
   num_smooth_bins: 4
   max_depth: 4
   min_depth: 0.1
-collision_depth: 0.5
+collision_depth: 0.2
 odometry_topic: '/odom'
 odometry_type: 'Odometry'

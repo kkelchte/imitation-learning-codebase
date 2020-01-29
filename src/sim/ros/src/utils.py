@@ -1,19 +1,31 @@
 #!/usr/bin/python3.7
+import os
 from typing import Union, List
 
 import numpy as np
+import rospy
 from imitation_learning_ros_package.msg import RosSensor, RosAction
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
 from geometry_msgs.msg import Twist
 from sensor_msgs.msg import Image, LaserScan
+from std_msgs.msg import Float32MultiArray
 
 from src.sim.common.actors import ActorConfig
 from src.sim.common.data_types import Action, ActorType
 from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 
 bridge = CvBridge()
+
+
+def get_output_path() -> str:
+    output_path = rospy.get_param('/output_path', '/tmp')
+    if not output_path.startswith('/'):
+        output_path = os.path.join(os.environ['HOME'], output_path)
+    if not os.path.isdir(output_path):
+        os.makedirs(output_path)
+    return output_path
 
 
 def get_type_from_topic_and_actor_configs(actor_configs: List[ActorConfig], topic_name: str) -> ActorType:
@@ -23,26 +35,13 @@ def get_type_from_topic_and_actor_configs(actor_configs: List[ActorConfig], topi
     return ActorType.Unknown
 
 
-def adapt_odometry_to_vector(msg: Odometry) -> np.ndarray:
-    return np.asarray([msg.pose.pose.position.x,
-                       msg.pose.pose.position.y,
-                       msg.pose.pose.position.z,
-                       msg.pose.pose.orientation.x,
-                       msg.pose.pose.orientation.y,
-                       msg.pose.pose.orientation.z,
-                       msg.pose.pose.orientation.w])
-
-
 def adapt_sensor_to_ros_message(data: np.ndarray, sensor_name: str) -> RosSensor:
+
     message = RosSensor()
-    if 'scan' in sensor_name:
-        message.laser_scan = LaserScan()
-        message.laser_scan.ranges = data
-    if 'image' in sensor_name or 'camera' in sensor_name:
-        message.image = Image()
-        # message.image.data = [int(d*255) for d in data.flatten()]
-        message.image.encoding = 'rgb8'
-    if 'odom' in sensor_name:
+    if 'waypoint' in sensor_name:
+        message.waypoint = Float32MultiArray()
+        message.waypoint.data = data.tolist()
+    elif 'odom' in sensor_name:
         message.odometry = Odometry()
         message.odometry.pose.pose.position.x = data[0]
         message.odometry.pose.pose.position.y = data[1]
@@ -81,8 +80,8 @@ def adapt_action_to_twist(action: Action) -> Union[Twist, None]:
     if action.value is None:
         return None
     twist = Twist()
-    twist.linear.x, twist.linear.y, twist.linear.z, \
-    twist.angular.x, twist.angular.y, twist.angular.z = tuple(action.value)
+    twist.linear.x, twist.linear.y, twist.linear.z, twist.angular.x, twist.angular.y, twist.angular.z = \
+        tuple(action.value)
     return twist
 
 
@@ -99,6 +98,16 @@ def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
           ::scale[2]
           ]
     return sm.resize(img, size, mode='constant').astype(np.float16)
+
+
+def process_odometry(msg: Odometry, _=None) -> np.ndarray:
+    return np.asarray([msg.pose.pose.position.x,
+                       msg.pose.pose.position.y,
+                       msg.pose.pose.position.z,
+                       msg.pose.pose.orientation.x,
+                       msg.pose.pose.orientation.y,
+                       msg.pose.pose.orientation.z,
+                       msg.pose.pose.orientation.w])
 
 
 def process_image(msg, sensor_stats: dict = None) -> np.ndarray:

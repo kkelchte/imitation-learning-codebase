@@ -24,21 +24,31 @@ Control height
 aggressiveness = 1.  # define how direct the yaw turn is put on control
 adjust_height = -100
 """
+import os
 import time
 
 import rospy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 
+from src.core.logger import get_logger, cprint
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.sim.ros.src.utils import get_output_path
 
 
 class ControlMapper:
 
     def __init__(self):
-        while not rospy.has_param('/control_mapping/mapping'):
+        stime = time.time()
+        max_duration = 60
+        while not rospy.has_param('/control_mapping/mapping') and time.time() < stime + max_duration:
             time.sleep(0.01)
+
+        self._output_path = get_output_path()
+        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+
         self._mapping = rospy.get_param('/control_mapping/mapping')
+        cprint(f'mapping: {self._mapping}', self._logger)
         for key in FsmState.members():
             if key not in self._mapping.keys():
                 self._mapping[key] = {}
@@ -69,6 +79,8 @@ class ControlMapper:
             rospy.Subscriber(topic, Twist, self._control_callback, callback_args=topic)
 
     def _fsm_state_update(self, msg: String):
+        if self._fsm_state != FsmState[msg.data]:
+            cprint(f'update fsm state to {FsmState[msg.data]}', self._logger)
         self._fsm_state = FsmState[msg.data]
         if self._fsm_state.name not in self._mapping.keys():
             raise KeyError(f'Unrecognised Fsm state {self._fsm_state}.\n Not in current mapping: {self._mapping}.\n'

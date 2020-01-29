@@ -1,12 +1,12 @@
 #!/usr/bin/python3.7
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import rospy
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from geometry_msgs.msg import Twist
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32MultiArray
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 from imitation_learning_ros_package.msg import RosState
@@ -18,7 +18,7 @@ from src.sim.common.data_types import Action, State, TerminalType, ActorType
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
 from src.sim.ros.src.utils import process_compressed_image, process_image, process_laser_scan, \
-    adapt_twist_to_action, get_type_from_topic_and_actor_configs, adapt_odometry_to_vector, \
+    adapt_twist_to_action, get_type_from_topic_and_actor_configs, process_odometry, \
     adapt_action_to_ros_message, adapt_action_to_twist, adapt_sensor_to_ros_message
 
 bridge = CvBridge()
@@ -63,8 +63,8 @@ class RosEnvironment(Environment):
             rospy.Subscriber(rospy.get_param('/fsm/state_topic'),
                              String,
                              self._set_field,
-                             callback_args='_fsm_state')
-        self._fsm_state = FsmState.Unknown
+                             callback_args='fsm_state')
+        self.fsm_state = FsmState.Unknown
 
         if rospy.has_param('/fsm/terminal_topic'):
             rospy.Subscriber(rospy.get_param('/fsm/terminal_topic'),
@@ -74,19 +74,32 @@ class RosEnvironment(Environment):
         self._terminal_state = TerminalType.Unknown
 
         sensor_list = rospy.get_param('/robot/sensors', [])
+        self._sensor_processors = {}
         self._sensor_values = {}
         for sensor in sensor_list:
             sensor_name = sensor
             sensor_topic = rospy.get_param(f'/robot/{sensor}_topic')
             sensor_type = rospy.get_param(f'/robot/{sensor}_type')
-            sensor_callback = f'_set_{camelcase_to_snake_format(sensor_type)}'
-            assert sensor_callback in self.__dir__(), f'Could not find {sensor_callback} in {self.__module__}'
+            try:  # if processing function exist for this sensor name add it to the sensor processing functions
+                processing_function = f'process_{camelcase_to_snake_format(sensor_type)}'
+                self._sensor_processors[sensor_name] = eval(processing_function)
+            except NameError:
+                pass
+            # sensor_callback = f'_set_{camelcase_to_snake_format(sensor_type)}'
+            # assert sensor_callback in self.__dir__(), f'Could not find {sensor_callback} in {self.__module__}'
             sensor_args = rospy.get_param(f'/robot/{sensor}_stats') if rospy.has_param(f'/robot/{sensor}_stats') else {}
             rospy.Subscriber(name=sensor_topic,
                              data_class=eval(sensor_type),
-                             callback=eval(f'self.{sensor_callback}'),
+                             callback=self._set_sensor_data,
                              callback_args=(sensor_name, sensor_args))
             self._sensor_values[sensor_name]: np.ndarray = self._default_sensor_value
+        # add waypoint subscriber as extra sensor
+        sensor_name = 'current_waypoint'
+        rospy.Subscriber(name='/waypoint_indicator/current_waypoint',
+                         data_class=Float32MultiArray,
+                         callback=self._set_sensor_data,
+                         callback_args=(sensor_name, {}))
+        self._sensor_values[sensor_name] = self._default_sensor_value
 
         self._actor_values = {}
         if self._config.actor_configs is None:
@@ -132,32 +145,24 @@ class RosEnvironment(Environment):
                         actor_type=config.type,
                         value=adapt_twist_to_action(msg).value)
         if config.type == ActorType.Unknown and self.control_mapping != {}:
-            original_topic = self.control_mapping[self._fsm_state.name]
+            original_topic = self.control_mapping[self.fsm_state.name]
             action.actor_type = get_type_from_topic_and_actor_configs(actor_configs=self._config.actor_configs,
                                                                       topic_name=original_topic)
         self._actor_values[config.name] = action
 
-    def _set_compressed_image(self, msg: CompressedImage, args: Tuple) -> None:
+    def _set_sensor_data(self, msg: Union[CompressedImage, Image, LaserScan, Odometry, Float32MultiArray],
+                         args: Tuple) -> None:
         sensor_name, sensor_stats = args
-        self._sensor_values[sensor_name] = process_compressed_image(msg, sensor_stats)
+        if sensor_name in self._sensor_processors.keys():
+            self._sensor_values[sensor_name] = self._sensor_processors[sensor_name](msg, sensor_stats)
+        else:
+            self._sensor_values[sensor_name] = np.asarray(msg.data)
 
-    def _set_image(self, msg: Image, args: Tuple) -> None:
-        sensor_name, sensor_stats = args
-        self._sensor_values[sensor_name] = process_image(msg, sensor_stats)
-
-    def _set_laser_scan(self, msg: LaserScan, args: Tuple) -> None:
-        sensor_name, sensor_stats = args
-        self._sensor_values[sensor_name] = process_laser_scan(msg, sensor_stats)
-
-    def _set_odometry(self, msg: Odometry, args: Tuple) -> None:
-        sensor_name, sensor_stats = args
-        self._sensor_values[sensor_name] = adapt_odometry_to_vector(msg)
-
-    def _set_field(self, msg: String, field_name: str) -> None:
+    def _set_field(self, msg: Union[String, ], field_name: str) -> None:
         if field_name == '_terminal_state':
             self._terminal_state = TerminalType[msg.data]
-        elif field_name == '_fsm_state':
-            self._fsm_state = FsmState[msg.data]
+        elif field_name == 'fsm_state':
+            self.fsm_state = FsmState[msg.data]
         else:
             raise NotImplementedError
 
@@ -238,10 +243,11 @@ class RosEnvironment(Environment):
         ros_state.actions = [adapt_action_to_ros_message(self._state.actor_data[actor_name])
                              for actor_name in self._state.actor_data.keys()
                              if adapt_action_to_twist(self._state.actor_data[actor_name]) is not None]
-        ros_state.sensors = [adapt_sensor_to_ros_message(self._state.sensor_data[sensor_name], sensor_name)
+        ros_state.sensors = [adapt_sensor_to_ros_message(self._state.sensor_data[sensor_name], sensor_name=sensor_name)
                              for sensor_name in self._state.sensor_data.keys()
                              if self._state.sensor_data[sensor_name].shape != self._default_sensor_value.shape
-                             and 'camera' not in sensor_name and 'image' not in sensor_name]
+                             and 'camera' not in sensor_name and 'image' not in sensor_name
+                             and 'depth' not in sensor_name and 'scan' not in sensor_name]
         self._state_publisher.publish(ros_state)
 
     def remove(self) -> ProcessState:
@@ -249,7 +255,7 @@ class RosEnvironment(Environment):
 
     def get_actor(self) -> ActorType:
         if self.control_mapping is not {}:
-            topic_name = self.control_mapping[self._fsm_state.name]
+            topic_name = self.control_mapping[self.fsm_state.name]
             return get_type_from_topic_and_actor_configs(self._config.actor_configs, topic_name)
 
 
