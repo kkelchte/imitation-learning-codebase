@@ -41,9 +41,9 @@
 
     <!--######################## HELPER NODES ########################-->
     <arg name="fsm" default="true"/>
+    <arg name="fsm_config" default="debug"/>
+    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
     <group if="$(arg fsm)">
-        <arg name="fsm_config" default="debug"/>
-        <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
         <node pkg="imitation_learning_ros_package"
               name="fsm"
               type="fsm.py"
@@ -51,11 +51,11 @@
     </group>
 
     <arg name="control_mapping" default="true"/>
-    <group if="$(arg control_mapping)">
-        <arg name="control_mapping_config" default="default"/>
-        <rosparam command="load"
+    <arg name="control_mapping_config" default="default"/>
+    <rosparam command="load"
                   file="$(env HOME)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
                   ns="control_mapping"/>
+    <group if="$(arg control_mapping)">
         <node pkg="imitation_learning_ros_package"
               name="control_mapping"
               type="control_mapping.py"
@@ -67,6 +67,14 @@
         <node pkg="imitation_learning_ros_package"
               name="waypoint_indicator"
               type="waypoint_indicator.py"
+              output="screen"/>
+    </group>
+
+    <arg name="robot_mapping" default="true"/>
+    <group if="$(arg robot_mapping)">
+        <node pkg="imitation_learning_ros_package"
+              name="robot_mapping"
+              type="robot_mapping.py"
               output="screen"/>
     </group>
 

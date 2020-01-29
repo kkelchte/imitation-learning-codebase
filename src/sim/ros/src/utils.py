@@ -35,6 +35,29 @@ def get_type_from_topic_and_actor_configs(actor_configs: List[ActorConfig], topi
     return ActorType.Unknown
 
 
+def get_distance(a: Union[tuple, list], b: Union[tuple, list]) -> float:
+    return np.sqrt(sum((np.asarray(a) - np.asarray(b)) ** 2))
+
+
+def adapt_vector_to_odometry(data: Union[np.ndarray, list, tuple]) -> Odometry:
+    """data is 1D numpy array in format [x, y, z] or [x, y, z, yaw] or [x, y, z, qx, qy, qz, qw]"""
+    odometry = Odometry()
+    odometry.pose.pose.position.x = data[0]
+    odometry.pose.pose.position.y = data[1]
+    odometry.pose.pose.position.z = data[2]
+    if len(data) == 3:
+        return odometry
+    if len(data) == 4:
+        qx, qy, qz, qw = quaternion_from_euler((0, 0, data[3]))
+    else:
+        qx, qy, qz, qw = data[3:]
+    odometry.pose.pose.orientation.x = qx
+    odometry.pose.pose.orientation.y = qy
+    odometry.pose.pose.orientation.z = qz
+    odometry.pose.pose.orientation.w = qw
+    return odometry
+
+
 def adapt_sensor_to_ros_message(data: np.ndarray, sensor_name: str) -> RosSensor:
 
     message = RosSensor()
@@ -42,14 +65,7 @@ def adapt_sensor_to_ros_message(data: np.ndarray, sensor_name: str) -> RosSensor
         message.waypoint = Float32MultiArray()
         message.waypoint.data = data.tolist()
     elif 'odom' in sensor_name:
-        message.odometry = Odometry()
-        message.odometry.pose.pose.position.x = data[0]
-        message.odometry.pose.pose.position.y = data[1]
-        message.odometry.pose.pose.position.z = data[2]
-        message.odometry.pose.pose.orientation.x = data[3]
-        message.odometry.pose.pose.orientation.y = data[4]
-        message.odometry.pose.pose.orientation.z = data[5]
-        message.odometry.pose.pose.orientation.w = data[6]
+        message.odometry = adapt_vector_to_odometry(data)
     return message
 
 
@@ -153,4 +169,8 @@ def process_laser_scan(msg, sensor_stats: dict = None) -> np.ndarray:
 
 
 def euler_from_quaternion(quaternion: tuple) -> tuple:
-    return tuple(R.from_quat(quaternion).as_euler('xyz'))
+    return tuple(R.from_quat(quaternion).as_euler('XYZ'))
+
+
+def quaternion_from_euler(euler: tuple) -> tuple:
+    return tuple(R.from_euler('XYZ', euler, degrees=False).as_quat())

@@ -39,9 +39,12 @@ include_directories(
 )
 
 catkin_install_python(PROGRAMS
-  rosnodes/teleop_twist_keyboard.py
-  rosnodes/fsm.py
   rosnodes/control_mapping.py
+  rosnodes/fsm.py
+  rosnodes/robot_mapping.py
+  rosnodes/ros_expert.py
+  rosnodes/teleop_twist_keyboard.py
+  rosnodes/waypoint_indicator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch
