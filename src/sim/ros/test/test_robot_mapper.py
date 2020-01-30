@@ -8,8 +8,9 @@ import shlex
 import rospy
 from nav_msgs.msg import Odometry
 
+from src.sim.common.data_types import ProcessState
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
+from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import adapt_vector_to_odometry
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 

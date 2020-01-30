@@ -3,10 +3,12 @@ from typing import Tuple, Union
 
 import numpy as np
 import rospy
+from gazebo_msgs.msg import ModelState
+from gazebo_msgs.srv import SetModelState
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import CompressedImage, Image, LaserScan
-from geometry_msgs.msg import Twist
-from std_msgs.msg import String, Float32MultiArray
+from geometry_msgs.msg import Twist, Pose
+from std_msgs.msg import String, Float32MultiArray, Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 from imitation_learning_ros_package.msg import RosState
@@ -14,12 +16,12 @@ from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm impor
 from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import Action, State, TerminalType, ActorType
+from src.sim.common.data_types import Action, State, TerminalType, ActorType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
-from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
+from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import process_compressed_image, process_image, process_laser_scan, \
     adapt_twist_to_action, get_type_from_topic_and_actor_configs, process_odometry, \
-    adapt_action_to_ros_message, adapt_action_to_twist, adapt_sensor_to_ros_message
+    adapt_action_to_ros_message, adapt_action_to_twist, adapt_sensor_to_ros_message, quaternion_from_euler
 
 bridge = CvBridge()
 
@@ -49,7 +51,7 @@ class RosEnvironment(Environment):
             terminal=TerminalType.Unknown,
             actor_data={},
             sensor_data={},
-            time_stamp_us=-1
+            time_stamp_ms=-1
         )
         self._default_sensor_value = np.zeros((1,))
 
@@ -57,6 +59,8 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
             self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
+            self._reset_simulation = rospy.ServiceProxy('/gazebo/reset_simulation', Emptyservice)
+            self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
         # Subscribers
         if rospy.has_param('/fsm/state_topic'):
@@ -133,9 +137,8 @@ class RosEnvironment(Environment):
                              callback_args=actor_config)
         # Publishers
         # Publish state at each step (all except RGB info)
-        self._state_publisher = rospy.Publisher(name='/ros_environment/state',
-                                                data_class=RosState,
-                                                queue_size=10)
+        self._state_publisher = rospy.Publisher('/ros_environment/state', RosState, queue_size=10)
+        self._reset_publisher = rospy.Publisher(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, queue_size=10)
 
         # Start ROS node:
         rospy.init_node('ros_python_interface', anonymous=True)
@@ -166,7 +169,9 @@ class RosEnvironment(Environment):
         else:
             raise NotImplementedError
 
-    def _check_max_number_of_steps(self):
+    def _internal_update_terminal_state(self):
+        if self.fsm_state == FsmState.Running and self._terminal_state == TerminalType.Unknown:
+            self._terminal_state = TerminalType.NotDone
         if self._terminal_state == TerminalType.NotDone and \
                 self._config.max_number_of_steps != -1 and \
                 self._config.max_number_of_steps < self._step:
@@ -187,17 +192,34 @@ class RosEnvironment(Environment):
         except ResourceWarning:
             pass
 
+    def _reset_gazebo(self):
+        try:
+            model_state = ModelState()
+            model_state.model_name = 'turtlebot3_burger' \
+                if self._config.ros_config.ros_launch_config.robot_name.startswith('turtle') else 'quadrotor'
+            model_state.pose = Pose()
+            model_state.pose.position.x = self._config.ros_config.ros_launch_config.x_pos
+            model_state.pose.position.y = self._config.ros_config.ros_launch_config.y_pos
+            model_state.pose.position.z = self._config.ros_config.ros_launch_config.z_pos
+            model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
+                model_state.pose.orientation.w = quaternion_from_euler((0, 0,
+                                                                        self._config.ros_config.ros_launch_config.yaw_or))
+            self._set_model_state(model_state)
+        except ResourceWarning:
+            pass
+
     def reset(self) -> State:
+        self._reset_publisher.publish(Empty())
+        self._reset_gazebo()
         if self._config.ros_config.ros_launch_config.gazebo:
             self._unpause_gazebo()
-        # TODO add option to reset gazebo robot
         rospy.sleep(self._pause_period)
         self._state = State(
             terminal=self._terminal_state,
             sensor_data={
                 sensor_name: self._sensor_values[sensor_name] for sensor_name in self._sensor_values.keys()
             },
-            time_stamp_us=int(rospy.get_time() * 10**6)
+            time_stamp_ms=int(rospy.get_time() * 10**6)
         )
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_gazebo()
@@ -213,7 +235,7 @@ class RosEnvironment(Environment):
 
     def step(self, action: Action = None) -> State:
         self._step += 1
-        self._check_max_number_of_steps()
+        self._internal_update_terminal_state()
         self._clear_sensor_and_actor_values()
         if self._config.ros_config.ros_launch_config.gazebo:
             self._unpause_gazebo()
@@ -222,23 +244,25 @@ class RosEnvironment(Environment):
             terminal=self._terminal_state,
             sensor_data={
                 sensor_name: self._sensor_values[sensor_name] for sensor_name in self._sensor_values.keys()
+                if self._sensor_values[sensor_name].shape != self._default_sensor_value.shape
             },
             # TODO update self._state on new actor info
             #      => self._state will update on the background during rospy.sleep.
             actor_data={
                 actor_name: actor_value for actor_name, actor_value in self._actor_values.items()
             },
-            time_stamp_us=int(rospy.get_time() * 10**6)
+            time_stamp_ms=int(rospy.get_time() * 10**3)
         )
         self._publish_state()
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_gazebo()
+        self._terminal_state = TerminalType.Unknown
         return self._state
 
     def _publish_state(self):
         ros_state = RosState()
         ros_state.robot_name = self._config.ros_config.ros_launch_config.robot_name
-        ros_state.time_stamp_us = int(self._state.time_stamp_us)
+        ros_state.time_stamp_ms = int(self._state.time_stamp_ms)
         ros_state.terminal = self._state.terminal.name
         ros_state.actions = [adapt_action_to_ros_message(self._state.actor_data[actor_name])
                              for actor_name in self._state.actor_data.keys()

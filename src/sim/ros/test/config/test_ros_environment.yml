@@ -11,7 +11,7 @@ ros_config:
     random_seed: 123
     robot_name: turtlebot_sim
     waypoint_indicator: true
-    world_name: object_world
+    world_name: test_world
     x_pos: 0.0
     y_pos: 0.0
     yaw_or: 1.57

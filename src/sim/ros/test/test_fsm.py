@@ -10,8 +10,8 @@ from std_msgs.msg import String, Empty  # Do not remove!
 from sensor_msgs.msg import LaserScan  # Do not remove!
 
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.common.data_types import TerminalType
-from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
+from src.sim.common.data_types import TerminalType, ProcessState
+from src.sim.ros.src.process_wrappers import RosWrapper
 
 """ Test FSM in different modes
 

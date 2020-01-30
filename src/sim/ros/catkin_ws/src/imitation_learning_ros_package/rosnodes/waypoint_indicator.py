@@ -13,7 +13,7 @@ import time
 import numpy as np
 import rospy
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, Empty
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import camelcase_to_snake_format
@@ -30,12 +30,35 @@ class WaypointIndicator:
         self._output_path = get_output_path()
         self._logger = get_logger(os.path.basename(__file__), self._output_path)
 
+        # fields
+        self._current_waypoint_index = 0
+        self._waypoints = rospy.get_param('/world/waypoints', [])
+        self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.5)
+
+        # publishers
+        self._publisher = rospy.Publisher('/waypoint_indicator/current_waypoint', Float32MultiArray, queue_size=10)
+
+        # subscribe
+        odometry_type = rospy.get_param('/robot/odometry_type')
+        callback = f'_{camelcase_to_snake_format(odometry_type)}_callback'
+        assert callback in self.__dir__()
+        rospy.Subscriber(name=rospy.get_param('/robot/odometry_topic'),
+                         data_class=eval(odometry_type),
+                         callback=eval(f'self.{callback}'))
+        rospy.Subscriber(name=rospy.get_param('/fsm/reset_topic', '/reset'),
+                         data_class=Empty,
+                         callback=self.reset)
+        rospy.init_node('waypoint_indicator')
+        self.reset()
+
+    def reset(self, msg: Empty = None):
         self._waypoints = rospy.get_param('/world/waypoints', [])
         self._waypoints = [[float(coor) for coor in wp] for wp in self._waypoints]
         self._current_waypoint_index = 0
+        self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.5)
+
         # TODO extension: add automatic closest waypoint detection and start flying to there
         #  ==> this allows robot to be spawned anywhere on the trajectory.
-        self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.5)
         if len(self._waypoints) == 0:
             cprint(message='could not find waypoints in rosparam so exit',
                    logger=self._logger,
@@ -43,16 +66,6 @@ class WaypointIndicator:
             sys.exit(0)
         else:
             cprint(f'waypoints: {self._waypoints}', self._logger)
-
-        self._publisher = rospy.Publisher('/waypoint_indicator/current_waypoint', Float32MultiArray, queue_size=10)
-        odometry_type = rospy.get_param('/robot/odometry_type')
-        callback = f'_{camelcase_to_snake_format(odometry_type)}_callback'
-        assert callback in self.__dir__()
-        rospy.Subscriber(name=rospy.get_param('/robot/odometry_topic'),
-                         data_class=eval(odometry_type),
-                         callback=eval(f'self.{callback}'))
-
-        rospy.init_node('waypoint_indicator')
 
     def _odometry_callback(self, msg: Odometry):
         # adjust orientation towards current_waypoint

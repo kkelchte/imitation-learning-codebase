@@ -41,12 +41,12 @@ class Actor:
         return self._name
 
 
-class DNNActor(Actor):
-
-    def __init__(self, config: ActorConfig):
-        super().__init__(config)
-        self._dnn = BaseModel.load_from_trace_path(self._config.actor_specs['model_trace_path'])
-
-    def get_action(self, sensor_data: dict) -> Action:
-        processed_state = self.io_adapter.from_raw_to_(sensor_data)
-        return Action(self._dnn.forward(processed_state))
+# class DNNActor(Actor):
+#
+#     def __init__(self, config: ActorConfig):
+#         super().__init__(config)
+#         self._dnn = BaseModel.load_from_trace_path(self._config.actor_specs['model_trace_path'])
+#
+#     def get_action(self, sensor_data: dict) -> Action:
+#         processed_state = self.io_adapter.from_raw_to_(sensor_data)
+#         return Action(self._dnn.forward(processed_state))

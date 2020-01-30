@@ -1,22 +1,31 @@
 output_path: '/tmp' #'/esat/opal/kkelchte/test_experiments/data_collection'
 runner_config:
   environment_config:
-    max_number_of_steps: 100
-    factory_key: 0 # Ros = 0, Gym = 1, Carla = 2
+    factory_key: 0
+    max_number_of_steps: -1
+    output_path: tmp_test_dir/20-01-28_14-39
     ros_config:
-      headless: False
       ros_launch_config:
+        control_mapping: true
+        control_mapping_config: test_ros_environment
+        fsm: true
+        fsm_config: single_run
+        gazebo: true
         random_seed: 123
-        gazebo: True
-        world_name: empty_world
         robot_name: turtlebot_sim
-        turtlebot_sim: True
-  actor_config:
-    actor_type: 1 # Model = 0, Expert = 1
-    description: 'default-expert'
+        waypoint_indicator: true
+        world_name: test_world
+        x_pos: 0.0
+        y_pos: 0.0
+        yaw_or: 1.57
+        z_pos: 0.0
+      visible_xterm: true
+    actor_configs:
+      - file: src/sim/ros/config/keyboard/turtlebot_sim.yml
+        name: keyboard
+        type: 2
+      - file: src/sim/ros/config/actor/ros_expert.yml
+        name: ros_expert
+        type: 1
   number_of_episodes: 2
-data_saver_config:
-  saving_directory: 'dataset'
-  sensors:
-    - 0
-    - 1
+data_saver_config: {}

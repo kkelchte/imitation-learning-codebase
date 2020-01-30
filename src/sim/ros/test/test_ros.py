@@ -8,9 +8,9 @@ import rospy
 import numpy as np
 
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import TerminalType, EnvironmentType, Action, ActorType
+from src.sim.common.data_types import TerminalType, EnvironmentType, Action, ActorType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
-from src.sim.ros.src.process_wrappers import ProcessState, RosWrapper
+from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.ros_actors_DEPRECATED import RosExpert
 from src.sim.ros.src.ros_environment import RosEnvironment
 

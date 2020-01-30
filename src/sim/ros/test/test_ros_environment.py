@@ -16,10 +16,10 @@ from sensor_msgs.msg import Image, LaserScan
 from std_msgs.msg import Empty
 
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import EnvironmentType, ActorType, TerminalType
+from src.sim.common.data_types import EnvironmentType, ActorType, TerminalType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
+from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig, \
     get_fake_odometry, compare_odometry

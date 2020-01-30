@@ -76,6 +76,7 @@ class Fsm:
         self._logger = get_logger(os.path.basename(__file__), self._output_path)
 
         self.mode = rospy.get_param('/fsm/fsm_mode')
+        self._state = FsmState.Unknown
         self._state_pub = rospy.Publisher(rospy.get_param('/fsm/state_topic'), String, queue_size=10)
         self._terminal_outcome_pub = rospy.Publisher(rospy.get_param('/fsm/terminal_topic'), String, queue_size=10)
         # self._pause_physics_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
@@ -136,14 +137,13 @@ class Fsm:
         self._collision_depth = rospy.get_param('robot/collision_depth', 0)
         self._max_travelled_distance = rospy.get_param('world/max_travelled_distance', -1)
         self._max_distance_from_start = rospy.get_param('world/max_distance_from_start', -1)
-        self._goal = rospy.get_param('world/goal', {})  # TODO: check if this works.
-        if True:
-            print('****FSM: Settings:****')
-            for name, value in [('_max_duration', self._max_duration), ('_collision_depth', self._collision_depth),
-                          ('_max_travelled_distance', self._max_travelled_distance), ('mode', self.mode),
-                          ('_max_distance_from_start', self._max_distance_from_start), ('_goal', self._goal)]:
-                print(f'{name}: {value}')
-            print('********')
+        self._goal = rospy.get_param('world/goal', {})
+        # cprint('****FSM: Settings:****')
+        # for name, value in [('_max_duration', self._max_duration), ('_collision_depth', self._collision_depth),
+        #                     ('_max_travelled_distance', self._max_travelled_distance), ('mode', self.mode),
+        #                     ('_max_distance_from_start', self._max_distance_from_start), ('_goal', self._goal)]:
+        #     cprint(f'{name}: {value}')
+        # cprint('********')
         self._start()
 
     def _set_state(self, state: FsmState) -> None:
@@ -166,13 +166,13 @@ class Fsm:
     def _shutdown_run(self, msg: Empty = None, outcome: TerminalType = TerminalType.Unknown):
         # Invocation for next run
         self._is_shuttingdown = True
+        self._terminal_outcome_pub.publish(outcome.name)
         # pause_physics_client(EmptyRequest())
         cprint(f'Terminated with {outcome.name}', self._logger)
         if self.mode == FsmMode.TakeOverRunDriveBack:
             self._set_state(FsmState.DriveBack)
         else:
             self._set_state(FsmState.Terminated)
-        self._terminal_outcome_pub.publish(outcome.name)
 
     def _check_time(self) -> float:
         run_duration_s = rospy.get_time() - self._start_time if self._start_time != -1 else 0

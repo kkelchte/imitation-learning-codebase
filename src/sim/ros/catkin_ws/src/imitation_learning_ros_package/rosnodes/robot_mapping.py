@@ -50,7 +50,8 @@ class RobotMapper:
 
         # fields
         self._fsm_state = FsmState.Unknown
-        self._world_to_image_transformation = rospy.get_param('/world/transformation')
+        default_transformation = [1, 0, 1, 0]
+        self._world_to_image_transformation = rospy.get_param('/world/transformation', default=default_transformation)
         self._min_step_distance = rospy.get_param('/world/min_step_distance', 0.7)
         self._previous_position = []
         self._initial_arrow = np.asarray([[0., 0.], [7., 0.], [7., 1.5], [9., 0.], [7., -1.5], [7., 0.]])

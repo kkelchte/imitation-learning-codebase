@@ -5,8 +5,9 @@ import rospy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Empty
 
+from src.sim.common.data_types import ProcessState
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
+from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig
 
 """

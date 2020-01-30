@@ -7,18 +7,12 @@ import shlex
 from datetime import datetime
 
 from src.core.logger import cprint
+from src.sim.common.data_types import ProcessState
 
 """Interface with other applications such as 
 - xpra
 - ros
 """
-
-
-class ProcessState(IntEnum):
-    Running = 0
-    Terminated = 1
-    Unknown = 2
-    Initializing = 3
 
 
 class ProcessWrapper:

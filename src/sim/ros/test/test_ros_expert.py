@@ -6,7 +6,8 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 
-from src.sim.ros.src.process_wrappers import RosWrapper, ProcessState
+from src.sim.common.data_types import ProcessState
+from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 
 

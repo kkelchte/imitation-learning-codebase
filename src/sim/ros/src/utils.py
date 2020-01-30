@@ -113,7 +113,7 @@ def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
           ::scale[1],
           ::scale[2]
           ]
-    return sm.resize(img, size, mode='constant').astype(np.float16)
+    return sm.resize(img, size, mode='constant').astype(np.float32)
 
 
 def process_odometry(msg: Odometry, _=None) -> np.ndarray:
@@ -131,7 +131,7 @@ def process_image(msg, sensor_stats: dict = None) -> np.ndarray:
         img = bridge.imgmsg_to_cv2(msg, 'passthrough')
         max_depth = float(sensor_stats['max_depth']) if 'max_depth' in sensor_stats.keys() else 4
         min_depth = float(sensor_stats['min_depth']) if 'min_depth' in sensor_stats.keys() else 0.1
-        img = np.clip(img, min_depth, max_depth)
+        img = np.clip(img, min_depth, max_depth).astype(np.float32)
         # TODO add image resize and smoothing option
         print('WARNING: utils.py: depth image is not resized.')
         return img

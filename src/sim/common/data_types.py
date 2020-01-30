@@ -5,6 +5,13 @@ import numpy as np
 from dataclasses import dataclass
 
 
+class ProcessState(IntEnum):
+    Running = 0
+    Terminated = 1
+    Unknown = 2
+    Initializing = 3
+
+
 class TerminalType(IntEnum):
     Unknown = -1
     NotDone = 0
@@ -37,4 +44,4 @@ class State:
     terminal: TerminalType = None
     actor_data: Dict[str, Action] = None
     sensor_data: Dict[str, np.ndarray] = None
-    time_stamp_us: int = 0
+    time_stamp_ms: int = 0
