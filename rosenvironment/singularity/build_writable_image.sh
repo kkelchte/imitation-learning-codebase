@@ -12,7 +12,7 @@ echo "
   # # mount -t ntfs /dev/sda2  /usr/data
 "
 sudo lsblk
-sudo fdisk /dev/sda
+#sudo fdisk /dev/sda
 sudo lsblk
 sudo mkntfs /dev/sda2
 sudo mkdir -p /usr/data

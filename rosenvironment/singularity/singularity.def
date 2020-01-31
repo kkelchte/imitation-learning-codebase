@@ -61,6 +61,15 @@ apt-get update && apt-get install -q -y \
 # ---- EXTRA ROS PACKAGES ----
 apt-get update && apt-get install -yq\
     python3-yaml \
+    python3-rospkg-modules \
+    ros-melodic-hector-sensors-gazebo \
+    ros-melodic-hector-gazebo \
+    ros-melodic-hector-gazebo-worlds \
+    ros-melodic-hector-gazebo-plugins \
+    ros-melodic-geographic-msgs \
+    ros-melodic-hardware-interface \
+    ros-melodic-controller-interface \
+    ros-melodic-gazebo-ros-control \
     ros-melodic-rosbridge-suite \
     ros-melodic-rosauth \
     ros-melodic-turtlebot3 \
@@ -75,6 +84,8 @@ apt-get update && apt-get install -yq\
     ros-melodic-rqt \
     ros-melodic-rqt-common-plugins \
     && rm -rf /var/lib/apt/lists/*
+
+
 
 # ---- CUDA ----
 %files
