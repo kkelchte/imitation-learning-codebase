@@ -1,9 +1,19 @@
 command_topic: '/cmd_vel'
 sensors:
   - 'forward_camera'
-forward_camera_topic: ?????
+  - 'downward_camera'
+  - 'odometry'
+forward_camera_topic: '/ardrone/front/image_raw'
 forward_camera_type: 'Image'
 forward_camera_stats:
   height: 128
   width: 128
   depth: 3
+downward_camera_topic: '/ardrone/bottom/image_raw'
+downward_camera_type: 'Image'
+downward_camera_stats:
+  height: 128
+  width: 128
+  depth: 3
+odometry_topic: '/ardrone/odometry'
+odometry_type: 'Odometry'

@@ -51,6 +51,16 @@
                 output="log"/>
     </group>
 
+    <arg name="bebop_real" default="false"/>
+    <group if="$(arg bebop_real)">
+<!--        <include file="$(find bebop_driver)/launch/bebop_node.launch"/>-->
+    </group>
+
+    <arg name="ardrone_real" default="false"/>
+    <group if="$(arg ardrone_real)">
+<!--        <include file="$(find ardrone_driver)/launch/ardrone_node.launch"/>-->
+    </group>
+
 
     <!--######################## HELPER NODES ########################-->
     <arg name="fsm" default="true"/>
