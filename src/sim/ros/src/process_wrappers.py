@@ -7,6 +7,7 @@ import shlex
 from datetime import datetime
 
 from src.core.logger import cprint
+from src.sim.common.data_types import ProcessState
 
 """Interface with other applications such as 
 - xpra
@@ -14,19 +15,12 @@ from src.core.logger import cprint
 """
 
 
-class ProcessState(IntEnum):
-    Running = 0
-    Terminated = 1
-    Unknown = 2
-    Initializing = 3
-
-
 class ProcessWrapper:
 
     def __init__(self,
                  name: str = '',
                  grep_str: str = ''):
-        self._grace_period = 3
+        self._grace_period = 1  # 3
         self._name = name if name else 'default'
         self._state = ProcessState.Initializing
         self._grep_str = grep_str if grep_str else self._name
@@ -67,7 +61,7 @@ class ProcessWrapper:
             if strict_check:
                 assert process.returncode == 0
                 assert process.stderr == b''
-        time.sleep(1)
+        time.sleep(3)
         if self._check_running_process_with_ps():
             self._state = ProcessState.Running
             return True
@@ -111,7 +105,8 @@ class ProcessWrapper:
         self._cleanup()
         return self._state
 
-    def _cleanup(self):
+    @staticmethod
+    def _cleanup():
         pass
 
 
@@ -138,7 +133,7 @@ def adapt_launch_config(config: dict) -> str:
     config_str = ''
     for key, value in config.items():
         if isinstance(value, str):
-            config_str += f" {key}:=\'{value}\'"
+            config_str += f" {key}:={value}"
         elif isinstance(value, bool):
             config_str += f" {key}:=\'true\'" if value else f" {key}:=\'false\'"
         else:
@@ -150,6 +145,8 @@ class RosWrapper(ProcessWrapper):
 
     def __init__(self, config: dict, launch_file: str = 'load_ros.launch', visible: bool = False):
         super().__init__(name='ros')
+        post_init_delay = 4
+        # executable = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'scripts', 'ros_DEPRECATED.sh')
         executable = 'roslaunch '
         if not visible:
             executable = f'xvfb-run -a {executable}'
@@ -160,7 +157,7 @@ class RosWrapper(ProcessWrapper):
         executable += adapt_launch_config(config)
         if not os.path.isdir(f'{os.environ["HOME"]}/.ros/'):
             os.makedirs(f'{os.environ["HOME"]}/.ros/')
-        command = f'xterm -iconic -l -lf "{os.environ["HOME"]}/.ros/'\
+        command = f'env -u SESSION_MANAGER xterm -iconic -l -lf "{os.environ["HOME"]}/.ros/'\
                   f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H:%M:%S")}_xterm_output.log" '\
                   f'-hold -e {executable}'
         if not visible:
@@ -169,6 +166,10 @@ class RosWrapper(ProcessWrapper):
                          strict_check=False,
                          shell=False,
                          background=True)
+        if 'gazebo' in config.keys() and config['gazebo'] == 'true':
+            while not self._check_running_process_with_ps('gzserver'):
+                time.sleep(1)
+        time.sleep(post_init_delay)
         # TODO pipe stderr of ROS to logger debug.
 
     @staticmethod
@@ -180,11 +181,10 @@ class RosWrapper(ProcessWrapper):
         self._terminate_by_pid()
         if self._terminate_by_name(command_name='gz') and \
             self._terminate_by_name(command_name='xterm') and \
-                self._terminate_by_name(command_name='xvfb'):
+                self._terminate_by_name(command_name='xvfb') and \
+                self._terminate_by_name(command_name='ros'):
             self._state = ProcessState.Terminated
         else:
             self._state = ProcessState.Unknown
         self._cleanup()
         return self._state
-
-

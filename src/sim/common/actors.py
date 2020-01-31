@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
+import yaml
 
 from src.sim.common.data_types import Action, ActorType
 from src.ai.architectures.models.model import BaseModel
@@ -13,34 +14,39 @@ Depends on ai/architectures/models to call forward pass.
 
 @dataclass
 class ActorConfig:
-    description: str = None
-    actor_type: ActorType = None
+    name: str = None
+    type: ActorType = None
+    specs: dict = None
+    file: str = None
+
+    def __post_init__(self):
+        if self.specs is None and self.file is not None:
+            with open(self.file, 'r') as f:
+                specs = yaml.load(f, Loader=yaml.FullLoader)
+                self.specs = specs['specs'] if 'specs' in specs.keys() else specs
 
 
 class Actor:
 
     def __init__(self, config: ActorConfig):
-        self._description = config.description
+        self._name = config.name
+        self._type = config.type
+        self._specs = config.specs
+        self._config_file = config.file
 
-    def get_action(self, raw_state: np.array, visualize: bool = False, verbose: bool = False) -> Action:
+    def get_action(self, sensor_data: dict = None) -> Action:
         pass
 
-    def get_description(self):
-        return self._description
+    def get_name(self):
+        return self._name
 
 
-@dataclass
-class DNNActorConfig(ActorConfig):
-    model_trace_path: str = None
-
-
-class DNNActor(Actor):
-
-    def __init__(self, config: DNNActorConfig):
-        super(DNNActor, self).__init__(config)
-        self._config = config
-        self._dnn = BaseModel.load_from_trace_path(self._config.model_trace_path)
-
-    def get_action(self, raw_state: np.array, visualize: bool = False, verbose: bool = False) -> Action:
-        processed_state = self.io_adapter.from_raw_to_(raw_state)
-        return Action(self._dnn.forward(processed_state))
+# class DNNActor(Actor):
+#
+#     def __init__(self, config: ActorConfig):
+#         super().__init__(config)
+#         self._dnn = BaseModel.load_from_trace_path(self._config.actor_specs['model_trace_path'])
+#
+#     def get_action(self, sensor_data: dict) -> Action:
+#         processed_state = self.io_adapter.from_raw_to_(sensor_data)
+#         return Action(self._dnn.forward(processed_state))

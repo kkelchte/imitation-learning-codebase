@@ -1,0 +1,9 @@
+command_topic: '/cmd_vel'
+sensors:
+  - 'forward_camera'
+forward_camera_topic: ?????
+forward_camera_type: 'Image'
+forward_camera_stats:
+  height: 128
+  width: 128
+  depth: 3

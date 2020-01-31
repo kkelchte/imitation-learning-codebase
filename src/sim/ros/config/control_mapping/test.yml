@@ -1,0 +1,20 @@
+supervision_topic: '/control_mapper/supervision'
+mapping:
+  Unknown: {}
+  Terminated: {}
+  Running:
+    command: '/actor/ros_expert'
+    supervision: '/actor/neural_network'
+  TakeOff:
+    command: '/actor/ros_expert'
+    supervision: '/actor/ros_expert'
+  TakenOver:
+    command: '/actor/keyboard'
+    supervision: '/actor/drive_back'
+  DriveBack:
+    command: '/actor/drive_back'
+
+#max_time
+#current_time
+#control_time
+#aggressiveness

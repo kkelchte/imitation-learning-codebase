@@ -1,5 +1,6 @@
 import os
 import argparse
+import warnings
 
 import yaml
 from dataclasses import dataclass
@@ -38,7 +39,6 @@ class Config:
                 raise FileNotFoundError('Are you in the code root directory?')
             with open(config_file, 'r') as f:
                 config_dict = yaml.load(f, Loader=yaml.FullLoader)
-
         instant = self.from_dict(config_dict)
         instant.iterative_add_output_path(output_path=instant.output_path)
         instant.iterative_check_for_none()
@@ -74,6 +74,7 @@ class Config:
             else:
                 output_dict[key] = value
         return output_dict
+
 
 
 class Parser(argparse.ArgumentParser):

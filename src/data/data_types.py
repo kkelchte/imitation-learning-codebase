@@ -5,7 +5,6 @@ import numpy as np
 from dataclasses import dataclass
 import torch
 
-from src.sim.common.data_types import SensorType
 
 """Data types required for defining dataset frames and torch dataset samples.
 
@@ -23,8 +22,8 @@ class OutcomeType(IntEnum):
 
 @dataclass
 class Frame:
-    sensor_type: SensorType = None
-    time_stamp_us: int = None
+    origin: str = None
+    time_stamp_ms: int = None
     data: np.array = None
 
 

@@ -1,5 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/python3.7
 from __future__ import print_function
+
+import os
 import sys
 import select
 import termios
@@ -10,6 +12,9 @@ import roslib
 import rospy
 from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist
+
+from src.core.logger import get_logger, cprint
+from src.sim.ros.src.utils import get_output_path
 
 roslib.load_manifest('teleop_twist_keyboard')
 
@@ -26,29 +31,42 @@ if __name__ == "__main__":
     settings = termios.tcgetattr(sys.stdin)
     rospy.init_node('teleop_twist_keyboard')
 
-    command_topic = rospy.get_param("command_topic", "/cmd_vel")
-    pub = rospy.Publisher(command_topic, Twist, queue_size=1)
-    print("publishing on {0}".format(command_topic))
+    logger = get_logger(os.path.basename(__file__), get_output_path())
 
-    speed = rospy.get_param("~speed", 0.5)
-    turn = rospy.get_param("~turn", 1.0)
+    command_topic = rospy.get_param("/actor/keyboard/command_topic")
+
+    pub = rospy.Publisher(command_topic, Twist, queue_size=1)
+    # print("publishing on {0}".format(command_topic))
+
+    rate_fps = rospy.get_param('/actor/keyboard/rate_fps', 20)
+    speed = rospy.get_param("/actor/keyboard/speed", 0.5)
+    turn = rospy.get_param("/actor/keyboard/turn", 1.0)
     x = 0
     y = 0
     z = 0
     th = 0
     status = 0
 
-    config_file = rospy.get_param("keyboard_config")
-    with open(config_file, 'r') as f:
-        config = yaml.load(f)
-    message = config['message']
-    moveBindings = config['moveBindings']
-    speedBindings = config['speedBindings']
-
+    # config_file = rospy.get_param("keyboard_config")
+    # with open(config_file, 'r') as f:
+    #     config = yaml.load(f)
+    message = rospy.get_param('/actor/keyboard/message', '### Could not find config message.')
+    moveBindings = rospy.get_param('/actor/keyboard/moveBindings')
+    speedBindings = rospy.get_param('/actor/keyboard/speedBindings')
+    topicBindings = rospy.get_param('/actor/keyboard/topicBindings')
+    publishers = {
+        key: rospy.Publisher(
+                name=rospy.get_param(topicBindings[key]),
+                data_class=Empty,
+                queue_size=10
+             ) for key in topicBindings.keys()
+    }
     try:
-        print(message)
+        cprint(message, logger)
         while True:
             key = get_key()
+            if key in topicBindings.keys():
+                publishers[key].publish(Empty())
             if key in moveBindings.keys():
                 x = moveBindings[key][0]
                 y = moveBindings[key][1]
@@ -58,10 +76,10 @@ if __name__ == "__main__":
                 speed = speed * speedBindings[key][0]
                 turn = turn * speedBindings[key][1]
 
-                print("currently:\tspeed %s\tturn %s " % (speed, turn))
-                if status == 14:
-                    print(message)
-                status = (status + 1) % 15
+                # print("currently:\tspeed %s\tturn %s " % (speed, turn))
+                # if status == 14:
+                #     print(message)
+                # status = (status + 1) % 15
             else:
                 x = 0
                 y = 0
@@ -79,6 +97,7 @@ if __name__ == "__main__":
             twist.angular.z = th*turn
             pub.publish(twist)
 
+            rospy.sleep(1./rate_fps)
     except Exception as e:
         print(e)
 

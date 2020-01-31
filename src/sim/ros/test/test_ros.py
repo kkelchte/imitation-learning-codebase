@@ -1,17 +1,18 @@
 #!/usr/bin/python3.7
+import os
 import unittest
 import time
 
 import subprocess
-import roslib
+import rospy
 import numpy as np
 
-from src.sim.common.data_types import TerminalType, EnvironmentType, Action, ActorType, State
+from src.sim.common.actors import ActorConfig
+from src.sim.common.data_types import TerminalType, EnvironmentType, Action, ActorType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
-from src.sim.ros.src.process_wrappers import ProcessState, RosWrapper
+from src.sim.ros.src.process_wrappers import RosWrapper
+from src.sim.ros.src.ros_actors_DEPRECATED import RosExpert
 from src.sim.ros.src.ros_environment import RosEnvironment
-roslib.load_manifest('imitation_learning_ros_package')
-import rospy
 
 
 def count_grep_name(grep_str: str) -> int:
@@ -73,12 +74,14 @@ class TestRos(unittest.TestCase):
             'graphics': 'true',
             'world_name': 'empty_world',
             'robot_name': 'turtlebot_sim',
-            'turtlebot_sim': 'true'
+            'turtlebot_sim': 'true',
+            'keyboard': 'true'
         }
         ros_process = RosWrapper(config=config)
         self.assertEqual(ros_process.get_state(), ProcessState.Running)
         time.sleep(int(duration_min * 60))
-        self.assertEqual(rospy.get_param('command_topic'), '/cmd_vel')
+        self.assertTrue(rospy.has_param('keyboard_config'))
+        self.assertEqual(rospy.get_param('/robot/command_topic'), '/cmd_vel')
         self.assertTrue(count_grep_name('gzserver') >= 1)
         ros_process.terminate()
         self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
@@ -104,35 +107,17 @@ class TestRos(unittest.TestCase):
         self.assertEqual(ros_process.get_state(), ProcessState.Terminated)
         self.assertTrue(count_grep_name('gzserver') == 0)
 
-    def test_ros_environment(self):
-        # spinoff RosEnvironment with config containing turtlebot and images
-        config = EnvironmentConfig(
-            factory_key=EnvironmentType.Ros,
-            max_number_of_steps=10,
-            ros_config=RosConfig(
-                visible_xterm=True,
-                ros_launch_config=RosLaunchConfig(
-                    random_seed=123,
-                    gazebo=True,
-                    world_name='object_world',
-                    robot_name='turtlebot_sim',
-                    turtlebot_sim=True
-                )
-            )
-        )
-        environment = RosEnvironment(config=config)
-        # take a 10 steps
-        state = environment.reset()
-        while state.terminal == TerminalType.NotDone:
-            if True:
-                import matplotlib.pyplot as plt
-                plt.imshow(state.sensor_data['forward_camera'])
-                plt.show()
-            action = Action(
-                actor_type=ActorType.Expert,
-                value=np.array((1, 0, 0, 0, 0, 1))
-            )
-            state = environment.step(action)
+    @unittest.skip
+    def test_load_params(self):
+        config = {
+            'robot_name': 'turtlebot_sim',
+            'fsm': False
+        }
+        ros_process = RosWrapper(launch_file='load_ros.launch',
+                                 config=config,
+                                 visible=True)
+        self.assertEqual(rospy.get_param('/robot/forward_camera_topic'), '/wa/camera/image_raw')
+        ros_process.terminate()
 
 
 if __name__ == '__main__':
