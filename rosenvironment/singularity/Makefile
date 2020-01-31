@@ -14,7 +14,7 @@ writable_image: #*.sif
 	vagrant up
 	vagrant ssh -- -t ${WRITABLECOMMAND}
 
-Vagrantfile:
+Vagrantfile: Vagrantfile
 	vagrant init ${VM} && \
 	echo 'Adjust memory in Vagrantfile'
 
