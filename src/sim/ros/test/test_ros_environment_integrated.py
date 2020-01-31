@@ -31,7 +31,6 @@ class TestRosIntegrated(unittest.TestCase):
             config=config
         )
 
-    @unittest.skip
     def test_waypoints_in_object_world(self):
         # self.start_test('test_ros_environment')
         state = self._environment.reset()

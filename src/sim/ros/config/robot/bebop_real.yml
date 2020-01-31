@@ -1,3 +1,4 @@
+robot_type: 'quadrotor'
 command_topic: '/bebop/cmd_vel'
 sensors:
   - 'forward_camera'

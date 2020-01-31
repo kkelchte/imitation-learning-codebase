@@ -1,3 +1,4 @@
+robot_type: 'turtlebot'
 command_topic: '/cmd_vel'
 sensors:
   - 'forward_camera'
