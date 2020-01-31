@@ -33,9 +33,12 @@ class RosEnvironment(Environment):
         self._pause_period = 1./config.ros_config.step_rate_fps
         roslaunch_arguments = config.ros_config.ros_launch_config.__dict__
         # Add automatically added values according to robot_name, world_name, actor_configs
-        if config.ros_config.ros_launch_config.robot_name == 'turtlebot_sim' and \
-                config.ros_config.ros_launch_config.gazebo:
-            roslaunch_arguments['turtlebot_sim'] = True
+        if config.ros_config.ros_launch_config.gazebo:
+            roslaunch_arguments['turtlebot_sim'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'turtlebot_sim' else False
+            roslaunch_arguments['drone_sim'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'drone_sim' else False
+
         for actor_config in config.actor_configs:
             roslaunch_arguments[actor_config.name] = True
             roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = actor_config.file

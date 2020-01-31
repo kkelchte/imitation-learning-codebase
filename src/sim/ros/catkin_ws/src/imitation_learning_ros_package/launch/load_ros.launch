@@ -39,6 +39,19 @@
                 output="log"/>
     </group>
 
+    <arg name="drone_sim" default="false"/>
+    <group if="$(arg drone_sim)">
+          <param name="robot_description"
+                 command="$(find xacro)/xacro --inorder $(env HOME)/src/sim/ros/gazebo/urdf/drone_sim.urdf.xacro"/>
+          <node pkg="gazebo_ros"
+                type="spawn_model"
+                name="spawn_urdf"
+                args="-urdf -model drone_sim -x $(arg x_pos) -y $(arg y_pos)
+                -Y $(arg yaw_or) -z $(arg z_pos) -param robot_description"
+                output="log"/>
+    </group>
+
+
     <!--######################## HELPER NODES ########################-->
     <arg name="fsm" default="true"/>
     <arg name="fsm_config" default="debug"/>

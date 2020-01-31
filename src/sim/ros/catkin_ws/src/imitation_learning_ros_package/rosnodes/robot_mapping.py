@@ -2,7 +2,24 @@
 
 """ Listen to the robot's odometry and create a figure of the trajectory.
 
-Color of arrows indicate FSM state
+Assuming background is taken from gazebo image-taker with following GUI camera settings:
+<pose frame=''>0 0 50 0 1.57 1.57</pose>
+<view_controller>ortho</view_controller>
+<projection_type>orthographic</projection_type>
+
+Resolution: 964x1630
+
+Transformation with frames r: robot, c: camera, g: gazebo/global
+
+Translation:
+t^r_c = t^g_c + t^r_g
+with t^g_c = [964/2 1630/2]
+with t^r_g = odometry.pose.position.x, odometry.pose.position.y
+
+Rotation:
+R^r_c = R^g_c * R^r_g
+with R^r_g = Rotation matrix from odometry.pose.orientation.yaw
+with R^g_c = [[0 -1 0][1 0 0][0 0 1]] OR [[0 1 0][-1 0 0][0 0 1]]
 """
 import os
 import sys
@@ -50,11 +67,11 @@ class RobotMapper:
 
         # fields
         self._fsm_state = FsmState.Unknown
-        default_transformation = [1, 0, 1, 0]
-        self._world_to_image_transformation = rospy.get_param('/world/transformation', default=default_transformation)
+        # default_transformation = [1, 0, 1, 0]
+        # self._world_to_image_transformation = rospy.get_param('/world/transformation', default=default_transformation)
         self._min_step_distance = rospy.get_param('/world/min_step_distance', 0.7)
         self._previous_position = []
-        self._initial_arrow = np.asarray([[0., 0.], [7., 0.], [7., 1.5], [9., 0.], [7., -1.5], [7., 0.]])
+        self._initial_arrow = np.asarray([[0., 0.], [7., 0.], [7., 1.5], [9., 0.], [7., -1.5], [7., 0.]]) * 4
         self._positions = []
         self._optima = {  # keep track of smallest and largest value among positions (arrows)
             'min': {
@@ -87,15 +104,7 @@ class RobotMapper:
             self._write_image()
 
     def _translate_position(self, x: float, y: float, z: float = 0) -> tuple:
-        if len(self._world_to_image_transformation) == 4:
-            a, b, c, d = self._world_to_image_transformation
-            return a * x + b, c * y + d
-        elif len(self._world_to_image_transformation) == 6:
-            a, b, c, d, e, f = self._world_to_image_transformation
-            return a * x + b * y + c, d * x + e * y + f
-        else:
-            # TODO add extension to 3d
-            raise NotImplementedError
+        return ()
 
     def _rotate_orientation(self, odom: Odometry) -> np.array:
         _, _, yaw = euler_from_quaternion((odom.pose.pose.orientation.x,
@@ -130,6 +139,11 @@ class RobotMapper:
         self._update_arrow(self._get_transformation_local_to_drone(msg))
 
     def _write_image(self):
+        # figsize = (30, 30)
+        # fig, ax = plt.subplots(1, figsize=figsize)
+        # ax.imshow(np.ones((964, 1630, 3)))
+        # ax.add_patch(patches.Polygon(arrow, linewidth=3, edgecolor=(1, 0, 0), facecolor='None'))
+        
         figsize = (30, 30)
         fig, ax = plt.subplots(1, figsize=figsize)
         if self._background_file:
