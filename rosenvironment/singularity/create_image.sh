@@ -12,13 +12,14 @@ if [ ! -d /usr/data ] ; then
   exit 1
 fi
 
-export SINGULARITY_TMPDIR='/usr/data/tmp'
-export SINGULARITY_CACHEDIR='/usr/data/cache'
+mkdir "/usr/data/tmp"
+mkdir "/usr/data/cache"
 
 if [ -e image-${VERSION}.sif ] ; then
 	echo "found existing singularity image: $(echo ./*.sif)"
 else
-	sudo singularity build image-${VERSION}.sif singularity.def
+	sudo SINGULARITY_TMPDIR='/usr/data/tmp' SINGULARITY_CACHEDIR='/usr/data/cache' \
+	singularity build image-${VERSION}.sif singularity.def
 fi
 
 if [ -e image-${VERSION}.sif ] ; then
