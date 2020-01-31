@@ -163,3 +163,5 @@ virtualenvironment/venv
 /.nv
 /.gazebo
 /.ignition
+/.local
+
