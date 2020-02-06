@@ -7,14 +7,14 @@ WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
 
 shell-writable:
 	vagrant up
-	vagrant ssh -- -t singularity shell --writable /usr/data/writable_image
+	vagrant ssh -- -t sudo singularity shell --writable /usr/data/writable_image
 	# sudo mount -t ntfs /dev/sda2  /usr/data &&
 
 writable_image: #*.sif
 	vagrant up
 	vagrant ssh -- -t ${WRITABLECOMMAND}
 
-Vagrantfile:
+Vagrantfile: Vagrantfile
 	vagrant init ${VM} && \
 	echo 'Adjust memory in Vagrantfile'
 

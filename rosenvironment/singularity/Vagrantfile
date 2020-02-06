@@ -16,7 +16,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "sylabs/singularity-3.2-ubuntu-bionic64"
 #  config.vm.synced_folder "..", "/code"
 
-  config.disksize.size = "40GB"
+  config.disksize.size = "50GB"
   # Add diskspace in guest with following lines:
   # $ sudo su
   # # lsblk
@@ -69,7 +69,7 @@ Vagrant.configure("2") do |config|
     #vb.gui = true
 
     # Customize the amount of memory on the VM:
-    vb.memory = "3000"
+    vb.memory = "4000"
   end
 
   #

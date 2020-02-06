@@ -7,6 +7,14 @@ echo "VERSION = ${VERSION}"
 
 cd /vagrant || exit
 
+if [ ! -d /usr/data ] ; then
+  echo 'sda2 is not mounted on /usr/data'
+  exit 1
+fi
+
+export SINGULARITY_TMPDIR='/usr/data/tmp'
+export SINGULARITY_CACHEDIR='/usr/data/cache'
+
 if [ -e image-${VERSION}.sif ] ; then
 	echo "found existing singularity image: $(echo ./*.sif)"
 else
