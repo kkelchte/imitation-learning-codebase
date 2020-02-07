@@ -23,7 +23,7 @@ from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig, \
     get_fake_odometry, compare_odometry
-from src.core.utils import camelcase_to_snake_format
+from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 """
 test starting ros_environment in subprocess and interact with it through publishing & subscribing topics
@@ -34,7 +34,7 @@ validate by checking ros_environment/state topic
 class TestRosEnvironment(unittest.TestCase):
 
     def start_test(self, config_file: str) -> None:
-        self.output_dir = f'tmp_test_dir/{datetime.strftime(datetime.now(), format="%y-%m-%d_%H-%M-%S")}'
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         with open(f'src/sim/ros/test/config/{config_file}.yml', 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)

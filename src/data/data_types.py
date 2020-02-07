@@ -37,20 +37,24 @@ class Episode:
 
 
 @dataclass
-class Dataset:
-    episodes: List[Episode] = None
-
-
-@dataclass
-class Sample:
-    """Contains all relevant sensor readings related to one time stamp."""
-    label: torch.Tensor = None
-    input: torch.Tensor = None
+class Run:
+    outputs: Dict[str, torch.Tensor] = None
+    inputs: Dict[str, torch.Tensor] = None
     reward: torch.Tensor = None
-    auxiliary_input: Dict[str, torch.Tensor] = None
-    auxiliary_output: Dict[str, torch.Tensor] = None
+
+    def __post_init__(self):
+        if self.outputs is None:
+            self.outputs = {}
+        if self.inputs is None:
+            self.inputs = {}
+        if self.reward is None:
+            self.reward = torch.Tensor()
 
 
 @dataclass
-class TorchDataset:
-    data: List[Sample]
+class Dataset:
+    data: List[Run] = None
+
+    def __post_init__(self):
+        if self.data is None:
+            self.data = []

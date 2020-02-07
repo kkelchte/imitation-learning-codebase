@@ -2,21 +2,21 @@ import os
 import shutil
 import unittest
 
-import numpy as np
 import rospy
 import yaml
 
+from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.common.data_types import TerminalType
 from src.sim.common.environment import EnvironmentConfig
-from src.sim.ros.src.ros_environment import RosEnvironment
+from src.core.utils import get_filename_without_extension
 
 
 class TestDroneSim(unittest.TestCase):
 
     def setUp(self) -> None:
         config_file = 'test_drone_sim'
-        self.output_dir = f'test_dir/{os.path.basename(__file__)}'
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         with open(f'src/sim/ros/test/config/{config_file}.yml', 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)

@@ -5,12 +5,13 @@ import os
 import yaml
 
 from src.scripts.interactive_experiment import InteractiveExperimentConfig, InteractiveExperiment
+from src.core.utils import get_filename_without_extension
 
 
 class TestRosExperiments(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{os.path.basename(__file__)}'
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         os.makedirs(self.output_dir, exist_ok=True)

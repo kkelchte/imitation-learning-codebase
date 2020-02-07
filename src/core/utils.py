@@ -1,3 +1,5 @@
+import os
+
 
 def camelcase_to_snake_format(input: str) -> str:
     output = ''
@@ -9,3 +11,7 @@ def camelcase_to_snake_format(input: str) -> str:
             output += c
         prev_c = c
     return output
+
+
+def get_filename_without_extension(filename: str) -> str:
+    return os.path.basename(filename).split('.')[0]

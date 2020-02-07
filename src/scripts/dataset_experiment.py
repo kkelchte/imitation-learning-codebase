@@ -1,4 +1,4 @@
-
+#!/usr/bin/python3.7
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 

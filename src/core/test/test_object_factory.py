@@ -9,7 +9,7 @@ from dataclasses_json.undefined import UndefinedParameterError
 
 from src.core.object_factory import ObjectFactory, ConfigFactory
 from src.core.config_loader import Config
-
+from src.core.utils import get_filename_without_extension
 
 @dataclass_json
 @dataclass
@@ -68,7 +68,7 @@ class DummyEnvironmentFactory(ObjectFactory):
 class TestObjectFactory(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.TEST_DIR = f'test-{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}'
+        self.TEST_DIR = f'test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.exists(self.TEST_DIR):
             os.makedirs(self.TEST_DIR)
         self.config = {

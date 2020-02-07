@@ -5,12 +5,13 @@ import os
 from src.data.dataset_saver import DataSaver, DataSaverConfig
 from src.data.test.common_utils import state_generator
 from src.sim.common.data_types import TerminalType
+from src.core.utils import get_filename_without_extension
 
 
 class TestDataStorage(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{os.path.basename(__file__)}'
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
