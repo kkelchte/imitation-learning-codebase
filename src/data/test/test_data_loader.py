@@ -67,6 +67,22 @@ class TestDataLoader(unittest.TestCase):
         for run in dataset.data:
             self.assertTrue(check_run_lengths(run=run))
 
+    def test_data_storage_with_sizes(self):
+        config_dict = {
+            'data_directories': [os.path.join(self.dummy_dataset, 'raw_data', d)
+                                 for d in os.listdir(os.path.join(self.dummy_dataset, 'raw_data'))],
+            'output_path': self.output_dir,
+            'inputs': ['forward_camera',
+                       'current_waypoint'],
+            'outputs': ['depth_scan',
+                        'ros_expert']
+        }
+        config = DataLoaderConfig().create(config_dict=config_dict)
+        data_loader = DataLoader(config=config)
+        dataset = data_loader.load(sizes=[(3, 64, 64), (1, 1, 2)])
+        self.assertTrue(dataset.data[0].inputs['forward_camera'][0].size() == (3, 64, 64))
+        self.assertTrue(dataset.data[0].inputs['current_waypoint'][0].size() == (1, 1, 2))
+
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

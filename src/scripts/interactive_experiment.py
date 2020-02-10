@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config, Parser
-from src.core.logger import get_logger
+from src.core.logger import get_logger, cprint
 from src.sim.common.environment_runner import EnvironmentRunnerConfig, EnvironmentRunner
 from src.data.dataset_saver import DataSaverConfig, DataSaver
 
@@ -23,10 +23,10 @@ class InteractiveExperimentConfig(Config):
 class InteractiveExperiment:
 
     def __init__(self, config: InteractiveExperimentConfig):
-        logger = get_logger(name=__name__,
-                            output_path=config.output_path,
-                            quite=False)
-        logger.info(f'Started.')
+        self._logger = get_logger(name=__name__,
+                                  output_path=config.output_path,
+                                  quite=False)
+        cprint(f'Started.', self._logger)
         self._data_saver = DataSaver(config=config.data_saver_config)
         self._environment_runner = EnvironmentRunner(config=config.runner_config,
                                                      data_saver=self._data_saver)

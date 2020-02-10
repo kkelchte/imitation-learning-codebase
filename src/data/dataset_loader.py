@@ -9,6 +9,7 @@ import torch
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
+from src.core.logger import cprint, get_logger, MessageType
 from src.data.data_types import Dataset, Run
 from src.data.utils import load_and_preprocess_file, filename_to_timestamp, torch_append
 
@@ -21,7 +22,7 @@ class DataLoaderConfig(Config):
     outputs: List[str] = None
     reward: str = ''
 
-    def __post_init__(self):
+    def __post_init__(self):  # add default options
         if self.inputs is None:
             self.inputs = ['forward_camera']
         if self.outputs is None:
@@ -32,19 +33,29 @@ class DataLoader:
 
     def __init__(self, config: DataLoaderConfig):
         self._config = config
+        self._logger = get_logger(name=__name__,
+                                  output_path=config.output_path,
+                                  quite=False)
+        cprint(f'Started.', self._logger)
 
-    def load(self, size: tuple = ()) -> Dataset:
+    def load(self, sizes: List[tuple] = None) -> Dataset:
         dataset = Dataset()
         for directory in self._config.data_directories:
-            run = self.load_run(directory, size=size)
+            run = self.load_run(directory, sizes=sizes)
             dataset.data.append(run)
         return dataset
 
-    def load_run(self, directory: str, size: tuple = ()) -> Run:
+    def load_run(self, directory: str, sizes: List[tuple] = None) -> Run:
         run = Run()
         time_stamps = {}
-        for x in self._config.inputs:
-            time_stamps[x], run.inputs[x] = load_data(x, directory, size=size)
+        for x_i, x in enumerate(self._config.inputs):
+            try:
+                time_stamps[x], run.inputs[x] = load_data(x, directory, size=sizes[x_i] if sizes is not None else ())
+            except IndexError:
+                cprint(f'data loader input config {self._config.inputs} mismatches models input sizes {sizes}.',
+                       self._logger, msg_type=MessageType.error)
+                raise IndexError
+
         for y in self._config.outputs:
             time_stamps[y], run.outputs[y] = load_data(y, directory)
         if self._config.reward:
@@ -101,7 +112,7 @@ def load_data(dataype: str, directory: str, size: tuple = ()) -> Tuple[list, tor
     if os.path.isdir(os.path.join(directory, dataype)):
         return load_data_from_directory(os.path.join(directory, dataype), size=size)
     elif os.path.isfile(os.path.join(directory, dataype)):
-        return load_data_from_file(os.path.join(directory, dataype))
+        return load_data_from_file(os.path.join(directory, dataype), size=size)
     else:
         return [], torch.Tensor()
 
@@ -117,7 +128,7 @@ def load_data_from_directory(directory: str, size: tuple = ()) -> Tuple[list, to
     return time_stamps, torch.Tensor(data)
 
 
-def load_data_from_file(filename: str) -> Tuple[list, torch.Tensor]:
+def load_data_from_file(filename: str, size: tuple = ()) -> Tuple[list, torch.Tensor]:
     with open(filename, 'r') as f:
         lines = f.readlines()
     time_stamps = []
@@ -125,6 +136,8 @@ def load_data_from_file(filename: str) -> Tuple[list, torch.Tensor]:
     for line in lines:
         time_stamp, data_stamp = line.strip().split(':')
         time_stamps.append(float(time_stamp))
-        data.append([float(d) for d in data_stamp.strip().split(' ')])
-
-    return time_stamps, torch.Tensor(data)
+        data_vector = torch.Tensor([float(d) for d in data_stamp.strip().split(' ')])
+        if size is not None and size != ():
+            data_vector = data_vector.reshape(size)
+        data.append(data_vector)
+    return time_stamps, torch.stack(data)

@@ -3,7 +3,6 @@ import numpy as np
 import yaml
 
 from src.sim.common.data_types import Action, ActorType
-from src.ai.architectures.models.model import BaseModel
 
 
 """Base actor class and dnn actor class

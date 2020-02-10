@@ -12,8 +12,6 @@ class TestRosExperiments(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
-        if not os.path.isdir(self.output_dir):
-            os.makedirs(self.output_dir)
         os.makedirs(self.output_dir, exist_ok=True)
         with open(f'src/scripts/test/config/test_data_collection_in_ros_config.yml', 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)

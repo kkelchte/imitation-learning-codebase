@@ -37,7 +37,9 @@ def load_and_preprocess_file(file_name: str, sensor_name: str, size: tuple = (),
     if 'camera' in sensor_name:
         data = Image.open(file_name, mode='r')
         if size:
-            data = data.resize(size[:2])
+            # assume [channel, height, width]
+            assert min(size) == size[0]
+            data = data.resize(size[1:])
         data = np.array(data).astype(np.float32)  # uint8 -> float32
         data /= 255.  # 0:255 -> 0:1
         assert np.amax(data) < 1 and np.amin(data) > 0

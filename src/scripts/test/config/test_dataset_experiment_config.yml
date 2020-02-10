@@ -1,0 +1,24 @@
+model_config:
+  architecture: tiny_net_v0
+trainer_config:
+  batch_size: 32
+  data_loader_config:
+    data_directories:
+      - /esat/opal/kkelchte/experimental_data/dummy_dataset/raw_data/20-02-06_13-32-24
+    inputs: # Order needs to be the same as network input (!)
+      - forward_camera
+#      - current_waypoint
+    outputs:
+      - depth_scan
+      - ros_expert
+evaluator_config:
+  data_loader_config:
+    data_directories:
+      - /esat/opal/kkelchte/experimental_data/dummy_dataset/raw_data/20-02-06_13-32-43
+    inputs:
+      - forward_camera
+#      - current_waypoint
+    outputs:
+      - depth_scan
+      - ros_expert
+number_of_epochs: 1
