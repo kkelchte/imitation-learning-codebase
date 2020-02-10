@@ -50,6 +50,9 @@ class Run:
         if self.reward is None:
             self.reward = torch.Tensor()
 
+    def __len__(self):
+        return max([len(o) for o in self.outputs] + [len(i) for i in self.inputs] + [len(self.reward)])
+
 
 @dataclass
 class Dataset:

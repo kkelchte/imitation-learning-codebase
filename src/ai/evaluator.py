@@ -11,7 +11,7 @@ from src.data.dataset_loader import DataLoaderConfig, DataLoader
 
 """Given model, config, data_loader, evaluates a model and logs relevant training information
 
-Depends on ai/architectures/models, data/data_loader, core/logger
+Depends on ai/architectures, data/data_loader, core/logger
 """
 
 
@@ -19,6 +19,8 @@ Depends on ai/architectures/models, data/data_loader, core/logger
 @dataclass
 class EvaluatorConfig(Config):
     data_loader_config: DataLoaderConfig = None
+    device: str = 'cpu'
+    criterion: str = 'MSELoss'
 
 
 class Evaluator:
@@ -32,14 +34,15 @@ class Evaluator:
                                   quite=False)
         if not quiet:
             cprint(f'Started.', self._logger)
+        self._criterion = eval(f'nn.{self._config.loss}(reduction=\'none\').to(self._config.device)')
 
-        self._dataset = self._data_loader.load(sizes=self._model.get_input_sizes())
-
-        print('ok')
+        self._dataset = self._data_loader.load(input_sizes=self._model.get_input_sizes(),
+                                               output_sizes=self._model.get_output_sizes())
 
     def evaluate(self):
         for run in self._dataset.data:
-            predicted_outputs = self._model.forward(list(run.inputs.values()))
-            for output_index, output in enumerate(predicted_outputs):
-                error = np.mean((output - run.outputs.values()[output_index])**2)
-                cprint(f'{run.outputs.keys()[output_index]}: {error} MSE.')
+            model_outputs = self._model.forward(list(run.inputs.values()))
+            for output_index, output in enumerate(model_outputs):
+                targets = run.outputs.values()[output_index]
+                error = self._criterion(output, targets)
+                cprint(f'{run.outputs.keys()[output_index]}: {error} {self._config.criterion}.')

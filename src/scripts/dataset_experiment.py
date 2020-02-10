@@ -53,10 +53,9 @@ class DatasetExperiment:
         for epoch in range(self._config.number_of_epochs):
             cprint(f'epoch: {epoch} / {self._config.number_of_epochs}', self._logger)
             if self._trainer is not None:
-                self._trainer.train()
+                self._trainer.train(epoch=epoch)  # include checkpoint saving.
             if self._evaluator is not None:
                 self._evaluator.evaluate()
-            self._model.save()
         cprint(f'Finished.', self._logger)
 
 

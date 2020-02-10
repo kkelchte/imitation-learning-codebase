@@ -1,8 +1,10 @@
 import os
 import argparse
 import warnings
+from enum import Enum, IntEnum
 
 import yaml
+from datetime import datetime
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json, Undefined
 
@@ -62,7 +64,8 @@ class Config:
         if not os.path.isdir(os.path.join(self.output_path, 'configs')):
             os.makedirs(os.path.join(self.output_path, 'configs'))
         with open(os.path.join(self.output_path, 'configs',
-                               camelcase_to_snake_format(self.__class__.__name__) + '.yml'), 'w') as f:
+                               f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H-%M-%S")}_'
+                               f'{camelcase_to_snake_format(self.__class__.__name__)}.yml'), 'w') as f:
             yaml.dump(data=self.yaml_approved_dict(),
                       stream=f)
 
@@ -72,9 +75,11 @@ class Config:
             if isinstance(value, Config):
                 output_dict[key] = value.yaml_approved_dict()
             else:
-                output_dict[key] = value
+                if isinstance(value, IntEnum):
+                    output_dict[key] = int(value)
+                else:
+                    output_dict[key] = value
         return output_dict
-
 
 
 class Parser(argparse.ArgumentParser):

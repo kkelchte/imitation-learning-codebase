@@ -1,6 +1,7 @@
 import unittest
 import os
 import shutil
+from enum import IntEnum
 
 import yaml
 from datetime import datetime
@@ -9,6 +10,12 @@ from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config, Parser
 from src.core.utils import get_filename_without_extension
+
+
+class DummyEnvironmentType(IntEnum):
+    Ros = 0
+    Gym = 1
+    Real = 2
 
 
 @dataclass_json
@@ -23,6 +30,7 @@ class DummyModelConfig(Config):
 class DummyEnvironmentConfig(Config):
     environment_name: str = None
     number_of_runs: int = 5
+    factory_type: DummyEnvironmentType = 0
 
 
 @dataclass_json

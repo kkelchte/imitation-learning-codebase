@@ -164,4 +164,5 @@ virtualenvironment/venv
 /.gazebo
 /.ignition
 /.local
+test_dir/
 

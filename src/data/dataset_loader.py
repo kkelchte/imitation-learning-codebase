@@ -3,8 +3,9 @@
 """
 import os
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Tuple, Generator
 
+import numpy as np
 import torch
 from dataclasses_json import dataclass_json
 
@@ -37,30 +38,78 @@ class DataLoader:
                                   output_path=config.output_path,
                                   quite=False)
         cprint(f'Started.', self._logger)
+        self._dataset = Dataset()
+        self._num_datapoints = 0
+        self._num_runs = 0
 
-    def load(self, sizes: List[tuple] = None) -> Dataset:
-        dataset = Dataset()
+    def load_dataset(self, input_sizes: List[tuple] = None, output_sizes: List[tuple] = None):
         for directory in self._config.data_directories:
-            run = self.load_run(directory, sizes=sizes)
-            dataset.data.append(run)
-        return dataset
+            run = self.load_run(directory, input_sizes=input_sizes, output_sizes=output_sizes)
+            if len(run) != 0:
+                self._dataset.data.append(run)
+        self.count_datapoints()
+        self._num_runs = len(self._dataset.data)
 
-    def load_run(self, directory: str, sizes: List[tuple] = None) -> Run:
+    def load_run(self, directory: str, input_sizes: List[tuple] = None, output_sizes: List[tuple] = None) -> Run:
         run = Run()
         time_stamps = {}
         for x_i, x in enumerate(self._config.inputs):
             try:
-                time_stamps[x], run.inputs[x] = load_data(x, directory, size=sizes[x_i] if sizes is not None else ())
+                time_stamps[x], run.inputs[x] = load_data(x, directory,
+                                                          size=input_sizes[x_i] if input_sizes is not None else ())
             except IndexError:
-                cprint(f'data loader input config {self._config.inputs} mismatches models input sizes {sizes}.',
+                cprint(f'data loader input config {self._config.inputs} mismatches models input sizes {input_sizes}.',
                        self._logger, msg_type=MessageType.error)
                 raise IndexError
-
-        for y in self._config.outputs:
-            time_stamps[y], run.outputs[y] = load_data(y, directory)
+        for y_i, y in enumerate(self._config.outputs):
+            time_stamps[y], run.outputs[y] = load_data(y, directory,
+                                                       size=output_sizes[y_i] if output_sizes is not None else ())
         if self._config.reward:
             time_stamps['reward'], run.reward = load_data(self._config.reward, directory)
         return arrange_run_according_timestamps(run, time_stamps)
+
+    def count_datapoints(self):
+        # TODO: add extra time dimension (concat frames & sequence)
+        self._num_datapoints = sum([1 for run in self._dataset.data for sample in list(run.inputs.values())[0]])
+
+    def _get_run_length(self, run_index: int) -> int:
+        return len(list(self._dataset.data[run_index].inputs.values())[0])
+
+    def _append_datapoint(self, destination: Run, run_index: int, sample_index: int) -> Run:
+        for x in destination.inputs.keys():
+            destination.inputs[x] = torch_append(destination.inputs[x],
+                                                 self._dataset.data[run_index].inputs[x][sample_index].unsqueeze_(0))
+        for y in destination.outputs.keys():
+            destination.outputs[y] = torch_append(destination.outputs[y],
+                                                  self._dataset.data[run_index].outputs[y][sample_index].unsqueeze_(0))
+        if self._dataset.data[run_index].reward.size() != (0,):
+            destination.reward = torch_append(destination.reward,
+                                              self._dataset.data[run_index].reward[sample_index].unsqueeze_(0))
+        return destination
+
+    def sample_shuffled_batch(self, batch_size: int = 64, max_number_of_batches: int = 1000) -> Generator[Run]:
+        """
+        randomly shuffle data samples in runs in dataset and provide them as ready run objects
+        :param batch_size: number of samples or datapoints in one batch
+        :param max_number_of_batches: define an upperbound in number of batches to end epoch
+        :param dataset: list of runs with inputs, outputs and batches
+        :return: yield a batch up until all samples are done
+        """
+
+        # Calculate sampling weights according to:
+        # TODO   a. number of samples per run
+        # TODO   b. steering balancing
+        # TODO   c. speed balancing
+        # TODO   d. previous error (prioritized sweeping)
+        number_of_batches = min(max_number_of_batches, int(self._num_datapoints / batch_size))
+        for batch_index in range(number_of_batches):
+            batch = Run()
+            for sample in range(batch_size):
+                run_index = int(np.random.choice(list(range(self._num_runs)), p=None))
+                sample_index = int(np.random.choice(list(range(self._get_run_length(run_index=run_index))), p=None))
+                batch = self._append_datapoint(destination=batch, run_index=run_index, sample_index=sample_index)
+            yield batch
+        return
 
 
 def arrange_run_according_timestamps(run: Run, time_stamps: dict) -> Run:

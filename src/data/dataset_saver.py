@@ -40,7 +40,7 @@ class DataSaverConfig(Config):
                 value.iterative_add_output_path(output_path)
         if self.saving_directory is None:
             self.saving_directory = os.path.join(self.output_path, 'raw_data',
-                                                 datetime.strftime(datetime.now(), format="%y-%m-%d_%H-%M-%S"))
+                                                 f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H-%M-%S")}')
 
 
 class DataSaver:
@@ -85,7 +85,7 @@ class DataSaver:
             self._store_frame(
                 Frame(
                     origin='action',
-                    time_stamp_us=state.time_stamp_ms,
+                    time_stamp_ms=state.time_stamp_ms,
                     data=action.value
                 )
             )
