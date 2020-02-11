@@ -1,14 +1,12 @@
 import os
 import argparse
-import warnings
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 import yaml
-from datetime import datetime
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json, Undefined
 
-from src.core.utils import camelcase_to_snake_format
+from src.core.utils import camelcase_to_snake_format, get_date_time_tag
 
 
 def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
@@ -64,7 +62,7 @@ class Config:
         if not os.path.isdir(os.path.join(self.output_path, 'configs')):
             os.makedirs(os.path.join(self.output_path, 'configs'))
         with open(os.path.join(self.output_path, 'configs',
-                               f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H-%M-%S")}_'
+                               f'{get_date_time_tag()}_'
                                f'{camelcase_to_snake_format(self.__class__.__name__)}.yml'), 'w') as f:
             yaml.dump(data=self.yaml_approved_dict(),
                       stream=f)

@@ -7,6 +7,7 @@ from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
+from src.core.utils import get_date_time_tag
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file
 from src.data.data_types import Frame
 from src.sim.common.data_types import State, Action, TerminalType
@@ -40,7 +41,7 @@ class DataSaverConfig(Config):
                 value.iterative_add_output_path(output_path)
         if self.saving_directory is None:
             self.saving_directory = os.path.join(self.output_path, 'raw_data',
-                                                 f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H-%M-%S")}')
+                                                 f'{get_date_time_tag()}')
 
 
 class DataSaver:

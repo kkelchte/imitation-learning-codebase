@@ -50,6 +50,9 @@ class DataLoader:
         self.count_datapoints()
         self._num_runs = len(self._dataset.data)
 
+    def get_data(self) -> list:
+        return self._dataset.data
+
     def load_run(self, directory: str, input_sizes: List[tuple] = None, output_sizes: List[tuple] = None) -> Run:
         run = Run()
         time_stamps = {}
@@ -87,7 +90,9 @@ class DataLoader:
                                               self._dataset.data[run_index].reward[sample_index].unsqueeze_(0))
         return destination
 
-    def sample_shuffled_batch(self, batch_size: int = 64, max_number_of_batches: int = 1000) -> Generator[Run]:
+    def sample_shuffled_batch(self, batch_size: int = 64, max_number_of_batches: int = 1000) -> Generator[Run,
+                                                                                                          None,
+                                                                                                          None]:
         """
         randomly shuffle data samples in runs in dataset and provide them as ready run objects
         :param batch_size: number of samples or datapoints in one batch
@@ -95,7 +100,11 @@ class DataLoader:
         :param dataset: list of runs with inputs, outputs and batches
         :return: yield a batch up until all samples are done
         """
-
+        if len(self._dataset) == 0:
+            msg = f'Cannot sample batch from dataset of size {len(self._dataset)}, ' \
+                  f'make sure you call DataLoader.load_dataset()'
+            cprint(msg, self._logger, msg_type=MessageType.error)
+            raise IOError(msg)
         # Calculate sampling weights according to:
         # TODO   a. number of samples per run
         # TODO   b. steering balancing

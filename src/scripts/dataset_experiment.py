@@ -1,6 +1,6 @@
 #!/usr/bin/python3.7
+import os
 from dataclasses import dataclass
-from typing import Optional
 
 from dataclasses_json import dataclass_json
 
@@ -9,9 +9,7 @@ from src.ai.model import ModelConfig, Model
 from src.ai.trainer import TrainerConfig, Trainer
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint
-from src.data.dataset_loader import DataLoaderConfig
-from src.sim.common.environment_runner import EnvironmentRunnerConfig, EnvironmentRunner
-from src.data.dataset_saver import DataSaverConfig, DataSaver
+from src.core.utils import get_date_time_tag
 
 """Script for collecting dataset / evaluating a model in simulated or real environment.
 
@@ -34,6 +32,14 @@ class DatasetExperimentConfig(Config):
         if self.evaluator_config is None:
             del self.evaluator_config
 
+    def iterative_add_output_path(self, output_path: str) -> None:
+        # assuming output_path is standard ${experiment_name}
+        self.output_path = os.path.join(output_path, 'models',
+                                        f'{get_date_time_tag()}_{self.model_config.architecture}')
+        for key, value in self.__dict__.items():
+            if isinstance(value, Config):
+                value.iterative_add_output_path(self.output_path)
+
 
 class DatasetExperiment:
 
@@ -54,8 +60,8 @@ class DatasetExperiment:
             cprint(f'epoch: {epoch} / {self._config.number_of_epochs}', self._logger)
             if self._trainer is not None:
                 self._trainer.train(epoch=epoch)  # include checkpoint saving.
-            if self._evaluator is not None:
-                self._evaluator.evaluate()
+            if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
+                self._evaluator.evaluate(save_checkpoints=self._trainer is not None)
         cprint(f'Finished.', self._logger)
 
 

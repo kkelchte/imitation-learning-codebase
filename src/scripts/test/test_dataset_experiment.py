@@ -11,6 +11,8 @@ from src.scripts.dataset_experiment import DatasetExperimentConfig, DatasetExper
 class TestDatasetExperiment(unittest.TestCase):
 
     def setUp(self) -> None:
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+
         with open(f'src/scripts/test/config/test_dataset_experiment_config.yml', 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         config_dict['output_path'] = self.output_dir

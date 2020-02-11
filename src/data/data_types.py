@@ -53,6 +53,12 @@ class Run:
     def __len__(self):
         return max([len(o) for o in self.outputs] + [len(i) for i in self.inputs] + [len(self.reward)])
 
+    def get_input(self) -> list:
+        return list(self.inputs.values())
+
+    def get_output(self) -> list:
+        return list(self.outputs.values())
+
 
 @dataclass
 class Dataset:
@@ -61,3 +67,6 @@ class Dataset:
     def __post_init__(self):
         if self.data is None:
             self.data = []
+
+    def __len__(self):
+        return len(self.data)

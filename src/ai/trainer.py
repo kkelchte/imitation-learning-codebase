@@ -8,7 +8,6 @@ from dataclasses_json import dataclass_json
 from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.model import Model
 from src.core.logger import get_logger, cprint
-from src.data.dataset_loader import sample_shuffled_batch
 
 """Given model, config, data_loader, trains a model and logs relevant training information
 
