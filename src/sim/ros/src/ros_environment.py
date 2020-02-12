@@ -256,12 +256,9 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._unpause_gazebo()
         rospy.sleep(self._pause_period)
-        # if self.fsm_state == FsmState.Terminated:
-        #     rospy.sleep(0.05)  # sleep an extra period to ensure terminal_state is updated.
-        if self._terminal_state == TerminalType.Unknown:
-            import ipdb
-            ipdb.set_trace()
-
+        if self._config.ros_config.ros_launch_config.gazebo:
+            self._pause_gazebo()
+        assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminalType.Unknown)
         self._state = State(
             terminal=self._terminal_state,
             sensor_data={
@@ -274,8 +271,6 @@ class RosEnvironment(Environment):
             time_stamp_ms=int(rospy.get_time() * 10**3)
         )
         self._publish_state()
-        if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_gazebo()
         self._terminal_state = TerminalType.Unknown
         return self._state
 

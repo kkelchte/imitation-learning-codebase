@@ -4,9 +4,9 @@ model_config:
 trainer_config:
   device: 'cuda'
   criterion: 'MSELoss'
-  batch_size: 32
+  batch_size: 64
   optimizer: 'SGD'
-  learning_rate: 0.01
+  learning_rate: 0.0001
   data_loader_config:
     output_path: /esat/opal/kkelchte/experimental_data/cube_world
     data_directories:
