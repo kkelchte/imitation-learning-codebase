@@ -19,9 +19,9 @@ class TestModel(unittest.TestCase):
                                            input_signals: List[str],
                                            output_signals: List[str]):
         model_config = {'output_path': self.output_dir,
-                        'load_checkpoint_path': None,
+                        'load_checkpoint_dir': None,
                         'architecture': architecture,
-                        'dropout': 0.}
+                        'dropout': 0.,}
         model = Model(config=ModelConfig().create(config_dict=model_config))
 
         data_loader_config = {
@@ -47,18 +47,35 @@ class TestModel(unittest.TestCase):
     def test_save_load_checkpoint(self) -> None:
         architecture = 'tiny_net_v0'
         model_config = {'output_path': self.output_dir,
-                        'load_checkpoint_path': None,
+                        'load_checkpoint_dir': None,
                         'architecture': architecture,
                         'dropout': 0.}
         model = Model(config=ModelConfig().create(config_dict=model_config))
-        validation_param = model.get_parameters()[0]
+        validation_param = float(model.get_parameters()[0][0, 0, 0, 0])
         model.save_to_checkpoint(tag='5')
         self.assertTrue(os.path.isfile(os.path.join(self.output_dir, 'torch_checkpoints', 'checkpoint_latest')))
         self.assertTrue(os.path.isfile(os.path.join(self.output_dir, 'torch_checkpoints', 'checkpoint_5')))
 
-        model_config['load_checkpoint_path'] = os.path.join(self.output_dir, 'torch_checkpoints', 'checkpoint_latest')
+        model_config['load_checkpoint_dir'] = os.path.join(self.output_dir, 'torch_checkpoints')
         new_model = Model(config=ModelConfig().create(config_dict=model_config))
-        self.assertTrue(validation_param[:] == new_model.get_parameters()[0][:])
+        self.assertTrue(validation_param == float(new_model.get_parameters()[0][0, 0, 0, 0]))
+
+    def test_modular_architecture(self) -> None:
+        #  Test modular loaded networks can:
+        #   1. get_params
+        #   2. save & load checkpoint
+        architecture = 'tiny_net_v1'
+        model_config = {'output_path': self.output_dir,
+                        'load_checkpoint_dir': None,
+                        'architecture': architecture,
+                        'dropout': 0.}
+        model = Model(config=ModelConfig().create(config_dict=model_config))
+        self.assertEqual(13, len(model.get_parameters()))
+        validation_param = float(model.get_parameters()[0][0, 0, 0, 0])
+        model.save_to_checkpoint(tag='test')
+        model_config['load_checkpoint_dir'] = os.path.join(self.output_dir, 'torch_checkpoints')
+        new_model = Model(config=ModelConfig().create(config_dict=model_config))
+        self.assertTrue(validation_param == float(new_model.get_parameters()[0][0, 0, 0, 0]))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

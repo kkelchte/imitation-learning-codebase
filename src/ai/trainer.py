@@ -44,14 +44,14 @@ class Trainer(Evaluator):
 
     def train(self, epoch: int = -1):
         self._optimizer.zero_grad()
-        for batch in sample_shuffled_batch(self._dataset):  # a batch is of type Run
-            model_outputs = self._model.forward(list(batch.inputs.values()))
+        for batch in self._data_loader.sample_shuffled_batch():  # a batch is of type Run
+            model_outputs = self._model.forward(batch.get_input())
             total_loss = torch.Tensor([0])
             for output_index, output in enumerate(model_outputs):
-                targets = batch.outputs.values()[output_index]
+                targets = batch.get_output()[output_index]
                 loss = self._criterion(output, targets)
                 cprint(f'{batch.outputs.keys()[output_index]}: {loss} {self._config.criterion}.')
                 total_loss += self._config.output_weights[output_index] * loss.mean()
             total_loss.backward()  # calculate gradients
             self._optimizer.step()  # apply gradients according to optimizer
-        self._model.save_to_checkpoint(tag=str(epoch) if epoch != -1 else '')
+        self._model.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')

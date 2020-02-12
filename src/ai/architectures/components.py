@@ -1,16 +1,15 @@
 import torch
 from torch import nn
 import torch.nn.functional as functional
+from torch.nn import Module
 
 
-class ArchiterturalComponentBase:
+class ArchiterturalComponentBase(Module):
 
     def __init__(self):
+        super().__init__()
         self.input = (3, 100, 100)
         self.output = (1, 1000)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        pass
 
 
 class FourLayerReLuEncoder(ArchiterturalComponentBase):
