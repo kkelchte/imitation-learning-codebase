@@ -4,5 +4,6 @@ model_config:
 environment_config:
   environment_name: 'gym'
   number_of_runs: 10
+  factory_type: 0
 store_data: True
 output_path: '/tmp'

@@ -8,6 +8,7 @@ import shlex
 import rospy
 from nav_msgs.msg import Odometry
 
+from src.core.utils import get_filename_without_extension
 from src.sim.common.data_types import ProcessState
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
@@ -18,7 +19,7 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 class TestRobotMapper(unittest.TestCase):
 
     def start_test(self) -> None:
-        self.output_dir = f'test_dir/test_{os.path.basename(__file__)}'
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
         config = {

@@ -1,6 +1,7 @@
 import unittest
 import os
 import shutil
+from enum import IntEnum
 
 import yaml
 from datetime import datetime
@@ -8,6 +9,13 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config, Parser
+from src.core.utils import get_filename_without_extension
+
+
+class DummyEnvironmentType(IntEnum):
+    Ros = 0
+    Gym = 1
+    Real = 2
 
 
 @dataclass_json
@@ -22,6 +30,7 @@ class DummyModelConfig(Config):
 class DummyEnvironmentConfig(Config):
     environment_name: str = None
     number_of_runs: int = 5
+    factory_type: DummyEnvironmentType = 0
 
 
 @dataclass_json
@@ -36,7 +45,7 @@ class DummyDataCollectionConfig(Config):
 class TestConfigLoader(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.TEST_DIR = f'test-{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}'
+        self.TEST_DIR = f'test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.exists(self.TEST_DIR):
             os.makedirs(self.TEST_DIR)
         self.config_file = 'src/core/test/config/test_config_loader_config.yml'

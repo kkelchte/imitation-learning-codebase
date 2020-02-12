@@ -1,4 +1,6 @@
 #!/usr/bin/python3.7
+import signal
+import sys
 from typing import Tuple, Union
 
 import numpy as np
@@ -12,6 +14,8 @@ from std_msgs.msg import String, Float32MultiArray, Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 from imitation_learning_ros_package.msg import RosState
+
+from src.core.logger import cprint, MessageType
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
@@ -33,9 +37,12 @@ class RosEnvironment(Environment):
         self._pause_period = 1./config.ros_config.step_rate_fps
         roslaunch_arguments = config.ros_config.ros_launch_config.__dict__
         # Add automatically added values according to robot_name, world_name, actor_configs
-        if config.ros_config.ros_launch_config.robot_name == 'turtlebot_sim' and \
-                config.ros_config.ros_launch_config.gazebo:
-            roslaunch_arguments['turtlebot_sim'] = True
+        if config.ros_config.ros_launch_config.gazebo:
+            roslaunch_arguments['turtlebot_sim'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'turtlebot_sim' else False
+            roslaunch_arguments['drone_sim'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'drone_sim' else False
+
         for actor_config in config.actor_configs:
             roslaunch_arguments[actor_config.name] = True
             roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = actor_config.file
@@ -143,6 +150,15 @@ class RosEnvironment(Environment):
         # Start ROS node:
         rospy.init_node('ros_python_interface', anonymous=True)
 
+        # Catch kill signals:
+        signal.signal(signal.SIGTERM, self._signal_handler)
+
+    def _signal_handler(self, signal_number: int, _) -> None:
+        return_value = self.remove()
+        cprint(f'received signal {signal_number}.', self._logger,
+               msg_type=MessageType.info if return_value == ProcessState.Terminated else MessageType.error)
+        sys.exit(0)
+
     def _set_action(self, msg: Twist, config: ActorConfig) -> None:
         action = Action(actor_name=config.name,
                         actor_type=config.type,
@@ -240,14 +256,18 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._unpause_gazebo()
         rospy.sleep(self._pause_period)
+        # if self.fsm_state == FsmState.Terminated:
+        #     rospy.sleep(0.05)  # sleep an extra period to ensure terminal_state is updated.
+        if self._terminal_state == TerminalType.Unknown:
+            import ipdb
+            ipdb.set_trace()
+
         self._state = State(
             terminal=self._terminal_state,
             sensor_data={
                 sensor_name: self._sensor_values[sensor_name] for sensor_name in self._sensor_values.keys()
                 if self._sensor_values[sensor_name].shape != self._default_sensor_value.shape
             },
-            # TODO update self._state on new actor info
-            #      => self._state will update on the background during rospy.sleep.
             actor_data={
                 actor_name: actor_value for actor_name, actor_value in self._actor_values.items()
             },

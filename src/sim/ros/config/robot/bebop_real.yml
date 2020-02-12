@@ -1,16 +1,20 @@
+robot_type: 'quadrotor'
 command_topic: '/bebop/cmd_vel'
 sensors:
   - 'forward_camera'
-forward_camera_topic: bebop/image_raw
+  - 'odometry'
+  - 'gps'
+forward_camera_topic: '/bebop/image_raw'
 forward_camera_type: 'Image'
 forward_camera_stats:
   height: 128
   width: 128
   depth: 3
-pose_estimation_topic: /odom
-pose_estimation_type: Odometry
-takeoff: /bebop/takeoff
-land: /bebop/land
-emergency: /bebop/emergency
-flattrim: /bebop/flattrim
-aggressiveness: 1
+odometry_topic: '/bebop/odom'
+odometry_type: 'Odometry'
+gps_topic: '/bebop/fix'
+gps_type: 'NavSatFix'
+takeoff: '/bebop/takeoff'
+land: '/bebop/land'
+emergency: '/bebop/emergency'
+flattrim: '/bebop/flattrim'

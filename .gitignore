@@ -153,10 +153,16 @@ virtualenvironment/venv
 # ros variables
 .catkin*
 .ros
-/src/sim/ros/catkin_ws/src/CMakeLists.txt
+./src/sim/ros/catkin_ws/devel
+./src/sim/ros/catkin_ws/build
+./src/sim/ros/extra_ros_ws/devel
+./src/sim/ros/extra_ros_ws/build
 /.python_history
 /.bash_history
 /.gitconfig
 /.nv
 /.gazebo
 /.ignition
+/.local
+test_dir/
+

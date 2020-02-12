@@ -6,6 +6,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 
+from src.core.utils import get_filename_without_extension
 from src.sim.common.data_types import ProcessState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
@@ -21,7 +22,7 @@ class TestRosExpert(unittest.TestCase):
             'fsm': False,
             'control_mapping': False,
             'ros_expert': True,
-            'output_path': 'test_ros_expert_output_path',
+            'output_path': f'test_dir/{get_filename_without_extension(__file__)}',
             'expert_config_file_path_with_extension': f'src/sim/ros/config/actor/{config}.yml'
         }
 

@@ -2,11 +2,30 @@
 
 """ Listen to the robot's odometry and create a figure of the trajectory.
 
-Color of arrows indicate FSM state
+Assuming background is taken from gazebo image-taker with following GUI camera settings:
+<pose frame=''>0 0 50 0 1.57 1.57</pose>
+<view_controller>ortho</view_controller>
+<projection_type>orthographic</projection_type>
+
+Resolution: 964x1630
+
+Transformation with frames r: robot, c: camera, g: gazebo/global
+
+Translation:
+t^r_c = t^g_c + s^g_c . t^r_g
+with t^g_c = [964/2 1630/2] ~ origin of global frame in camera frame
+with t^r_g = odometry.pose.position.x, odometry.pose.position.y
+with s^g_c scaling of global frame coordinates to camera frame
+
+Rotation:
+R^r_c = R^g_c * R^r_g
+with R^r_g = Rotation matrix from odometry.pose.orientation.yaw
+with R^g_c = [[0 -1 0][1 0 0][0 0 1]] OR [[0 1 0][-1 0 0][0 0 1]]
 """
 import os
 import sys
 import time
+from typing import Tuple
 
 import numpy as np
 from numpy.linalg import inv
@@ -50,36 +69,52 @@ class RobotMapper:
 
         # fields
         self._fsm_state = FsmState.Unknown
-        default_transformation = [1, 0, 1, 0]
-        self._world_to_image_transformation = rospy.get_param('/world/transformation', default=default_transformation)
-        self._min_step_distance = rospy.get_param('/world/min_step_distance', 0.7)
-        self._previous_position = []
-        self._initial_arrow = np.asarray([[0., 0.], [7., 0.], [7., 1.5], [9., 0.], [7., -1.5], [7., 0.]])
-        self._positions = []
-        self._optima = {  # keep track of smallest and largest value among positions (arrows)
-            'min': {
-                'x': np.nan,
-                'y': np.nan
-            },
-            'max': {
-                'x': np.nan,
-                'y': np.nan
-            }
+        self._world_name = rospy.get_param('/world/world_name')
+        self._robot_type = rospy.get_param('/robot/robot_type', 'turtlebot')
+        self._gui_camera_height = rospy.get_param('/world/gui_camera_height',
+                                                  20 if self._robot_type == 'turtlebot' else 50)
+        self._background_file = rospy.get_param('/world/background_file', '')
 
+        # Check if background file {world_name}.jpg exists
+        # if robot type is turtlebot, check if {world_name}_20.jpg exists where 20 indicates camera height
+        # if robot type is quadrotor, check if {world_name}_20.jpg exists where 20 indicates camera height
+        if self._background_file == '':
+            if os.path.isfile(f'src/sim/ros/gazebo/backgrounds/{self._world_name}.jpg'):
+                self._background_file = f'src/sim/ros/gazebo/backgrounds/{self._world_name}.jpg'
+            if os.path.isfile(f'src/sim/ros/gazebo/backgrounds/{self._world_name}_{self._gui_camera_height}.jpg'):
+                self._background_file = f'src/sim/ros/gazebo/backgrounds/{self._world_name}_' \
+                                        f'{self._gui_camera_height}.jpg'
+
+        self._rotate_global_to_camera = np.asarray([[-1, 0], [0, 1]])
+        self._translate_global_to_camera = [815, 482]
+        self._scale_global_to_local_frame = {
+            20: [815/28.46, 482/17.],
+            50: [815/11.2, 482/6.7]
         }
-        self._rotate_global_to_local = np.asarray([[-1, 0], [0, 1]])
-        self._background_file = 'src/sim/ros/gazebo/backgrounds/'+rospy.get_param('/world/world_name')+'.png' \
-            if rospy.has_param('/world/world_name') \
-            and os.path.isfile('src/sim/ros/gazebo/backgrounds/' + rospy.get_param('/world/world_name') + '.png') \
-            else ''
 
+        self._previous_position = []
+        self._initial_arrow = np.asarray([[0., 0.], [7., 0.], [7., 1.5], [9., 0.], [7., -1.5], [7., 0.]]) * 4
+        self._arrow_length = np.amax(self._initial_arrow)
+        self._arrow_width = 3
+        self._positions = []
+        # self._optima = {  # keep track of smallest and largest value among positions (arrows)
+        #     'min': {
+        #         'x': np.nan,
+        #         'y': np.nan
+        #     },
+        #     'max': {
+        #         'x': np.nan,
+        #         'y': np.nan
+        #     }
+        #
+        # }
         rospy.init_node('robot_mapper')
         self._rate = rospy.Rate(10)
 
-    def _update_minima_maxima(self, arrow: np.ndarray) -> None:
-        for optimum in ['min', 'max']:
-            for axe_index, axe in enumerate(['x', 'y']):
-                self._optima[optimum][axe] = eval(f'np.nan{optimum}(arrow[:, {axe_index}])')
+    # def _update_minima_maxima(self, arrow: np.ndarray) -> None:
+    #     for optimum in ['min', 'max']:
+    #         for axe_index, axe in enumerate(['x', 'y']):
+    #             self._optima[optimum][axe] = eval(f'np.nan{optimum}(arrow[:, {axe_index}])')
 
     def _update_fsm_state(self, msg: String):
         self._fsm_state = FsmState[msg.data]
@@ -87,15 +122,8 @@ class RobotMapper:
             self._write_image()
 
     def _translate_position(self, x: float, y: float, z: float = 0) -> tuple:
-        if len(self._world_to_image_transformation) == 4:
-            a, b, c, d = self._world_to_image_transformation
-            return a * x + b, c * y + d
-        elif len(self._world_to_image_transformation) == 6:
-            a, b, c, d, e, f = self._world_to_image_transformation
-            return a * x + b * y + c, d * x + e * y + f
-        else:
-            # TODO add extension to 3d
-            raise NotImplementedError
+        return self._translate_global_to_camera[0] + self._scale_global_to_local_frame[self._gui_camera_height][0] * x,\
+               self._translate_global_to_camera[1] + self._scale_global_to_local_frame[self._gui_camera_height][1] * y
 
     def _rotate_orientation(self, odom: Odometry) -> np.array:
         _, _, yaw = euler_from_quaternion((odom.pose.pose.orientation.x,
@@ -120,16 +148,19 @@ class RobotMapper:
         self._positions.append(updated_arrow)
 
     def _odometry_callback(self, msg: Odometry):
-        # adjust orientation towards current_waypoint
-        # cprint(f'Received odometry: \n{msg}', self._logger)
         current_position = self._translate_position(msg.pose.pose.position.x, msg.pose.pose.position.y)
         if len(self._previous_position) == 0:
             self._previous_position = current_position[:]
-        if get_distance(a=current_position, b=self._previous_position) < self._min_step_distance:
+        if get_distance(a=current_position, b=self._previous_position) < self._arrow_length + self._arrow_width:
             return
         self._update_arrow(self._get_transformation_local_to_drone(msg))
 
     def _write_image(self):
+        # figsize = (30, 30)
+        # fig, ax = plt.subplots(1, figsize=figsize)
+        # ax.imshow(np.ones((964, 1630, 3)))
+        # ax.add_patch(patches.Polygon(arrow, linewidth=self._arrow_width, edgecolor=(1, 0, 0), facecolor='None'))
+        
         figsize = (30, 30)
         fig, ax = plt.subplots(1, figsize=figsize)
         if self._background_file:
@@ -138,13 +169,12 @@ class RobotMapper:
         else:
             height = abs(self._optima['max']['x'] - self._optima['min']['x'])
             width = abs(self._optima['max']['y'] - self._optima['min']['y'])
-            image = np.ones((int(height)+10, int(width)+10, 3)) \
+            image = np.ones((int(height)+10, int(width)+10, self._arrow_width)) \
                 if not np.isnan(height) and not np.isnan(width) else np.ones((1000, 1000, 3))
             ax.imshow(image)
 
         for position in self._positions:
             ax.add_patch(patches.Polygon(position, linewidth=1, edgecolor=(1, 0, 0), facecolor='None'))
-        plt.tight_layout()
         fig.savefig(os.path.join(self._output_path, 'trajectory.png'))
 
     def run(self):

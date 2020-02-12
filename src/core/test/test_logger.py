@@ -2,15 +2,14 @@ import unittest
 import os
 import shutil
 
-from datetime import datetime
-
 import src.core.logger as logger
+from src.core.utils import get_filename_without_extension
 
 
 class TestLogger(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.TEST_DIR = f'test-{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}'
+        self.TEST_DIR = f'test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.exists(self.TEST_DIR):
             os.makedirs(self.TEST_DIR)
 

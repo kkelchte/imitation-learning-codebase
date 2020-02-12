@@ -1,0 +1,31 @@
+output_path: /esat/opal/kkelchte/experimental_data/dummy_dataset
+model_config:
+  architecture: tiny_net_v0
+trainer_config:
+  device: 'gpu'
+  criterion: 'MSE'
+  batch_size: 32
+  optimizer: 'SGD'
+  learning_rate: 0.01
+  data_loader_config:
+    data_directories:
+      - raw_data/20-02-06_13-32-24
+    inputs: # Order needs to be the same as network input (!)
+      - forward_camera
+#      - current_waypoint
+    outputs:
+#      - depth_scan
+      - ros_expert
+evaluator_config:
+  device: 'cpu'
+  criterion: 'MSE'
+  data_loader_config:
+    data_directories:
+      - raw_data/20-02-06_13-32-43
+    inputs:
+      - forward_camera
+#      - current_waypoint
+    outputs:
+      - depth_scan
+      - ros_expert
+number_of_epochs: 1

@@ -51,31 +51,33 @@
           <update_rate>10.0</update_rate>
           <camera name="head">
             <!-- 106 degrees horizontal field of view -->
-            <horizontal_fov>1.849</horizontal_fov>
+            <horizontal_fov>3.14</horizontal_fov>
+<!--            <horizontal_fov>6</horizontal_fov>-->
+            <vertical_fov>3.14</vertical_fov>
             <image>
-              <width>410</width>
-              <height>308</height>
+              <width>500</width>
+              <height>500</height>
               <format>R8G8B8</format>
             </image>
             <clip>
               <near>0.02</near>
               <far>300</far>
             </clip>
-            <noise>
-              <type>gaussian</type>
-              <!-- Noise is sampled independently per pixel on each frame.
-                   That pixel's noise value is added to each of its color
-                   channels, which at that point lie in the range [0,1]. -->
-              <mean>0.0</mean>
-              <stddev>0.007</stddev>
-            </noise>
-<!--        <lens>
-              <type>gnomonical</type>
-              <scale_to_hfov>true</scale_to_hfov>
-              <cutoff_angle>1.5707</cutoff_angle>
-              <env_texture_size>512</env_texture_size>
-            </lens>
- -->
+<!--            <noise>-->
+<!--              <type>gaussian</type>-->
+<!--              &lt;!&ndash; Noise is sampled independently per pixel on each frame.-->
+<!--                   That pixel's noise value is added to each of its color-->
+<!--                   channels, which at that point lie in the range [0,1]. &ndash;&gt;-->
+<!--              <mean>0.0</mean>-->
+<!--              <stddev>0.007</stddev>-->
+<!--            </noise>-->
+<!--            <lens>-->
+<!--              <type>gnomonical</type>-->
+<!--              <scale_to_hfov>true</scale_to_hfov>-->
+<!--              <cutoff_angle>1.5707</cutoff_angle>-->
+<!--              <env_texture_size>512</env_texture_size>-->
+<!--            </lens>-->
+
           </camera>
           <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
             <alwaysOn>true</alwaysOn>

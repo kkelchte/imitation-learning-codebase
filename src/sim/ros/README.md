@@ -1,3 +1,25 @@
+# Creating a new world:
+
+_make world in gazebo_
+Draft a world file in gazebo, save it in gazebo/worlds and modify it.
+Adjust GUI camera to:
+```xml
+<gui fullscreen='0'>
+  <camera name='user_camera'>
+    <pose frame=''>0 0 50 0 1.57 1.57</pose>
+    <view_controller>ortho</view_controller>
+    <projection_type>orthographic</projection_type>
+  </camera>
+</gui>
+``` 
+
+_define world config_
+Define yml config file in config/world and modify it to specify the terminal conditions.
+
+_test expert_
+
+Run test_ros_environment_integrated
+
 # Structure:
 
 _catkin_ws_
