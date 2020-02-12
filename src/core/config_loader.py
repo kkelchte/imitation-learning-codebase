@@ -41,6 +41,7 @@ class Config:
                 config_dict = yaml.load(f, Loader=yaml.FullLoader)
         instant = self.from_dict(config_dict)
         instant.iterative_add_output_path(output_path=instant.output_path)
+        instant.post_init()
         instant.iterative_check_for_none()
         instant.save_config_file()
         return instant
@@ -53,10 +54,11 @@ class Config:
                 value.iterative_check_for_none()
 
     def iterative_add_output_path(self, output_path: str) -> None:
-        self.output_path = output_path
+        if self.output_path is None:
+            self.output_path = output_path
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
-                value.iterative_add_output_path(output_path)
+                value.iterative_add_output_path(self.output_path)
 
     def save_config_file(self) -> None:
         if not os.path.isdir(os.path.join(self.output_path, 'configs')):
@@ -78,6 +80,11 @@ class Config:
                 else:
                     output_dict[key] = value
         return output_dict
+
+    def post_init(self):
+        for key, value in self.__dict__.items():
+            if isinstance(value, Config):
+                value.post_init()
 
 
 class Parser(argparse.ArgumentParser):

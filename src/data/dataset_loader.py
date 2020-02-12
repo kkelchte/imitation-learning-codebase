@@ -29,6 +29,15 @@ class DataLoaderConfig(Config):
         if self.outputs is None:
             self.outputs = ['ros_expert']
 
+    def iterative_add_output_path(self, output_path: str) -> None:
+        if self.output_path is None:
+            self.output_path = output_path
+        if not self.data_directories[0].startswith('/'):
+            self.data_directories = [os.path.join(self.output_path, d) for d in self.data_directories]
+        for key, value in self.__dict__.items():
+            if isinstance(value, Config):
+                value.iterative_add_output_path(output_path)
+
 
 class DataLoader:
 
@@ -42,18 +51,24 @@ class DataLoader:
         self._num_datapoints = 0
         self._num_runs = 0
 
-    def load_dataset(self, input_sizes: List[tuple] = None, output_sizes: List[tuple] = None):
-        for directory in self._config.data_directories:
+    def load_dataset(self, input_sizes: List[List] = None, output_sizes: List[List] = None):
+        for dir_index, directory in enumerate(self._config.data_directories):
+            # TODO: change to tqdm
+            if dir_index % 10 == 0:
+                cprint(f'loading dir {dir_index}/{len(self._config.data_directories)}')
             run = self.load_run(directory, input_sizes=input_sizes, output_sizes=output_sizes)
             if len(run) != 0:
                 self._dataset.data.append(run)
         self.count_datapoints()
         self._num_runs = len(self._dataset.data)
 
+        cprint(f'Loaded {self._num_runs} from {len(self._config.data_directories)} directories', self._logger,
+               msg_type=MessageType.error if self._num_runs == 0 else MessageType.info)
+
     def get_data(self) -> list:
         return self._dataset.data
 
-    def load_run(self, directory: str, input_sizes: List[tuple] = None, output_sizes: List[tuple] = None) -> Run:
+    def load_run(self, directory: str, input_sizes: List[List] = None, output_sizes: List[List] = None) -> Run:
         run = Run()
         time_stamps = {}
         for x_i, x in enumerate(self._config.inputs):
@@ -79,16 +94,26 @@ class DataLoader:
         return len(list(self._dataset.data[run_index].inputs.values())[0])
 
     def _append_datapoint(self, destination: Run, run_index: int, sample_index: int) -> Run:
-        for x in destination.inputs.keys():
+        for x in self._dataset.data[run_index].inputs.keys():
             destination.inputs[x] = torch_append(destination.inputs[x],
                                                  self._dataset.data[run_index].inputs[x][sample_index].unsqueeze_(0))
-        for y in destination.outputs.keys():
+        for y in self._dataset.data[run_index].outputs.keys():
             destination.outputs[y] = torch_append(destination.outputs[y],
                                                   self._dataset.data[run_index].outputs[y][sample_index].unsqueeze_(0))
         if self._dataset.data[run_index].reward.size() != (0,):
             destination.reward = torch_append(destination.reward,
                                               self._dataset.data[run_index].reward[sample_index].unsqueeze_(0))
         return destination
+
+    def _get_empty_run(self) -> Run:
+        run = Run()
+        for x in self._dataset.data[0].inputs.keys():
+            run.inputs[x] = torch.Tensor()
+        for y in self._dataset.data[0].outputs.keys():
+            run.outputs[y] = torch.Tensor()
+        if self._dataset.data[0].reward.size() != (0,):
+            run.reward = torch.Tensor()
+        return run
 
     def sample_shuffled_batch(self, batch_size: int = 64, max_number_of_batches: int = 1000) -> Generator[Run,
                                                                                                           None,
@@ -112,12 +137,13 @@ class DataLoader:
         # TODO   d. previous error (prioritized sweeping)
         number_of_batches = min(max_number_of_batches, int(self._num_datapoints / batch_size))
         for batch_index in range(number_of_batches):
-            batch = Run()
+            batch = self._get_empty_run()
             for sample in range(batch_size):
                 run_index = int(np.random.choice(list(range(self._num_runs)), p=None))
                 sample_index = int(np.random.choice(list(range(self._get_run_length(run_index=run_index))), p=None))
                 batch = self._append_datapoint(destination=batch, run_index=run_index, sample_index=sample_index)
-            yield batch
+            if len(batch) != 0:
+                yield batch
         return
 
 

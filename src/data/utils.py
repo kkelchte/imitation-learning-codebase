@@ -42,7 +42,7 @@ def load_and_preprocess_file(file_name: str, sensor_name: str, size: tuple = (),
             data = data.resize(size[1:])
         data = np.array(data).astype(np.float32)  # uint8 -> float32
         data /= 255.  # 0:255 -> 0:1
-        assert np.amax(data) < 1 and np.amin(data) > 0
+        assert np.amax(data) <= 1 and np.amin(data) >= 0
         if grayscale:
             data = data.mean(axis=-1, keepdims=True)
         data = data.swapaxes(1, 2).swapaxes(0, 1)  # make channel first

@@ -9,7 +9,7 @@ from src.ai.architectures.base_net import BaseNet
 
 class Net(BaseNet):
 
-    def __init__(self, output_sizes: list = None, dropout: float = 0.0):
+    def __init__(self, output_sizes: List[List] = None, dropout: float = 0.0):
         super().__init__(dropout=dropout)
         self.output_sizes = output_sizes if output_sizes is not None else [[1]]
 
@@ -21,11 +21,11 @@ class Net(BaseNet):
         if self.dropout_rate:
             self.dropout = nn.Dropout(p=self._config.dropout_rate)
 
-        self.fc1 = nn.Linear(2 * 2 * 256, 512)
+        self.fc1 = nn.Linear(6 * 6 * 256, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 1, bias=False)
+        self.fc3 = nn.Linear(256, self.output_sizes[0][0], bias=False)
 
-        self.input_sizes = [(3, 128, 128)]
+        self.input_sizes = [[3, 128, 128]]
 
     def forward(self, inputs: List[torch.Tensor], train: bool = False) -> List[torch.Tensor]:
         """
@@ -41,7 +41,7 @@ class Net(BaseNet):
         x = functional.relu(self.conv3(x))
         x = functional.relu(self.conv4(x))
 
-        x = x.view(-1, 2 * 2 * 256)
+        x = x.view(-1, 6 * 6 * 256)
         if self.dropout_rate != 0:
             x = self.dropout(x)
         x = functional.relu(self.fc1(x))

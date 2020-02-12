@@ -1,0 +1,19 @@
+world_name: cube_world
+starting_height: 0
+delay_evaluation: 0.1
+goal:
+  x:
+    min: 1.7
+    max: 2.2
+  y:
+    min: -1
+    max: 1
+  z:
+    min: -1
+    max: 1
+waypoints:
+  - [0, 4]
+  - [4, 4]
+  - [4, 0]
+  - [0, 0]
+waypoint_reached_distance: 0.1

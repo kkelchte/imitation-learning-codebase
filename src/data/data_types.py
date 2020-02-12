@@ -51,7 +51,8 @@ class Run:
             self.reward = torch.Tensor()
 
     def __len__(self):
-        return max([len(o) for o in self.outputs] + [len(i) for i in self.inputs] + [len(self.reward)])
+        return max([len(o) for o in self.outputs.values()] +
+                   [len(i) for i in self.inputs.values()] + [len(self.reward)])
 
     def get_input(self) -> list:
         return list(self.inputs.values())

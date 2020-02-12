@@ -11,9 +11,9 @@ from src.ai.architectures.components import FourLayerReLuEncoder, ThreeLayerCont
 
 class Net(BaseNet):
 
-    def __init__(self, output_sizes: list = None, dropout: float = 0.0):
+    def __init__(self, output_sizes: List[List] = None, dropout: float = 0.0):
         super().__init__(dropout=dropout)
-        self.input_sizes = [(3, 128, 128)]
+        self.input_sizes = [[3, 128, 128]]
         self.output_sizes = output_sizes if output_sizes is not None else [[1]]
 
         if self.dropout_rate:
@@ -21,7 +21,7 @@ class Net(BaseNet):
 
         #  To check: if elements gradients are set to zero correctly + to eval/train mode
         self.encoder = FourLayerReLuEncoder()
-        self.decoder = ThreeLayerControlDecoder(output_size=self.output_sizes[0][-1])
+        self.decoder = ThreeLayerControlDecoder(output_size=self.output_sizes[0][0])
 
     def forward(self, inputs: List[torch.Tensor], train: bool = False) -> List[torch.Tensor]:
         """

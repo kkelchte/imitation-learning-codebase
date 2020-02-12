@@ -36,23 +36,24 @@ class Evaluator:
                                   quite=False)
         if not quiet:
             cprint(f'Started.', self._logger)
-        self._criterion = eval(f'nn.{self._config.loss}(reduction=\'none\').to(self._config.device)')
+        self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._config.device)')
 
         self._data_loader.load_dataset(input_sizes=self._model.get_input_sizes(),
                                        output_sizes=self._model.get_output_sizes())
 
         self._minimum_error = float(10**6)
 
-    def evaluate(self, save_checkpoints: bool = False) -> None:
+    def evaluate(self, save_checkpoints: bool = False) -> float:
         total_error = []
         for run in self._data_loader.get_data():
             model_outputs = self._model.forward(run.get_input())
             for output_index, output in enumerate(model_outputs):
                 targets = run.get_output()[output_index]
-                error = self._criterion(output, targets)
-                total_error.append(error.mean())
-                cprint(f'{run.outputs.keys()[output_index]}: {error} {self._config.criterion}.')
+                error = self._criterion(output, targets).mean()
+                total_error.append(error)
+                cprint(f'{list(run.outputs.keys())[output_index]}: {error} {self._config.criterion}.')
         total_error = float(torch.Tensor(total_error).mean())
         if save_checkpoints and total_error < self._minimum_error:
             self._model.save_to_checkpoint(tag='best')
             self._minimum_error = total_error
+        return total_error

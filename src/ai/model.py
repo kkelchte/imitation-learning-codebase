@@ -29,12 +29,15 @@ class ModelConfig(Config):
     load_checkpoint_dir: str = None
     architecture: str = None
     dropout: float = 0.
+    output_sizes: List[List] = None
     initialisation_type: InitializationType = InitializationType.Xavier
     pretrained: bool = False
 
     def __post_init__(self):
         if self.load_checkpoint_dir is None:
             del self.load_checkpoint_dir
+        if self.output_sizes is None:
+            self.output_sizes = [[6]]  # default to six dimensional action space.
 
 
 class Model:
@@ -48,7 +51,8 @@ class Model:
         os.makedirs(self._checkpoint_directory, exist_ok=True)
         cprint(f'Started.', self._logger)
         self._architecture = eval(f'{self._config.architecture}.Net('
-                                  f'dropout={self._config.dropout})')
+                                  f'dropout={self._config.dropout},'
+                                  f'output_sizes={self._config.output_sizes})')
 
         if self._config.load_checkpoint_dir:
             self.load_from_checkpoint(checkpoint_dir=self._config.load_checkpoint_dir)
@@ -56,7 +60,7 @@ class Model:
             self.initialize_architecture_weights(self._config.initialisation_type)
 
     def forward(self, inputs: List[torch.Tensor], train: bool = False):
-        return self._architecture.forward(*inputs, train=train)
+        return self._architecture.forward(inputs=inputs, train=train)
 
     def initialize_architecture_weights(self, initialisation_type: InitializationType = 0):
         for p in self.get_parameters():

@@ -1,14 +1,16 @@
 supervision_topic: '/control_mapper/supervision'
 mapping:
+  Unknown:
+    command: '/actor/keyboard/cmd_vel'
+  Terminated:
+    command: '/actor/keyboard/cmd_vel'
   Running:
-    command: '/actor/ros_expert'
-    supervision: '/actor/neural_network'
-  TakeOff:
-    command: '/actor/ros_expert'
+    command: '/actor/ros_expert/cmd_vel'
+    supervision: '/actor/keyboard/cmd_vel'
+  TakeOff: {}
   TakenOver:
-    command: '/actor/keyboard'
-  DriveBack:
-    command: '/actor/drive_back'
+    command: '/actor/keyboard/cmd_vel'
+  DriveBack: {}
 
 
 #max_time

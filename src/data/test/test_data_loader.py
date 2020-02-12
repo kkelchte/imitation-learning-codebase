@@ -54,20 +54,20 @@ class TestDataLoader(unittest.TestCase):
         }
         config = DataLoaderConfig().create(config_dict=config_dict)
         data_loader = DataLoader(config=config)
-        dataset = data_loader.load()
+        data_loader.load_dataset()
 
         # assert nothing is empty
         for x in config.inputs:
-            self.assertTrue(x in dataset.data[0].inputs.keys())
-            self.assertTrue(sum(dataset.data[0].inputs[x].shape) > 0)
+            self.assertTrue(x in data_loader.get_data()[0].inputs.keys())
+            self.assertTrue(sum(data_loader.get_data()[0].inputs[x].shape) > 0)
         for y in config.outputs:
-            self.assertTrue(y in dataset.data[0].outputs.keys())
-            self.assertTrue(sum(dataset.data[0].outputs[y].shape) > 0)
+            self.assertTrue(y in data_loader.get_data()[0].outputs.keys())
+            self.assertTrue(sum(data_loader.get_data()[0].outputs[y].shape) > 0)
         # assert lengths are equal
-        for run in dataset.data:
+        for run in data_loader.get_data():
             self.assertTrue(check_run_lengths(run=run))
 
-    def test_data_storage_with_sizes(self):
+    def test_data_storage_with_input_sizes(self):
         config_dict = {
             'data_directories': [os.path.join(self.dummy_dataset, 'raw_data', d)
                                  for d in os.listdir(os.path.join(self.dummy_dataset, 'raw_data'))],
@@ -79,9 +79,23 @@ class TestDataLoader(unittest.TestCase):
         }
         config = DataLoaderConfig().create(config_dict=config_dict)
         data_loader = DataLoader(config=config)
-        dataset = data_loader.load(sizes=[(3, 64, 64), (1, 1, 2)])
-        self.assertTrue(dataset.data[0].inputs['forward_camera'][0].size() == (3, 64, 64))
-        self.assertTrue(dataset.data[0].inputs['current_waypoint'][0].size() == (1, 1, 2))
+        data_loader.load_dataset(input_sizes=[[3, 64, 64], [1, 1, 2]])
+        self.assertTrue(data_loader.get_data()[0].inputs['forward_camera'][0].size() == (3, 64, 64))
+        self.assertTrue(data_loader.get_data()[0].inputs['current_waypoint'][0].size() == (1, 1, 2))
+
+    def test_data_loader_with_relative_paths(self):
+        config_dict = {'output_path': '/esat/opal/kkelchte/experimental_data/dummy_dataset',
+                       'data_directories': ['raw_data/20-02-06_13-32-24',
+                                            'raw_data/20-02-06_13-32-43'],
+                       'inputs': ['forward_camera'],
+                       'outputs': ['ros_expert']}
+        config = DataLoaderConfig().create(config_dict=config_dict)
+        for d in config.data_directories:
+            self.assertTrue(os.path.isdir(d))
+        data_loader = DataLoader(config=config)
+        data_loader.load_dataset(input_sizes=[[3, 128, 128]],
+                                 output_sizes=[[6]])
+        self.assertTrue(len(data_loader.get_data()) != 0)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
