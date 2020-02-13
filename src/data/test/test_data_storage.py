@@ -53,6 +53,23 @@ class TestDataStorage(unittest.TestCase):
             self.assertEqual(len(expert_controls), total)
         self.assertTrue(not os.path.exists(os.path.join(self.output_dir, 'custom_place', 'depth')))
 
+    def test_create_train_validation_hdf5_files(self):
+        config_dict = {
+            'output_path': self.output_dir,
+            'sensors': ['rgb']
+        }
+        config = DataSaverConfig().create(config_dict=config_dict)
+        data_saver = DataSaver(config=config)
+        total = 0
+        for state in state_generator():
+            if state.terminal != TerminalType.Unknown:
+                total += 1
+            data_saver.save(state=state,
+                            action=None)
+        data_saver.create_train_validation_hdf5_files()
+
+        print('finished')
+
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

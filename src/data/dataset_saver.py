@@ -109,3 +109,7 @@ class DataSaver:
         elif len(frame.data.shape) == 1:
             store_array_to_file(data=frame.data, file_name=os.path.join(self._config.saving_directory, frame.origin),
                                 time_stamp=frame.time_stamp_ms)
+
+    def create_train_validation_hdf5_files(self) -> None:
+
+        pass
