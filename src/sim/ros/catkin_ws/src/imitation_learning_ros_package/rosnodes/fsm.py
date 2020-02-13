@@ -13,7 +13,7 @@ from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
-from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
+from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.logger import get_logger, cprint
 from src.sim.common.data_types import TerminalType
 from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path

@@ -17,7 +17,7 @@ from imitation_learning_ros_package.msg import RosState
 
 from src.core.logger import cprint, MessageType
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.extra_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
+from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
 from src.sim.common.actors import ActorConfig
 from src.sim.common.data_types import Action, State, TerminalType, ActorType, ProcessState
