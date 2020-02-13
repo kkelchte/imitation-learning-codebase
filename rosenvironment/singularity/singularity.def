@@ -61,10 +61,12 @@ apt-get update && apt-get install -q -y \
 apt-get update && apt-get install -yq\
     python3-yaml \
     python3-rospkg-modules \
+    ros-melodic-roslint \
     ros-melodic-hector-sensors-gazebo \
     ros-melodic-hector-gazebo \
     ros-melodic-hector-gazebo-worlds \
     ros-melodic-hector-gazebo-plugins \
+    ros-melodic-hector-models \
     ros-melodic-geographic-msgs \
     ros-melodic-hardware-interface \
     ros-melodic-controller-interface \
