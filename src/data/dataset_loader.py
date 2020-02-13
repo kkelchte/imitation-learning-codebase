@@ -8,32 +8,40 @@ from typing import List, Tuple, Generator
 import numpy as np
 import torch
 from dataclasses_json import dataclass_json
+from tqdm import tqdm
 
 from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
 from src.data.data_types import Dataset, Run
-from src.data.utils import load_and_preprocess_file, filename_to_timestamp, torch_append
+from src.data.utils import load_and_preprocess_file, filename_to_timestamp, torch_append, \
+    arrange_run_according_timestamps, load_data, load_dataset_from_hdf5
 
 
 @dataclass_json
 @dataclass
 class DataLoaderConfig(Config):
     data_directories: List[str] = None
+    hdf5_file: str = ''
     inputs: List[str] = None
     outputs: List[str] = None
     reward: str = ''
 
-    def __post_init__(self):  # add default options
+    def post_init(self):  # add default options
         if self.inputs is None:
             self.inputs = ['forward_camera']
         if self.outputs is None:
             self.outputs = ['ros_expert']
+        if self.data_directories is None:
+            del self.data_directories
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
             self.output_path = output_path
-        if not self.data_directories[0].startswith('/'):
+        if self.data_directories is not None and len(self.data_directories) != 0 \
+                and not self.data_directories[0].startswith('/'):
             self.data_directories = [os.path.join(self.output_path, d) for d in self.data_directories]
+        if len(self.hdf5_file) != 0 and not self.hdf5_file.startswith('/'):
+            self.hdf5_file = os.path.join(self.output_path, self.hdf5_file)
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 value.iterative_add_output_path(output_path)
@@ -52,18 +60,22 @@ class DataLoader:
         self._num_runs = 0
 
     def load_dataset(self, input_sizes: List[List] = None, output_sizes: List[List] = None):
-        for dir_index, directory in enumerate(self._config.data_directories):
-            # TODO: change to tqdm
-            if dir_index % 10 == 0:
-                cprint(f'loading dir {dir_index}/{len(self._config.data_directories)}')
-            run = self.load_run(directory, input_sizes=input_sizes, output_sizes=output_sizes)
-            if len(run) != 0:
-                self._dataset.data.append(run)
+        if self._config.hdf5_file is not '':
+            self._dataset = load_dataset_from_hdf5(self._config.hdf5_file,
+                                                   self._config.inputs,
+                                                   self._config.outputs)
+            cprint(f'Loaded {len(self._dataset.data)} from {self._config.hdf5_file}',
+                   self._logger, msg_type=MessageType.error if len(self._dataset.data) == 0 else MessageType.info)
+        else:
+            for directory in tqdm(self._config.data_directories, ascii=True, desc=__name__):
+                run = self.load_run(directory, input_sizes=input_sizes, output_sizes=output_sizes)
+                if len(run) != 0:
+                    self._dataset.data.append(run)
+            cprint(f'Loaded {len(self._dataset.data)} from {len(self._config.data_directories)} directories',
+                   self._logger, msg_type=MessageType.error if len(self._dataset.data) == 0 else MessageType.info)
+
         self.count_datapoints()
         self._num_runs = len(self._dataset.data)
-
-        cprint(f'Loaded {self._num_runs} from {len(self._config.data_directories)} directories', self._logger,
-               msg_type=MessageType.error if self._num_runs == 0 else MessageType.info)
 
     def get_data(self) -> list:
         return self._dataset.data
@@ -145,83 +157,3 @@ class DataLoader:
             if len(batch) != 0:
                 yield batch
         return
-
-
-def arrange_run_according_timestamps(run: Run, time_stamps: dict) -> Run:
-    """Ensure there is a data row in the torch tensor for each time stamp.
-    """
-    clean_run = Run()
-    for x in run.inputs.keys():
-        clean_run.inputs[x] = torch.Tensor()
-        assert len(time_stamps[x]) == len(run.inputs[x])
-    for y in run.outputs.keys():
-        clean_run.outputs[y] = torch.Tensor()
-        assert len(time_stamps[y]) == len(run.outputs[y])
-
-    while min([len(time_stamps[data_type]) for data_type in time_stamps.keys()]) != 0:
-        # get first coming time stamp
-        current_time_stamp = min([time_stamps[data_type][0] for data_type in time_stamps.keys()])
-        # check if all inputs & outputs & rewards have a value for this stamp
-        check = True
-        for x in run.inputs.keys():
-            check = time_stamps[x][0] == current_time_stamp and check
-        for y in run.outputs.keys():
-            check = time_stamps[y][0] == current_time_stamp and check
-        if run.reward.size() != (0,):
-            check = time_stamps['reward'][0] == current_time_stamp and check
-        if check:  # if check, add tensor to current tensors
-            for x in run.inputs.keys():
-                clean_run.inputs[x] = torch_append(clean_run.inputs[x], run.inputs[x][0].unsqueeze_(0))
-            for y in run.outputs.keys():
-                clean_run.outputs[y] = torch_append(clean_run.outputs[y], run.outputs[y][0].unsqueeze_(0))
-            if run.reward.size() != (0,):
-                clean_run.reward = torch_append(clean_run.reward, run.reward[0].unsqueeze_(0))
-        # discard data corresponding to this timestamp
-        for x in run.inputs.keys():
-            while len(time_stamps[x]) != 0 and time_stamps[x][0] == current_time_stamp:
-                run.inputs[x] = run.inputs[x][1:] if len(run.inputs[x]) > 1 else []
-                time_stamps[x] = time_stamps[x][1:] if len(time_stamps[x]) > 1 else []
-        for y in run.outputs.keys():
-            while len(time_stamps[y]) != 0 and time_stamps[y][0] == current_time_stamp:
-                run.outputs[y] = run.outputs[y][1:] if len(run.outputs[y]) > 1 else []
-                time_stamps[y] = time_stamps[y][1:] if len(time_stamps[y]) > 1 else []
-        while run.reward.size() != (0,) and len(time_stamps['reward']) != 0 \
-                and time_stamps['reward'][0] == current_time_stamp:
-            run.reward = run.reward[1:] if len(run.reward) > 1 else []
-            time_stamps['reward'] = time_stamps['reward'][1:] if len(time_stamps['reward']) > 1 else []
-    return clean_run
-
-
-def load_data(dataype: str, directory: str, size: tuple = ()) -> Tuple[list, torch.Tensor]:
-    if os.path.isdir(os.path.join(directory, dataype)):
-        return load_data_from_directory(os.path.join(directory, dataype), size=size)
-    elif os.path.isfile(os.path.join(directory, dataype)):
-        return load_data_from_file(os.path.join(directory, dataype), size=size)
-    else:
-        return [], torch.Tensor()
-
-
-def load_data_from_directory(directory: str, size: tuple = ()) -> Tuple[list, torch.Tensor]:
-    time_stamps = []
-    data = []
-    for f in sorted(os.listdir(directory)):
-        data.append(load_and_preprocess_file(file_name=os.path.join(directory, f),
-                                             sensor_name=os.path.basename(directory),
-                                             size=size))
-        time_stamps.append(filename_to_timestamp(f))
-    return time_stamps, torch.Tensor(data)
-
-
-def load_data_from_file(filename: str, size: tuple = ()) -> Tuple[list, torch.Tensor]:
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-    time_stamps = []
-    data = []
-    for line in lines:
-        time_stamp, data_stamp = line.strip().split(':')
-        time_stamps.append(float(time_stamp))
-        data_vector = torch.Tensor([float(d) for d in data_stamp.strip().split(' ')])
-        if size is not None and size != ():
-            data_vector = data_vector.reshape(size)
-        data.append(data_vector)
-    return time_stamps, torch.stack(data)

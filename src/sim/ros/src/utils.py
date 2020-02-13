@@ -95,9 +95,10 @@ def adapt_action_to_ros_message(action: Action) -> RosAction:
 def adapt_action_to_twist(action: Action) -> Union[Twist, None]:
     if action.value is None:
         return None
+    values = action.value.flatten()
     twist = Twist()
     twist.linear.x, twist.linear.y, twist.linear.z, twist.angular.x, twist.angular.y, twist.angular.z = \
-        tuple(action.value)
+        tuple(values)
     return twist
 
 

@@ -16,7 +16,7 @@ def state_generator():
         else:
             state.terminal = TerminalType.Success
         state.time_stamp_ms = step
-        state.sensor_data = {'rgb': np.ones((300, 300, 3)), 'depth': np.ones((360,))}
+        state.sensor_data = {'camera': np.ones((300, 300, 3)), 'depth': np.ones((360,))}
         state.actor_data = {'expert': Action(actor_name='expert',
                                              actor_type=ActorType.Expert,
                                              value=np.ones((6,)))}

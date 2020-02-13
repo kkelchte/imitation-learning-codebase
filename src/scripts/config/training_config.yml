@@ -9,90 +9,92 @@ trainer_config:
   learning_rate: 0.0001
   data_loader_config:
     output_path: /esat/opal/kkelchte/experimental_data/cube_world
-    data_directories:
-      - raw_data/20-02-12_15-32-52
-      - raw_data/20-02-12_15-41-30
-      - raw_data/20-02-12_16-23-40
-      - raw_data/20-02-12_16-31-15
-      - raw_data/20-02-12_14-32-28
-      - raw_data/20-02-12_14-39-52
-      - raw_data/20-02-12_14-47-16
-      - raw_data/20-02-12_14-54-40
-      - raw_data/20-02-12_15-02-04
-      - raw_data/20-02-12_15-10-41
-      - raw_data/20-02-12_15-18-05
-      - raw_data/20-02-12_15-25-29
-      - raw_data/20-02-12_15-34-06
-      - raw_data/20-02-12_15-42-44
-      - raw_data/20-02-12_16-25-01
-      - raw_data/20-02-12_14-33-42
-      - raw_data/20-02-12_14-41-06
-      - raw_data/20-02-12_14-48-30
-      - raw_data/20-02-12_14-55-54
-      - raw_data/20-02-12_15-03-18
-      - raw_data/20-02-12_15-11-55
-      - raw_data/20-02-12_15-19-19
-      - raw_data/20-02-12_15-26-42
-      - raw_data/20-02-12_15-35-20
-      - raw_data/20-02-12_15-43-58
-      - raw_data/20-02-12_16-26-15
-      - raw_data/20-02-12_14-34-57
-      - raw_data/20-02-12_14-42-20
-      - raw_data/20-02-12_14-49-44
-      - raw_data/20-02-12_14-57-07
-      - raw_data/20-02-12_15-04-31
-      - raw_data/20-02-12_15-13-09
-      - raw_data/20-02-12_15-20-33
-      - raw_data/20-02-12_15-27-56
-      - raw_data/20-02-12_15-36-34
-      - raw_data/20-02-12_15-45-11
-      - raw_data/20-02-12_16-27-30
-      - raw_data/20-02-12_14-36-11
-      - raw_data/20-02-12_14-43-34
-      - raw_data/20-02-12_14-50-58
-      - raw_data/20-02-12_14-58-21
-      - raw_data/20-02-12_15-05-45
-      - raw_data/20-02-12_15-14-23
-      - raw_data/20-02-12_15-21-47
-      - raw_data/20-02-12_15-30-24
-      - raw_data/20-02-12_15-37-48
-      - raw_data/20-02-12_16-13-53
-      - raw_data/20-02-12_16-28-45
-      - raw_data/20-02-12_14-37-25
-      - raw_data/20-02-12_14-44-48
-      - raw_data/20-02-12_14-52-12
-      - raw_data/20-02-12_14-59-35
-      - raw_data/20-02-12_15-06-59
-      - raw_data/20-02-12_15-15-37
-      - raw_data/20-02-12_15-23-01
-      - raw_data/20-02-12_15-31-38
-      - raw_data/20-02-12_15-40-16
-      - raw_data/20-02-12_16-15-13
-      - raw_data/20-02-12_16-30-00
+    hdf5_file: train.hdf5
+#    data_directories:
+#      - raw_data/20-02-12_15-32-52
+#      - raw_data/20-02-12_15-41-30
+#      - raw_data/20-02-12_16-23-40
+#      - raw_data/20-02-12_16-31-15
+#      - raw_data/20-02-12_14-32-28
+#      - raw_data/20-02-12_14-39-52
+#      - raw_data/20-02-12_14-47-16
+#      - raw_data/20-02-12_14-54-40
+#      - raw_data/20-02-12_15-02-04
+#      - raw_data/20-02-12_15-10-41
+#      - raw_data/20-02-12_15-18-05
+#      - raw_data/20-02-12_15-25-29
+#      - raw_data/20-02-12_15-34-06
+#      - raw_data/20-02-12_15-42-44
+#      - raw_data/20-02-12_16-25-01
+#      - raw_data/20-02-12_14-33-42
+#      - raw_data/20-02-12_14-41-06
+#      - raw_data/20-02-12_14-48-30
+#      - raw_data/20-02-12_14-55-54
+#      - raw_data/20-02-12_15-03-18
+#      - raw_data/20-02-12_15-11-55
+#      - raw_data/20-02-12_15-19-19
+#      - raw_data/20-02-12_15-26-42
+#      - raw_data/20-02-12_15-35-20
+#      - raw_data/20-02-12_15-43-58
+#      - raw_data/20-02-12_16-26-15
+#      - raw_data/20-02-12_14-34-57
+#      - raw_data/20-02-12_14-42-20
+#      - raw_data/20-02-12_14-49-44
+#      - raw_data/20-02-12_14-57-07
+#      - raw_data/20-02-12_15-04-31
+#      - raw_data/20-02-12_15-13-09
+#      - raw_data/20-02-12_15-20-33
+#      - raw_data/20-02-12_15-27-56
+#      - raw_data/20-02-12_15-36-34
+#      - raw_data/20-02-12_15-45-11
+#      - raw_data/20-02-12_16-27-30
+#      - raw_data/20-02-12_14-36-11
+#      - raw_data/20-02-12_14-43-34
+#      - raw_data/20-02-12_14-50-58
+#      - raw_data/20-02-12_14-58-21
+#      - raw_data/20-02-12_15-05-45
+#      - raw_data/20-02-12_15-14-23
+#      - raw_data/20-02-12_15-21-47
+#      - raw_data/20-02-12_15-30-24
+#      - raw_data/20-02-12_15-37-48
+#      - raw_data/20-02-12_16-13-53
+#      - raw_data/20-02-12_16-28-45
+#      - raw_data/20-02-12_14-37-25
+#      - raw_data/20-02-12_14-44-48
+#      - raw_data/20-02-12_14-52-12
+#      - raw_data/20-02-12_14-59-35
+#      - raw_data/20-02-12_15-06-59
+#      - raw_data/20-02-12_15-15-37
+#      - raw_data/20-02-12_15-23-01
+#      - raw_data/20-02-12_15-31-38
+#      - raw_data/20-02-12_15-40-16
+#      - raw_data/20-02-12_16-15-13
+#      - raw_data/20-02-12_16-30-00
     inputs: # Order needs to be the same as network input (!)
       - forward_camera
 #      - current_waypoint
     outputs:
-#      - depth_scan
       - ros_expert
+#      - depth_scan
 evaluator_config:
   device: 'cpu'
   criterion: 'MSELoss'
   data_loader_config:
     output_path: /esat/opal/kkelchte/experimental_data/cube_world
-    data_directories:
-      - raw_data/20-02-12_14-31-09
-      - raw_data/20-02-12_14-38-38
-      - raw_data/20-02-12_14-46-02
-      - raw_data/20-02-12_14-53-26
-      - raw_data/20-02-12_15-00-50
-      - raw_data/20-02-12_15-09-27
-      - raw_data/20-02-12_15-16-51
-      - raw_data/20-02-12_15-24-15
+    hdf5_file: validation.hdf5
+#    data_directories:
+#      - raw_data/20-02-12_14-31-09
+#      - raw_data/20-02-12_14-38-38
+#      - raw_data/20-02-12_14-46-02
+#      - raw_data/20-02-12_14-53-26
+#      - raw_data/20-02-12_15-00-50
+#      - raw_data/20-02-12_15-09-27
+#      - raw_data/20-02-12_15-16-51
+#      - raw_data/20-02-12_15-24-15
     inputs:
       - forward_camera
 #      - current_waypoint
     outputs:
-#      - depth_scan
       - ros_expert
-number_of_epochs: 1
+#      - depth_scan
+number_of_epochs: 100

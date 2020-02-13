@@ -5,8 +5,8 @@ source /opt/ros/melodic/setup.bash
 # perform catkin make if source files have changed.
 cd "${HOME}/src/sim/ros" || exit 1
 make catkin_ws/devel/setup.bash
-make python3_ros_ws/devel/setup.bash
-make python2_ros_ws/devel/setup.bash
+#make python3_ros_ws/devel/setup.bash
+#make python2_ros_ws/devel/setup.bash
 cd "${HOME}" || exit 1
 
 # shellcheck disable=SC1090

@@ -54,6 +54,8 @@ class EnvironmentRunner:
             if self._run_index > 0:
                 self._data_saver.update_saving_directory()
             self._run_episode()
+        if self._data_saver is not None:
+            self._data_saver.create_train_validation_hdf5_files()
 
     def shutdown(self):
         self._environment.remove()

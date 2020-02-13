@@ -21,13 +21,13 @@ class ClassName:
             time.sleep(0.1)
         self._output_path = get_output_path()
         self._logger = get_logger(os.path.basename(__file__), self._output_path)
-        self._rate = rospy.Rate(100)
+        self._rate_fps = rospy.Rate(100)
         rospy.init_node('class_name')
 
     def run(self):
-        cprint(f'started with rate {self._rate}', self._logger)
+        cprint(f'started with rate {self._rate_fps}', self._logger)
         while not rospy.is_shutdown():
-            self._rate.sleep()
+            self._rate_fps.sleep()
 
 
 if __name__ == "__main__":

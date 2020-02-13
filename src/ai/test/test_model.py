@@ -73,7 +73,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(13, len(model.get_parameters()))
         validation_param = float(model.get_parameters()[0][0, 0, 0, 0])
         model.save_to_checkpoint(tag='test')
-        model_config['load_checkpoint_dir'] = os.path.join(self.output_dir, 'torch_checkpoints')
+        model_config['load_checkpoint_dir'] = os.path.join(self.output_dir)
         new_model = Model(config=ModelConfig().create(config_dict=model_config))
         self.assertTrue(validation_param == float(new_model.get_parameters()[0][0, 0, 0, 0]))
 

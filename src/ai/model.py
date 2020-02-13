@@ -55,6 +55,9 @@ class Model:
                                   f'output_sizes={self._config.output_sizes})')
 
         if self._config.load_checkpoint_dir:
+            self._config.load_checkpoint_dir = self._config.load_checkpoint_dir \
+                if self._config.load_checkpoint_dir.endswith('torch_checkpoints') \
+                else os.path.join(self._config.load_checkpoint_dir, 'torch_checkpoints')
             self.load_from_checkpoint(checkpoint_dir=self._config.load_checkpoint_dir)
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)

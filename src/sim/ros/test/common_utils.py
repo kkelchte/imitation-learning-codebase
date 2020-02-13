@@ -56,7 +56,6 @@ def compare_odometry(first_msg: Odometry, second_msg: Odometry) -> bool:
 
 
 def get_fake_image():
-    # DEPRECATED
     image = Image()
     image.data = [int(5)]*300*600*3
     image.height = 600

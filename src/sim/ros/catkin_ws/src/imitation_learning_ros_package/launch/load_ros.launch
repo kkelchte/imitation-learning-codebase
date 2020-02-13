@@ -93,7 +93,7 @@
               output="screen"/>
     </group>
 
-    <arg name="robot_mapping" default="true"/>
+    <arg name="robot_mapping" default="false"/>
     <group if="$(arg robot_mapping)">
         <node pkg="imitation_learning_ros_package"
               name="robot_mapping"
@@ -128,6 +128,20 @@
               type="ros_expert.py"
               output="screen"
               ns="/actor/ros_expert"/>
+    </group>
+
+    <arg name="dnn_actor" default="false"/>
+    <group if="$(arg dnn_actor)">
+        <arg name="dnn_config_file_path_with_extension"
+             default="src/sim/ros/config/actor/dnn_actor.yml"/>
+        <rosparam command="load"
+                  file="$(env HOME)/$(arg dnn_config_file_path_with_extension)"
+                  ns="/actor/dnn_actor"/>
+        <node pkg="imitation_learning_ros_package"
+              name="dnn_actor"
+              type="dnn_actor.py"
+              output="screen"
+              ns="/actor/dnn_actor"/>
     </group>
 
 </launch>

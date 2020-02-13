@@ -2,6 +2,7 @@ import shutil
 import unittest
 import os
 
+from src.data.dataset_loader import DataLoaderConfig, DataLoader
 from src.data.dataset_saver import DataSaver, DataSaverConfig
 from src.data.test.common_utils import state_generator
 from src.sim.common.data_types import TerminalType
@@ -28,7 +29,7 @@ class TestDataStorage(unittest.TestCase):
             data_saver.save(state=state,
                             action=None)
         episode_dir = os.listdir(os.path.join(self.output_dir, 'raw_data'))[0]
-        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data', episode_dir, 'rgb'))), total)
+        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data', episode_dir, 'camera'))), total)
         with open(os.path.join(self.output_dir, 'raw_data', episode_dir, 'expert')) as f:
             expert_controls = f.readlines()
             self.assertEqual(len(expert_controls), total)
@@ -37,7 +38,7 @@ class TestDataStorage(unittest.TestCase):
         config_dict = {
             'output_path': self.output_dir,
             'saving_directory': os.path.join(self.output_dir, 'custom_place'),
-            'sensors': ['rgb']
+            'sensors': ['camera']
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         data_saver = DataSaver(config=config)
@@ -47,16 +48,18 @@ class TestDataStorage(unittest.TestCase):
                 total += 1
             data_saver.save(state=state,
                             action=None)
-        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'custom_place', 'rgb'))), total)
+        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'custom_place', 'camera'))), total)
         with open(os.path.join(self.output_dir, 'custom_place', 'expert')) as f:
             expert_controls = f.readlines()
             self.assertEqual(len(expert_controls), total)
         self.assertTrue(not os.path.exists(os.path.join(self.output_dir, 'custom_place', 'depth')))
 
     def test_create_train_validation_hdf5_files(self):
+        # dummy_dataset = '/esat/opal/kkelchte/experimental_data/dummy_dataset'
+        dataset_name = '/esat/opal/kkelchte/experimental_data/cube_world'
         config_dict = {
-            'output_path': self.output_dir,
-            'sensors': ['rgb']
+            'output_path': dataset_name,
+            'training_validation_split': 0.9
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         data_saver = DataSaver(config=config)
@@ -67,8 +70,6 @@ class TestDataStorage(unittest.TestCase):
             data_saver.save(state=state,
                             action=None)
         data_saver.create_train_validation_hdf5_files()
-
-        print('finished')
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

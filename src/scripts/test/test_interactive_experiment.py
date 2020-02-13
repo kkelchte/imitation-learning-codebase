@@ -13,16 +13,16 @@ class TestRosExperiments(unittest.TestCase):
     def setUp(self) -> None:
         self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
+
+    def test_ros_with_data_collection(self):
         with open(f'src/scripts/test/config/test_data_collection_in_ros_config.yml', 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         config_dict['output_path'] = self.output_dir
         with open(os.path.join(self.output_dir, 'config.yml'), 'w') as f:
             yaml.dump(config_dict, f)
         self.config = InteractiveExperimentConfig().create(
-            config_file=os.path.join(self.output_dir, 'config.yml')
+            config_dict=config_dict
         )
-
-    def test_ros_with_data_collection(self):
         self.experiment = InteractiveExperiment(self.config)
         self.experiment.run()
 
@@ -40,9 +40,38 @@ class TestRosExperiments(unittest.TestCase):
             distances = [img_numbers[i+1] - img_numbers[i] for i in range(len(img_numbers)-1)]
             self.assertTrue(max(distances) < 500)  # asserting the largest delay < 2 FPS or 500ms
 
+    def test_ros_with_model_evaluation(self):
+        with open(f'src/scripts/test/config/test_online_model_evaluation.yml', 'r') as f:
+            config_dict = yaml.load(f, Loader=yaml.FullLoader)
+        config_dict['output_path'] = self.output_dir
+        with open(os.path.join(self.output_dir, 'config.yml'), 'w') as f:
+            yaml.dump(config_dict, f)
+        self.config = InteractiveExperimentConfig().create(
+            config_dict=config_dict
+        )
+        self.experiment = InteractiveExperiment(self.config)
+        self.experiment.run()
+        run_dirs = [os.path.join(self.output_dir, 'raw_data', d) for d in os.listdir(os.path.join(self.output_dir,
+                                                                                                  'raw_data'))]
+        for run in run_dirs:
+            first_applied_action = []
+            first_dnn_action = []
+            file_lengths = {}
+            for f in ['applied_action', 'dnn_actor', 'ros_expert', 'supervised_action']:
+                self.assertTrue(os.path.isfile(os.path.join(run, f)))
+                with open(os.path.join(run, f), 'r') as fp:
+                    lines = fp.readlines()
+                    file_lengths[f] = len(lines)
+                    if f == 'applied_action':
+                        first_applied_action = lines[0]
+                    if f == 'dnn_actor':
+                        first_dnn_action = lines[0]
+            self.assertEqual(min(file_lengths.values()), max(file_lengths.values()))
+            self.assertEqual(first_dnn_action, first_applied_action)
+
     def tearDown(self) -> None:
         self.experiment.shutdown()
-        shutil.rmtree(self.output_dir, ignore_errors=True)
+        # shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

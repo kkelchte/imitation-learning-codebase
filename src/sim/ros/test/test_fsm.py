@@ -43,9 +43,9 @@ class TestPublisherSubscriber:
             self.scan_publisher = rospy.Publisher(rospy.get_param('/robot/depth_scan_topic'),
                                                   eval(rospy.get_param('/robot/depth_scan_type')),
                                                   queue_size=10)
-        if rospy.has_param('/robot/pose_estimation_topic'):
-            self.odom_publisher = rospy.Publisher(rospy.get_param('/robot/pose_estimation_topic'),
-                                                  eval(rospy.get_param('/robot/pose_estimation_type')),
+        if rospy.has_param('/robot/odometry_topic'):
+            self.odom_publisher = rospy.Publisher(rospy.get_param('/robot/odometry_topic'),
+                                                  eval(rospy.get_param('/robot/odometry_type')),
                                                   queue_size=10)
         if rospy.has_param('/fsm/go_topic'):
             self.go_publisher = rospy.Publisher(rospy.get_param('/fsm/go_topic'), Empty, queue_size=10)
@@ -123,7 +123,7 @@ class TestFsm(unittest.TestCase):
         self.start_test(config=config)
         time.sleep(1)
         self.ros_topic.publish_fake_odom(x=0, y=0, z=4)
-        time.sleep(2)
+        time.sleep(rospy.get_param('/world/delay_evaluation')+1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Running.name)
         self.ros_topic.publish_fake_odom(x=1, y=1, z=4)
         time.sleep(1)
@@ -142,7 +142,7 @@ class TestFsm(unittest.TestCase):
         self.start_test(config=config)
         time.sleep(1)
         self.ros_topic.publish_fake_go()
-        time.sleep(2)
+        time.sleep(rospy.get_param('/world/delay_evaluation')+1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Running.name)
         self.ros_topic.publish_fake_takeover()
         time.sleep(1)
@@ -173,7 +173,7 @@ class TestFsm(unittest.TestCase):
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Running.name)
         self.stop_test()
 
-    @unittest.skip
+    # @unittest.skip
     def test_multiple_runs(self):
         config = {
             'robot_name': 'drone_sim',
@@ -210,8 +210,8 @@ class TestFsm(unittest.TestCase):
         self.stop_test()
 
     def stop_test(self) -> None:
-        self.assertEqual(self._ros_process.terminate(),
-                         ProcessState.Terminated)
+        self.assertEqual(ProcessState.Terminated,
+                         self._ros_process.terminate())
 
 
 if __name__ == '__main__':

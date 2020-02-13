@@ -8,7 +8,7 @@ from dataclasses_json import dataclass_json
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_date_time_tag
-from src.data.utils import timestamp_to_filename, store_image, store_array_to_file
+from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file
 from src.data.data_types import Frame
 from src.sim.common.data_types import State, Action, TerminalType
 
@@ -27,6 +27,8 @@ class DataSaverConfig(Config):
     saving_directory: str = None
     sensors: List[str] = None
     actors: List[str] = None
+    training_validation_split: float = 0.9
+    store_hdf5: bool = True
 
     def __post_init__(self):
         if self.sensors is None:
@@ -42,6 +44,7 @@ class DataSaverConfig(Config):
         if self.saving_directory is None:
             self.saving_directory = os.path.join(self.output_path, 'raw_data',
                                                  f'{get_date_time_tag()}')
+            os.makedirs(self.saving_directory, exist_ok=True)
 
 
 class DataSaver:
@@ -111,5 +114,15 @@ class DataSaver:
                                 time_stamp=frame.time_stamp_ms)
 
     def create_train_validation_hdf5_files(self) -> None:
-
-        pass
+        if not self._config.store_hdf5:
+            return
+        raw_data_dir = os.path.dirname(self._config.saving_directory)
+        runs = [
+            os.path.join(raw_data_dir, run)
+            for run in sorted(os.listdir(raw_data_dir))
+        ]
+        number_of_training_runs = int(self._config.training_validation_split*len(runs))
+        train_runs = runs[0:number_of_training_runs]
+        validation_runs = runs[number_of_training_runs:]
+        create_hdf5_file(filename=os.path.join(self._config.output_path, 'train.hdf5'), runs=train_runs)
+        create_hdf5_file(filename=os.path.join(self._config.output_path, 'validation.hdf5'), runs=validation_runs)

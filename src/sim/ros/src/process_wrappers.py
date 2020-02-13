@@ -63,7 +63,7 @@ class ProcessWrapper:
                 assert process.stderr == b''
         stime = time.time()
         max_duration = 30
-        while not self._check_running_process_with_ps() and time.time() - stime < max_duration:
+        while not self._check_running_process_with_ps() and (time.time() - stime) < max_duration:
             time.sleep(0.1)
         if self._check_running_process_with_ps():
             self._state = ProcessState.Running

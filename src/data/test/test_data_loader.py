@@ -49,8 +49,8 @@ class TestDataLoader(unittest.TestCase):
             'output_path': self.output_dir,
             'inputs': ['forward_camera',
                        'current_waypoint'],
-            'outputs': ['depth_scan',
-                        'ros_expert']
+            'outputs': ['ros_expert',
+                        'depth_scan']
         }
         config = DataLoaderConfig().create(config_dict=config_dict)
         data_loader = DataLoader(config=config)
@@ -74,8 +74,8 @@ class TestDataLoader(unittest.TestCase):
             'output_path': self.output_dir,
             'inputs': ['forward_camera',
                        'current_waypoint'],
-            'outputs': ['depth_scan',
-                        'ros_expert']
+            'outputs': ['ros_expert',
+                        'depth_scan']
         }
         config = DataLoaderConfig().create(config_dict=config_dict)
         data_loader = DataLoader(config=config)
@@ -96,6 +96,18 @@ class TestDataLoader(unittest.TestCase):
         data_loader.load_dataset(input_sizes=[[3, 128, 128]],
                                  output_sizes=[[6]])
         self.assertTrue(len(data_loader.get_data()) != 0)
+
+    def test_data_loader_with_hdf5_file(self):
+        # dataset_name = '/esat/opal/kkelchte/experimental_data/dummy_dataset'
+        dataset_name = '/esat/opal/kkelchte/experimental_data/cube_world'
+        config_dict = {'output_path': dataset_name,
+                       'hdf5_file': 'train.hdf5',
+                       'inputs': ['forward_camera'],
+                       'outputs': ['ros_expert']}
+        config = DataLoaderConfig().create(config_dict=config_dict)
+        data_loader = DataLoader(config=config)
+        data_loader.load_dataset()
+        print('finished')
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

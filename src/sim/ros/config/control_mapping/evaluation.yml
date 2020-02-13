@@ -1,0 +1,10 @@
+supervision_topic: '/control_mapper/supervision'
+mapping:
+  Unknown: {}
+  Terminated: {}
+  Running:
+    command: '/actor/dnn_actor/cmd_vel'
+    supervision: '/actor/ros_expert/cmd_vel'
+  TakeOff: {}
+  TakenOver: {}
+  DriveBack: {}

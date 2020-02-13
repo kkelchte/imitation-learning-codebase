@@ -152,10 +152,12 @@ class Fsm:
         self._state_pub.publish(self._state.name)
 
     def _running(self, msg: Empty = None):
-        self._set_state(FsmState.Running)
-        self._run_number += 1
         if self._start_time == -1:
             self._start_time = rospy.get_time()
+        while self._check_time() < self._delay_evaluation:
+            rospy.sleep(0.01)
+        self._set_state(FsmState.Running)
+        self._run_number += 1
 
     def _takeoff(self):
         self._set_state(FsmState.TakeOff)
@@ -188,7 +190,8 @@ class Fsm:
             and duration_s > self._delay_evaluation
 
     def _check_depth(self, data: np.ndarray) -> None:
-
+        if not self._update_state():
+            return
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
             cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
             self._shutdown_run(outcome=TerminalType.Failure)
@@ -216,11 +219,8 @@ class Fsm:
         scan = process_laser_scan(msg, sensor_stats)
         self._check_depth(scan)
 
-    def _check_distance(self, max_val: float, val: float, swap: bool = False) -> bool:
-        if not swap:
-            return max_val != -1 and max_val > val and not self._is_shuttingdown
-        else:
-            return max_val != -1 and max_val < val and not self._is_shuttingdown
+    def _check_distance(self, max_val: float, val: float) -> bool:
+        return max_val != -1 and max_val < val and not self._is_shuttingdown
 
     def _check_position(self, msg: Odometry) -> None:
         previous_pos = np.copy(self._current_pos)
