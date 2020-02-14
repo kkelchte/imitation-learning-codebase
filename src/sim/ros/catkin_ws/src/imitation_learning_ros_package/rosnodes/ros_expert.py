@@ -48,6 +48,7 @@ class RosExpert(Actor):
         self._reference_height = rospy.get_param('/world/starting_height', -1)
         self._rate_fps = specs['rate_fps'] if 'rate_fps' in specs.keys() else 20
         self._next_waypoint = []
+        # self._noise = eval(specs['noise'])
 
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()

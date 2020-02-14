@@ -8,6 +8,7 @@ trainer_config:
   optimizer: 'Adadelta'
   learning_rate: 0.001
   data_loader_config:
+    balance_targets: True
     output_path: /esat/opal/kkelchte/experimental_data/cube_world
     hdf5_file: train.hdf5
 #    data_directories:

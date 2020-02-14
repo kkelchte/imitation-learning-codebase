@@ -182,10 +182,13 @@ class RosWrapper(ProcessWrapper):
 
     def terminate(self) -> ProcessState:
         self._terminate_by_pid()
-        if self._terminate_by_name(command_name='gz') and \
-            self._terminate_by_name(command_name='xterm') and \
-                self._terminate_by_name(command_name='xvfb') and \
-                self._terminate_by_name(command_name='ros'):
+        outcomes = [
+            self._terminate_by_name(command_name='gz'),
+            self._terminate_by_name(command_name='xterm'),
+            self._terminate_by_name(command_name='xvfb'),
+            self._terminate_by_name(command_name='ros')
+        ]
+        if sum(outcomes) == len(outcomes):
             self._state = ProcessState.Terminated
         else:
             self._state = ProcessState.Unknown
