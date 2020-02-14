@@ -3,11 +3,13 @@ import unittest
 import os
 
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 
 from src.data.data_types import Run
 from src.data.dataset_loader import DataLoader, DataLoaderConfig, arrange_run_according_timestamps
 from src.core.utils import get_filename_without_extension
+from src.data.utils import calculate_probabilities, get_ideal_number_of_bins, calculate_probabilites_per_run
 
 
 def check_run_lengths(run: Run) -> bool:
@@ -107,7 +109,47 @@ class TestDataLoader(unittest.TestCase):
         config = DataLoaderConfig().create(config_dict=config_dict)
         data_loader = DataLoader(config=config)
         data_loader.load_dataset()
-        print('finished')
+
+    def test_data_loaders_data_balancing(self):
+        dummy_dataset = False
+        config_dict = {'inputs': ['forward_camera'],
+                       'outputs': ['ros_expert'],
+                       'balance_targets': True}
+        if dummy_dataset:
+            config_dict['output_path'] = '/esat/opal/kkelchte/experimental_data/dummy_dataset'
+            config_dict['data_directories'] = ['raw_data/20-02-06_13-32-24',
+                                               'raw_data/20-02-06_13-32-43']
+        else:
+            config_dict['hdf5_file'] = 'validation.hdf5'
+            config_dict['output_path'] = '/esat/opal/kkelchte/experimental_data/cube_world'
+        config = DataLoaderConfig().create(config_dict=config_dict)
+        data_loader = DataLoader(config=config)
+        data_loader.load_dataset()
+
+        # test calculate probabilities for run
+        data = [float(d) for d in data_loader._dataset.data[0].outputs['ros_expert'][:, 5]]
+        probabilities = calculate_probabilities(data)
+
+        # by sampling new data with probabilities and asserting difference among histogram bins is relatively low
+        clean_data = []
+        for i in range(300):
+            clean_data.append(np.random.choice(data, p=probabilities))
+        y, x, _ = plt.hist(clean_data, bins=get_ideal_number_of_bins(data))
+        relative_height_difference = (max(y) - min(y[y != 0])) / max(y)
+        self.assertTrue(relative_height_difference < 0.3)
+
+        # normalize over all actions should not have impact as all other actions are the same:
+        probabilities_all_dimensions = calculate_probabilites_per_run(data_loader._dataset.data[0])
+        self.assertTrue(np.abs(min(probabilities_all_dimensions) - min(probabilities)) < 1e-6)
+        self.assertTrue(np.abs(max(probabilities_all_dimensions) - max(probabilities)) < 1e-6)
+
+        # sampling a large batch should have a low relative height
+        clean_data = []
+        for batch in data_loader.sample_shuffled_batch(batch_size=100):
+            clean_data.extend([float(t) for t in batch.outputs['ros_expert'][:, 5]])
+        y, x, _ = plt.hist(clean_data, bins=get_ideal_number_of_bins(clean_data))
+        relative_height_difference = (max(y) - min(y[y != 0])) / max(y)
+        self.assertTrue(relative_height_difference < 0.3)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

@@ -6,6 +6,7 @@ import torch
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 from src.data.data_types import Run, Dataset
 
@@ -208,3 +209,47 @@ def load_run_from_h5py(group: h5py.Group, inputs: List[str], outputs: List[str])
         if field_name in outputs:
             run.outputs[field_name] = torch.Tensor(group[field_name])
     return run
+
+
+def get_ideal_number_of_bins(data: List[float]) -> int:
+    number_of_bins = 1
+    heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
+    while min(heights) > 0.05 * len(data):  # minimal bin should ideally contain 5% of the data
+        number_of_bins += 1
+        heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
+    number_of_bins -= 1
+    return number_of_bins
+
+
+def calculate_probabilities(data: List[float]) -> List[float]:
+    number_of_bins = get_ideal_number_of_bins(data)
+    if number_of_bins == 0:
+        return [1./len(data)]*len(data)
+    heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
+
+    normalized_inverse_heights = heights ** -1 / sum(heights ** -1)
+    probabilities = []
+    for d in data:
+        # loop over boundaries to detect correct bin index
+        index = 0
+        for i, b in enumerate(boundaries[:-1]):
+            index = i
+            if b >= d:
+                break
+        probabilities.append(normalized_inverse_heights[index])
+    # normalize probabilities
+    return [p/sum(probabilities) for p in probabilities]
+
+
+def calculate_probabilites_per_run(run: Run) -> List[float]:
+    run_length = run.outputs['ros_expert'].size()[0]
+    probabilities = np.asarray([0.]*run_length)
+    for action_dim in range(run.outputs['ros_expert'].size()[-1]):
+        data = [float(d) for d in run.outputs['ros_expert'][:, action_dim]]
+        run_probabilities = np.asarray(calculate_probabilities(data))
+        probabilities += run_probabilities - 1./run_length  # center values around zero
+    # recenter around average:
+    probabilities += 1./run_length
+    return [p / sum(probabilities) for p in probabilities]
+
+

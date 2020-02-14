@@ -14,7 +14,7 @@ from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
 from src.data.data_types import Dataset, Run
 from src.data.utils import load_and_preprocess_file, filename_to_timestamp, torch_append, \
-    arrange_run_according_timestamps, load_data, load_dataset_from_hdf5
+    arrange_run_according_timestamps, load_data, load_dataset_from_hdf5, calculate_probabilites_per_run
 
 
 @dataclass_json
@@ -25,6 +25,7 @@ class DataLoaderConfig(Config):
     inputs: List[str] = None
     outputs: List[str] = None
     reward: str = ''
+    balance_targets: bool = False
 
     def post_init(self):  # add default options
         if self.inputs is None:
@@ -58,6 +59,8 @@ class DataLoader:
         self._dataset = Dataset()
         self._num_datapoints = 0
         self._num_runs = 0
+        self._probabilities_per_run: List[List] = []  # sample probabilities per data point in a run
+        self._run_probabilities: List = []  # normalize over different runs according to number of samples in run
 
     def load_dataset(self, input_sizes: List[List] = None, output_sizes: List[List] = None):
         if self._config.hdf5_file is not '':
@@ -76,6 +79,11 @@ class DataLoader:
 
         self.count_datapoints()
         self._num_runs = len(self._dataset.data)
+        run_lengths = [len(r) for r in self._dataset.data]
+        self._run_probabilities = [r/sum(run_lengths) for r in run_lengths]
+        if self._config.balance_targets:
+            for run in self._dataset.data:
+                self._probabilities_per_run.append(calculate_probabilites_per_run(run))
 
     def get_data(self) -> list:
         return self._dataset.data
@@ -143,16 +151,14 @@ class DataLoader:
             cprint(msg, self._logger, msg_type=MessageType.error)
             raise IOError(msg)
         # Calculate sampling weights according to:
-        # TODO   a. number of samples per run
-        # TODO   b. steering balancing
-        # TODO   c. speed balancing
         # TODO   d. previous error (prioritized sweeping)
         number_of_batches = min(max_number_of_batches, int(self._num_datapoints / batch_size))
         for batch_index in range(number_of_batches):
             batch = self._get_empty_run()
             for sample in range(batch_size):
-                run_index = int(np.random.choice(list(range(self._num_runs)), p=None))
-                sample_index = int(np.random.choice(list(range(self._get_run_length(run_index=run_index))), p=None))
+                run_index = int(np.random.choice(list(range(self._num_runs)), p=self._run_probabilities))
+                sample_index = int(np.random.choice(list(range(self._get_run_length(run_index=run_index))),
+                                                    p=self._probabilities_per_run[run_index]))
                 batch = self._append_datapoint(destination=batch, run_index=run_index, sample_index=sample_index)
             if len(batch) != 0:
                 yield batch
