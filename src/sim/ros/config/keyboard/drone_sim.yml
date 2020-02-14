@@ -7,19 +7,50 @@ specs:
                u    i    o
                j    k    l
                m    ,    .
-             CTRL-C to quit
-         "
-  speed: 0.2
-  turn: 0.8
+
+               i/, : up/down
+               k: straight
+               u/o: rotate in yaw
+               j/l: roll
+
+             Publish on topics:
+               g: /fsm/go_topic
+               f: /fsm/overtake_topic
+               t: /robot/takeoff,
+               l: /robot/land,
+               e: /robot/emergency "
+  speed: 0.5
+  turn: 1.0
   rate_fps: 20
   moveBindings:
-    i:
+    k:
     - 1
     - 0
     - 0
     - 0
     - 0
     - 0
+    i:
+    - 0
+    - 0
+    - 1
+    - 0
+    - 0
+    - 0
+    ',':
+    - 0
+    - 0
+    - -1
+    - 0
+    - 0
+    - 0
+    u:
+    - 1
+    - 0
+    - 0
+    - 0
+    - 0
+    - 1
     o:
     - 1
     - 0
@@ -29,46 +60,21 @@ specs:
     - -1
     j:
     - 0
-    - 0
-    - 0
-    - 0
-    - 0
     - 1
+    - 0
+    - 0
+    - 0
+    - 0
     l:
     - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    - -1
-    u:
-    - 1
-    - 0
-    - 0
-    - 0
-    - 0
-    - 1
-    ',':
     - -1
     - 0
     - 0
     - 0
     - 0
-    - 0
-    .:
-    - -1
-    - 0
-    - 0
-    - 0
-    - 0
-    - 1
-    m:
-    - -1
-    - 0
-    - 0
-    - 0
-    - 0
-    - -1
   topicBindings:
     g: '/fsm/go_topic'
     f: '/fsm/overtake_topic'
+    t: '/robot/takeoff'
+    l: '/robot/land'
+    e: '/robot/emergency'

@@ -57,11 +57,15 @@ class DatasetExperiment:
 
     def run(self):
         for epoch in range(self._config.number_of_epochs):
-            cprint(f'epoch: {epoch} / {self._config.number_of_epochs}', self._logger)
+            msg = f'ended epoch: {epoch} / {self._config.number_of_epochs}'
             if self._trainer is not None:
-                self._trainer.train(epoch=epoch)  # include checkpoint saving.
+                training_error = self._trainer.train(epoch=epoch)  # include checkpoint saving.
+                msg += f' training error: {training_error}'
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
-                self._evaluator.evaluate(save_checkpoints=self._trainer is not None)
+                validation_error = self._evaluator.evaluate(save_checkpoints=self._trainer is not None)
+                msg += f' validation error: {validation_error}'
+            cprint(msg, self._logger)
+
         cprint(f'Finished.', self._logger)
 
 

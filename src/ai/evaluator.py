@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 from dataclasses_json import dataclass_json
+from tqdm import tqdm
 
 from src.ai.model import Model
 from src.core.config_loader import Config
@@ -21,7 +22,6 @@ Depends on ai/architectures, data/data_loader, core/logger
 @dataclass
 class EvaluatorConfig(Config):
     data_loader_config: DataLoaderConfig = None
-    device: str = 'cpu'
     criterion: str = 'MSELoss'
 
 
@@ -33,10 +33,10 @@ class Evaluator:
         self._data_loader = DataLoader(config=self._config.data_loader_config)
         self._logger = get_logger(name=__name__,
                                   output_path=config.output_path,
-                                  quite=False)
+                                  quite=True)
         if not quiet:
             cprint(f'Started.', self._logger)
-        self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._config.device)')
+        self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._model.device)')
 
         self._data_loader.load_dataset(input_sizes=self._model.get_input_sizes(),
                                        output_sizes=self._model.get_output_sizes())
@@ -45,13 +45,13 @@ class Evaluator:
 
     def evaluate(self, save_checkpoints: bool = False) -> float:
         total_error = []
-        for run in self._data_loader.get_data():
+        for run in tqdm(self._data_loader.get_data(), ascii=True, desc='evaluate'):
             model_outputs = self._model.forward(run.get_input())
             for output_index, output in enumerate(model_outputs):
-                targets = run.get_output()[output_index]
+                targets = run.get_output()[output_index].to(self._model.device)
                 error = self._criterion(output, targets).mean()
                 total_error.append(error)
-                cprint(f'{list(run.outputs.keys())[output_index]}: {error} {self._config.criterion}.')
+                cprint(f'{list(run.outputs.keys())[output_index]}: {error} {self._config.criterion}.', self._logger)
         total_error = float(torch.Tensor(total_error).mean())
         if save_checkpoints and total_error < self._minimum_error:
             self._model.save_to_checkpoint(tag='best')

@@ -220,6 +220,7 @@ class RosEnvironment(Environment):
             model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
                 model_state.pose.orientation.w = quaternion_from_euler((0, 0,
                                                                         self._config.ros_config.ros_launch_config.yaw_or))
+            self._set_model_state.wait_for_service()
             self._set_model_state(model_state)
         except ResourceWarning:
             pass

@@ -152,6 +152,8 @@ def add_run_to_h5py(h5py_file: h5py.File, run: str) -> h5py.File:
         element = os.path.join(run, element_name)
         time_stamps[element_name], data[element_name] = load_data_from_file(element) if os.path.isfile(element) else \
             load_data_from_directory(element)
+    if len(data.keys()) == 0:
+        return h5py_file
     # arrange all data to have corresponding time stamps
     clean_data = {
         element_name: torch.Tensor() for element_name in data.keys()

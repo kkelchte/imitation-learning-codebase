@@ -5,6 +5,7 @@ from typing import List
 import torch
 from torch import nn, optim
 from dataclasses_json import dataclass_json
+from tqdm import tqdm
 
 from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.model import Model
@@ -42,7 +43,7 @@ class Trainer(Evaluator):
         super().__init__(config, model, quiet=True)
         self._logger = get_logger(name=__name__,
                                   output_path=config.output_path,
-                                  quite=False)
+                                  quite=True)
         cprint(f'Started.', self._logger)
         self._optimizer = eval(f'torch.optim.{self._config.optimizer}(params=self._model.get_parameters(),'
                                f'lr=self._config.learning_rate)')
@@ -50,13 +51,13 @@ class Trainer(Evaluator):
     def train(self, epoch: int = -1) -> float:
         self._optimizer.zero_grad()
         total_error = []
-        for batch in self._data_loader.sample_shuffled_batch():  # a batch is of type Run
+        for batch in tqdm(self._data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
             model_outputs = self._model.forward(batch.get_input())
-            total_loss = torch.Tensor([0])
+            total_loss = torch.Tensor([0]).to(self._model.device)
             for output_index, output in enumerate(model_outputs):
-                targets = batch.get_output()[output_index]
+                targets = batch.get_output()[output_index].to(self._model.device)
                 loss = self._criterion(output, targets).mean()
-                cprint(f'{list(batch.outputs.keys())[output_index]}: {loss} {self._config.criterion}.')
+                cprint(f'{list(batch.outputs.keys())[output_index]}: {loss} {self._config.criterion}.', self._logger)
                 total_loss += self._config.output_weights[output_index] * loss
             total_loss.backward()  # calculate gradients
             self._optimizer.step()  # apply gradients according to optimizer

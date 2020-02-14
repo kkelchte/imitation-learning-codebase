@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
-from src.core.logger import get_logger, cprint
+from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_date_time_tag
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file
 from src.data.data_types import Frame
@@ -28,7 +28,7 @@ class DataSaverConfig(Config):
     sensors: List[str] = None
     actors: List[str] = None
     training_validation_split: float = 0.9
-    store_hdf5: bool = True
+    store_hdf5: bool = False
 
     def __post_init__(self):
         if self.sensors is None:
@@ -115,6 +115,7 @@ class DataSaver:
 
     def create_train_validation_hdf5_files(self) -> None:
         if not self._config.store_hdf5:
+            cprint(f'store_hdf5: {self._config.store_hdf5}', self._logger, msg_type=MessageType.warning)
             return
         raw_data_dir = os.path.dirname(self._config.saving_directory)
         runs = [

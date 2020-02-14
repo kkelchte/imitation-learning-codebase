@@ -26,20 +26,6 @@ class TestLogger(unittest.TestCase):
         self.assertEqual(len(log_lines), 4)
         f.close()
 
-    def test_quite(self):
-        current_logger = logger.get_logger(name=os.path.basename(__file__),
-                                           output_path=self.TEST_DIR,
-                                           quite=True)
-        current_logger.debug(f'debug message')
-        current_logger.info(f'info message')
-        current_logger.warning(f'warning message')
-        current_logger.error(f'error message')
-
-        f = open(os.path.join(self.TEST_DIR, 'logfile'), 'r')
-        log_lines = f.readlines()
-        self.assertEqual(len(log_lines), 4)
-        f.close()
-
     def test_cprint(self):
         current_logger = logger.get_logger(name=os.path.basename(__file__),
                                            output_path=self.TEST_DIR,

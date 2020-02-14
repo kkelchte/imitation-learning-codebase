@@ -146,7 +146,7 @@ class RosExpert(Actor):
         dy = (self._next_waypoint[1] - msg.pose.pose.position.y)
 
         # adjust for quadrants...
-        yaw_goal = np.arctan(dy / dx)
+        yaw_goal = np.arctan(dy / (dx + 1e-6))
         # cprint(f'yaw_goal: {yaw_goal}', self._logger)
         if np.sign(dx) == -1 and np.sign(dy) == +1:
             yaw_goal += np.pi

@@ -26,6 +26,7 @@ class InitializationType(IntEnum):
 @dataclass_json
 @dataclass
 class ModelConfig(Config):
+    device: str = 'cpu'
     load_checkpoint_dir: str = None
     architecture: str = None
     dropout: float = 0.
@@ -62,7 +63,13 @@ class Model:
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)
 
+        self.device = torch.device(
+            "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
+        )
+        self._architecture.to(self.device)
+
     def forward(self, inputs: List[torch.Tensor], train: bool = False):
+        inputs = [i.to(self.device) for i in inputs]
         return self._architecture.forward(inputs=inputs, train=train)
 
     def initialize_architecture_weights(self, initialisation_type: InitializationType = 0):
