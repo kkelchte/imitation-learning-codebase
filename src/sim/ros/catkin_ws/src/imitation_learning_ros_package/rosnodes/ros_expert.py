@@ -16,7 +16,7 @@ from src.core.logger import get_logger, cprint
 from src.sim.common.actors import Actor, ActorConfig
 from src.sim.common.data_types import ActorType, Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
-    get_output_path
+    get_output_path, apply_noise_to_twist
 from src.core.utils import camelcase_to_snake_format
 
 
@@ -48,7 +48,8 @@ class RosExpert(Actor):
         self._reference_height = rospy.get_param('/world/starting_height', -1)
         self._rate_fps = specs['rate_fps'] if 'rate_fps' in specs.keys() else 20
         self._next_waypoint = []
-        # self._noise = eval(specs['noise'])
+        noise_config = specs['noise'] if 'noise' in specs.keys() else {}
+        self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
 
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()
@@ -175,6 +176,9 @@ class RosExpert(Actor):
         twist.linear.z = self._adjust_height
         twist.angular.z = self._specs['collision_avoidance_weight'] * self._adjust_yaw_collision_avoidance \
             + self._specs['waypoint_following_weight'] * self._adjust_yaw_waypoint_following
+
+        if self._noise is not None:
+            twist = apply_noise_to_twist(twist=twist, noise=self._noise.sample())
         return twist
 
     def get_action(self, sensor_data: dict = None) -> Action:

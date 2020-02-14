@@ -19,7 +19,7 @@ runner_config:
         y_pos: 0.0
         yaw_or: 1.57
         z_pos: 0.0
-      visible_xterm: true
+      visible_xterm: false
     actor_configs:
       - file: src/sim/ros/config/actor/dnn_actor.yml
         name: dnn_actor
@@ -27,5 +27,5 @@ runner_config:
       - file: src/sim/ros/config/actor/ros_expert.yml
         name: ros_expert
         type: 1
-  number_of_episodes: 2
+  number_of_episodes: 1
 data_saver_config: {}

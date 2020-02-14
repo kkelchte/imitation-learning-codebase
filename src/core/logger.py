@@ -17,7 +17,7 @@ def get_logger(name: str,
     [logger.removeHandler(handler) for handler in logger.handlers]
 
     # add file handler
-    if not os.path.exists(output_path):
+    if output_path != '' and not os.path.exists(output_path):
         os.makedirs(output_path)
     output_file = f'/tmp/{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}.log' if not output_path else \
         f'{output_path}/logfile'

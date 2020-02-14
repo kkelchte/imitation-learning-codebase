@@ -6,7 +6,7 @@ import subprocess
 import shlex
 from datetime import datetime
 
-from src.core.logger import cprint
+from src.core.logger import cprint, MessageType, get_logger
 from src.sim.common.data_types import ProcessState
 
 """Interface with other applications such as 
@@ -20,12 +20,14 @@ class ProcessWrapper:
     def __init__(self,
                  name: str = '',
                  grep_str: str = ''):
-        self._grace_period = 1  # 3
+        self._grace_period = 1
         self._name = name if name else 'default'
         self._state = ProcessState.Initializing
         self._grep_str = grep_str if grep_str else self._name
         self._control_str = ''
         self._process_popen = None
+        self._logger = get_logger(name=__name__)
+        cprint(f'initiate', self._logger)
 
     def get_state(self) -> ProcessState:
         return self._state
@@ -149,6 +151,8 @@ class RosWrapper(ProcessWrapper):
     def __init__(self, config: dict, launch_file: str = 'load_ros.launch', visible: bool = False):
         super().__init__(name='ros')
         post_init_delay = 4
+        self._grace_period = 3
+
         # executable = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'scripts', 'ros_DEPRECATED.sh')
         executable = 'roslaunch '
         if not visible:
@@ -191,6 +195,7 @@ class RosWrapper(ProcessWrapper):
         if sum(outcomes) == len(outcomes):
             self._state = ProcessState.Terminated
         else:
+            cprint(f'termination outcomes: {outcomes}', self._logger, msg_type=MessageType.warning)
             self._state = ProcessState.Unknown
         self._cleanup()
         return self._state

@@ -3,6 +3,15 @@ specs:
   field_of_view: 100
   front_width: 40
   speed: 0.2
+  noise:
+    name: OUNoise
+    args:
+      dimension:
+        - 6
+        - 1
+      mean: 0
+      std: 0.5
+      pullback: 0.15
   aggressiveness: 0
   collision_avoidance_weight: 0.0
   waypoint_following_weight: 1

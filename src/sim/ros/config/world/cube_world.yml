@@ -1,4 +1,5 @@
 world_name: cube_world
+max_duration: 100
 starting_height: 0
 delay_evaluation: 0.1
 goal:

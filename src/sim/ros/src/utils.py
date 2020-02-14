@@ -19,6 +19,16 @@ from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge imp
 bridge = CvBridge()
 
 
+def apply_noise_to_twist(twist: Twist, noise: np.ndarray) -> Twist():
+    twist.linear.x += noise[0]
+    twist.linear.y += noise[1]
+    twist.linear.z += noise[2]
+    twist.angular.x += noise[3]
+    twist.angular.y += noise[4]
+    twist.angular.z += noise[5]
+    return twist
+
+
 def get_output_path() -> str:
     output_path = rospy.get_param('/output_path', '/tmp')
     if not output_path.startswith('/'):

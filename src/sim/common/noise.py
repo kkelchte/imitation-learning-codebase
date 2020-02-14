@@ -61,6 +61,6 @@ class OUNoise(NoiseBase):
 
     def sample(self):
         x = self._noise_value
-        dx = self._pullback * (self._mean - x) + self._std * np.random.randn(self._dimension)
+        dx = self._pullback * (self._mean - x) + self._std * np.random.normal(size=self._dimension)
         self._noise_value = x + dx
         return self._noise_value

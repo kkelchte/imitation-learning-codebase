@@ -191,7 +191,7 @@ class RosEnvironment(Environment):
         if self._terminal_state == TerminalType.NotDone and \
                 self._config.max_number_of_steps != -1 and \
                 self._config.max_number_of_steps < self._step:
-            self._terminal_state = TerminalType.Success
+            self._terminal_state = TerminalType.Failure
 
     def _pause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
