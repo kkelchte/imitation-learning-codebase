@@ -239,8 +239,13 @@ class RosEnvironment(Environment):
             self._pause_gazebo()
 
     def reset(self) -> State:
+        # assert fsm has started properly
         if self._config.ros_config.ros_launch_config.fsm:
             while self.fsm_state is None:
+                self._run_shortly()
+        # assert dnn model has started properly
+        if 'dnn_actor' in [conf.name for conf in self._config.actor_configs]:
+            while len(self._actor_values['dnn_actor']) == 0:
                 self._run_shortly()
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:

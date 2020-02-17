@@ -38,6 +38,9 @@ class Action:
     actor_name: str = None
     value: np.ndarray = None
 
+    def __len__(self):
+        return len(self.value) if self.value is not None else 0
+
 
 @dataclass
 class State:

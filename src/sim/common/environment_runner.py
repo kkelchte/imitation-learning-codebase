@@ -58,4 +58,4 @@ class EnvironmentRunner:
             self._data_saver.create_train_validation_hdf5_files()
 
     def shutdown(self) -> bool:
-        self._environment.remove()
+        return self._environment.remove()

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config, Parser
-from src.core.logger import get_logger, cprint
+from src.core.logger import get_logger, cprint, MessageType
 from src.sim.common.environment_runner import EnvironmentRunnerConfig, EnvironmentRunner
 from src.data.dataset_saver import DataSaverConfig, DataSaver
 
@@ -35,7 +35,9 @@ class InteractiveExperiment:
         self._environment_runner.run()
 
     def shutdown(self):
-        self._environment_runner.shutdown()
+        result = self._environment_runner.shutdown()
+        cprint(f'Terminated successfully: {result}', self._logger,
+               msg_type=MessageType.info if result else MessageType.warning)
 
 
 if __name__ == "__main__":
@@ -43,4 +45,4 @@ if __name__ == "__main__":
     experiment_config = InteractiveExperimentConfig().create(config_file=config_file)
     experiment = InteractiveExperiment(experiment_config)
     experiment.run()
-
+    experiment.shutdown()
