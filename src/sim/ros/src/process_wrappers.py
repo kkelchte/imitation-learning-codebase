@@ -107,7 +107,7 @@ class ProcessWrapper:
         while process.poll() is None and time.time() - start_time < max_duration:
             process.terminate()
             process.wait()
-            time.sleep(0.1)
+            time.sleep(1)
 
     def terminate(self) -> ProcessState:
         if self._terminate_by_name():
@@ -214,8 +214,8 @@ class RosWrapper(ProcessWrapper):
         max_duration = 20
         while not self._all_terminated_by_name('ros', 'gz', 'xterm', 'xvfb') \
                 and time.time() - start_time < max_duration:
-            time.sleep(0.1)
-        if not self._all_terminated_by_name('ros', 'gz', 'xterm', 'xvfb'):
+            time.sleep(1)
+        if time.time() - start_time < max_duration:
             self._state = ProcessState.Terminated
         else:
             self._state = ProcessState.Unknown

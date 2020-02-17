@@ -302,8 +302,8 @@ class RosEnvironment(Environment):
                              and 'depth' not in sensor_name and 'scan' not in sensor_name]
         self._state_publisher.publish(ros_state)
 
-    def remove(self) -> ProcessState:
-        return self._ros.terminate()
+    def remove(self) -> bool:
+        return self._ros.terminate() == ProcessState.Terminated
 
     def get_actor(self) -> ActorType:
         if self.control_mapping is not {}:

@@ -76,11 +76,12 @@ class DnnActor(Actor):
         processed_image = process_image(msg, sensor_stats=sensor_stats)
         processed_image = torch.Tensor(processed_image).permute(2, 0, 1).unsqueeze(0)
         assert processed_image.size()[0] == 1 and processed_image.size()[1] == 3
-        # cprint(f'output predicted {output}', self._logger)
+        output = self._model.forward([processed_image])[0].detach().cpu().numpy()
+        cprint(f'output predicted {output}', self._logger, msg_type=MessageType.debug)
         action = Action(
             actor_name='dnn_actor',
             actor_type=ActorType.Model,
-            value=self._model.forward([processed_image])[0].detach().cpu().numpy()  # assuming control is first output
+            value=output  # assuming control is first output
         )
         self._publisher.publish(adapt_action_to_twist(action))
 

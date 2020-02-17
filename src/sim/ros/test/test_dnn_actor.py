@@ -34,7 +34,8 @@ class TestDnnActor(unittest.TestCase):
                                        visible=True)
 
         # subscribe to command control
-        self.command_topic = '/actor/dnn_actor/cmd_vel'
+        specs = rospy.get_param('/actor/dnn_actor/specs')
+        self.command_topic = specs['command_topic']
         self._odom_topic = rospy.get_param('/robot/odometry_topic')
         subscribe_topics = [
             TopicConfig(topic_name=self.command_topic, msg_type="Twist"),
@@ -52,10 +53,11 @@ class TestDnnActor(unittest.TestCase):
             subscribe_topics=subscribe_topics,
             publish_topics=publish_topics
         )
+        time.sleep(3)  # give model time to be uploaded.
 
     def send_image_and_read_twist(self, image: Image) -> Twist:
         self.ros_topic.publishers[self._image_topic].publish(image)
-        time.sleep(1)
+        time.sleep(3)
         received_twist: Twist = self.ros_topic.topic_values[self.command_topic]
         return received_twist
 

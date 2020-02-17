@@ -34,9 +34,6 @@ def main():
         print(f'state: {environment.fsm_state}')
         state = environment.step()
     environment.remove()
-    # except Exception as e:
-    #     print(f'{e}')
-    #     environment.remove()
 
 
 if __name__ == '__main__':

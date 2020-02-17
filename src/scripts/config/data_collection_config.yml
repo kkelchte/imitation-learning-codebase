@@ -19,13 +19,14 @@ runner_config:
         y_pos: 0.0
         yaw_or: 1.57
         z_pos: 0.0
-      visible_xterm: false
+      visible_xterm: true # false
     actor_configs:
-      - file: src/sim/ros/config/keyboard/turtlebot_sim.yml
-        name: keyboard
-        type: 2
-      - file: src/sim/ros/config/actor/ros_expert.yml
+#      - file: src/sim/ros/config/keyboard/turtlebot_sim.yml
+#        name: keyboard
+#        type: 2
+      - file: src/sim/ros/config/actor/ros_expert_noisy.yml
         name: ros_expert
         type: 1
-  number_of_episodes: 30
-data_saver_config: {}
+  number_of_episodes: 1 # 30
+data_saver_config:
+  store_hdf5: false # true

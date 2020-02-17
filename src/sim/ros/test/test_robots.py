@@ -66,7 +66,7 @@ class TestRobots(unittest.TestCase):
 
     def tearDown(self) -> None:
         if hasattr(self, '_environment'):
-            self._environment.remove()
+            self.assertTrue(self._environment.remove())
         shutil.rmtree(self.output_dir, ignore_errors=True)
 
 

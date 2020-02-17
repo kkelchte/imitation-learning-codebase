@@ -21,8 +21,8 @@ class TestControlMapper(unittest.TestCase):
         config = {
             'robot_name': 'drone_sim',
             'fsm': False,
-            'control_mapper': True,
-            'control_mapper_config': 'test'
+            'control_mapping': True,
+            'control_mapping_config': 'test'
         }
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
@@ -34,12 +34,13 @@ class TestControlMapper(unittest.TestCase):
         subscribe_topics = [
             TopicConfig(topic_name=self.command_topic, msg_type="Twist"),
             TopicConfig(topic_name=self.supervision_topic, msg_type="Twist"),
-            TopicConfig(topic_name='/fsm_state', msg_type="String"),
+            TopicConfig(topic_name='/fsm/state', msg_type="String"),
         ]
         # create publishers for all control topics < control_mapper/default.yml
         self._mapping = rospy.get_param('/control_mapping/mapping')
+        print(self._mapping)
         publish_topics = [
-            TopicConfig(topic_name='/fsm_state', msg_type='String')
+            TopicConfig(topic_name='/fsm/state', msg_type='String')
         ]
         self._control_topics = []
         for state, mode in self._mapping.items():
@@ -68,7 +69,7 @@ class TestControlMapper(unittest.TestCase):
             print(f'FSM STATE: {fsm_state}')
             # fsm_state = FsmState.Running
             #   publish fsm state
-            self.ros_topic.publishers['/fsm_state'].publish(fsm_state.name)
+            self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
             #   wait
             time.sleep(1)
             #   publish on all controls
