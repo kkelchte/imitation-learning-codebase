@@ -4,7 +4,6 @@ import os
 import time
 from collections import OrderedDict
 
-import numpy as np
 import rospy
 import yaml
 from std_msgs.msg import Float32MultiArray
@@ -14,6 +13,7 @@ from sensor_msgs.msg import LaserScan, Image
 
 from src.core.logger import get_logger, cprint
 from src.sim.common.actors import Actor, ActorConfig
+from src.sim.common.noise import *
 from src.sim.common.data_types import ActorType, Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
     get_output_path, apply_noise_to_twist
@@ -50,7 +50,7 @@ class RosExpert(Actor):
         self._next_waypoint = []
         noise_config = specs['noise'] if 'noise' in specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
-
+        cprint(f'-------{self._noise}', self._logger)
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()
 

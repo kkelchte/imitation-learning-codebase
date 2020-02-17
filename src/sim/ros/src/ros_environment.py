@@ -236,6 +236,9 @@ class RosEnvironment(Environment):
             sensor_data={
                 sensor_name: self._sensor_values[sensor_name] for sensor_name in self._sensor_values.keys()
             },
+            actor_data={
+                actor_name: actor_value for actor_name, actor_value in self._actor_values.items()
+            },
             time_stamp_ms=int(rospy.get_time() * 10**6)
         )
         if self._config.ros_config.ros_launch_config.gazebo:

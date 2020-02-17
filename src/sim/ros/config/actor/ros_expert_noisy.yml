@@ -10,8 +10,8 @@ specs:
         - 6
         - 1
       mean: 0
-      std: 0.5
-      pullback: 0.15
+      std: 0.15
+      pullback: 0.2
   aggressiveness: 0
   collision_avoidance_weight: 0.0
   waypoint_following_weight: 1

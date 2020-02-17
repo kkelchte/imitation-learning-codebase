@@ -7,7 +7,7 @@ import rospy
 import yaml
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import TerminalType
+from src.sim.common.data_types import TerminalType, ProcessState
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
@@ -69,7 +69,7 @@ class TestRosIntegrated(unittest.TestCase):
 
     def tearDown(self) -> None:
         if hasattr(self, '_environment'):
-            self._environment.remove()
+            self.assertEqual(ProcessState.Terminated, self._environment.remove())
         shutil.rmtree(self.output_dir, ignore_errors=True)
 
 

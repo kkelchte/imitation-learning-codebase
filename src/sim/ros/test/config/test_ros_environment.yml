@@ -21,6 +21,6 @@ actor_configs:
   - file: src/sim/ros/config/keyboard/turtlebot_sim.yml
     name: keyboard
     type: 2
-  - file: src/sim/ros/config/actor/ros_expert.yml
+  - file: src/sim/ros/config/actor/ros_expert_noisy.yml
     name: ros_expert
     type: 1
