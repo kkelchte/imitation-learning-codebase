@@ -31,6 +31,7 @@ def main():
     environment = RosEnvironment(config=config)
     state = environment.reset()
     while state.terminal != TerminalType.Success and state.terminal != TerminalType.Failure:
+        print(f'state: {environment.fsm_state}')
         state = environment.step()
     environment.remove()
     # except Exception as e:

@@ -6,6 +6,8 @@ import subprocess
 import shlex
 from datetime import datetime
 
+import rospy
+
 from src.core.logger import cprint, MessageType, get_logger
 from src.sim.common.data_types import ProcessState
 
@@ -98,9 +100,14 @@ class ProcessWrapper:
 
     def _terminate_by_pid(self, process: subprocess.Popen = None):
         process = process if process is not None else self._process_popen
-        if process.poll() is None:
+        if process is None:
+            return
+        max_duration = 30
+        start_time = time.time()
+        while process.poll() is None and time.time() - start_time < max_duration:
             process.terminate()
             process.wait()
+            time.sleep(0.1)
 
     def terminate(self) -> ProcessState:
         if self._terminate_by_name():
@@ -176,7 +183,16 @@ class RosWrapper(ProcessWrapper):
         if 'gazebo' in config.keys() and config['gazebo'] == 'true':
             while not self._check_running_process_with_ps('gzserver'):
                 time.sleep(1)
+        success = False  # wait for ros server to be started by providing params
+        while not success:
+            try:
+                rospy.has_param('output_path')
+            except:
+                time.sleep(0.1)
+            else:
+                success = True
         time.sleep(post_init_delay)
+
         # TODO pipe stderr of ROS to logger debug.
 
     @staticmethod

@@ -1,6 +1,7 @@
 #!/usr/bin/python3.7
 import signal
 import sys
+import time
 from typing import Tuple, Union
 
 import numpy as np
@@ -52,6 +53,7 @@ class RosEnvironment(Environment):
             launch_file='load_ros.launch',
             visible=config.ros_config.visible_xterm
         )
+
         # Fields
         self._step = 0
         self._state = State(
@@ -70,12 +72,13 @@ class RosEnvironment(Environment):
             self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
         # Subscribers
-        if rospy.has_param('/fsm/state_topic'):
+        self.fsm_state = None
+        if self._config.ros_config.ros_launch_config.fsm:
+            # if rospy.has_param('/fsm/state_topic'):
             rospy.Subscriber(rospy.get_param('/fsm/state_topic'),
                              String,
                              self._set_field,
                              callback_args='fsm_state')
-        self.fsm_state = FsmState.Unknown
 
         if rospy.has_param('/fsm/terminal_topic'):
             rospy.Subscriber(rospy.get_param('/fsm/terminal_topic'),
@@ -147,11 +150,11 @@ class RosEnvironment(Environment):
         self._state_publisher = rospy.Publisher('/ros_environment/state', RosState, queue_size=10)
         self._reset_publisher = rospy.Publisher(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, queue_size=10)
 
-        # Start ROS node:
-        rospy.init_node('ros_python_interface', anonymous=True)
-
         # Catch kill signals:
         signal.signal(signal.SIGTERM, self._signal_handler)
+
+        # Start ROS node:
+        rospy.init_node('ros_python_interface', anonymous=True)
 
     def _signal_handler(self, signal_number: int, _) -> None:
         return_value = self.remove()
@@ -184,6 +187,9 @@ class RosEnvironment(Environment):
             self.fsm_state = FsmState[msg.data]
         else:
             raise NotImplementedError
+        cprint(f'received: {msg} and set field {field_name}',
+               self._logger,
+               msg_type=MessageType.debug)
 
     def _internal_update_terminal_state(self):
         if self.fsm_state == FsmState.Running and self._terminal_state == TerminalType.Unknown:
@@ -225,12 +231,21 @@ class RosEnvironment(Environment):
         except ResourceWarning:
             pass
 
-    def reset(self) -> State:
-        self._reset_publisher.publish(Empty())
-        self._reset_gazebo()
+    def _run_shortly(self):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._unpause_gazebo()
         rospy.sleep(self._pause_period)
+        if self._config.ros_config.ros_launch_config.gazebo:
+            self._pause_gazebo()
+
+    def reset(self) -> State:
+        if self._config.ros_config.ros_launch_config.fsm:
+            while self.fsm_state is None:
+                self._run_shortly()
+        self._reset_publisher.publish(Empty())
+        if self._config.ros_config.ros_launch_config.gazebo:
+            self._reset_gazebo()
+        self._run_shortly()
         self._state = State(
             terminal=self._terminal_state,
             sensor_data={
@@ -241,8 +256,6 @@ class RosEnvironment(Environment):
             },
             time_stamp_ms=int(rospy.get_time() * 10**6)
         )
-        if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_gazebo()
         return self._state
 
     def _clear_sensor_and_actor_values(self):
@@ -257,11 +270,7 @@ class RosEnvironment(Environment):
         self._step += 1
         self._internal_update_terminal_state()
         self._clear_sensor_and_actor_values()
-        if self._config.ros_config.ros_launch_config.gazebo:
-            self._unpause_gazebo()
-        rospy.sleep(self._pause_period)
-        if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_gazebo()
+        self._run_shortly()
         assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminalType.Unknown)
         self._state = State(
             terminal=self._terminal_state,

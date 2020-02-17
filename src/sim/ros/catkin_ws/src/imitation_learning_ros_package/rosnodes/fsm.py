@@ -14,7 +14,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
-from src.core.logger import get_logger, cprint
+from src.core.logger import get_logger, cprint, MessageType
 from src.sim.common.data_types import TerminalType
 from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path
 
@@ -82,9 +82,10 @@ class Fsm:
         # self._pause_physics_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
         self._subscribe()
         rospy.init_node('fsm', anonymous=True)
-
         self._run_number = 0
-        self._reset()
+        self._set_state(FsmState.Unknown)
+        self._init_fields()
+        self.run()
 
     def _subscribe(self):
         """Subscribe to relevant topics depending on the mode"""
@@ -111,18 +112,7 @@ class Fsm:
         if rospy.has_param('/robot/wrench_topic'):
             rospy.Subscriber(rospy.get_param('/robot/wrench_topic'), WrenchStamped, self._check_wrench)
 
-    def _start(self):
-        """Define correct initial state depending on mode"""
-        if self.mode == FsmMode.SingleRun:
-            self._running()
-        if self.mode == FsmMode.TakeOffRun:
-            self._takeoff()
-        if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
-            self._takeover()
-
-    def _reset(self, msg: Empty = None):
-        """Add entrance of idle state all field variables are reset
-        """
+    def _init_fields(self):
         self._delay_evaluation = rospy.get_param('world/delay_evaluation')
         self._is_shuttingdown = False
         self._set_state(FsmState.Unknown)
@@ -138,6 +128,12 @@ class Fsm:
         self._max_travelled_distance = rospy.get_param('world/max_travelled_distance', -1)
         self._max_distance_from_start = rospy.get_param('world/max_distance_from_start', -1)
         self._goal = rospy.get_param('world/goal', {})
+
+    def _reset(self, msg: Empty = None):
+        """Add entrance of idle state all field variables are reset
+        """
+        self._init_fields()
+        cprint(f'resetting', self._logger, msg_type=MessageType.debug)
         # cprint('****FSM: Settings:****')
         # for name, value in [('_max_duration', self._max_duration), ('_collision_depth', self._collision_depth),
         #                     ('_max_travelled_distance', self._max_travelled_distance), ('mode', self.mode),
@@ -146,6 +142,15 @@ class Fsm:
         # cprint('********')
         self._start()
 
+    def _start(self):
+        """Define correct initial state depending on mode"""
+        if self.mode == FsmMode.SingleRun:
+            self._running()
+        if self.mode == FsmMode.TakeOffRun:
+            self._takeoff()
+        if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
+            self._takeover()
+
     def _set_state(self, state: FsmState) -> None:
         cprint(f'set state: {state.name}', self._logger)
         self._state = state
@@ -153,6 +158,8 @@ class Fsm:
 
     def _running(self, msg: Empty = None):
         if self._start_time == -1:
+            while rospy.get_time() == 0:
+                time.sleep(0.1)
             self._start_time = rospy.get_time()
         while self._check_time() < self._delay_evaluation:
             rospy.sleep(0.01)
@@ -181,6 +188,9 @@ class Fsm:
         if self._start_time != -1 and run_duration_s > self._max_duration != -1 and not self._is_shuttingdown:
             cprint(f'duration: {run_duration_s} > {self._max_duration}', self._logger)
             self._shutdown_run(outcome=TerminalType.Success)
+        # cprint(f'check time: duration = {run_duration_s}, start_time = {self._start_time}',
+        #        self._logger,
+        #        msg_type=MessageType.debug)
         return run_duration_s
 
     def _update_state(self) -> bool:
@@ -249,7 +259,7 @@ class Fsm:
                 self._goal['x']['max'] > self._current_pos[0] > self._goal['x']['min'] and \
                 self._goal['y']['max'] > self._current_pos[1] > self._goal['y']['min'] and \
                 self._goal['z']['max'] > self._current_pos[2] > self._goal['z']['min']:
-            cprint(f'Reached goal {self._goal} on location {self._current_pos}', self._logger)
+            cprint(f'Reached goal on location {self._current_pos}', self._logger)
             self._shutdown_run(outcome=TerminalType.Success)
 
     def _check_wrench(self, msg: WrenchStamped) -> None:
@@ -260,12 +270,12 @@ class Fsm:
             self._shutdown_run(outcome=TerminalType.Failure)
 
     def run(self):
-        rate = rospy.Rate(50)  # 10hz
+        rate = rospy.Rate(1)
         while not rospy.is_shutdown():
+            cprint(f'state: {self._state.name}', self._logger, msg_type=MessageType.debug)
             self._state_pub.publish(self._state.name)
             rate.sleep()
 
 
 if __name__ == "__main__":
-    fsm = Fsm()
-    fsm.run()
+    Fsm()

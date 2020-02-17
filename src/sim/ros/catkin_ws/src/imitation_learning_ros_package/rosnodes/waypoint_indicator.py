@@ -76,7 +76,7 @@ class WaypointIndicator:
             # update to next waypoint:
             self._current_waypoint_index += 1
             self._current_waypoint_index = self._current_waypoint_index % len(self._waypoints)
-            cprint(f"Reached waypoint: {self._current_waypoint_index-1}, "
+            cprint(f"Reached waypoint: {self._waypoints[self._current_waypoint_index-1]}, "
                    f"next waypoint @ {self._waypoints[self._current_waypoint_index]}.", self._logger)
             self._adjust_yaw_waypoint_following = 0
 

@@ -38,7 +38,7 @@ class RosExpert(Actor):
         )
         self._output_path = get_output_path()
         self._logger = get_logger(os.path.basename(__file__), self._output_path)
-        cprint(f'&&&&&&&&&&&&&&&&&& \n {self._specs} \n &&&&&&&&&&&&&&&&&', self._logger)
+        cprint(f'ros specifications: {self._specs}', self._logger)
         with open(os.path.join(self._output_path, 'ros_expert_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)
 
@@ -50,7 +50,7 @@ class RosExpert(Actor):
         self._next_waypoint = []
         noise_config = specs['noise'] if 'noise' in specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
-        cprint(f'-------{self._noise}', self._logger)
+
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()
 

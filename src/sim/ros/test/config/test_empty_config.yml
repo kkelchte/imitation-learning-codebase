@@ -5,7 +5,7 @@ ros_config:
   output_path: null
   ros_launch_config:
     control_mapping: false
-    fsm: false
+    fsm: true
     gazebo: false
     output_path: null
     random_seed: 123
