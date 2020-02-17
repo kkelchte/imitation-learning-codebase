@@ -126,10 +126,10 @@
 
     <arg name="ros_expert" default="false"/>
     <group if="$(arg ros_expert)">
-        <arg name="expert_config_file_path_with_extension"
+        <arg name="ros_expert_config_file_path_with_extension"
              default="src/sim/ros/config/actor/ros_expert.yml"/>
         <rosparam command="load"
-                  file="$(env HOME)/$(arg expert_config_file_path_with_extension)"
+                  file="$(env HOME)/$(arg ros_expert_config_file_path_with_extension)"
                   ns="/actor/ros_expert"/>
         <node pkg="imitation_learning_ros_package"
               name="ros_expert"
