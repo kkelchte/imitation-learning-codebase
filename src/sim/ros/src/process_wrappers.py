@@ -184,18 +184,24 @@ class RosWrapper(ProcessWrapper):
         shutil.rmtree('.ros', ignore_errors=True)
         shutil.rmtree('.gazebo', ignore_errors=True)
 
+    def _all_terminated_by_name(self, *args):
+        outcomes = [
+            self._terminate_by_name(command_name=argument) for argument in args
+        ]
+        cprint(f'termination outcomes: {outcomes}', self._logger, msg_type=MessageType.debug)
+        return sum(outcomes) == len(outcomes)
+
     def terminate(self) -> ProcessState:
         self._terminate_by_pid()
-        outcomes = [
-            self._terminate_by_name(command_name='gz'),
-            self._terminate_by_name(command_name='xterm'),
-            self._terminate_by_name(command_name='xvfb'),
-            self._terminate_by_name(command_name='ros')
-        ]
-        if sum(outcomes) == len(outcomes):
+
+        start_time = time.time()
+        max_duration = 20
+        while not self._all_terminated_by_name('ros', 'gz', 'xterm', 'xvfb') \
+                and time.time() - start_time < max_duration:
+            time.sleep(0.1)
+        if not self._all_terminated_by_name('ros', 'gz', 'xterm', 'xvfb'):
             self._state = ProcessState.Terminated
         else:
-            cprint(f'termination outcomes: {outcomes}', self._logger, msg_type=MessageType.warning)
             self._state = ProcessState.Unknown
         self._cleanup()
         return self._state
