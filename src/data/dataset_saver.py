@@ -24,6 +24,7 @@ Extension:
 @dataclass_json
 @dataclass
 class DataSaverConfig(Config):
+    saving_directory_tag: str = ''
     saving_directory: str = None
     sensors: List[str] = None
     actors: List[str] = None
@@ -42,9 +43,10 @@ class DataSaverConfig(Config):
             if isinstance(value, Config):
                 value.iterative_add_output_path(output_path)
         if self.saving_directory is None:
-            self.saving_directory = os.path.join(self.output_path, 'raw_data',
-                                                 f'{get_date_time_tag()}')
-            os.makedirs(self.saving_directory, exist_ok=True)
+            self.saving_directory = os.path.join(self.output_path, 'raw_data', f'{get_date_time_tag()}')
+            if self.saving_directory_tag != '':
+                self.saving_directory += f'_{self.saving_directory_tag}'
+            os.makedirs(self.saving_directory)
 
 
 class DataSaver:

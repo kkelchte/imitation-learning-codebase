@@ -7,6 +7,7 @@ import subprocess
 import rospy
 import numpy as np
 
+from src.core.utils import count_grep_name
 from src.sim.common.actors import ActorConfig
 from src.sim.common.data_types import TerminalType, EnvironmentType, Action, ActorType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
@@ -14,19 +15,6 @@ from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.ros_actors_DEPRECATED import RosExpert
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-
-def count_grep_name(grep_str: str) -> int:
-    ps_process = subprocess.Popen(["ps", "-ef"],
-                                  stdout=subprocess.PIPE)
-    with ps_process.stdout:
-        grep_process = subprocess.Popen(["grep", grep_str],
-                                        stdin=ps_process.stdout,
-                                        stdout=subprocess.PIPE)
-        with grep_process.stdout:
-            output_string = str(grep_process.communicate()[0])
-    processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
-                               and 'test' not in line and len(line) > len(grep_str) and 'pycharm' not in line]
-    return len(processed_output_string)
 
 
 class TestRos(unittest.TestCase):

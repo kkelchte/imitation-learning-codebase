@@ -60,14 +60,16 @@ class Config:
             if isinstance(value, Config):
                 value.iterative_add_output_path(self.output_path)
 
-    def save_config_file(self) -> None:
+    def save_config_file(self) -> str:
         if not os.path.isdir(os.path.join(self.output_path, 'configs')):
             os.makedirs(os.path.join(self.output_path, 'configs'))
-        with open(os.path.join(self.output_path, 'configs',
-                               f'{get_date_time_tag()}_'
-                               f'{camelcase_to_snake_format(self.__class__.__name__)}.yml'), 'w') as f:
+        config_file_path = os.path.join(self.output_path, 'configs',
+                                        f'{get_date_time_tag()}_'
+                                        f'{camelcase_to_snake_format(self.__class__.__name__)}.yml')
+        with open(config_file_path, 'w') as f:
             yaml.dump(data=self.yaml_approved_dict(),
                       stream=f)
+        return config_file_path
 
     def yaml_approved_dict(self) -> dict:
         output_dict = {}

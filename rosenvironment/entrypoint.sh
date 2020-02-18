@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 export HOME="${PWD}"
 export PYTHONPATH=''
 source /opt/ros/melodic/setup.bash
