@@ -9,6 +9,8 @@ import shlex
 from typing import List
 
 from dataclasses import dataclass
+
+import yaml
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
@@ -33,7 +35,7 @@ class CondorJobConfig(Config):
     use_singularity: bool = True
     singularity_file: str = sorted(glob.glob('/users/visics/kkelchte/code/imitation-learning-codebase/'
                                              'rosenvironment/singularity/ros_gazebo_cuda_*.sif'))[-1]
-    check_for_ros: bool = False
+    check_if_ros_already_in_use: bool = False
     save_locally: bool = False
 
     def post_init(self):  # add default options
@@ -73,6 +75,9 @@ class CondorJob:
         self.error_file = os.path.join(self.output_dir, 'job.error')
         self.log_file = os.path.join(self.output_dir, 'job.log')
 
+        self.local_output_path = f'/tmp/home/{os.path.basename(self.output_dir)}' if self._config.save_locally else None
+        self._original_output_path = None
+
     def _get_requirements(self) -> str:
         requirements = f'(machineowner == \"Visics\") && (machine =!= LastRemoteHost)'
         for i in range(6):
@@ -86,7 +91,7 @@ class CondorJob:
             for bad_machine in self._config.black_list:
                 requirements += f' && (machine != \"{bad_machine}.esat.kuleuven.be\")'
         if self._config.green_list is not None:
-            requirements += ' ('
+            requirements += ' && ('
             for good_machine in self._config.green_list:
                 requirements += f'(machine == \"{good_machine}.esat.kuleuven.be\") ||'
             requirements = f'{requirements[:-2]})'
@@ -115,25 +120,61 @@ class CondorJob:
 
         subprocess.call(shlex.split("chmod 711 {0}".format(self.job_file)))
 
-    def _add_check_for_ros_lines(self) -> str:
-        #  todo
-        raise NotImplementedError
+    @staticmethod
+    def _add_check_for_ros_lines() -> str:  # NOT WORKING CURRENTLY
+        lines = 'ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d \'=\' -f 2 | tail -1 | tr -d [:space:]) \n'
+        lines += 'ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
+        lines += 'JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
+        lines += 'RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d \'=\' -f 2 ' \
+                 '| cut -d \'@\' -f 2 | cut -d \'.\' -f 1) \n'
+        lines += 'Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d \'/\' -f 8) \n'
 
-    def _add_lines_to_save_locally(self) -> str:
-        #  todo
-        raise NotImplementedError
+        lines += 'while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n'
+        lines += '\t echo found other ros job, so leaving machine $RemoteHost'
+        lines += '\t ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n'
+        lines += '\t while [ $JobStatus = 2 ] ; do \n'
+        lines += '\t \t ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n'
+        lines += '\t \t JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 |' \
+                 ' cut -d \'=\' -f 2 | tr -d [:space:]) \n'
+        lines += '\t \t echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n'
+        lines += '\t \t sleep $(( RANDOM % 30 )) \n'
+        lines += '\t done \n'
+        lines += '\t echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n'
+        lines += 'done \n'
+
+        lines += 'echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running ' \
+                 'on $RemoteHost so continue...\" \n'
+        return lines
+
+    def _adjust_commands_config_to_save_locally(self) -> str:
+        # copy current config file and adjust output path
+        if '--config' not in self._config.command:
+            return ''
+        config_file = self._config.command.split('--config')[-1].strip()
+        with open(config_file, 'r') as f:
+            config_dict = yaml.load(f, Loader=yaml.FullLoader)
+        self._original_output_path = config_dict['output_path']
+        config_dict['output_path'] = self.local_output_path
+        adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
+        # store adjust config file in condor dir and make command point to adjust config file
+        with open(adjusted_config_file, 'w') as f:
+            yaml.dump(config_dict, f)
+        self._config.command = f'{self._config.command.split("--config")[0]} --config {adjusted_config_file}'
+        # add some extra lines to create new output path
+        return f'mkdir -p {self.local_output_path} \n'
 
     def _add_lines_to_copy_local_data_back(self) -> str:
-        #  todo
-        raise NotImplementedError
+        lines = f'cp -r {self.local_output_path}/* {self._original_output_path} \n'
+        lines += f'rm -r {self.local_output_path} \n'
+        return lines
 
     def write_executable_file(self):
         with open(self.executable_file, 'w') as executable:
             executable.write('#!/bin/bash\n')
-            if self._config.check_for_ros and self._config.use_singularity:
+            if self._config.check_if_ros_already_in_use and self._config.use_singularity:
                 executable.write(self._add_check_for_ros_lines())
             if self._config.save_locally:
-                executable.write(self._add_lines_to_save_locally())
+                executable.write(self._adjust_commands_config_to_save_locally())
             if self._config.use_singularity:
                 executable.write(
                     f"/usr/bin/singularity exec --nv {self._config.singularity_file} "
