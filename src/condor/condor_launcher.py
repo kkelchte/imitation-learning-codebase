@@ -1,9 +1,11 @@
 import copy
+import os
 import time
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import List
 
+import yaml
 from dataclasses_json import dataclass_json
 
 from src.condor.condor_job import CondorJobConfig, CondorJob
@@ -15,6 +17,7 @@ from src.core.utils import camelcase_to_snake_format
 class CondorLauncherMode(IntEnum):
     DataCollection = 0
     TrainModel = 1
+    EvaluateModel = 2
 
 
 @dataclass_json
@@ -64,6 +67,22 @@ class CondorLauncher:
         config_files = create_configs(base_config=self._config.base_config_file,
                                       variable_name='[\"model_config\"][\"initialisation_seed\"]',
                                       variable_values=[123*n+5100 for n in range(self._config.number_of_jobs)])
+        self.create_jobs_from_job_config_files(job_config_files=config_files)
+
+    def prepare_evaluate_model(self):
+        model_directories = [os.path.join(self._config.output_path, 'models', d)
+                             for d in os.listdir(os.path.join(self._config.output_path, 'models'))]
+        model_directories = model_directories[-self._config.number_of_jobs:]
+        with open('src/sim/ros/config/actor/dnn_actor.yml', 'r') as f:
+            actor_base_config = yaml.load(f, Loader=yaml.FullLoader)
+        actor_base_config['output_path'] = self._config.output_path
+        actor_config_files = create_configs(base_config=actor_base_config,
+                                            variable_name='[\"specs\"][\"model_config\"][\"load_checkpoint_dir\"]',
+                                            variable_values=model_directories)
+        config_files = create_configs(base_config=self._config.base_config_file,
+                                      variable_name='[\"runner_config\"][\"environment_config\"]'
+                                                    '[\"actor_configs\"][0][\"file\"]',
+                                      variable_values=actor_config_files)
         self.create_jobs_from_job_config_files(job_config_files=config_files)
 
 

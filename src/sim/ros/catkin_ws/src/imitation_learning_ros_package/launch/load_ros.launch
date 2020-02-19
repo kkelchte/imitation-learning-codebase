@@ -113,9 +113,9 @@
     <arg name="keyboard" default="false"/>
     <group if="$(arg keyboard)">
         <arg name="keyboard_config_file_path_with_extension"
-             default="src/sim/ros/config/keyboard/turtlebot_sim.yml"/>
+             default="$(env HOME)/src/sim/ros/config/keyboard/turtlebot_sim.yml"/>
         <rosparam command="load"
-                  file="$(env HOME)/$(arg keyboard_config_file_path_with_extension)"
+                  file="$(arg keyboard_config_file_path_with_extension)"
                   ns="/actor/keyboard"/>
         <node pkg="imitation_learning_ros_package"
               name="teleop_twist_keyboard"
@@ -127,9 +127,9 @@
     <arg name="ros_expert" default="false"/>
     <group if="$(arg ros_expert)">
         <arg name="ros_expert_config_file_path_with_extension"
-             default="src/sim/ros/config/actor/ros_expert.yml"/>
+             default="$(env HOME)/src/sim/ros/config/actor/ros_expert.yml"/>
         <rosparam command="load"
-                  file="$(env HOME)/$(arg ros_expert_config_file_path_with_extension)"
+                  file="$(arg ros_expert_config_file_path_with_extension)"
                   ns="/actor/ros_expert"/>
         <node pkg="imitation_learning_ros_package"
               name="ros_expert"
@@ -141,9 +141,9 @@
     <arg name="dnn_actor" default="false"/>
     <group if="$(arg dnn_actor)">
         <arg name="dnn_config_file_path_with_extension"
-             default="src/sim/ros/config/actor/dnn_actor.yml"/>
+             default="$(env HOME)/src/sim/ros/config/actor/dnn_actor.yml"/>
         <rosparam command="load"
-                  file="$(env HOME)/$(arg dnn_config_file_path_with_extension)"
+                  file="$(arg dnn_config_file_path_with_extension)"
                   ns="/actor/dnn_actor"/>
         <node pkg="imitation_learning_ros_package"
               name="dnn_actor"

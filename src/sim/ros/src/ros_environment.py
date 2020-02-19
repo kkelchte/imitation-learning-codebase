@@ -1,4 +1,5 @@
 #!/usr/bin/python3.7
+import os
 import signal
 import sys
 import time
@@ -46,7 +47,9 @@ class RosEnvironment(Environment):
 
         for actor_config in config.actor_configs:
             roslaunch_arguments[actor_config.name] = True
-            roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = actor_config.file
+            config_file = actor_config.file if actor_config.file.startswith('/') \
+                else os.path.join(os.environ['HOME'], actor_config.file)
+            roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
 
         self._ros = RosWrapper(
             config=roslaunch_arguments,

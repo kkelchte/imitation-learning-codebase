@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List
 
 from datetime import datetime
@@ -43,10 +44,20 @@ class DataSaverConfig(Config):
             if isinstance(value, Config):
                 value.iterative_add_output_path(output_path)
         if self.saving_directory is None:
-            self.saving_directory = os.path.join(self.output_path, 'raw_data', f'{get_date_time_tag()}')
-            if self.saving_directory_tag != '':
-                self.saving_directory += f'_{self.saving_directory_tag}'
-            os.makedirs(self.saving_directory)
+            self.saving_directory = create_saving_directory(self.output_path, self.saving_directory_tag)
+
+
+def create_saving_directory(output_path: str, saving_directory_tag: str = ''):
+    saving_directory = os.path.join(output_path, 'raw_data', f'{get_date_time_tag()}')
+    if saving_directory_tag != '':
+        saving_directory += f'_{saving_directory_tag}'
+    while os.path.isdir(saving_directory):  # update second if directory is already taken
+        time.sleep(1)
+        saving_directory = os.path.join(output_path, 'raw_data', f'{get_date_time_tag()}')
+        if saving_directory_tag != '':
+            saving_directory += f'_{saving_directory_tag}'
+    os.makedirs(saving_directory)
+    return saving_directory
 
 
 class DataSaver:
@@ -63,12 +74,8 @@ class DataSaver:
                                                          self._config.saving_directory)
 
     def update_saving_directory(self):
-        self._config.saving_directory = os.path.join(os.path.dirname(self._config.saving_directory),
-                                                     get_date_time_tag())
-        if self._config.saving_directory_tag != '':
-            self._config.saving_directory += f'_{self._config.saving_directory_tag}'
-
-        os.makedirs(self._config.saving_directory, exist_ok=True)
+        self._config.saving_directory = create_saving_directory(self._config.output_path,
+                                                                self._config.saving_directory_tag)
 
     def save(self, state: State, action: Action = None) -> None:
         if state.terminal == TerminalType.Unknown:

@@ -1,0 +1,17 @@
+output_path: /esat/opal/kkelchte/experimental_data/cube_world
+job_config:
+  command: python3.7 src/scripts/interactive_experiment.py
+  codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
+  cpus: 11
+  gpus: 1
+  cpu_mem_gb: 17
+  disk_mem_gb: 52
+  nice: False
+  gpu_mem_mb: 1900
+  use_singularity: True
+  check_for_ros: False
+  save_locally: False
+number_of_jobs: 3  # evaluate last three models
+mode: 2  # evaluate model mode
+use_dag: False
+base_config_file: src/scripts/config/evaluate_model_config.yml
