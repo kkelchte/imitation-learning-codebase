@@ -38,7 +38,6 @@ def get_logger(name: str,
         logger.addHandler(c_handler)
 
     logger.setLevel(logging.DEBUG)
-
     return logger
 
 

@@ -15,6 +15,7 @@ from std_msgs.msg import String
 
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.logger import get_logger, cprint, MessageType
+from src.core.utils import get_filename_without_extension
 from src.sim.common.data_types import TerminalType
 from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path
 
@@ -73,7 +74,7 @@ class Fsm:
             time.sleep(0.01)
 
         self._output_path = get_output_path()
-        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+        self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
 
         self.mode = rospy.get_param('/fsm/fsm_mode')
         self._state = FsmState.Unknown

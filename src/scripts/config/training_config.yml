@@ -8,6 +8,7 @@ trainer_config:
   batch_size: 64
   optimizer: 'Adadelta'
   learning_rate: 0.001
+  save_checkpoint_every_n: 10
   data_loader_config:
     data_sampling_seed: 123
     balance_targets: True

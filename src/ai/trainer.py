@@ -11,6 +11,7 @@ from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.model import Model
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
+from src.core.utils import get_filename_without_extension
 
 """Given model, config, data_loader, trains a model and logs relevant training information
 
@@ -26,6 +27,7 @@ class TrainerConfig(EvaluatorConfig):
     optimizer: str = 'SGD'
     output_weights: List[float] = None  # for each model output specify impact amount of loss in optimizer step
     learning_rate: float = 0.01
+    save_checkpoint_every_n: int = 10
 
     def post_init(self):
         if self.output_weights is not None:
@@ -41,9 +43,9 @@ class Trainer(Evaluator):
 
     def __init__(self, config: TrainerConfig, model: Model):
         super().__init__(config, model, quiet=True)
-        self._logger = get_logger(name=__name__,
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
-                                  quite=True)
+                                  quite=False)
         cprint(f'Started.', self._logger)
         self._optimizer = eval(f'torch.optim.{self._config.optimizer}(params=self._model.get_parameters(),'
                                f'lr=self._config.learning_rate)')
@@ -62,5 +64,10 @@ class Trainer(Evaluator):
             total_loss.backward()  # calculate gradients
             self._optimizer.step()  # apply gradients according to optimizer
             total_error.append(total_loss.cpu().detach())
-        self._model.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
+
+        if epoch != -1:
+            if epoch % self._config.save_checkpoint_every_n == 0:
+                self._model.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
+        else:
+            self._model.save_to_checkpoint()
         return float(torch.Tensor(total_error).mean())

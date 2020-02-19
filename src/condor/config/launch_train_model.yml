@@ -1,6 +1,6 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world
 job_config:
-  command: python3.7 src/scripts/interactive_experiment.py
+  command: python3.7 src/scripts/dataset_experiment.py
   codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
   cpus: 8
   gpus: 1
@@ -8,7 +8,7 @@ job_config:
   disk_mem_gb: 52
   nice: False
   gpu_mem_mb: 1900
-  use_singularity: True
+  use_singularity: False
   check_for_ros: False
   save_locally: False
 number_of_jobs: 3

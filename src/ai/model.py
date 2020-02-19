@@ -11,6 +11,7 @@ from torch import nn
 from src.ai.architectures import *  # Do not remove
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint, MessageType
+from src.core.utils import get_filename_without_extension
 
 """
 Model contains of architectures (can be modular).
@@ -46,12 +47,12 @@ class Model:
 
     def __init__(self, config: ModelConfig):
         self._config = config
-        self._logger = get_logger(name=__name__,
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
                                   quite=False)
+        cprint(f'Started.', self._logger)
         self._checkpoint_directory = os.path.join(self._config.output_path, 'torch_checkpoints')
         os.makedirs(self._checkpoint_directory, exist_ok=True)
-        cprint(f'Started.', self._logger)
         self._architecture = eval(f'{self._config.architecture}.Net('
                                   f'dropout={self._config.dropout},'
                                   f'output_sizes={self._config.output_sizes})')
@@ -104,6 +105,7 @@ class Model:
         filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'
         torch.save(self._architecture.state_dict(), f'{self._checkpoint_directory}/{filename}')
         torch.save(self._architecture.state_dict(), f'{self._checkpoint_directory}/checkpoint_latest')
+        cprint(f'stored {filename}', self._logger)
 
     def get_input_sizes(self):
         return self._architecture.input_sizes

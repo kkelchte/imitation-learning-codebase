@@ -17,7 +17,7 @@ from src.core.logger import get_logger, cprint, MessageType
 from src.sim.common.actors import Actor, ActorConfig
 from src.sim.common.data_types import ActorType, Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_image, get_output_path, adapt_action_to_twist
-from src.core.utils import camelcase_to_snake_format
+from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 
 class DnnActor(Actor):
@@ -37,7 +37,7 @@ class DnnActor(Actor):
             )
         )
         self._output_path = get_output_path()
-        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+        self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         cprint(f'&&&&&&&&&&&&&&&&&& \n {self._specs} \n &&&&&&&&&&&&&&&&&', self._logger)
         with open(os.path.join(self._output_path, 'dnn_actor_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)

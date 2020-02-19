@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
+from src.core.utils import get_filename_without_extension
 from src.data.data_types import Dataset, Run
 from src.data.utils import load_and_preprocess_file, filename_to_timestamp, torch_append, \
     arrange_run_according_timestamps, load_data, load_dataset_from_hdf5, calculate_probabilites_per_run
@@ -53,7 +54,7 @@ class DataLoader:
 
     def __init__(self, config: DataLoaderConfig):
         self._config = config
-        self._logger = get_logger(name=__name__,
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
                                   quite=False)
         cprint(f'Started.', self._logger)

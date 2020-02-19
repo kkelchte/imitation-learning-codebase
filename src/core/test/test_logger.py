@@ -27,6 +27,16 @@ class TestLogger(unittest.TestCase):
             log_lines = f.readlines()
             self.assertEqual(len(log_lines), 4)
 
+    def test_multiple_loggers(self):
+        logger_a = logger.get_logger(name='module_a',
+                                     output_path=self.TEST_DIR)
+        logger_b = logger.get_logger(name='module_b',
+                                     output_path=self.TEST_DIR)
+        logger.cprint('started', logger_a)
+        logger.cprint('started', logger_b)
+        log_files = glob(os.path.join(self.TEST_DIR, 'log_files', '*'))
+        self.assertEqual(len(log_files), 2)
+
     def test_cprint(self):
         current_logger = logger.get_logger(name=os.path.basename(__file__),
                                            output_path=self.TEST_DIR,

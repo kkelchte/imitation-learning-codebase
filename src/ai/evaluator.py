@@ -1,15 +1,14 @@
 #!/usr/bin/python3.7
 
 from dataclasses import dataclass
-import numpy as np
 import torch
-from torch import nn
 from dataclasses_json import dataclass_json
 from tqdm import tqdm
 
 from src.ai.model import Model
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
+from src.core.utils import get_filename_without_extension
 from src.data.dataset_loader import DataLoaderConfig, DataLoader
 
 """Given model, config, data_loader, evaluates a model and logs relevant training information
@@ -31,9 +30,10 @@ class Evaluator:
         self._config = config
         self._model = model
         self._data_loader = DataLoader(config=self._config.data_loader_config)
-        self._logger = get_logger(name=__name__,
+
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
-                                  quite=True)
+                                  quite=False) if type(self) == Evaluator else None
         if not quiet:
             cprint(f'Started.', self._logger)
         self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._model.device)')

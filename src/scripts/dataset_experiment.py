@@ -9,7 +9,7 @@ from src.ai.model import ModelConfig, Model
 from src.ai.trainer import TrainerConfig, Trainer
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint
-from src.core.utils import get_date_time_tag
+from src.core.utils import get_date_time_tag, get_filename_without_extension
 
 """Script for collecting dataset / evaluating a model in simulated or real environment.
 
@@ -45,7 +45,7 @@ class DatasetExperiment:
 
     def __init__(self, config: DatasetExperimentConfig):
         self._config = config
-        self._logger = get_logger(name=__name__,
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
                                   quite=False)
         cprint(f'Started.', self._logger)
