@@ -4,6 +4,7 @@ from dataclasses_json import dataclass_json
 
 from src.core.logger import get_logger, cprint
 from src.core.config_loader import Config
+from src.core.utils import get_filename_without_extension
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.common.data_types import TerminalType
 from src.sim.environment_factory import EnvironmentFactory
@@ -24,7 +25,7 @@ class EnvironmentRunner:
     """
     def __init__(self, config: EnvironmentRunnerConfig, data_saver: DataSaver = None):
         self._config = config
-        self._logger = get_logger(name=__name__,
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
                                   quite=False)
 

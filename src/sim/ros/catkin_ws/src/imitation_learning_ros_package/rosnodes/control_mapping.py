@@ -32,6 +32,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 
 from src.core.logger import get_logger, cprint
+from src.core.utils import get_filename_without_extension
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.utils import get_output_path
 
@@ -45,7 +46,7 @@ class ControlMapper:
             time.sleep(0.01)
 
         self._output_path = get_output_path()
-        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+        self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
 
         self._mapping = rospy.get_param('/control_mapping/mapping')
         cprint(f'mapping: {self._mapping}', self._logger)

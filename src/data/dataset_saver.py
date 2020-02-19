@@ -8,7 +8,7 @@ from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint, MessageType
-from src.core.utils import get_date_time_tag
+from src.core.utils import get_date_time_tag, get_filename_without_extension
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file
 from src.data.data_types import Frame
 from src.sim.common.data_types import State, Action, TerminalType
@@ -64,7 +64,7 @@ class DataSaver:
 
     def __init__(self, config: DataSaverConfig):
         self._config = config
-        self._logger = get_logger(name=__name__,
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=self._config.output_path,
                                   quite=False)
         cprint(f'initiate', self._logger)

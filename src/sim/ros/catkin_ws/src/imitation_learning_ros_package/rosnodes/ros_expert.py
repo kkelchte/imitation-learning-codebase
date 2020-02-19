@@ -17,7 +17,7 @@ from src.sim.common.noise import *
 from src.sim.common.data_types import ActorType, Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
     get_output_path, apply_noise_to_twist
-from src.core.utils import camelcase_to_snake_format
+from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 
 class RosExpert(Actor):
@@ -37,7 +37,7 @@ class RosExpert(Actor):
             )
         )
         self._output_path = get_output_path()
-        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+        self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         cprint(f'ros specifications: {self._specs}', self._logger)
         with open(os.path.join(self._output_path, 'ros_expert_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)

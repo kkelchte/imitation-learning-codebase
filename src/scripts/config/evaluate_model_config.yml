@@ -28,4 +28,5 @@ runner_config:
         name: ros_expert
         type: 1
   number_of_episodes: 1
-data_saver_config: {}
+data_saver_config:
+  saving_directory_tag: evaluate

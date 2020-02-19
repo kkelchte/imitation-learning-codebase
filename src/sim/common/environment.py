@@ -6,6 +6,7 @@ from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
+from src.core.utils import get_filename_without_extension
 from src.sim.common.data_types import Action, State, EnvironmentType, ActorType, ProcessState
 from src.sim.common.actors import Actor, ActorConfig
 
@@ -83,7 +84,7 @@ class Environment:
 
     def __init__(self, config: EnvironmentConfig):
         self._config = config
-        self._logger = get_logger(name=__name__,
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=self._config.output_path,
                                   quite=False)
         cprint(f'initiate', self._logger)

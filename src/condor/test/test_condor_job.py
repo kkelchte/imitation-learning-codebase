@@ -89,9 +89,10 @@ class TestCondorJob(unittest.TestCase):
         variable_values = ['src/sim/ros/config/actor/ros_expert_noisy.yml',
                            'src/sim/ros/config/actor/ros_expert.yml']
         config_files = create_configs(base_config=config_dict,
-                                      variable_name='[\"runner_config\"][\"environment_config\"]'
-                                                    '[\"actor_configs\"][0][\"file\"]',
-                                      variable_values=variable_values)
+                                      adjustments={
+                                          '[\"runner_config\"][\"environment_config\"][\"actor_configs\"][0][\"file\"]':
+                                              variable_values
+                                      })
         self.assertEqual(len(config_files), len(variable_values))
         for index, f in enumerate(config_files):
             self.assertTrue(os.path.isfile(f))
@@ -99,6 +100,30 @@ class TestCondorJob(unittest.TestCase):
                 config_dict = yaml.load(fstream, Loader=yaml.FullLoader)
                 self.assertEqual(config_dict['runner_config']['environment_config']['actor_configs'][0]['file'],
                                  variable_values[index])
+
+    def test_config_creation_with_multiple_variables(self):
+        base_file = 'src/scripts/config/evaluate_model_config.yml'
+        with open(base_file, 'r') as f:
+            config_dict = yaml.load(f, Loader=yaml.FullLoader)
+        config_dict['output_path'] = self.output_dir
+        actor_tags = ['a', 'b', 'c', 'd']
+        actor_config_files = [f'file_{x}' for x in actor_tags]
+        adjustments = {
+            '[\"data_saver_config\"][\"saving_directory_tag\"]': actor_tags,
+            '[\"runner_config\"][\"environment_config\"]'
+            '[\"actor_configs\"][0][\"file\"]': actor_config_files
+        }
+        config_files = create_configs(base_config=config_dict,
+                                      adjustments=adjustments)
+        self.assertEqual(len(config_files), len(actor_tags))
+        for index, f in enumerate(config_files):
+            self.assertTrue(os.path.isfile(f))
+            with open(f, 'r') as fstream:
+                config_dict = yaml.load(fstream, Loader=yaml.FullLoader)
+                self.assertEqual(config_dict['runner_config']['environment_config']['actor_configs'][0]['file'],
+                                 actor_config_files[index])
+                self.assertEqual(config_dict['data_saver_config']['saving_directory_tag'],
+                                 actor_tags[index])
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

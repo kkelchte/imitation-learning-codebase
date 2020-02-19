@@ -1,6 +1,6 @@
 import copy
 import os
-from typing import List, Union
+from typing import List, Union, Dict
 
 import yaml
 
@@ -26,14 +26,25 @@ def get_variable_name(variable_name: str) -> str:
     return strip_variable(variable_name.split(']')[-2].split('[')[-1])
 
 
-def create_configs(base_config: Union[dict, str], variable_name: str, variable_values: list) -> List[str]:
+def create_configs(base_config: Union[dict, str], adjustments: Dict[str, list]) -> List[str]:
     if isinstance(base_config, str):
         with open(base_config, 'r') as f:
             base_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    # assert each adjusting variable name comes with an equal number of values
+    variable_value_lengths = [len(variable_values) for variable_values in adjustments.values()]
+    assert min(variable_value_lengths) == max(variable_value_lengths)
+
     configs = []
-    for value in variable_values:
+    for value_index in range(variable_value_lengths[0]):
         new_config = copy.deepcopy(base_config)
-        exec(f'new_config{variable_name} = value')
+        # loop over variable names to adjust new config
+        for variable_name in adjustments.keys():
+            value = adjustments[variable_name][value_index]
+            exec(f'new_config{variable_name} = value')
+        # use first variable_name to define config_name
+        variable_name = list(adjustments.keys())[0]
+        value = adjustments[variable_name][value_index]
         config_path = os.path.join(base_config['output_path'], 'configs',
                                    f'{get_date_time_tag()}_{get_variable_name(variable_name)}_'
                                    f'{strip_variable(value)}.yml')

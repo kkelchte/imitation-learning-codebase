@@ -59,14 +59,18 @@ class CondorLauncher:
 
     def prepare_data_collection(self):
         config_files = create_configs(base_config=self._config.base_config_file,
-                                      variable_name='[\"data_saver_config\"][\"saving_directory_tag\"]',
-                                      variable_values=list(range(self._config.number_of_jobs)))
+                                      adjustments={
+                                          '[\"data_saver_config\"][\"saving_directory_tag\"]':
+                                              list(range(self._config.number_of_jobs))
+                                      })
         self.create_jobs_from_job_config_files(job_config_files=config_files)
 
     def prepare_train_model(self):
         config_files = create_configs(base_config=self._config.base_config_file,
-                                      variable_name='[\"model_config\"][\"initialisation_seed\"]',
-                                      variable_values=[123*n+5100 for n in range(self._config.number_of_jobs)])
+                                      adjustments={
+                                          '[\"model_config\"][\"initialisation_seed\"]':
+                                              [123 * n + 5100 for n in range(self._config.number_of_jobs)]
+                                      })
         self.create_jobs_from_job_config_files(job_config_files=config_files)
 
     def prepare_evaluate_model(self):
@@ -76,13 +80,18 @@ class CondorLauncher:
         with open('src/sim/ros/config/actor/dnn_actor.yml', 'r') as f:
             actor_base_config = yaml.load(f, Loader=yaml.FullLoader)
         actor_base_config['output_path'] = self._config.output_path
+        actor_tags = [f'evaluate_{os.path.basename(d)}' for d in model_directories]
         actor_config_files = create_configs(base_config=actor_base_config,
-                                            variable_name='[\"specs\"][\"model_config\"][\"load_checkpoint_dir\"]',
-                                            variable_values=model_directories)
+                                            adjustments={
+                                                '[\"specs\"][\"model_config\"][\"load_checkpoint_dir\"]':
+                                                    model_directories
+                                            })
         config_files = create_configs(base_config=self._config.base_config_file,
-                                      variable_name='[\"runner_config\"][\"environment_config\"]'
-                                                    '[\"actor_configs\"][0][\"file\"]',
-                                      variable_values=actor_config_files)
+                                      adjustments={
+                                          '[\"data_saver_config\"][\"saving_directory_tag\"]': actor_tags,
+                                          '[\"runner_config\"][\"environment_config\"]'
+                                          '[\"actor_configs\"][0][\"file\"]': actor_config_files
+                                      })
         self.create_jobs_from_job_config_files(job_config_files=config_files)
 
 

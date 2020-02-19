@@ -16,7 +16,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32MultiArray, Empty
 
 from src.core.logger import get_logger, cprint, MessageType
-from src.core.utils import camelcase_to_snake_format
+from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 from src.sim.ros.src.utils import get_output_path
 
 
@@ -28,7 +28,7 @@ class WaypointIndicator:
         while not rospy.has_param('/robot/odometry_topic') and time.time() < start_time + max_duration:
             time.sleep(0.1)
         self._output_path = get_output_path()
-        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+        self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
 
         # fields
         self._current_waypoint_index = 0
