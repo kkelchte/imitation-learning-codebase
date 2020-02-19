@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from enum import IntEnum
 
+from src.core.utils import get_date_time_tag
 """Modified logger to store easy-extractable log files.
 
 """
@@ -17,10 +18,11 @@ def get_logger(name: str,
     [logger.removeHandler(handler) for handler in logger.handlers]
 
     # add file handler
-    if output_path != '' and not os.path.exists(output_path):
-        os.makedirs(output_path)
-    output_file = f'/tmp/{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}.log' if not output_path else \
-        f'{output_path}/logfile'
+    if output_path != '':
+        os.makedirs(os.path.join(output_path, 'log_files'), exist_ok=True)
+        output_file = os.path.join(output_path, 'log_files', f'{get_date_time_tag()}_{name}')
+    else:
+        output_file = f'/tmp/{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}.log'
     f_handler = logging.FileHandler(output_file)
     f_handler.setLevel(logging.DEBUG)
     f_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')

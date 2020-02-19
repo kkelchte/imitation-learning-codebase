@@ -1,6 +1,7 @@
 import unittest
 import os
 import shutil
+from glob import glob
 
 import src.core.logger as logger
 from src.core.utils import get_filename_without_extension
@@ -21,10 +22,10 @@ class TestLogger(unittest.TestCase):
         current_logger.warning(f'warning message')
         current_logger.error(f'error message')
 
-        f = open(os.path.join(self.TEST_DIR, 'logfile'), 'r')
-        log_lines = f.readlines()
-        self.assertEqual(len(log_lines), 4)
-        f.close()
+        log_file = glob(os.path.join(self.TEST_DIR, 'log_files', '*'))[0]
+        with open(log_file, 'r') as f:
+            log_lines = f.readlines()
+            self.assertEqual(len(log_lines), 4)
 
     def test_cprint(self):
         current_logger = logger.get_logger(name=os.path.basename(__file__),
@@ -32,14 +33,13 @@ class TestLogger(unittest.TestCase):
                                            quite=True)
         logger.cprint('HELP', current_logger)
 
-        f = open(os.path.join(self.TEST_DIR, 'logfile'), 'r')
-        log_line = f.readlines()[0].strip()
-        print(log_line)
-        self.assertTrue('HELP' in log_line)
-        f.close()
+        log_file = glob(os.path.join(self.TEST_DIR, 'log_files', '*'))[0]
+        with open(log_file, 'r') as f:
+            log_line = f.readlines()[0].strip()
+            print(log_line)
+            self.assertTrue('HELP' in log_line)
 
     def tearDown(self):
-        os.remove(os.path.join(self.TEST_DIR, 'logfile'))
         shutil.rmtree(self.TEST_DIR, ignore_errors=True)
 
 
