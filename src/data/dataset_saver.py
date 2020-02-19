@@ -65,6 +65,9 @@ class DataSaver:
     def update_saving_directory(self):
         self._config.saving_directory = os.path.join(os.path.dirname(self._config.saving_directory),
                                                      get_date_time_tag())
+        if self._config.saving_directory_tag != '':
+            self._config.saving_directory += f'_{self._config.saving_directory_tag}'
+
         os.makedirs(self._config.saving_directory, exist_ok=True)
 
     def save(self, state: State, action: Action = None) -> None:

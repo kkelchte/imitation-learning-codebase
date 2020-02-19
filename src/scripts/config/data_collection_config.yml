@@ -29,4 +29,4 @@ runner_config:
         type: 1
   number_of_episodes: 10
 data_saver_config:
-  store_hdf5: true
+  store_hdf5: false

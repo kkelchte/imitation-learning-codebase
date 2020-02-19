@@ -1,4 +1,4 @@
-# imitation-learning-codebase
+# imitation-learning-codebase overview
 integrated code base for future imitation learning projects
 
 ### /rosenvironment 
@@ -10,3 +10,9 @@ Directory contains python virtual environment which requires to be sourced to ru
 
 ### /src
 Directory contains source code of total project.
+
+# Troubleshoot
+
+__Module Not Found__
+1. make sure each python scripts is called from the main (this) directory
+2. make sure the correct python3.7 interpreter is used

@@ -33,6 +33,7 @@ class ModelConfig(Config):
     output_sizes: List[List] = None
     initialisation_type: InitializationType = InitializationType.Xavier
     pretrained: bool = False
+    initialisation_seed: int = 0
 
     def __post_init__(self):
         if self.load_checkpoint_dir is None:
@@ -73,6 +74,7 @@ class Model:
         return self._architecture.forward(inputs=inputs, train=train)
 
     def initialize_architecture_weights(self, initialisation_type: InitializationType = 0):
+        torch.manual_seed(self._config.initialisation_seed)
         for p in self.get_parameters():
             if initialisation_type == InitializationType.Xavier:
                 if len(p.shape) == 1:

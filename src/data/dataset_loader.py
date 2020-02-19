@@ -26,6 +26,7 @@ class DataLoaderConfig(Config):
     outputs: List[str] = None
     reward: str = ''
     balance_targets: bool = False
+    data_sampling_seed: int = 123
 
     def post_init(self):  # add default options
         if self.inputs is None:
@@ -56,6 +57,7 @@ class DataLoader:
                                   output_path=config.output_path,
                                   quite=False)
         cprint(f'Started.', self._logger)
+        np.random.seed(self._config.data_sampling_seed)
         self._dataset = Dataset()
         self._num_datapoints = 0
         self._num_runs = 0

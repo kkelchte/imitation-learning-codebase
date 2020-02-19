@@ -5,9 +5,11 @@ import numpy as np
 
 class NoiseBase:
 
-    def __init__(self, dimension: tuple = (1,)):
+    def __init__(self, dimension: tuple = (1,), seed: int = -1):
         self._dimension = dimension
         self._noise_value = np.zeros(dimension)
+        if seed != -1:
+            np.random.seed(seed)
 
     def sample(self) -> np.ndarray:
         self._noise_value = np.random.normal(size=self._dimension)
@@ -21,8 +23,9 @@ class GaussianNoise(NoiseBase):
 
     def __init__(self, dimension: tuple = (1,),
                  mean: Union[float, np.ndarray] = 0,
-                 std: Union[float, np.ndarray] = 1):
-        super().__init__(dimension=dimension)
+                 std: Union[float, np.ndarray] = 1,
+                 seed: int = -1):
+        super().__init__(dimension=dimension, seed=seed)
         self._mean = mean
         self._std = std
 
@@ -35,8 +38,9 @@ class UniformNoise(NoiseBase):
 
     def __init__(self, dimension: tuple = (1,),
                  low: Union[float, np.ndarray] = 0,
-                 high: Union[float, np.ndarray] = 1):
-        super().__init__(dimension=dimension)
+                 high: Union[float, np.ndarray] = 1,
+                 seed: int = -1):
+        super().__init__(dimension=dimension, seed=seed)
         self._low = low
         self._high = high
 
@@ -50,8 +54,9 @@ class OUNoise(NoiseBase):
     def __init__(self, dimension: tuple = (1,),
                  mean: Union[float, np.ndarray] = 0,
                  std: Union[float, np.ndarray] = 1,
-                 pullback: Union[float, np.ndarray] = 0.15):
-        super().__init__(dimension=dimension)
+                 pullback: Union[float, np.ndarray] = 0.15,
+                 seed: int = -1):
+        super().__init__(dimension=dimension, seed=seed)
         self._mean = mean * np.ones(self._dimension) if isinstance(mean, float) else mean
         self._std = std * np.ones(self._dimension) if isinstance(std, float) else std
         self._pullback = pullback * np.ones(self._dimension) if isinstance(pullback, float) else pullback
