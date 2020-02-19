@@ -1,6 +1,8 @@
+import copy
 import time
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import List
 
 from dataclasses_json import dataclass_json
 
@@ -42,12 +44,9 @@ class CondorLauncher:
     def prepare_factory(self):
         eval(f'self.prepare_{camelcase_to_snake_format(self._config.mode.name)}()')
 
-    def prepare_data_collection(self):
-        job_config = self._config.job_config
-        config_files = create_configs(base_config=self._config.base_config_file,
-                                      variable_name='[\"data_saver_config\"][\"saving_directory_tag\"]',
-                                      variable_values=list(range(self._config.number_of_jobs)))
-        for config in config_files:
+    def create_jobs_from_job_config_files(self, job_config_files: List[str]) -> None:
+        for config in job_config_files:
+            job_config = copy.deepcopy(self._config.job_config)
             job_config.config_file = config
             condor_job = CondorJob(config=job_config)
             condor_job.write_job_file()
@@ -55,18 +54,17 @@ class CondorLauncher:
             self._jobs.append(condor_job)
             time.sleep(1)
 
-    def prepare_train_model(self):
-        job_config = self._config.job_config
+    def prepare_data_collection(self):
         config_files = create_configs(base_config=self._config.base_config_file,
                                       variable_name='[\"data_saver_config\"][\"saving_directory_tag\"]',
                                       variable_values=list(range(self._config.number_of_jobs)))
-        for config in config_files:
-            job_config.config_file = config
-            condor_job = CondorJob(config=job_config)
-            condor_job.write_job_file()
-            condor_job.write_executable_file()
-            self._jobs.append(condor_job)
-            time.sleep(1)
+        self.create_jobs_from_job_config_files(job_config_files=config_files)
+
+    def prepare_train_model(self):
+        config_files = create_configs(base_config=self._config.base_config_file,
+                                      variable_name='[\"model_config\"][\"initialisation_seed\"]',
+                                      variable_values=[123*n+5100 for n in range(self._config.number_of_jobs)])
+        self.create_jobs_from_job_config_files(job_config_files=config_files)
 
 
 if __name__ == '__main__':

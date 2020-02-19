@@ -2,9 +2,9 @@ output_path: /esat/opal/kkelchte/experimental_data/cube_world
 job_config:
   command: python3.7 src/scripts/interactive_experiment.py
   codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-  cpus: 4
+  cpus: 8
   gpus: 1
-  cpu_mem_gb: 17
+  cpu_mem_gb: 10
   disk_mem_gb: 52
   nice: False
   gpu_mem_mb: 1900
