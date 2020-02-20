@@ -159,6 +159,16 @@ class RosEnvironment(Environment):
         # Start ROS node:
         rospy.init_node('ros_python_interface', anonymous=True)
 
+        # assert fsm has started properly
+        if self._config.ros_config.ros_launch_config.fsm:
+            while self.fsm_state is None:
+                self._run_shortly()
+
+        # assert dnn model has started properly
+        if 'dnn_actor' in [conf.name for conf in self._config.actor_configs]:
+            while len(self._actor_values['dnn_actor']) == 0:
+                self._run_shortly()
+
     def _signal_handler(self, signal_number: int, _) -> None:
         return_value = self.remove()
         cprint(f'received signal {signal_number}.', self._logger,
@@ -201,6 +211,7 @@ class RosEnvironment(Environment):
                 self._config.max_number_of_steps != -1 and \
                 self._config.max_number_of_steps < self._step:
             self._terminal_state = TerminalType.Failure
+            cprint(f'reach max number of steps {self._config.max_number_of_steps} < {self._step}', self._logger)
 
     def _pause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
@@ -242,14 +253,9 @@ class RosEnvironment(Environment):
             self._pause_gazebo()
 
     def reset(self) -> State:
-        # assert fsm has started properly
-        if self._config.ros_config.ros_launch_config.fsm:
-            while self.fsm_state is None:
-                self._run_shortly()
-        # assert dnn model has started properly
-        if 'dnn_actor' in [conf.name for conf in self._config.actor_configs]:
-            while len(self._actor_values['dnn_actor']) == 0:
-                self._run_shortly()
+        cprint(f'resetting', self._logger)
+        self._step = 0
+        self._terminal_state = TerminalType.Unknown
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()

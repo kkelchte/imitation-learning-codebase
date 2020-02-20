@@ -74,6 +74,7 @@ class ProcessWrapper:
             return True
         else:
             self._state = ProcessState.Unknown
+            self.terminate()
             return False
 
     def _terminate_by_name(self, command_name: str = '') -> bool:
