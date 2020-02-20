@@ -1,5 +1,5 @@
-output_path: /esat/opal/kkelchte/experimental_data/cube_world_fresh
-mode: 4  # dag data_collection mode
+output_path: /esat/opal/kkelchte/experimental_data/cube_world_all
+mode: 6  # dag data_collection_train_evaluate mode
 job_configs:
   - command: python3.7 src/scripts/interactive_experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase

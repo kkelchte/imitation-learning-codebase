@@ -2,9 +2,9 @@ output_path: /esat/opal/kkelchte/experimental_data/cube_world
 runner_config:
   environment_config:
     factory_key: 0
-    max_number_of_steps: -1
+    max_number_of_steps: 1000
     ros_config:
-      step_rate_fps: 2
+      step_rate_fps: 10
       ros_launch_config:
         control_mapping: true
         control_mapping_config: evaluation
@@ -27,6 +27,6 @@ runner_config:
       - file: src/sim/ros/config/actor/ros_expert.yml
         name: ros_expert
         type: 1
-  number_of_episodes: 1
+  number_of_episodes: 10
 data_saver_config:
   saving_directory_tag: evaluate

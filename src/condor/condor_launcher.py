@@ -21,6 +21,7 @@ class CondorLauncherMode(IntEnum):
     DataCleaning = 3
     DagDataCollection = 4
     DagTrainEvaluate = 5
+    DagDataCollectionTrainEvaluate = 6
 
 
 @dataclass_json
@@ -187,6 +188,61 @@ class CondorLauncher:
             dag_lines += f'Retry training_{index} 2 \n'
         for index, job in enumerate(self._jobs[:self._config.number_of_jobs[1]]):
             dag_lines += f'Retry evaluation_{index} 3 \n'
+
+        self._dag = Dag(lines_dag_file=dag_lines,
+                        dag_directory=os.path.join(self._config.output_path, 'dag', get_date_time_tag()))
+
+    def prepare_dag_data_collection_train_evaluate(self):
+        self.prepare_data_collection(base_config_file=self._config.base_config_files[0],
+                                     job_config_object=self._config.job_configs[0],
+                                     number_of_jobs=self._config.number_of_jobs[0])
+        self.prepare_data_cleaning(base_config_file=self._config.base_config_files[1],
+                                   job_config_object=self._config.job_configs[1],
+                                   number_of_jobs=self._config.number_of_jobs[1])
+        self.prepare_train_model(base_config_file=self._config.base_config_files[2],
+                                 job_config_object=self._config.job_configs[2],
+                                 number_of_jobs=self._config.number_of_jobs[2])
+        self.prepare_evaluate_model(base_config_file=self._config.base_config_files[3],
+                                    job_config_object=self._config.job_configs[3],
+                                    number_of_jobs=self._config.number_of_jobs[3])
+        dag_lines = '# Prepare_dag_data_collection_train_evaluate: \n'
+        # Define jobs:
+        start_index = 0
+        end_index = self._config.number_of_jobs[0]
+        for index, job in enumerate(self._jobs[start_index: end_index]):
+            dag_lines += f'JOB data_collection_{index} {job.job_file} \n'
+        start_index = self._config.number_of_jobs[0]
+        end_index = sum(self._config.number_of_jobs[0:2])
+        assert end_index - start_index == 1
+        for index, job in enumerate(self._jobs[start_index: end_index]):
+            dag_lines += f'JOB data_cleaning {job.job_file} \n'
+        start_index = sum(self._config.number_of_jobs[0:2])
+        end_index = sum(self._config.number_of_jobs[0:3])
+        for index, job in enumerate(self._jobs[start_index: end_index]):
+            dag_lines += f'JOB training_{index} {job.job_file} \n'
+        start_index = sum(self._config.number_of_jobs[0:3])
+        end_index = sum(self._config.number_of_jobs[:])
+        for index, job in enumerate(self._jobs[start_index: end_index]):
+            dag_lines += f'JOB evaluate_{index} {job.job_file} \n'
+        # Define links:
+        dag_lines += f'PARENT {" ".join([f"data_collection_{i}" for i in range(self._config.number_of_jobs[0])])}' \
+                     f'CHILD data_cleaning \n'
+        dag_lines += f'PARENT data_cleaning' \
+                     f'CHILD {" ".join([f"training_{i}" for i in range(self._config.number_of_jobs[2])])} \n'
+        number_of_links = min(self._config.number_of_jobs[2:])
+        for index in range(number_of_links):
+            dag_lines += f'PARENT training_{index} CHILD evaluation_{index} \n'
+        # Define retry numbers
+        for index in range(self._config.number_of_jobs[0]):
+            dag_lines += f'Retry data_collection_{index} 2 \n'
+        dag_lines += f'Retry data_cleaning 3 \n'
+        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[2]]):
+            dag_lines += f'Retry training_{index} 2 \n'
+        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[3]]):
+            dag_lines += f'Retry evaluation_{index} 3 \n'
+        # Create DAG object
+        self._dag = Dag(lines_dag_file=dag_lines,
+                        dag_directory=os.path.join(self._config.output_path, 'dag', get_date_time_tag()))
 
 
 if __name__ == '__main__':
