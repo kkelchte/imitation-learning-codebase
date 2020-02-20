@@ -26,5 +26,5 @@ runner_config:
       - file: src/sim/ros/config/actor/ros_expert.yml
         name: ros_expert
         type: 1
-  number_of_episodes: 2
+  number_of_episodes: 3
 data_saver_config: {}

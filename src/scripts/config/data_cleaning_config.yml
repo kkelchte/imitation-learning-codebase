@@ -1,0 +1,4 @@
+output_path: '/esat/opal/kkelchte/experimental_data/cube_world'
+data_saver_config:
+  store_hdf5: true
+  training_validation_split: 0.8

@@ -61,8 +61,8 @@ class CondorJob:
         self.specs = {
             'RequestCpus': self._config.cpus,
             'Request_GPUs': self._config.gpus,
-            'RequestMemory': self._config.cpu_mem_gb,
-            'RequestDisk': self._config.disk_mem_gb,
+            'RequestMemory': f'{self._config.cpu_mem_gb} G',
+            'RequestDisk': f'{self._config.disk_mem_gb} G',
             'Niceuser': self._config.nice,
             '+RequestWalltime': self._config.wall_time_s,
         }
@@ -75,7 +75,9 @@ class CondorJob:
         self.error_file = os.path.join(self.output_dir, 'job.error')
         self.log_file = os.path.join(self.output_dir, 'job.log')
 
-        self.local_output_path = f'/tmp/home/{os.path.basename(self.output_dir)}' if self._config.save_locally else None
+        self.local_home = '/tmp/imitation-learning-codebase'
+        self.local_output_path = f'{self.local_home}/{os.path.basename(self.output_dir)}_' \
+                                 f'{get_date_time_tag()}' if self._config.save_locally else None
         self._original_output_path = None
 
     def _get_requirements(self) -> str:
@@ -120,8 +122,7 @@ class CondorJob:
 
         subprocess.call(shlex.split("chmod 711 {0}".format(self.job_file)))
 
-    @staticmethod
-    def _add_check_for_ros_lines() -> str:  # NOT WORKING CURRENTLY
+    def _add_check_for_ros_lines(self) -> str:  # NOT WORKING CURRENTLY
         lines = 'ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d \'=\' -f 2 | tail -1 | tr -d [:space:]) \n'
         lines += 'ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
         lines += 'JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
@@ -129,7 +130,8 @@ class CondorJob:
                  '| cut -d \'@\' -f 2 | cut -d \'.\' -f 1) \n'
         lines += 'Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d \'/\' -f 8) \n'
 
-        lines += 'while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n'
+        # lines += 'while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n'
+        lines += f'if [ -e {self.local_home}/* ] ; then'
         lines += '\t echo found other ros job, so leaving machine $RemoteHost'
         lines += '\t ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n'
         lines += '\t while [ $JobStatus = 2 ] ; do \n'
@@ -140,7 +142,7 @@ class CondorJob:
         lines += '\t \t sleep $(( RANDOM % 30 )) \n'
         lines += '\t done \n'
         lines += '\t echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n'
-        lines += 'done \n'
+        lines += 'fi \n'
 
         lines += 'echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running ' \
                  'on $RemoteHost so continue...\" \n'
@@ -183,10 +185,11 @@ class CondorJob:
                     f">> {os.path.join(self.output_dir, 'singularity.output')}\n")
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
-                executable.write(f'export PYTHONPATH=$PYTHONPATH/{self._config.codebase_dir}\n')
+                executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
                 executable.write(f'{self._config.command}\n')
             executable.write("retVal=$? \n")
             executable.write("echo \"got exit code $retVal\" \n")
+            executable.write(f"touch {self.output_dir}/FINISHED_$retVal")
             if self._config.save_locally:
                 executable.write(self._add_lines_to_copy_local_data_back())
             executable.write("exit $retVal \n")

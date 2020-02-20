@@ -52,6 +52,10 @@ class Config:
                 raise IOError(f'Found None value in config. \n {key}: {value}')
             if isinstance(value, Config):
                 value.iterative_check_for_none()
+            if isinstance(value, list):
+                for element in value:
+                    if isinstance(element, Config):
+                        element.iterative_check_for_none()
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
@@ -59,6 +63,10 @@ class Config:
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 value.iterative_add_output_path(self.output_path)
+            if isinstance(value, list):
+                for element in value:
+                    if isinstance(element, Config):
+                        element.iterative_add_output_path(self.output_path)
 
     def save_config_file(self) -> str:
         if not os.path.isdir(os.path.join(self.output_path, 'configs')):
@@ -87,6 +95,10 @@ class Config:
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 value.post_init()
+            if isinstance(value, list):
+                for element in value:
+                    if isinstance(element, Config):
+                        element.post_init()
 
 
 class Parser(argparse.ArgumentParser):

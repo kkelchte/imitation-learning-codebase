@@ -1,18 +1,17 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world
-mode: 2  # evaluate model mode
+mode: 3  # data_cleaning mode
 job_configs:
-  - command: python3.7 src/scripts/interactive_experiment.py
+  - command: python3.7 src/scripts/data_cleaning.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 11
-    gpus: 1
-    cpu_mem_gb: 17
+    cpus: 2
+    gpus: 0
+    cpu_mem_gb: 18
     disk_mem_gb: 52
     nice: False
-    gpu_mem_mb: 1900
-    use_singularity: True
+    use_singularity: False
     check_if_ros_already_in_use: False
     save_locally: False
 number_of_jobs:
-  - 3
+  - 1
 base_config_files:
-  - src/scripts/config/evaluate_model_config.yml
+  - src/scripts/config/data_cleaning_config.yml

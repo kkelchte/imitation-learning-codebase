@@ -1,5 +1,7 @@
 import copy
 import os
+import shlex
+import subprocess
 from typing import List, Union, Dict
 
 import yaml
@@ -26,10 +28,12 @@ def get_variable_name(variable_name: str) -> str:
     return strip_variable(variable_name.split(']')[-2].split('[')[-1])
 
 
-def create_configs(base_config: Union[dict, str], adjustments: Dict[str, list]) -> List[str]:
+def create_configs(base_config: Union[dict, str], output_path: str, adjustments: Dict[str, list]) -> List[str]:
     if isinstance(base_config, str):
         with open(base_config, 'r') as f:
             base_config = yaml.load(f, Loader=yaml.FullLoader)
+
+    base_config['output_path'] = output_path
 
     # assert each adjusting variable name comes with an equal number of values
     variable_value_lengths = [len(variable_values) for variable_values in adjustments.values()]
@@ -53,3 +57,16 @@ def create_configs(base_config: Union[dict, str], adjustments: Dict[str, list]) 
             yaml.dump(new_config, f)
         configs.append(config_path)
     return configs
+
+
+class Dag:
+
+    def __init__(self, lines_dag_file: str, dag_directory: str):
+        os.makedirs(dag_directory)
+        assert len(lines_dag_file.split('\n')) > 3
+        self._dag_file = os.path.join(dag_directory, 'dag_file')
+        with open(self._dag_file, 'w') as dag_file_stream:
+            dag_file_stream.write(lines_dag_file)
+
+    def submit(self) -> int:
+        return subprocess.call(shlex.split(f'condor_submit_dag {self._dag_file}'))

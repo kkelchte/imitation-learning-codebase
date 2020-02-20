@@ -9,47 +9,59 @@ import yaml
 from dataclasses_json import dataclass_json
 
 from src.condor.condor_job import CondorJobConfig, CondorJob
-from src.condor.helper_functions import create_configs
+from src.condor.helper_functions import create_configs, Dag
 from src.core.config_loader import Parser, Config
-from src.core.utils import camelcase_to_snake_format
+from src.core.utils import camelcase_to_snake_format, get_date_time_tag
 
 
 class CondorLauncherMode(IntEnum):
     DataCollection = 0
     TrainModel = 1
     EvaluateModel = 2
+    DataCleaning = 3
+    DagDataCollection = 4
+    DagTrainEvaluate = 5
 
 
 @dataclass_json
 @dataclass
 class CondorLauncherConfig(Config):
-    job_config: CondorJobConfig = None
     mode: CondorLauncherMode = None
-    number_of_jobs: int = 1
-    use_dag: bool = False
-    base_config_file: str = ''
+    number_of_jobs: List[int] = 1
+    base_config_files: List[str] = None
+    job_configs: List[CondorJobConfig] = None
 
 
 class CondorLauncher:
 
     def __init__(self, config: CondorLauncherConfig):
         self._config = config
-        self._jobs = []
+        self._jobs: List[CondorJob] = []
+        self._dag = None
+
         self.prepare_factory()
 
     def launch(self):
-        if not self._config.use_dag:
+        if self._config.mode in [CondorLauncherMode.DataCollection,
+                                 CondorLauncherMode.TrainModel,
+                                 CondorLauncherMode.EvaluateModel,
+                                 CondorLauncherMode.DataCleaning]:
             for job in self._jobs:
                 job.submit()
+        elif self._config.mode in [CondorLauncherMode.DagDataCollection]:
+            self._dag.submit()
         else:
             raise NotImplementedError
 
     def prepare_factory(self):
         eval(f'self.prepare_{camelcase_to_snake_format(self._config.mode.name)}()')
 
-    def create_jobs_from_job_config_files(self, job_config_files: List[str]) -> None:
+    def create_jobs_from_job_config_files(self,
+                                          job_config_files: List[str],
+                                          job_config_object: CondorJobConfig = None) -> None:
+        job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
         for config in job_config_files:
-            job_config = copy.deepcopy(self._config.job_config)
+            job_config = copy.deepcopy(job_config_object)
             job_config.config_file = config
             condor_job = CondorJob(config=job_config)
             condor_job.write_job_file()
@@ -57,42 +69,124 @@ class CondorLauncher:
             self._jobs.append(condor_job)
             time.sleep(1)
 
-    def prepare_data_collection(self):
-        config_files = create_configs(base_config=self._config.base_config_file,
+    def prepare_data_collection(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+                                number_of_jobs: int = None):
+        base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
+        job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
+        number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
+
+        config_files = create_configs(base_config=base_config,
+                                      output_path=self._config.output_path,
                                       adjustments={
                                           '[\"data_saver_config\"][\"saving_directory_tag\"]':
-                                              list(range(self._config.number_of_jobs))
+                                              list(range(number_of_jobs))
                                       })
-        self.create_jobs_from_job_config_files(job_config_files=config_files)
+        self.create_jobs_from_job_config_files(job_config_files=config_files,
+                                               job_config_object=job_config_object)
 
-    def prepare_train_model(self):
-        config_files = create_configs(base_config=self._config.base_config_file,
+    def prepare_train_model(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+                            number_of_jobs: int = None):
+        base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
+        job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
+        number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
+        if number_of_jobs == 0:
+            return
+        config_files = create_configs(base_config=base_config,
+                                      output_path=self._config.output_path,
                                       adjustments={
                                           '[\"model_config\"][\"initialisation_seed\"]':
-                                              [123 * n + 5100 for n in range(self._config.number_of_jobs)]
+                                              [123 * n + 5100 for n in range(number_of_jobs)]
                                       })
-        self.create_jobs_from_job_config_files(job_config_files=config_files)
+        self.create_jobs_from_job_config_files(job_config_files=config_files,
+                                               job_config_object=job_config_object)
 
-    def prepare_evaluate_model(self):
+    def prepare_evaluate_model(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+                               number_of_jobs: int = None):
+        base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
+        job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
+        number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
+        if number_of_jobs == 0:
+            return
         model_directories = [os.path.join(self._config.output_path, 'models', d)
                              for d in os.listdir(os.path.join(self._config.output_path, 'models'))]
-        model_directories = model_directories[-self._config.number_of_jobs:]
+        model_directories = model_directories[-number_of_jobs:]
         with open('src/sim/ros/config/actor/dnn_actor.yml', 'r') as f:
             actor_base_config = yaml.load(f, Loader=yaml.FullLoader)
         actor_base_config['output_path'] = self._config.output_path
         actor_tags = [f'evaluate_{os.path.basename(d)}' for d in model_directories]
         actor_config_files = create_configs(base_config=actor_base_config,
+                                            output_path=self._config.output_path,
                                             adjustments={
                                                 '[\"specs\"][\"model_config\"][\"load_checkpoint_dir\"]':
                                                     model_directories
                                             })
-        config_files = create_configs(base_config=self._config.base_config_file,
+        config_files = create_configs(base_config=base_config,
+                                      output_path=self._config.output_path,
                                       adjustments={
                                           '[\"data_saver_config\"][\"saving_directory_tag\"]': actor_tags,
                                           '[\"runner_config\"][\"environment_config\"]'
                                           '[\"actor_configs\"][0][\"file\"]': actor_config_files
                                       })
-        self.create_jobs_from_job_config_files(job_config_files=config_files)
+        self.create_jobs_from_job_config_files(job_config_files=config_files,
+                                               job_config_object=job_config_object)
+
+    def prepare_data_cleaning(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+                              number_of_jobs: int = None):
+        """Launch condor job in virtualenv to clean raw_data in output_path/raw_data and create hdf5 file"""
+        base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
+        job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
+        number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
+        if number_of_jobs == 0:
+            return
+
+        job_config_object.command += f' --config {base_config}'
+        condor_job = CondorJob(config=job_config_object)
+        condor_job.write_job_file()
+        condor_job.write_executable_file()
+        self._jobs.append(condor_job)
+        time.sleep(1)
+
+    def prepare_dag_data_collection(self):
+        self.prepare_data_collection(base_config_file=self._config.base_config_files[0],
+                                     job_config_object=self._config.job_configs[0],
+                                     number_of_jobs=self._config.number_of_jobs[0])
+        self.prepare_data_cleaning(base_config_file=self._config.base_config_files[1],
+                                   job_config_object=self._config.job_configs[1],
+                                   number_of_jobs=self._config.number_of_jobs[1])
+        dag_lines = '# Prepare_dag_data_collection: \n'
+        for index, job in enumerate(self._jobs[:-1]):
+            dag_lines += f'JOB data_collection_{index} {job.job_file} \n'
+        num_collection_jobs = len(self._jobs) - 1
+        dag_lines += f'JOB data_cleaning {self._jobs[-1].job_file} \n'
+        dag_lines += f'PARENT {" ".join([f"data_collection_{index}" for index in range(num_collection_jobs)])} ' \
+                     f'CHILD data_cleaning \n'
+        for index in range(num_collection_jobs):
+            dag_lines += f'Retry data_collection_{index} 2 \n'
+        dag_lines += f'Retry data_cleaning 3 \n'
+        self._dag = Dag(lines_dag_file=dag_lines,
+                        dag_directory=os.path.join(self._config.output_path, 'dag', get_date_time_tag()))
+
+    def prepare_dag_train_evaluate(self):
+        self.prepare_train_model(base_config_file=self._config.base_config_files[0],
+                                 job_config_object=self._config.job_configs[0],
+                                 number_of_jobs=self._config.number_of_jobs[0])
+        self.prepare_evaluate_model(base_config_file=self._config.base_config_files[1],
+                                    job_config_object=self._config.job_configs[1],
+                                    number_of_jobs=self._config.number_of_jobs[1])
+        dag_lines = '# prepare_dag_train_evaluate: \n'
+        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[0]]):
+            dag_lines += f'JOB training_{index} {job.job_file} \n'
+        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[1]]):
+            dag_lines += f'JOB evaluation_{index} {job.job_file} \n'
+
+        number_of_links = min(self._config.number_of_jobs)
+        for index in range(number_of_links):
+            dag_lines += f'PARENT training_{index} CHILD evaluation_{index} \n'
+
+        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[0]]):
+            dag_lines += f'Retry training_{index} 2 \n'
+        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[1]]):
+            dag_lines += f'Retry evaluation_{index} 3 \n'
 
 
 if __name__ == '__main__':
@@ -100,3 +194,4 @@ if __name__ == '__main__':
     launcher_config = CondorLauncherConfig().create(config_file=config_file)
     launcher = CondorLauncher(config=launcher_config)
     print(launcher.launch())
+    print('finished')

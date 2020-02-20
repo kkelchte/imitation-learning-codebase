@@ -1,17 +1,18 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world
-job_config:
-  command: python3.7 src/scripts/dataset_experiment.py
-  codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-  cpus: 8
-  gpus: 1
-  cpu_mem_gb: 10
-  disk_mem_gb: 52
-  nice: False
-  gpu_mem_mb: 1900
-  use_singularity: False
-  check_for_ros: False
-  save_locally: False
-number_of_jobs: 3
 mode: 1  # train_model mode
-use_dag: False
-base_config_file: src/scripts/config/training_config.yml
+job_configs:
+  - command: python3.7 src/scripts/dataset_experiment.py
+    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
+    cpus: 8
+    gpus: 1
+    cpu_mem_gb: 10
+    disk_mem_gb: 52
+    nice: False
+    gpu_mem_mb: 1900
+    use_singularity: False
+    check_if_ros_already_in_use: False
+    save_locally: False
+number_of_jobs:
+  - 3
+base_config_files:
+  - src/scripts/config/training_config.yml
