@@ -13,8 +13,10 @@ import roslib
 import rospy
 from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist
+from hector_uav_msgs.srv import EnableMotors
 
 from src.core.logger import get_logger, cprint
+from src.core.utils import get_filename_without_extension
 from src.sim.common.actors import Actor, ActorConfig
 from src.sim.common.data_types import ActorType
 from src.sim.ros.src.utils import get_output_path
@@ -39,23 +41,36 @@ class KeyboardActor(Actor):
             )
         )
         self.settings = termios.tcgetattr(sys.stdin)
-        self._logger = get_logger(os.path.basename(__file__), get_output_path())
+        self._logger = get_logger(get_filename_without_extension(__file__), get_output_path())
 
         self.command_pub = rospy.Publisher(self.specs['command_topic'], Twist, queue_size=1)
         self.rate_fps = self.specs['rate_fps']
         self.speed = self.specs['speed']
         self.turn = self.specs['turn']
         self.message = self.specs['message']
-        self.moveBindings = self.specs['moveBindings']
-        self.topicBindings = self.specs['topicBindings']
-        self.publishers = {
-            key: rospy.Publisher(
-                name=self.topicBindings[key],
-                data_class=Empty,
-                queue_size=10
-            ) for key in self.topicBindings.keys()
-        }
 
+        self.moveBindings = self.specs['moveBindings'] if 'moveBindings' in self.specs.keys() else None
+        self.topicBindings = self.specs['topicBindings'] if 'topicBindings' in self.specs.keys() else None
+        if self.topicBindings is not None:
+            self.publishers = {
+                key: rospy.Publisher(
+                    name=self.topicBindings[key],
+                    data_class=Empty,
+                    queue_size=10
+                ) for key in self.topicBindings.keys()
+            }
+            cprint(f'topicBindings: \n {self.topicBindings}', self._logger)
+        self.serviceBindings = None
+        if 'serviceBindings' in self.specs.keys():
+            self.serviceBindings = {}
+            for service_specs in self.specs['serviceBindings']:
+                rospy.wait_for_service(service_specs['name'])
+                self.serviceBindings[service_specs['key']] = {
+                    'name': service_specs['name'],
+                    'proxy': rospy.ServiceProxy(service_specs['name'], eval(service_specs['type'])),
+                    'message': service_specs['message']
+                }
+            cprint(f'serviceBindings: \n {self.serviceBindings}', self._logger)
         self.x = 0
         self.y = 0
         self.z = 0
@@ -81,9 +96,13 @@ class KeyboardActor(Actor):
 
     def update_fields(self):
         key = self.get_key()
-        if key in self.topicBindings.keys():
+        if self.topicBindings is not None and key in self.topicBindings.keys():
             self.publishers[key].publish(Empty())
-        if key in self.moveBindings.keys():
+        if self.serviceBindings is not None and key in self.serviceBindings.keys():
+            # self.serviceBindings[key]['proxy'](eval(self.serviceBindings[key]['message']))
+            self.serviceBindings[key]['proxy'](True)
+            # cprint(f'{self.serviceBindings[key]["proxy"]}({self.serviceBindings[key]["message"]})', self._logger)
+        if self.moveBindings is not None and key in self.moveBindings.keys():
             self.x = self.moveBindings[key][0]
             self.y = self.moveBindings[key][1]
             self.z = self.moveBindings[key][2]
@@ -92,6 +111,7 @@ class KeyboardActor(Actor):
             self.yaw = self.moveBindings[key][5]
         else:
             self.reset_control_fields()
+
         return key
 
     def run(self):

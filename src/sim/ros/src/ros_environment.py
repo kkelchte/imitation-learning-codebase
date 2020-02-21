@@ -10,7 +10,7 @@ import rospy
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import CompressedImage, Image, LaserScan
+from sensor_msgs.msg import CompressedImage, Image, LaserScan, Imu
 from geometry_msgs.msg import Twist, Pose
 from std_msgs.msg import String, Float32MultiArray, Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
@@ -26,7 +26,7 @@ from src.sim.common.data_types import Action, State, TerminalType, ActorType, Pr
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import process_compressed_image, process_image, process_laser_scan, \
-    adapt_twist_to_action, get_type_from_topic_and_actor_configs, process_odometry, \
+    adapt_twist_to_action, get_type_from_topic_and_actor_configs, process_odometry, process_imu, \
     adapt_action_to_ros_message, adapt_action_to_twist, adapt_sensor_to_ros_message, quaternion_from_euler
 
 bridge = CvBridge()

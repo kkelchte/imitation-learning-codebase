@@ -1,6 +1,6 @@
 #!/usr/bin/python3.7
 import os
-from typing import Union, List
+from typing import Union, List, Tuple
 
 import numpy as np
 import rospy
@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
 from geometry_msgs.msg import Twist
-from sensor_msgs.msg import Image, LaserScan
+from sensor_msgs.msg import Image, LaserScan, Imu
 from std_msgs.msg import Float32MultiArray
 
 from src.sim.common.actors import ActorConfig
@@ -125,6 +125,19 @@ def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
           ::scale[2]
           ]
     return sm.resize(img, size, mode='constant').astype(np.float32)
+
+
+def process_imu(msg: Imu, _=None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    linear_acceleration = np.asarray([msg.linear_acceleration.x,
+                                      msg.linear_acceleration.y,
+                                      msg.linear_acceleration.z])
+    orientation = np.asarray([msg.orientation.x,
+                              msg.orientation.y,
+                              msg.orientation.z])
+    angular_velocity = np.asarray([msg.angular_velocity.x,
+                                   msg.angular_velocity.y,
+                                   msg.angular_velocity.z])
+    return linear_acceleration, orientation, angular_velocity
 
 
 def process_odometry(msg: Odometry, _=None) -> np.ndarray:

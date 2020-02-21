@@ -238,7 +238,8 @@ class Fsm:
         self._current_pos = np.asarray([msg.pose.pose.position.x,
                                         msg.pose.pose.position.y,
                                         msg.pose.pose.position.z])
-        if self.mode == FsmMode.TakeOffRun and self._current_pos[2] >= self.starting_height - 0.1:
+        if self.mode == FsmMode.TakeOffRun and self._state == FsmState.TakeOff \
+                and self._current_pos[2] >= self.starting_height - 0.1:
             self._running()
 
         if not self._update_state():
@@ -266,14 +267,14 @@ class Fsm:
     def _check_wrench(self, msg: WrenchStamped) -> None:
         if not self._update_state():
             return
-        if msg.wrench.force.z < 1:
+        if msg.wrench.force.z < 0:
             cprint(f"found drag force: {msg.wrench.force.z}, so robot must be upside-down.", self._logger)
             self._shutdown_run(outcome=TerminalType.Failure)
 
     def run(self):
         rate = rospy.Rate(1)
         while not rospy.is_shutdown():
-            cprint(f'state: {self._state.name}', self._logger, msg_type=MessageType.debug)
+            # cprint(f'state: {self._state.name}', self._logger, msg_type=MessageType.debug)
             self._state_pub.publish(self._state.name)
             rate.sleep()
 

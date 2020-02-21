@@ -16,9 +16,9 @@ specs:
              Publish on topics:
                g: /fsm/go_topic
                f: /fsm/overtake_topic
-               t: /robot/takeoff,
-               l: /robot/land,
-               e: /robot/emergency "
+
+             Service call:
+               e: /enable_motors"
   speed: 0.5
   turn: 1.0
   rate_fps: 20
@@ -75,6 +75,8 @@ specs:
   topicBindings:
     g: '/fsm/go_topic'
     f: '/fsm/overtake_topic'
-    t: '/robot/takeoff'
-    l: '/robot/land'
-    e: '/robot/emergency'
+  serviceBindings:
+    - key: e
+      name: enable_motors
+      type: EnableMotors
+      message: True

@@ -51,7 +51,7 @@ class TestRobots(unittest.TestCase):
         while state.terminal == TerminalType.Unknown:
             state = self._environment.step()
 
-        while not self._environment.fsm_state == FsmState.Terminated:
+        while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()
 
     def test_drone_sim(self):
@@ -61,7 +61,7 @@ class TestRobots(unittest.TestCase):
         while state.terminal == TerminalType.Unknown:
             state = self._environment.step()
 
-        while not self._environment.fsm_state == FsmState.Terminated:
+        while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()
 
     def tearDown(self) -> None:
