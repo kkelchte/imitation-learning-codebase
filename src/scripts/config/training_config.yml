@@ -1,4 +1,5 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world
+generate_new_output_path: True
 model_config:
   architecture: tiny_net_v0
   device: 'gpu'
@@ -12,7 +13,6 @@ trainer_config:
   data_loader_config:
     data_sampling_seed: 123
     balance_targets: True
-    output_path: /esat/opal/kkelchte/experimental_data/cube_world
     hdf5_file: train.hdf5
     inputs: # Order needs to be the same as network input (!)
       - forward_camera
@@ -23,7 +23,6 @@ trainer_config:
 evaluator_config:
   criterion: 'MSELoss'
   data_loader_config:
-    output_path: /esat/opal/kkelchte/experimental_data/cube_world
     hdf5_file: validation.hdf5
     inputs:
       - forward_camera

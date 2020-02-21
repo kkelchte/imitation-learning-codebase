@@ -22,9 +22,35 @@ job_configs:
     use_singularity: False
     check_if_ros_already_in_use: False
     save_locally: False
+  - command: python3.7 src/scripts/dataset_experiment.py
+    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
+    cpus: 8
+    gpus: 1
+    cpu_mem_gb: 10
+    disk_mem_gb: 52
+    nice: False
+    gpu_mem_mb: 1900
+    use_singularity: False
+    check_if_ros_already_in_use: False
+    save_locally: False
+  - command: python3.7 src/scripts/interactive_experiment.py
+    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
+    cpus: 11
+    gpus: 1
+    cpu_mem_gb: 17
+    disk_mem_gb: 52
+    nice: False
+    gpu_mem_mb: 1900
+    use_singularity: True
+    check_if_ros_already_in_use: False
+    save_locally: True
 number_of_jobs:
   - 3
   - 1
+  - 3
+  - 3
 base_config_files:
   - src/scripts/config/data_collection_config.yml
   - src/scripts/config/data_cleaning_config.yml
+  - src/scripts/config/training_config.yml
+  - src/scritps/config/evaluate_model_config.yml

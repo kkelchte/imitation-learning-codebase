@@ -2,6 +2,7 @@ import copy
 import os
 import shlex
 import subprocess
+import time
 from typing import List, Union, Dict
 
 import yaml
@@ -35,6 +36,13 @@ def create_configs(base_config: Union[dict, str], output_path: str, adjustments:
 
     base_config['output_path'] = output_path
 
+    if len(adjustments.keys()) == 0:
+        config_path = os.path.join(base_config['output_path'], 'configs', f'{get_date_time_tag()}.yml')
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
+        with open(config_path, 'w') as f:
+            yaml.dump(base_config, f)
+        return [config_path]
+
     # assert each adjusting variable name comes with an equal number of values
     variable_value_lengths = [len(variable_values) for variable_values in adjustments.values()]
     assert min(variable_value_lengths) == max(variable_value_lengths)
@@ -52,7 +60,12 @@ def create_configs(base_config: Union[dict, str], output_path: str, adjustments:
         config_path = os.path.join(base_config['output_path'], 'configs',
                                    f'{get_date_time_tag()}_{get_variable_name(variable_name)}_'
                                    f'{strip_variable(value)}.yml')
-        os.makedirs(os.path.join(base_config['output_path'], 'configs'), exist_ok=True)
+        while os.path.isfile(config_path):
+            time.sleep(1)
+            config_path = os.path.join(base_config['output_path'], 'configs',
+                                       f'{get_date_time_tag()}_{get_variable_name(variable_name)}_'
+                                       f'{strip_variable(value)}.yml')
+        os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, 'w') as f:
             yaml.dump(new_config, f)
         configs.append(config_path)

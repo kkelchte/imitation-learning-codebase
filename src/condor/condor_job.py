@@ -189,7 +189,7 @@ class CondorJob:
                 executable.write(f'{self._config.command}\n')
             executable.write("retVal=$? \n")
             executable.write("echo \"got exit code $retVal\" \n")
-            executable.write(f"touch {self.output_dir}/FINISHED_$retVal")
+            executable.write(f"touch {self.output_dir}/FINISHED_$retVal \n")
             if self._config.save_locally:
                 executable.write(self._add_lines_to_copy_local_data_back())
             executable.write("exit $retVal \n")

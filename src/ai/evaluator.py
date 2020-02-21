@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import torch
+from torch import nn
 from dataclasses_json import dataclass_json
 from tqdm import tqdm
 

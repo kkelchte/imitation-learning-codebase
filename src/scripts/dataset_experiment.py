@@ -24,6 +24,7 @@ class DatasetExperimentConfig(Config):
     trainer_config: TrainerConfig = None
     evaluator_config: EvaluatorConfig = None
     number_of_epochs: int = 1
+    generate_new_output_path: bool = True  # is overwritten by dag file to predefine output path.
 
     def __post_init__(self):
         # Avoid None value error by deleting irrelevant fields
@@ -34,8 +35,9 @@ class DatasetExperimentConfig(Config):
 
     def iterative_add_output_path(self, output_path: str) -> None:
         # assuming output_path is standard ${experiment_name}
-        self.output_path = os.path.join(output_path, 'models',
-                                        f'{get_date_time_tag()}_{self.model_config.architecture}')
+        if self.generate_new_output_path:
+            self.output_path = os.path.join(output_path, 'models',
+                                            f'{get_date_time_tag()}_{self.model_config.architecture}')
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 value.iterative_add_output_path(self.output_path)

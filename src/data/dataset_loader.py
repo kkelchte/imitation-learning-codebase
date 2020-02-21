@@ -39,7 +39,10 @@ class DataLoaderConfig(Config):
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
-            self.output_path = output_path
+            if 'models' not in output_path:
+                self.output_path = output_path
+            else:  # if output path is provided by ModelConfig, the data should be found in the experiment directory
+                self.output_path = output_path.split('models')[0]
         if self.data_directories is not None and len(self.data_directories) != 0 \
                 and not self.data_directories[0].startswith('/'):
             self.data_directories = [os.path.join(self.output_path, d) for d in self.data_directories]

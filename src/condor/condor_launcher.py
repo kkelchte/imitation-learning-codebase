@@ -38,6 +38,7 @@ class CondorLauncher:
     def __init__(self, config: CondorLauncherConfig):
         self._config = config
         self._jobs: List[CondorJob] = []
+        self._model_paths: List[str] = []  # link training and evaluation model paths in train - evaluate dag
         self._dag = None
 
         self.prepare_factory()
@@ -49,7 +50,9 @@ class CondorLauncher:
                                  CondorLauncherMode.DataCleaning]:
             for job in self._jobs:
                 job.submit()
-        elif self._config.mode in [CondorLauncherMode.DagDataCollection]:
+        elif self._config.mode in [CondorLauncherMode.DagDataCollection,
+                                   CondorLauncherMode.DagTrainEvaluate,
+                                   CondorLauncherMode.DagDataCollectionTrainEvaluate]:
             self._dag.submit()
         else:
             raise NotImplementedError
@@ -92,11 +95,14 @@ class CondorLauncher:
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
         if number_of_jobs == 0:
             return
+        seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+        self._model_paths = [os.path.join(self._config.output_path, 'models', f'seed_{seed}') for seed in seeds]
         config_files = create_configs(base_config=base_config,
                                       output_path=self._config.output_path,
                                       adjustments={
-                                          '[\"model_config\"][\"initialisation_seed\"]':
-                                              [123 * n + 5100 for n in range(number_of_jobs)]
+                                          '[\"model_config\"][\"initialisation_seed\"]': seeds,
+                                          '[\"generate_new_output_path\"]': [False] * number_of_jobs,
+                                          '[\"output_path\"]': self._model_paths,
                                       })
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)
@@ -108,9 +114,12 @@ class CondorLauncher:
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
         if number_of_jobs == 0:
             return
-        model_directories = [os.path.join(self._config.output_path, 'models', d)
-                             for d in os.listdir(os.path.join(self._config.output_path, 'models'))]
-        model_directories = model_directories[-number_of_jobs:]
+        if self._model_paths is None:
+            model_directories = [os.path.join(self._config.output_path, 'models', d)
+                                 for d in os.listdir(os.path.join(self._config.output_path, 'models'))]
+        else:
+            model_directories = self._model_paths
+        model_directories = model_directories[-min(number_of_jobs, len(model_directories)):]
         with open('src/sim/ros/config/actor/dnn_actor.yml', 'r') as f:
             actor_base_config = yaml.load(f, Loader=yaml.FullLoader)
         actor_base_config['output_path'] = self._config.output_path
@@ -139,8 +148,10 @@ class CondorLauncher:
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
         if number_of_jobs == 0:
             return
-
-        job_config_object.command += f' --config {base_config}'
+        cleaning_config = create_configs(base_config=base_config,
+                                         output_path=self._config.output_path,
+                                         adjustments={})
+        job_config_object.command += f' --config {cleaning_config}'
         condor_job = CondorJob(config=job_config_object)
         condor_job.write_job_file()
         condor_job.write_executable_file()
