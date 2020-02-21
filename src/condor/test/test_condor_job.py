@@ -10,7 +10,7 @@ import yaml
 
 from src.core.utils import get_filename_without_extension, read_file_to_output, get_file_length
 from src.condor.condor_job import CondorJob, CondorJobConfig
-from src.condor.helper_functions import create_configs, get_variable_name, strip_variable
+from src.condor.helper_functions import create_configs, get_variable_name, strip_variable, strip_command
 
 
 class TestCondorJob(unittest.TestCase):
@@ -81,6 +81,10 @@ class TestCondorJob(unittest.TestCase):
     def test_strip_variable(self):
         self.assertEqual(strip_variable('/a/b/c/d.ext'), 'd')
         self.assertEqual(strip_variable(0.001), '1e-03')
+
+    def test_strip_command(self):
+        result = strip_command('python3.7 src/scripts/dataset_experiment.py --config src/scripts/config/train.yml')
+        self.assertEqual(result, 'dataset_experiment')
 
     def test_config_creation(self):
         base_file = 'src/scripts/config/data_collection_config.yml'

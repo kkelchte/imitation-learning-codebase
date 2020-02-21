@@ -15,6 +15,7 @@ from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
 from src.core.utils import get_date_time_tag
+from src.condor.helper_functions import strip_command
 
 
 @dataclass_json
@@ -51,7 +52,10 @@ class CondorJob:
 
     def __init__(self, config: CondorJobConfig):
         self._config = config
-        self.output_dir = os.path.join(config.output_path, 'condor', get_date_time_tag())
+        self.output_dir = os.path.basename(config.config_file).split('.')[0] if config.config_file != '' else \
+            f'{get_date_time_tag()}_{strip_command(config.command)}'
+        self.output_dir = os.path.join(config.output_path, 'condor', self.output_dir)
+
         os.makedirs(self.output_dir)
 
         if config.config_file != '':

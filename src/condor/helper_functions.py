@@ -10,6 +10,13 @@ import yaml
 from src.core.utils import get_date_time_tag
 
 
+def strip_command(command: str) -> str:
+    command = command.split(' ')[1]  # python path/to/file.py --config config_file --> path/to/file.py
+    command = os.path.basename(command)  # path/to/file.py --> file.py
+    command = command.split('.')[0]  # file.py --> file
+    return str(command)
+
+
 def strip_variable(value) -> str:
     if not isinstance(value, float) and '.' in str(value):
         value = value.split('.')[-2]
