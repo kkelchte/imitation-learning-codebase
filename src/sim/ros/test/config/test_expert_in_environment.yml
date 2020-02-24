@@ -16,6 +16,7 @@ ros_config:
     z_pos: 0.0
   visible_xterm: true
 actor_configs:
-  - file: src/sim/ros/config/actor/ros_expert_noisy.yml
+#  - file: src/sim/ros/config/actor/ros_expert_noisy.yml
+  - file: src/sim/ros/config/actor/ros_expert.yml
     name: ros_expert
     type: 1

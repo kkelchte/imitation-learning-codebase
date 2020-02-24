@@ -1,13 +1,11 @@
 #!/usr/bin/python3.7
 from __future__ import print_function
 
-import os
 import sys
 import select
 import termios
 import time
 import tty
-import yaml
 
 import roslib
 import rospy
@@ -64,7 +62,6 @@ class KeyboardActor(Actor):
         if 'serviceBindings' in self.specs.keys():
             self.serviceBindings = {}
             for service_specs in self.specs['serviceBindings']:
-                rospy.wait_for_service(service_specs['name'])
                 self.serviceBindings[service_specs['key']] = {
                     'name': service_specs['name'],
                     'proxy': rospy.ServiceProxy(service_specs['name'], eval(service_specs['type'])),
@@ -99,8 +96,9 @@ class KeyboardActor(Actor):
         if self.topicBindings is not None and key in self.topicBindings.keys():
             self.publishers[key].publish(Empty())
         if self.serviceBindings is not None and key in self.serviceBindings.keys():
-            # self.serviceBindings[key]['proxy'](eval(self.serviceBindings[key]['message']))
-            self.serviceBindings[key]['proxy'](True)
+            # rospy.wait_for_service(self.serviceBindings[key]['name'])
+            self.serviceBindings[key]['proxy'](self.serviceBindings[key]['message'])
+            # self.serviceBindings[key]['proxy'](True)
             # cprint(f'{self.serviceBindings[key]["proxy"]}({self.serviceBindings[key]["message"]})', self._logger)
         if self.moveBindings is not None and key in self.moveBindings.keys():
             self.x = self.moveBindings[key][0]

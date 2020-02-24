@@ -49,14 +49,6 @@
         <arg name="z" value="$(arg z_pos)"/>
         <arg name="Y" default="$(arg yaw_or)"/>
       </include>
-<!--          <param name="robot_description"-->
-<!--                 command="$(find xacro)/xacro &#45;&#45;inorder $(env HOME)/src/sim/ros/gazebo/urdf/drone_sim.urdf.xacro"/>-->
-<!--          <node pkg="gazebo_ros"-->
-<!--                type="spawn_model"-->
-<!--                name="spawn_urdf"-->
-<!--                args="-urdf -model turtlebot3_burger -x $(arg x_pos) -y $(arg y_pos)-->
-<!--                -Y $(arg yaw_or) -z $(arg z_pos) -param robot_description"-->
-<!--                output="log"/>-->
     </group>
 
     <arg name="bebop_real" default="false"/>
@@ -140,10 +132,10 @@
 
     <arg name="dnn_actor" default="false"/>
     <group if="$(arg dnn_actor)">
-        <arg name="dnn_config_file_path_with_extension"
+        <arg name="dnn_actor_config_file_path_with_extension"
              default="$(env HOME)/src/sim/ros/config/actor/dnn_actor.yml"/>
         <rosparam command="load"
-                  file="$(arg dnn_config_file_path_with_extension)"
+                  file="$(arg dnn_actor_config_file_path_with_extension)"
                   ns="/actor/dnn_actor"/>
         <node pkg="imitation_learning_ros_package"
               name="dnn_actor"

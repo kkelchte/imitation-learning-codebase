@@ -188,7 +188,8 @@ class CondorLauncher:
         dag_lines = '# prepare_dag_train_evaluate: \n'
         for index, job in enumerate(self._jobs[:self._config.number_of_jobs[0]]):
             dag_lines += f'JOB training_{index} {job.job_file} \n'
-        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[1]]):
+        for index, job in enumerate(self._jobs[self._config.number_of_jobs[0]:
+                                               self._config.number_of_jobs[0] + self._config.number_of_jobs[1]]):
             dag_lines += f'JOB evaluation_{index} {job.job_file} \n'
 
         number_of_links = min(self._config.number_of_jobs)
@@ -197,7 +198,8 @@ class CondorLauncher:
 
         for index, job in enumerate(self._jobs[:self._config.number_of_jobs[0]]):
             dag_lines += f'Retry training_{index} 2 \n'
-        for index, job in enumerate(self._jobs[:self._config.number_of_jobs[1]]):
+        for index, job in enumerate(self._jobs[self._config.number_of_jobs[0]:
+                                               self._config.number_of_jobs[0] + self._config.number_of_jobs[1]]):
             dag_lines += f'Retry evaluation_{index} 3 \n'
 
         self._dag = Dag(lines_dag_file=dag_lines,

@@ -10,6 +10,7 @@ from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
+from hector_uav_msgs.srv import EnableMotors
 
 from src.core.logger import get_logger, cprint
 from src.sim.common.actors import Actor, ActorConfig
@@ -53,6 +54,13 @@ class RosExpert(Actor):
 
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()
+
+        self._robot = rospy.get_param('/robot/robot_type')
+
+        if self._robot == 'quadrotor_sim':
+            rospy.wait_for_service('/enable_motors')
+            enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
+            enable_motors_service.call(True)
 
     def _subscribe(self):
         # Robot sensors:

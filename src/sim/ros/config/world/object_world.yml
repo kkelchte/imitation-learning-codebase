@@ -17,4 +17,4 @@ waypoints:
   - [1, 1]
   - [1, 2]
   - [2, 2]
-waypoint_reached_distance: 0.1
+waypoint_reached_distance: 0.5

@@ -69,8 +69,7 @@ class Config:
                         element.iterative_add_output_path(self.output_path)
 
     def save_config_file(self) -> str:
-        if not os.path.isdir(os.path.join(self.output_path, 'configs')):
-            os.makedirs(os.path.join(self.output_path, 'configs'))
+        os.makedirs(os.path.join(self.output_path, 'configs'), exist_ok=True)
         config_file_path = os.path.join(self.output_path, 'configs',
                                         f'{get_date_time_tag()}_'
                                         f'{camelcase_to_snake_format(self.__class__.__name__)}.yml')

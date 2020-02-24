@@ -70,9 +70,9 @@ class RobotMapper:
         # fields
         self._fsm_state = FsmState.Unknown
         self._world_name = rospy.get_param('/world/world_name')
-        self._robot_type = rospy.get_param('/robot/robot_type', 'turtlebot')
+        self._robot_type = rospy.get_param('/robot/robot_type', 'turtlebot_sim')
         self._gui_camera_height = rospy.get_param('/world/gui_camera_height',
-                                                  20 if self._robot_type == 'turtlebot' else 50)
+                                                  20 if 'turtle' in self._robot_type else 50)
         self._background_file = rospy.get_param('/world/background_file', '')
 
         # Check if background file {world_name}.jpg exists

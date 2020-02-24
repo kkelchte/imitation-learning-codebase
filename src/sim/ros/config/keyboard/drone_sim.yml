@@ -77,6 +77,6 @@ specs:
     f: '/fsm/overtake_topic'
   serviceBindings:
     - key: e
-      name: enable_motors
+      name: /enable_motors
       type: EnableMotors
       message: True

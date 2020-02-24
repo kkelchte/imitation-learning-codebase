@@ -1,4 +1,4 @@
-robot_type: quadrotor
+robot_type: quadrotor_sim
 command_topic: /cmd_vel
 sensors:
   - forward_camera

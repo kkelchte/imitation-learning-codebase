@@ -161,11 +161,13 @@ class RosEnvironment(Environment):
 
         # assert fsm has started properly
         if self._config.ros_config.ros_launch_config.fsm:
+            cprint('Wait till fsm has started properly.', self._logger)
             while self.fsm_state is None:
                 self._run_shortly()
 
         # assert dnn model has started properly
         if 'dnn_actor' in [conf.name for conf in self._config.actor_configs]:
+            cprint('Wait till dnn_actor has started properly.', self._logger)
             while len(self._actor_values['dnn_actor']) == 0:
                 self._run_shortly()
 
@@ -184,6 +186,7 @@ class RosEnvironment(Environment):
             action.actor_type = get_type_from_topic_and_actor_configs(actor_configs=self._config.actor_configs,
                                                                       topic_name=original_topic)
         self._actor_values[config.name] = action
+        cprint(f'set action {config.name}', self._logger)
 
     def _set_sensor_data(self, msg: Union[CompressedImage, Image, LaserScan, Odometry, Float32MultiArray],
                          args: Tuple) -> None:
@@ -192,6 +195,7 @@ class RosEnvironment(Environment):
             self._sensor_values[sensor_name] = self._sensor_processors[sensor_name](msg, sensor_stats)
         else:
             self._sensor_values[sensor_name] = np.asarray(msg.data)
+        cprint(f'set sensor {sensor_name}', self._logger)
 
     def _set_field(self, msg: Union[String, ], field_name: str) -> None:
         if field_name == '_terminal_state':

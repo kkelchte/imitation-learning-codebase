@@ -9,6 +9,7 @@ from datetime import datetime
 import rospy
 
 from src.core.logger import cprint, MessageType, get_logger
+from src.core.utils import get_filename_without_extension
 from src.sim.common.data_types import ProcessState
 
 """Interface with other applications such as 
@@ -21,14 +22,17 @@ class ProcessWrapper:
 
     def __init__(self,
                  name: str = '',
-                 grep_str: str = ''):
+                 grep_str: str = '',
+                 output_path: str = ''):
         self._grace_period = 1
         self._name = name if name else 'default'
         self._state = ProcessState.Initializing
         self._grep_str = grep_str if grep_str else self._name
         self._control_str = ''
         self._process_popen = None
-        self._logger = get_logger(name=__name__)
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                  output_path=output_path,
+                                  quite=False)
         cprint(f'initiate', self._logger)
 
     def get_state(self) -> ProcessState:
@@ -52,6 +56,7 @@ class ProcessWrapper:
         return len(processed_output_string) >= 1
 
     def _run(self, command: str, strict_check: bool = False, shell: bool = False, background: bool = True) -> bool:
+        cprint(f'run {command}', self._logger)
         if shell:
             assert(os.path.exists(command.split(' ')[0]))
             command = f'/bin/bash {command}'
@@ -70,9 +75,11 @@ class ProcessWrapper:
         while not self._check_running_process_with_ps() and (time.time() - stime) < max_duration:
             time.sleep(0.1)
         if self._check_running_process_with_ps():
+            cprint(f'running', self._logger)
             self._state = ProcessState.Running
             return True
         else:
+            cprint(f'unknown', self._logger)
             self._state = ProcessState.Unknown
             self.terminate()
             return False
@@ -157,7 +164,8 @@ def adapt_launch_config(config: dict) -> str:
 class RosWrapper(ProcessWrapper):
 
     def __init__(self, config: dict, launch_file: str = 'load_ros.launch', visible: bool = False):
-        super().__init__(name='ros')
+        super().__init__(name='ros',
+                         output_path=config['output_path'])
         post_init_delay = 4
         self._grace_period = 3
 
@@ -170,9 +178,9 @@ class RosWrapper(ProcessWrapper):
         assert os.path.isfile(launch_file)
         executable += ' ' + launch_file
         executable += adapt_launch_config(config)
-        if not os.path.isdir(f'{os.environ["HOME"]}/.ros/'):
-            os.makedirs(f'{os.environ["HOME"]}/.ros/')
-        command = f'env -u SESSION_MANAGER xterm -iconic -l -lf "{os.environ["HOME"]}/.ros/'\
+        if not os.path.isdir(f'{config["output_path"]}/ros/'):
+            os.makedirs(f'{config["output_path"]}/ros/')
+        command = f'env -u SESSION_MANAGER xterm -iconic -l -lf "{config["output_path"]}/ros/'\
                   f'{datetime.strftime(datetime.now(), format="%y-%m-%d_%H:%M:%S")}_xterm_output.log" '\
                   f'-hold -e {executable}'
         if not visible:
@@ -182,17 +190,22 @@ class RosWrapper(ProcessWrapper):
                          shell=False,
                          background=True)
         if 'gazebo' in config.keys() and config['gazebo'] == 'true':
+            cprint(f'Check if gzserver is running...', self._logger)
             while not self._check_running_process_with_ps('gzserver'):
                 time.sleep(1)
-        success = False  # wait for ros server to be started by providing params
+        success = False
+        cprint(f'Check if load_param output_path is loaded...', self._logger)
         while not success:
             try:
-                rospy.has_param('output_path')
-            except:
+                success = rospy.has_param('/output_path')
+            except ConnectionRefusedError:
+                time.sleep(1)
+            except IndexError:
                 time.sleep(0.1)
             else:
                 success = True
         time.sleep(post_init_delay)
+        cprint(f'Ready', self._logger)
 
         # TODO pipe stderr of ROS to logger debug.
 

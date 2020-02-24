@@ -1,5 +1,6 @@
 #!/usr/bin/python3.7
 import os
+import time
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import List
@@ -90,6 +91,7 @@ class Model:
     def load_from_checkpoint(self, checkpoint_dir: str):
         if len(os.listdir(checkpoint_dir)) == 0:
             cprint(f'Could not find suitable checkpoint in {checkpoint_dir}', self._logger, MessageType.error)
+            time.sleep(0.5)
             raise FileNotFoundError
         if os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_best')):
             self._architecture.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'checkpoint_best')))

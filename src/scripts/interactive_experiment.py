@@ -26,17 +26,19 @@ class InteractiveExperiment:
         self._logger = get_logger(name=__name__,
                                   output_path=config.output_path,
                                   quite=False)
-        cprint(f'Started.', self._logger)
+        cprint(f'Creating data_saver.', self._logger)
         self._data_saver = DataSaver(config=config.data_saver_config)
+        cprint(f'Creating environment_runner.', self._logger)
         self._environment_runner = EnvironmentRunner(config=config.runner_config,
                                                      data_saver=self._data_saver)
 
     def run(self):
+        cprint(f'Run environment_runner.', self._logger)
         self._environment_runner.run()
 
     def shutdown(self):
         result = self._environment_runner.shutdown()
-        cprint(f'Terminated successfully: {result}', self._logger,
+        cprint(f'Terminated successfully? {result}', self._logger,
                msg_type=MessageType.info if result else MessageType.warning)
 
 

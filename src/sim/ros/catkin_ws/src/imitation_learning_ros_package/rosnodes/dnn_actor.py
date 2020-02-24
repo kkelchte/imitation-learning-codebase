@@ -45,11 +45,13 @@ class DnnActor(Actor):
         self._rate = rospy.Rate(self._rate_fps)
         config_dict = specs['model_config']
         config_dict['output_path'] = self._output_path
+        cprint(f'loading model...', self._logger)
         self._model = Model(config=ModelConfig().create(config_dict=config_dict))
         self._input_sizes = self._model.get_input_sizes()
 
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()
+        cprint(f'ready', self._logger)
 
     def _subscribe(self):
         for sensor in ['forward_camera']:  # future camera's could be added according to actor's specs
