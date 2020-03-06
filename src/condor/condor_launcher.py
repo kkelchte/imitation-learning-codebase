@@ -236,12 +236,12 @@ class CondorLauncher:
         start_index = sum(self._config.number_of_jobs[0:3])
         end_index = sum(self._config.number_of_jobs[:])
         for index, job in enumerate(self._jobs[start_index: end_index]):
-            dag_lines += f'JOB evaluate_{index} {job.job_file} \n'
+            dag_lines += f'JOB evaluation_{index} {job.job_file} \n'
         # Define links:
         dag_lines += f'PARENT {" ".join([f"data_collection_{i}" for i in range(self._config.number_of_jobs[0])])}' \
-                     f'CHILD data_cleaning \n'
+                     f' CHILD data_cleaning \n'
         dag_lines += f'PARENT data_cleaning' \
-                     f'CHILD {" ".join([f"training_{i}" for i in range(self._config.number_of_jobs[2])])} \n'
+                     f' CHILD {" ".join([f"training_{i}" for i in range(self._config.number_of_jobs[2])])} \n'
         number_of_links = min(self._config.number_of_jobs[2:])
         for index in range(number_of_links):
             dag_lines += f'PARENT training_{index} CHILD evaluation_{index} \n'

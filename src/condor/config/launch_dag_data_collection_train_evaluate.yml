@@ -53,4 +53,4 @@ base_config_files:
   - src/scripts/config/data_collection_config.yml
   - src/scripts/config/data_cleaning_config.yml
   - src/scripts/config/training_config.yml
-  - src/scritps/config/evaluate_model_config.yml
+  - src/scripts/config/evaluate_model_config.yml

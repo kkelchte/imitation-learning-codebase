@@ -24,7 +24,7 @@ runner_config:
 #      - file: src/sim/ros/config/keyboard/turtlebot_sim.yml
 #        name: keyboard
 #        type: 2
-      - file: src/sim/ros/config/actor/ros_expert_noisy.yml
+      - file: src/sim/ros/config/actor/ros_expert.yml
         name: ros_expert
         type: 1
   number_of_episodes: 37
