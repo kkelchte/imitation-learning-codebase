@@ -28,9 +28,11 @@ import time
 from typing import Tuple
 
 import numpy as np
+from PIL import Image
 from numpy.linalg import inv
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.lines as mlines
 import rospy
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
@@ -38,7 +40,8 @@ from std_msgs.msg import String
 from src.core.logger import get_logger, cprint
 from src.core.utils import camelcase_to_snake_format
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import get_output_path, euler_from_quaternion, get_distance
+from src.sim.ros.src.utils import get_output_path, euler_from_quaternion, get_distance, rotation_from_quaternion, \
+    transform, project
 
 
 class RobotMapper:
@@ -73,108 +76,96 @@ class RobotMapper:
         self._robot_type = rospy.get_param('/robot/robot_type', 'turtlebot_sim')
         self._gui_camera_height = rospy.get_param('/world/gui_camera_height',
                                                   20 if 'turtle' in self._robot_type else 50)
-        self._background_file = rospy.get_param('/world/background_file', '')
+        self._background_file = rospy.get_param('/world/background_file')
+        self._background_image = Image.open(self._background_file)
 
-        # Check if background file {world_name}.jpg exists
-        # if robot type is turtlebot, check if {world_name}_20.jpg exists where 20 indicates camera height
-        # if robot type is quadrotor, check if {world_name}_20.jpg exists where 20 indicates camera height
-        if self._background_file == '':
-            if os.path.isfile(f'src/sim/ros/gazebo/backgrounds/{self._world_name}.jpg'):
-                self._background_file = f'src/sim/ros/gazebo/backgrounds/{self._world_name}.jpg'
-            if os.path.isfile(f'src/sim/ros/gazebo/backgrounds/{self._world_name}_{self._gui_camera_height}.jpg'):
-                self._background_file = f'src/sim/ros/gazebo/backgrounds/{self._world_name}_' \
-                                        f'{self._gui_camera_height}.jpg'
+        # Camera intrinsics from assumption of horizontal and vertical field of view
+        horizontal_field_of_view = 60 * 3.14 / 180
+        vertical_field_of_view = 40 * 3.14 / 180
+        width = self._background_image[0]
+        height = self._background_image[1]
+        self._fx = -width/2*np.tan(horizontal_field_of_view/2)**(-1)
+        self._fy = -height/2*np.tan(vertical_field_of_view/2)**(-1)
+        self._cx = width/2
+        self._cy = height/2
 
-        self._rotate_global_to_camera = np.asarray([[-1, 0], [0, 1]])
-        self._translate_global_to_camera = [815, 482]
-        self._scale_global_to_local_frame = {
-            20: [815/28.46, 482/17.],
-            50: [815/11.2, 482/6.7]
-        }
+        # Camera extrinsics: orientation assumption and extracted translation
+        self._camera_global_orientation = np.asarray([
+            [-1, 0, 0],
+            [0, 1, 0],
+            [0, 0, -1]
+        ])
+        if len(os.path.basename(self._background_file).split('_')) > 2:
+            # extract camera position from background file name
+            x, y, z = (float(x) for x in self._background_file.split('.')[0].split('_')[-3:])
+            self._camera_global_translation = np.asarray([x, y, z])
+        else:
+            self._camera_global_translation = np.asarray([0, 0, 10])
 
-        self._previous_position = []
-        self._initial_arrow = np.asarray([[0., 0.], [7., 0.], [7., 1.5], [9., 0.], [7., -1.5], [7., 0.]]) * 4
-        self._arrow_length = np.amax(self._initial_arrow)
-        self._arrow_width = 3
-        self._positions = []
-        # self._optima = {  # keep track of smallest and largest value among positions (arrows)
-        #     'min': {
-        #         'x': np.nan,
-        #         'y': np.nan
-        #     },
-        #     'max': {
-        #         'x': np.nan,
-        #         'y': np.nan
-        #     }
-        #
-        # }
+        self._minimum_distance_px = 10
+        self._local_frame = [np.asarray([0, 0, 0]),
+                             np.asarray([1, 0, 0]),
+                             np.asarray([0, 1, 0]),
+                             np.asarray([0, 0, 1])]
+
+        self._previous_position = None
+        self._frame_points = []
+
         rospy.init_node('robot_mapper')
         self._rate = rospy.Rate(10)
-
-    # def _update_minima_maxima(self, arrow: np.ndarray) -> None:
-    #     for optimum in ['min', 'max']:
-    #         for axe_index, axe in enumerate(['x', 'y']):
-    #             self._optima[optimum][axe] = eval(f'np.nan{optimum}(arrow[:, {axe_index}])')
+        cprint(f'specifications: \n'
+               f'rate: {self._rate}\n'
+               f'cy: {self._cy}\n'
+               f'cx: {self._cx}\n'
+               f'fx: {self._fx}\n'
+               f'fy: {self._fy}\n'
+               f'camera_rotation: {self._camera_global_orientation}\n'
+               f'camera_translation: {self._camera_global_translation}\n', self._logger)
 
     def _update_fsm_state(self, msg: String):
         self._fsm_state = FsmState[msg.data]
         if self._fsm_state == FsmState.Terminated:
             self._write_image()
 
-    def _translate_position(self, x: float, y: float, z: float = 0) -> tuple:
-        return self._translate_global_to_camera[0] + self._scale_global_to_local_frame[self._gui_camera_height][0] * x,\
-               self._translate_global_to_camera[1] + self._scale_global_to_local_frame[self._gui_camera_height][1] * y
-
-    def _rotate_orientation(self, odom: Odometry) -> np.array:
-        _, _, yaw = euler_from_quaternion((odom.pose.pose.orientation.x,
-                                           odom.pose.pose.orientation.y,
-                                           odom.pose.pose.orientation.z,
-                                           odom.pose.pose.orientation.w))
-        robot_orientation = np.asarray([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
-        return np.matmul(self._rotate_global_to_local, robot_orientation)
-
-    def _get_transformation_local_to_drone(self, odom: Odometry) -> np.ndarray:
-        transformation = np.identity(3)
-        transformation[0:2, 2] = self._translate_position(odom.pose.pose.position.x, odom.pose.pose.position.y)
-        transformation[0:2, 0:2] = inv(self._rotate_orientation(odom))
-        return transformation
-
-    def _update_arrow(self, transformation: np.ndarray) -> None:
-        homogenous_arrow = np.concatenate([np.transpose(self._initial_arrow),
-                                           np.ones((1, self._initial_arrow.shape[0]))])
-        transformed_arrow = np.matmul(transformation, homogenous_arrow)
-        updated_arrow = np.transpose(transformed_arrow)[:, :2]
-        self._update_minima_maxima(updated_arrow)
-        self._positions.append(updated_arrow)
-
     def _odometry_callback(self, msg: Odometry):
-        current_position = self._translate_position(msg.pose.pose.position.x, msg.pose.pose.position.y)
-        if len(self._previous_position) == 0:
-            self._previous_position = current_position[:]
-        if get_distance(a=current_position, b=self._previous_position) < self._arrow_length + self._arrow_width:
-            return
-        self._update_arrow(self._get_transformation_local_to_drone(msg))
+        robot_global_translation = np.asarray([msg.pose.pose.position.x,
+                                               msg.pose.pose.position.y,
+                                               msg.pose.pose.position.z])
+        robot_global_orientation = rotation_from_quaternion((msg.pose.pose.orientation.x,
+                                                             msg.pose.pose.orientation.y,
+                                                             msg.pose.pose.orientation.z,
+                                                             msg.pose.pose.orientation.w))
+        points_global_frame = transform(points=self._local_frame,
+                                        orientation=robot_global_orientation,
+                                        translation=robot_global_translation)
+        points_camera_frame = transform(points=points_global_frame,
+                                        orientation=self._camera_global_orientation,
+                                        translation=self._camera_global_translation,
+                                        invert=True)
+        points_image_frame = project(points=points_camera_frame,
+                                     fx=self._fx,
+                                     fy=self._fy,
+                                     cx=self._cx,
+                                     cy=self._cy)
+        if self._previous_position is None:
+            self._previous_position = points_image_frame[0]  # store origin of position
+            self._frame_points.append(points_image_frame)
+        elif get_distance(self._previous_position, points_image_frame[0]) > self._minimum_distance_px:
+            self._previous_position = points_image_frame[0]  # store origin of position
+            self._frame_points.append(points_image_frame)
 
     def _write_image(self):
-        # figsize = (30, 30)
-        # fig, ax = plt.subplots(1, figsize=figsize)
-        # ax.imshow(np.ones((964, 1630, 3)))
-        # ax.add_patch(patches.Polygon(arrow, linewidth=self._arrow_width, edgecolor=(1, 0, 0), facecolor='None'))
-        
-        figsize = (30, 30)
-        fig, ax = plt.subplots(1, figsize=figsize)
-        if self._background_file:
-            image = plt.imread(self._background_file)
-            ax.imshow(image)
-        else:
-            height = abs(self._optima['max']['x'] - self._optima['min']['x'])
-            width = abs(self._optima['max']['y'] - self._optima['min']['y'])
-            image = np.ones((int(height)+10, int(width)+10, self._arrow_width)) \
-                if not np.isnan(height) and not np.isnan(width) else np.ones((1000, 1000, 3))
-            ax.imshow(image)
-
-        for position in self._positions:
-            ax.add_patch(patches.Polygon(position, linewidth=1, edgecolor=(1, 0, 0), facecolor='None'))
+        fig, ax = plt.subplots()
+        ax.imshow(self._background_image)
+        for _frame in self._frame_points:
+            colors = ['red', 'green', 'blue']
+            for index, p in enumerate(_frame[1:]):
+                xmin = _frame[0][0]
+                ymin = _frame[0][1]
+                line = mlines.Line2D([xmin, p[0]], [ymin, p[1]], color=colors[index])
+                ax.add_line(line)
+                plt.scatter(p[0], p[1], s=10, color=colors[index])
+        plt.axis('off')
         fig.savefig(os.path.join(self._output_path, 'trajectory.png'))
 
     def run(self):

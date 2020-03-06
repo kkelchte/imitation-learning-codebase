@@ -18,3 +18,4 @@ waypoints:
   - [4, 0]
   - [0, 0]
 waypoint_reached_distance: 0.25
+background_file: cube_world_2_2_10.jpg

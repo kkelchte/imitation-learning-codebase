@@ -45,7 +45,7 @@ def get_type_from_topic_and_actor_configs(actor_configs: List[ActorConfig], topi
     return ActorType.Unknown
 
 
-def get_distance(a: Union[tuple, list], b: Union[tuple, list]) -> float:
+def get_distance(a: Union[tuple, list, np.ndarray], b: Union[tuple, list, np.ndarray]) -> float:
     return np.sqrt(sum((np.asarray(a) - np.asarray(b)) ** 2))
 
 
@@ -198,3 +198,44 @@ def euler_from_quaternion(quaternion: tuple) -> tuple:
 
 def quaternion_from_euler(euler: tuple) -> tuple:
     return tuple(R.from_euler('XYZ', euler, degrees=False).as_quat())
+
+
+def rotation_from_quaternion(quaternion: tuple) -> np.ndarray:
+    return np.asarray(R.from_quat(quaternion).as_matrix())
+
+
+def transform(points: List[np.ndarray],
+              orientation: np.ndarray = np.eye(3),
+              translation: np.ndarray = np.zeros((3,)),
+              invert: bool = False) -> List[np.ndarray]:
+    augmented = True
+    lengths = [len(p) for p in points]
+    assert min(lengths) == max(lengths)
+    if len(points[0].shape) == 3:
+        augmented = False
+        points = [np.concatenate([p, np.ones(1,)]) for p in points]
+    transformation = np.zeros((4, 4))
+    transformation[0:3, 0:3] = orientation
+    transformation[0:3, 3] = translation
+    transformation[3, 3] = 1
+    if not invert:
+        transformation = np.linalg.inv(transformation)
+    return [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p) for p in points]
+
+
+def project(points: List[np.ndarray],
+            fx: float = 1,
+            fy: float = 1,
+            cx: float = 1,
+            cy: float = 1) -> List[np.ndarray]:
+    lengths = [len(p) for p in points]
+    assert min(lengths) == max(lengths)
+    if len(points[0]) == 4:
+        points = [p[:3] for p in points]
+    intrinsic_camera_matrix = np.ndarray([
+        [fx, 0, cx],
+        [0, fy, cy],
+        [0, 0, 1]
+    ])
+    pixel_coordinates = [np.matmul(intrinsic_camera_matrix, p) for p in points]
+    return [p / p[2] for p in pixel_coordinates]
