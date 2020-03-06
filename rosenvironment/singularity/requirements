@@ -1,6 +1,5 @@
 ipython
-jupyter-core
-jupyter-client
+jupyter
 matplotlib
 mock
 numpy
