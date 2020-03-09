@@ -31,7 +31,7 @@ class TestRobotMapper(unittest.TestCase):
             'control_mapping': False,
             'ros_expert': False,
             'waypoint_indicator': False,
-            'robot_mapper': True
+            'robot_mapping': True
         }
 
         # spinoff roslaunch
@@ -66,11 +66,13 @@ class TestRobotMapper(unittest.TestCase):
                 and not rospy.has_param('/output_path'):
             time.sleep(0.1)
         self.publish_odom(x=0, y=0, z=0, yaw=0)
-        self.publish_odom(x=6, y=0, z=0, yaw=0)
-        self.publish_odom(x=3, y=0, z=0, yaw=0.7)
-        self.publish_odom(x=6, y=3, z=0, yaw=-0.7)
-        self.publish_odom(x=3, y=0, z=0, yaw=-0.7+1.57)
-        self.publish_odom(x=0, y=3, z=0, yaw=-0.7+1.57)
+        self.publish_odom(x=1, y=0, z=0, yaw=0)
+        self.publish_odom(x=0, y=2, z=0, yaw=0)
+        # self.publish_odom(x=1, y=0, z=0, yaw=0)
+        # self.publish_odom(x=1, y=0, z=0, yaw=0.7)
+        # self.publish_odom(x=1, y=0, z=0, yaw=-0.7)
+        # self.publish_odom(x=0, y=1, z=0, yaw=-0.7+1.57)
+        # self.publish_odom(x=0, y=1, z=0, yaw=-0.7+1.57)
         self.ros_topic.publishers[self._fsm_topic].publish(FsmState.Terminated.name)
         self.assertTrue(os.path.isfile(os.path.join(self.output_dir, 'trajectory.png')))
 

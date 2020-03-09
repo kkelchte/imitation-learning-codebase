@@ -1,2 +1,2 @@
 world_name: test_robot_mapper
-transformation: [1, 1, 1, 1]
+background_file: src/sim/ros/gazebo/background_images/cube_world_2_2_10.jpg

@@ -77,19 +77,20 @@ class RobotMapper:
         self._gui_camera_height = rospy.get_param('/world/gui_camera_height',
                                                   20 if 'turtle' in self._robot_type else 50)
         self._background_file = rospy.get_param('/world/background_file')
+        if not self._background_file.startswith('/'):
+            self._background_file = os.path.join(os.environ['HOME'], self._background_file)
         self._background_image = Image.open(self._background_file)
 
         # Camera intrinsics from assumption of horizontal and vertical field of view
         horizontal_field_of_view = 60 * 3.14 / 180
         vertical_field_of_view = 40 * 3.14 / 180
-        width = self._background_image[0]
-        height = self._background_image[1]
+        width, height = self._background_image.size
         self._fx = -width/2*np.tan(horizontal_field_of_view/2)**(-1)
         self._fy = -height/2*np.tan(vertical_field_of_view/2)**(-1)
         self._cx = width/2
         self._cy = height/2
 
-        # Camera extrinsics: orientation assumption and extracted translation
+        # Camera extrinsics: orientation (assumption) and translation (extracted from filename)
         self._camera_global_orientation = np.asarray([
             [-1, 0, 0],
             [0, 1, 0],
@@ -114,7 +115,6 @@ class RobotMapper:
         rospy.init_node('robot_mapper')
         self._rate = rospy.Rate(10)
         cprint(f'specifications: \n'
-               f'rate: {self._rate}\n'
                f'cy: {self._cy}\n'
                f'cx: {self._cx}\n'
                f'fx: {self._fx}\n'
@@ -135,6 +135,9 @@ class RobotMapper:
                                                              msg.pose.pose.orientation.y,
                                                              msg.pose.pose.orientation.z,
                                                              msg.pose.pose.orientation.w))
+        print(f'robot_global_translation: {robot_global_translation}')
+        print(f'robot_global_orientation: {robot_global_orientation}')
+        print(f'local_frame: {self._local_frame}')
         points_global_frame = transform(points=self._local_frame,
                                         orientation=robot_global_orientation,
                                         translation=robot_global_translation)
@@ -166,6 +169,7 @@ class RobotMapper:
                 ax.add_line(line)
                 plt.scatter(p[0], p[1], s=10, color=colors[index])
         plt.axis('off')
+        cprint(f'writing image to {self._output_path}', self._logger)
         fig.savefig(os.path.join(self._output_path, 'trajectory.png'))
 
     def run(self):

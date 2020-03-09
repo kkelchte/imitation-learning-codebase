@@ -211,7 +211,7 @@ def transform(points: List[np.ndarray],
     augmented = True
     lengths = [len(p) for p in points]
     assert min(lengths) == max(lengths)
-    if len(points[0].shape) == 3:
+    if points[0].shape[0] == 3:
         augmented = False
         points = [np.concatenate([p, np.ones(1,)]) for p in points]
     transformation = np.zeros((4, 4))
@@ -230,12 +230,13 @@ def project(points: List[np.ndarray],
             cy: float = 1) -> List[np.ndarray]:
     lengths = [len(p) for p in points]
     assert min(lengths) == max(lengths)
-    if len(points[0]) == 4:
+    if points[0].shape[0] == 3:
         points = [p[:3] for p in points]
-    intrinsic_camera_matrix = np.ndarray([
+    intrinsic_camera_matrix = np.asarray([
         [fx, 0, cx],
         [0, fy, cy],
-        [0, 0, 1]
-    ])
+        [0, 0, 1]])
     pixel_coordinates = [np.matmul(intrinsic_camera_matrix, p) for p in points]
     return [p / p[2] for p in pixel_coordinates]
+
+
