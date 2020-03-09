@@ -164,7 +164,8 @@ class DataLoader:
             for sample in range(batch_size):
                 run_index = int(np.random.choice(list(range(self._num_runs)), p=self._run_probabilities))
                 sample_index = int(np.random.choice(list(range(self._get_run_length(run_index=run_index))),
-                                                    p=self._probabilities_per_run[run_index]))
+                                                    p=self._probabilities_per_run[run_index]
+                                                    if len(self._probabilities_per_run) != 0 else None))
                 batch = self._append_datapoint(destination=batch, run_index=run_index, sample_index=sample_index)
             if len(batch) != 0:
                 yield batch

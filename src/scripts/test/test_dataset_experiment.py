@@ -17,7 +17,7 @@ class TestDatasetExperiment(unittest.TestCase):
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         config_dict['output_path'] = self.output_dir
         self.config = DatasetExperimentConfig().create(
-            config_file=os.path.join(self.output_dir, 'config.yml')
+            config_dict=config_dict
         )
 
     def test_run(self):

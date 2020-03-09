@@ -250,7 +250,7 @@ def calculate_probabilites_per_run(run: Run) -> List[float]:
         probabilities += run_probabilities - 1./run_length  # center values around zero
     # recenter around average:
     probabilities += 1./run_length
-    probabilities = [min(p, 0) for p in probabilities]
+    probabilities = [max(p, 0) for p in probabilities]
     return [p / sum(probabilities) for p in probabilities]
 
 
