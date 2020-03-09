@@ -151,7 +151,7 @@ class CondorLauncher:
         cleaning_config = create_configs(base_config=base_config,
                                          output_path=self._config.output_path,
                                          adjustments={})
-        job_config_object.command += f' --config {cleaning_config}'
+        job_config_object.command += f' --config {cleaning_config[0]}'
         condor_job = CondorJob(config=job_config_object)
         condor_job.write_job_file()
         condor_job.write_executable_file()
