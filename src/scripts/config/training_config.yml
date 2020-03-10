@@ -2,11 +2,12 @@ output_path: /esat/opal/kkelchte/experimental_data/cube_world_fresh
 generate_new_output_path: True
 model_config:
   architecture: tiny_net_v0
-  device: 'gpu'
+  device: 'cpu'
   initialisation_seed: 123
 trainer_config:
   criterion: 'MSELoss'
   batch_size: 64
+  device: 'cuda'
   optimizer: 'Adadelta'
   learning_rate: 0.001
   save_checkpoint_every_n: 10
@@ -22,6 +23,7 @@ trainer_config:
 #      - depth_scan
 evaluator_config:
   criterion: 'MSELoss'
+  device: 'cpu'
   data_loader_config:
     hdf5_file: validation.hdf5
     inputs:

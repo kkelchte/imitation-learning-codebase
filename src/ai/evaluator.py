@@ -23,6 +23,7 @@ Depends on ai/architectures, data/data_loader, core/logger
 class EvaluatorConfig(Config):
     data_loader_config: DataLoaderConfig = None
     criterion: str = 'MSELoss'
+    device: str = 'cpu'
 
 
 class Evaluator:
@@ -37,19 +38,30 @@ class Evaluator:
                                   quite=False) if type(self) == Evaluator else None
         if not quiet:
             cprint(f'Started.', self._logger)
-        self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._model.device)')
+
+        self._device = torch.device(self._config.device)
+        self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._device)')
 
         self._data_loader.load_dataset(input_sizes=self._model.get_input_sizes(),
                                        output_sizes=self._model.get_output_sizes())
 
         self._minimum_error = float(10**6)
+        self._original_model_device = self._model.get_device()
+
+    def put_model_on_device(self):
+        self._original_model_device = self._model.get_device()
+        self._model.set_device(self._config.device)
+
+    def put_model_back_to_original_device(self):
+        self._model.set_device(self._original_model_device)
 
     def evaluate(self, save_checkpoints: bool = False) -> float:
+        self.put_model_on_device()
         total_error = []
         for run in tqdm(self._data_loader.get_data(), ascii=True, desc='evaluate'):
-            model_outputs = self._model.forward(run.get_input())
+            model_outputs = self._model.forward(inputs=run.get_input())
             for output_index, output in enumerate(model_outputs):
-                targets = run.get_output()[output_index].to(self._model.device)
+                targets = run.get_output()[output_index].to(self._config.device)
                 error = self._criterion(output, targets).mean()
                 total_error.append(error)
                 cprint(f'{list(run.outputs.keys())[output_index]}: {error} {self._config.criterion}.', self._logger)
@@ -57,4 +69,5 @@ class Evaluator:
         if save_checkpoints and total_error < self._minimum_error:
             self._model.save_to_checkpoint(tag='best')
             self._minimum_error = total_error
+        self.put_model_back_to_original_device()
         return total_error

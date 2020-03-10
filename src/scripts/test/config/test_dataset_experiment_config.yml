@@ -1,12 +1,13 @@
 output_path: /esat/opal/kkelchte/experimental_data/dummy_dataset
 model_config:
   architecture: tiny_net_v0
-  device: 'gpu'
+  device: 'cpu'
 trainer_config:
   criterion: 'MSELoss'
   batch_size: 32
   optimizer: 'SGD'
   learning_rate: 0.01
+  device: 'cuda'
   data_loader_config:
     balance_targets: True
     data_directories:
@@ -19,6 +20,7 @@ trainer_config:
       - ros_expert
 evaluator_config:
   criterion: 'MSELoss'
+  device: 'cpu'
   data_loader_config:
     data_directories:
       - /esat/opal/kkelchte/experimental_data/dummy_dataset/raw_data/20-02-06_13-32-43

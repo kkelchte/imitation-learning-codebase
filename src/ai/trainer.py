@@ -23,11 +23,11 @@ Allows combination of outputs as weighted sum in one big backward pass.
 @dataclass_json
 @dataclass
 class TrainerConfig(EvaluatorConfig):
-    batch_size: int = None
     optimizer: str = 'SGD'
     output_weights: List[float] = None  # for each model output specify impact amount of loss in optimizer step
     learning_rate: float = 0.01
     save_checkpoint_every_n: int = 10
+    batch_size: int = None
 
     def post_init(self):
         if self.output_weights is not None:
@@ -51,13 +51,14 @@ class Trainer(Evaluator):
                                f'lr=self._config.learning_rate)')
 
     def train(self, epoch: int = -1) -> float:
+        self.put_model_on_device()
         self._optimizer.zero_grad()
         total_error = []
         for batch in tqdm(self._data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
             model_outputs = self._model.forward(batch.get_input())
-            total_loss = torch.Tensor([0]).to(self._model.device)
+            total_loss = torch.Tensor([0]).to(self._device)
             for output_index, output in enumerate(model_outputs):
-                targets = batch.get_output()[output_index].to(self._model.device)
+                targets = batch.get_output()[output_index].to(self._device)
                 loss = self._criterion(output, targets).mean()
                 cprint(f'{list(batch.outputs.keys())[output_index]}: {loss} {self._config.criterion}.', self._logger)
                 total_loss += self._config.output_weights[output_index] * loss
@@ -70,4 +71,5 @@ class Trainer(Evaluator):
                 self._model.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
         else:
             self._model.save_to_checkpoint()
+        self.put_model_back_to_original_device()
         return float(torch.Tensor(total_error).mean())
