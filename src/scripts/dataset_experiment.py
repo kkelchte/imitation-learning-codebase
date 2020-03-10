@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 
 from dataclasses_json import dataclass_json
+from torch.utils.tensorboard import SummaryWriter
 
 from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.model import ModelConfig, Model
@@ -25,6 +26,7 @@ class DatasetExperimentConfig(Config):
     evaluator_config: EvaluatorConfig = None
     number_of_epochs: int = 1
     generate_new_output_path: bool = True  # is overwritten by dag file to predefine output path.
+    tensorboard: bool = False
 
     def __post_init__(self):
         # Avoid None value error by deleting irrelevant fields
@@ -50,6 +52,8 @@ class DatasetExperiment:
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
                                   quite=False)
+        self._writer = SummaryWriter(log_dir=config.output_path)
+
         cprint(f'Started.', self._logger)
         self._model = Model(config=self._config.model_config)
         self._trainer = Trainer(config=self._config.trainer_config, model=self._model) \
@@ -62,12 +66,14 @@ class DatasetExperiment:
             msg = f'ended epoch: {epoch} / {self._config.number_of_epochs}'
             if self._trainer is not None:
                 training_error = self._trainer.train(epoch=epoch)  # include checkpoint saving.
+                self._writer.add_scalar('training error', training_error, global_step=epoch)
                 msg += f' training error: {training_error}'
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
                 validation_error = self._evaluator.evaluate(save_checkpoints=self._trainer is not None)
+                self._writer.add_scalar('validation error', validation_error, global_step=epoch)
                 msg += f' validation error: {validation_error}'
             cprint(msg, self._logger)
-
+        self._writer.close()
         cprint(f'Finished.', self._logger)
 
 
