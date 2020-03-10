@@ -103,7 +103,7 @@ class RobotMapper:
         else:
             self._camera_global_translation = np.asarray([0, 0, 10])
 
-        self._minimum_distance_px = 10
+        self._minimum_distance_px = 30
         self._local_frame = [np.asarray([0, 0, 0]),
                              np.asarray([0.2, 0, 0]),
                              np.asarray([0, 0.2, 0]),
