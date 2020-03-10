@@ -8,7 +8,7 @@ job_configs:
     cpu_mem_gb: 10
     disk_mem_gb: 52
     nice: False
-    gpu_mem_mb: 4500
+    gpu_mem_mb: 1900
     use_singularity: False
     check_if_ros_already_in_use: False
     save_locally: False

@@ -13,6 +13,7 @@ scipy
 dataclasses
 torch
 torchvision
+tensorboard
 roslibpy
 frozendict
 gym==0.10.*
