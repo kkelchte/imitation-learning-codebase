@@ -105,9 +105,9 @@ class RobotMapper:
 
         self._minimum_distance_px = 30
         self._local_frame = [np.asarray([0, 0, 0]),
-                             np.asarray([0.2, 0, 0]),
-                             np.asarray([0, 0.2, 0]),
-                             np.asarray([0, 0, 0.2])]
+                             np.asarray([0.17, 0, 0]),
+                             np.asarray([0, 0.17, 0]),
+                             np.asarray([0, 0, 0.17])]
 
         self._previous_position = None
         self._frame_points = []
@@ -166,7 +166,7 @@ class RobotMapper:
                 ymin = _frame[0][1]
                 line = mlines.Line2D([xmin, p[0]], [ymin, p[1]], linewidth=1, color=colors[index])
                 ax.add_line(line)
-                plt.scatter(p[0], p[1], s=2, color=colors[index])
+                # plt.scatter(p[0], p[1], s=2, color=colors[index])
         plt.axis('off')
         output_file = f'{self._output_path}/trajectories/{get_date_time_tag()}'
         try:
@@ -186,6 +186,7 @@ class RobotMapper:
         fig.savefig(output_file+'.png')
         plt.clf()
         plt.close(fig)
+        self._frame_points = []
 
     def run(self):
         cprint(f'started with rate {self._rate}', self._logger)
