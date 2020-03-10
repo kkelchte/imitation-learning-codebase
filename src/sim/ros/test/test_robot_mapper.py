@@ -68,6 +68,8 @@ class TestRobotMapper(unittest.TestCase):
         self.publish_odom(x=0, y=0, z=0, yaw=0)
         self.publish_odom(x=1, y=0, z=0, yaw=0)
         self.publish_odom(x=0, y=2, z=0, yaw=0)
+        self.publish_odom(x=0, y=0, z=3, yaw=0)
+        self.publish_odom(x=1, y=4, z=2, yaw=0.5)
         # self.publish_odom(x=1, y=0, z=0, yaw=0)
         # self.publish_odom(x=1, y=0, z=0, yaw=0.7)
         # self.publish_odom(x=1, y=0, z=0, yaw=-0.7)

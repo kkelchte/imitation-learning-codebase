@@ -1,2 +1,2 @@
 world_name: test_robot_mapper
-background_file: src/sim/ros/gazebo/background_images/cube_world_2_2_10.jpg
+background_file: src/sim/ros/gazebo/background_images/cube_world_validate_2_2_10.jpg

@@ -1,4 +1,4 @@
-output_path: /esat/opal/kkelchte/experimental_data/cube_world
+output_path: /esat/opal/kkelchte/experimental_data/cube_world_fresh
 generate_new_output_path: True
 model_config:
   architecture: tiny_net_v0

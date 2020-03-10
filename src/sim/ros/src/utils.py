@@ -218,7 +218,7 @@ def transform(points: List[np.ndarray],
     transformation[0:3, 0:3] = orientation
     transformation[0:3, 3] = translation
     transformation[3, 3] = 1
-    if not invert:
+    if invert:
         transformation = np.linalg.inv(transformation)
     return [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p) for p in points]
 

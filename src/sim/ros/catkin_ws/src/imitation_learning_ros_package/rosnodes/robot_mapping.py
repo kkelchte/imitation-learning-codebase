@@ -135,16 +135,15 @@ class RobotMapper:
                                                              msg.pose.pose.orientation.y,
                                                              msg.pose.pose.orientation.z,
                                                              msg.pose.pose.orientation.w))
-        print(f'robot_global_translation: {robot_global_translation}')
-        print(f'robot_global_orientation: {robot_global_orientation}')
-        print(f'local_frame: {self._local_frame}')
+        cprint(f'robot_global_translation: {robot_global_translation}', self._logger)
+        cprint(f'robot_global_orientation: {robot_global_orientation}', self._logger)
         points_global_frame = transform(points=self._local_frame,
                                         orientation=robot_global_orientation,
                                         translation=robot_global_translation)
         points_camera_frame = transform(points=points_global_frame,
                                         orientation=self._camera_global_orientation,
                                         translation=self._camera_global_translation,
-                                        invert=True)
+                                        invert=True)  # camera_global transformation is given, but should be inverted
         points_image_frame = project(points=points_camera_frame,
                                      fx=self._fx,
                                      fy=self._fy,
