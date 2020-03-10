@@ -38,6 +38,12 @@ def get_output_path() -> str:
     return output_path
 
 
+def get_current_actor() -> str:
+    actor_command_topic = rospy.get_param('/control_mapping/mapping/Running/command')
+    actor_name = actor_command_topic.split('cmd_vel')[0].split('/actor')[-1].split('/')[1]
+    return actor_name
+
+
 def get_type_from_topic_and_actor_configs(actor_configs: List[ActorConfig], topic_name: str) -> ActorType:
     for actor_config in actor_configs:
         if actor_config.specs['command_topic'] == topic_name:

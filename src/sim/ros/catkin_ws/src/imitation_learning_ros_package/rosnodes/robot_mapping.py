@@ -38,10 +38,10 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
 from src.core.logger import get_logger, cprint
-from src.core.utils import camelcase_to_snake_format
+from src.core.utils import camelcase_to_snake_format, get_date_time_tag
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.utils import get_output_path, euler_from_quaternion, get_distance, rotation_from_quaternion, \
-    transform, project
+    transform, project, get_current_actor
 
 
 class RobotMapper:
@@ -105,9 +105,9 @@ class RobotMapper:
 
         self._minimum_distance_px = 10
         self._local_frame = [np.asarray([0, 0, 0]),
-                             np.asarray([1, 0, 0]),
-                             np.asarray([0, 1, 0]),
-                             np.asarray([0, 0, 1])]
+                             np.asarray([0.2, 0, 0]),
+                             np.asarray([0, 0.2, 0]),
+                             np.asarray([0, 0, 0.2])]
 
         self._previous_position = None
         self._frame_points = []
@@ -164,12 +164,28 @@ class RobotMapper:
             for index, p in enumerate(_frame[1:]):
                 xmin = _frame[0][0]
                 ymin = _frame[0][1]
-                line = mlines.Line2D([xmin, p[0]], [ymin, p[1]], color=colors[index])
+                line = mlines.Line2D([xmin, p[0]], [ymin, p[1]], linewidth=1, color=colors[index])
                 ax.add_line(line)
-                plt.scatter(p[0], p[1], s=10, color=colors[index])
+                plt.scatter(p[0], p[1], s=2, color=colors[index])
         plt.axis('off')
-        cprint(f'writing image to {self._output_path}', self._logger)
-        fig.savefig(os.path.join(self._output_path, 'trajectory.png'))
+        output_file = f'{self._output_path}/trajectories/{get_date_time_tag()}'
+        try:
+            actor_name = get_current_actor()
+        except IndexError:
+            pass
+        except KeyError:
+            pass
+        else:
+            if actor_name == 'dnn_actor':
+                output_file += '_' + os.path.basename(
+                    rospy.get_param('/actor/dnn_actor/specs/model_config/load_checkpoint_dir'))
+            else:
+                output_file += '_' + actor_name
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        cprint(f'writing image to {output_file}', self._logger)
+        fig.savefig(output_file+'.png')
+        plt.clf()
+        plt.close(fig)
 
     def run(self):
         cprint(f'started with rate {self._rate}', self._logger)

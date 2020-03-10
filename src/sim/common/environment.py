@@ -38,6 +38,7 @@ class RosLaunchConfig(Config):
     yaw_or: float = 1.57
     world_name: str = None
     robot_name: str = None
+    robot_mapping: bool = True
 
     def __post_init__(self):
         assert os.path.isfile(f'src/sim/ros/config/fsm/{self.fsm_config}.yml')

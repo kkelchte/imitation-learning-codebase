@@ -13,6 +13,7 @@ runner_config:
         gazebo: true
         random_seed: 123
         robot_name: turtlebot_sim
+        robot_mapping: true
         waypoint_indicator: true
         world_name: cube_world
         x_pos: 0.0

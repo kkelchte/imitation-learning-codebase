@@ -3,4 +3,4 @@ specs:
   rate_fps: 20
   model_config:
     architecture: tiny_net_v0
-    load_checkpoint_dir: '/esat/opal/kkelchte/experimental_data/cube_world/models/20-02-14_13-23-39_tiny_net_v0'
+    load_checkpoint_dir: '/esat/opal/kkelchte/experimental_data/cube_world_all/models/seed_5100'

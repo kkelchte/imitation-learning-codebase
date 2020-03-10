@@ -18,4 +18,4 @@ waypoints:
   - [4, 0]
   - [0, 0]
 waypoint_reached_distance: 0.25
-background_file: cube_world_2_2_10.jpg
+background_file: src/sim/ros/gazebo/background_images/cube_world_2_2_10.jpg
