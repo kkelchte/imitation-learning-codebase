@@ -23,7 +23,7 @@ from src.condor.helper_functions import strip_command
 class CondorJobConfig(Config):
     command: str = None
     config_file: str = ''
-    codebase_dir: str = '/users/visics/kkelchte/code/imitation-learning-codebase'
+    codebase_dir: str = f'{os.environ["HOME"]}/code/imitation-learning-codebase'
     cpus: int = 4
     gpus: int = 1
     cpu_mem_gb: int = 17
@@ -34,8 +34,8 @@ class CondorJobConfig(Config):
     black_list: List = None
     green_list: List = None
     use_singularity: bool = True
-    singularity_file: str = sorted(glob.glob('/users/visics/kkelchte/code/imitation-learning-codebase/'
-                                             'rosenvironment/singularity/ros_gazebo_cuda_*.sif'))[-1]
+    singularity_file: str = sorted(glob.glob(f'{os.environ["HOME"]}/code/imitation-learning-codebase/'
+                                             f'rosenvironment/singularity/*.sif'))[-1]
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
 
@@ -186,7 +186,7 @@ class CondorJob:
                     f"/usr/bin/singularity exec --nv {self._config.singularity_file} "
                     f"{os.path.join(self._config.codebase_dir, 'rosenvironment', 'entrypoint.sh')} "
                     f"{self._config.command} "
-                    f">> {os.path.join(self.output_dir, 'singularity.output')}\n")
+                    f">> {os.path.join(self.output_dir, 'singularity.output')} 2>&1 \n")
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
