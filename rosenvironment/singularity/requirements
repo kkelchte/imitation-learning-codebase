@@ -27,3 +27,4 @@ catkin_pkg
 opencv-python
 empy
 tqdm
+h5py
