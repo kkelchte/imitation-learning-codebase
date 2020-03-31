@@ -1,4 +1,4 @@
-output_path: /esat/opal/kkelchte/experimental_data/cube_world_all
+output_path: /esat/opal/kkelchte/experimental_data/cube_world_test
 mode: 6  # dag data_collection_train_evaluate mode
 job_configs:
   - command: python3.7 src/scripts/interactive_experiment.py
@@ -45,7 +45,7 @@ job_configs:
     check_if_ros_already_in_use: False
     save_locally: True
 number_of_jobs:
-  - 3
+  - 6
   - 1
   - 3
   - 3
