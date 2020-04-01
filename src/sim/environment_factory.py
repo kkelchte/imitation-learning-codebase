@@ -1,8 +1,12 @@
 
 from src.core.object_factory import ObjectFactory
 from src.sim.common.data_types import EnvironmentType
+
 from src.sim.gym.gym_environment import GymEnvironment
-from src.sim.ros.src.ros_environment import RosEnvironment
+try:
+    from src.sim.ros.src.ros_environment import RosEnvironment
+except ModuleNotFoundError:
+    pass
 
 """Pick correct environment class according to environment type.
 
