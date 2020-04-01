@@ -1,13 +1,13 @@
 output_path: 'experimental_data/gym_cartpole'
 runner_config:
   environment_config:
-    factory_key: 0
+    factory_key: 1
     max_number_of_steps: 1000
     gym_config:
       random_seed: 123
       world_name: "CartPole-v1"
     actor_config:
-      name: dnn_actor
+      name: "dnn_actor"
       type: 0
       model_config:
         architecture: mlp_v0

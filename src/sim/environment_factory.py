@@ -6,7 +6,8 @@ from src.sim.gym.gym_environment import GymEnvironment
 try:
     from src.sim.ros.src.ros_environment import RosEnvironment
 except ModuleNotFoundError:
-    pass
+    from mock import Mock
+    RosEnvironment = Mock
 
 """Pick correct environment class according to environment type.
 

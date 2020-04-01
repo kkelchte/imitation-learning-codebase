@@ -17,11 +17,11 @@ Depends on ai/architectures/models to call forward pass.
 """
 
 
-@dataclass
 @dataclass_json
+@dataclass
 class ActorConfig(Config):
-    name: str = None
-    type: ActorType = None
+    name: str = ''
+    type: ActorType = ActorType.Model
     model_config: ModelConfig = None
     specs: dict = None
     file: str = None
