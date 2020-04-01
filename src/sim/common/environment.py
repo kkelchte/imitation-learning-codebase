@@ -55,6 +55,7 @@ class RosConfig(Config):
     step_rate_fps: float = 10.
     visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None
+    actor_configs: List[ActorConfig] = None
 
 
 @dataclass_json
@@ -67,7 +68,7 @@ class EnvironmentConfig(Config):
     """
     factory_key: EnvironmentType = None
     max_number_of_steps: int = 100
-    actor_configs: List[ActorConfig] = None
+    actor_config: ActorConfig = None
     # Gazebo specific environment settings
     ros_config: RosConfig = None
     # Gym specific environment settings
@@ -77,6 +78,7 @@ class EnvironmentConfig(Config):
         # Avoid None value error by deleting irrelevant fields
         if self.factory_key == EnvironmentType.Ros:
             del self.gym_config
+            del self.actor_config
         elif self.factory_key == EnvironmentType.Gym:
             del self.ros_config
 

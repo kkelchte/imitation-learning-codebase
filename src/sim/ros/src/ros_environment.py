@@ -45,7 +45,7 @@ class RosEnvironment(Environment):
             roslaunch_arguments['drone_sim'] = True \
                 if config.ros_config.ros_launch_config.robot_name == 'drone_sim' else False
 
-        for actor_config in config.actor_configs:
+        for actor_config in config.ros_config.actor_configs:
             roslaunch_arguments[actor_config.name] = True
             config_file = actor_config.file if actor_config.file.startswith('/') \
                 else os.path.join(os.environ['HOME'], actor_config.file)
