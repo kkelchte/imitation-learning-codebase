@@ -262,7 +262,6 @@ result_directory = f'{os.environ["HOME"]}/code/imitation-learning-codebase/src/a
 os.makedirs(result_directory, exist_ok=True)
 
 linear_regressor = LinearRegression()
-#for epoch in tqdm(range(epochs)):
 for epoch in range(epochs):
     evaluation_returns, losses, objectives, \
     q_target_means, q_target_stds, \
