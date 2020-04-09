@@ -257,7 +257,7 @@ min_returns = []
 max_returns = []
 
 best_avg_return = -10000
-result_directory = f'{os.environ["HOME"]}/code/imitation-learning-codebase/src/ai/algorithms/standalone_scripts/' \
+result_directory = f'{os.environ["HOME"]}/code/imitation-learning-codebase/src/ai/algorithms/' \
                    f'results/ddpg'
 os.makedirs(result_directory, exist_ok=True)
 
