@@ -20,6 +20,7 @@ class GymConfig(Config):
     """
     random_seed: int = 123
     world_name: str = None
+    render: bool = False
 
 
 @dataclass_json
@@ -90,7 +91,7 @@ class Environment:
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=self._config.output_path,
                                   quite=False)
-        cprint(f'initiate', self._logger)
+        cprint('initiated', self._logger)
 
     def step(self, action: Action) -> State:
         pass
