@@ -27,6 +27,8 @@ class ActorConfig(Config):
     file: str = None
 
     def __post_init__(self):
+        """Actor either contains a file from which specifications are loaded, used by ROS actors
+        or it contains a model config. Delete the unused None variables."""
         if self.file is not None:
             with open(self.file, 'r') as f:
                 specs = yaml.load(f, Loader=yaml.FullLoader)
@@ -51,7 +53,7 @@ class Actor:
         return self._name
 
 
-class DNNActor(Actor):
+class DnnActor(Actor):
 
     def __init__(self, config: ActorConfig):
         super().__init__(config)
@@ -59,9 +61,9 @@ class DNNActor(Actor):
         self._model = Model(config=self._config.model_config)
 
     def get_action(self, sensor_data: dict) -> Action:
-        processed_image = torch.Tensor(sensor_data['observation']).permute(2, 0, 1).unsqueeze(0)
-        assert processed_image.size()[0] == 1 and processed_image.size()[1] == 3
-        output = self._model.forward([processed_image], train=False)[0].detach().cpu().numpy()
+        output = self._model.forward([torch.Tensor(sensor_data['next_observation'])], train=False)[0].detach().cpu().numpy()
+        if self._model.discrete:
+            output = np.argmax(output)
         return Action(
             actor_name='dnn_actor',
             actor_type=ActorType.Model,

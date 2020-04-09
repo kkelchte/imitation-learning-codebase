@@ -5,7 +5,7 @@ from dataclasses_json import dataclass_json
 from src.core.logger import get_logger, cprint
 from src.core.config_loader import Config
 from src.core.utils import get_filename_without_extension
-from src.sim.common.actors import DNNActor
+from src.sim.common.actors import DnnActor
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.common.data_types import TerminalType, EnvironmentType
 from src.sim.environment_factory import EnvironmentFactory
@@ -34,7 +34,7 @@ class EnvironmentRunner:
         self._environment = EnvironmentFactory().create(config.environment_config)
         # actor is not used for ros-gazebo environments.
         self._actor = None if config.environment_config.factory_key == EnvironmentType.Ros \
-            else DNNActor(config=self._config.environment_config.actor_config)
+            else DnnActor(config=self._config.environment_config.actor_config)
         cprint('initiated', self._logger)
 
     def _run_episode(self):
