@@ -36,18 +36,20 @@ class ModelConfig(Config):
     pretrained: bool = False
     initialisation_seed: int = 0
     device: str = 'cpu'
+    discrete: bool = False
 
     def __post_init__(self):
         if self.load_checkpoint_dir is None:
             del self.load_checkpoint_dir
         if self.output_sizes is None:
-            self.output_sizes = [[6]]  # default to six dimensional action space.
+            self.output_sizes = [[6]]  # default to six dimensional continuous action space.
 
 
 class Model:
 
     def __init__(self, config: ModelConfig):
         self._config = config
+        self.discrete = self._config.discrete
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
                                   quite=False)

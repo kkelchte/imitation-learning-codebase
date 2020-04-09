@@ -10,8 +10,9 @@ runner_config:
       name: "dnn_actor"
       type: 0
       model_config:
-        architecture: mlp_v0
+        architecture: "discrete_mlp_v0"
         output_sizes: [[2]]
+        discrete: true
   number_of_episodes: 1
 data_saver_config:
   store_hdf5: true
