@@ -15,8 +15,9 @@ class ProcessState(IntEnum):
 class TerminalType(IntEnum):
     Unknown = -1
     NotDone = 0
-    Success = 1
-    Failure = 2
+    Done = 1
+    Success = 2
+    Failure = 3
 
 
 class EnvironmentType(IntEnum):
