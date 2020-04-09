@@ -65,9 +65,9 @@ class Evaluator:
                 error = self._criterion(output, targets).mean()
                 total_error.append(error)
                 cprint(f'{list(run.outputs.keys())[output_index]}: {error} {self._config.criterion}.', self._logger)
-        total_error = float(torch.Tensor(total_error).mean())
-        if save_checkpoints and total_error < self._minimum_error:
+        average_error = float(torch.Tensor(total_error).mean())
+        if save_checkpoints and average_error < self._minimum_error:
             self._model.save_to_checkpoint(tag='best')
-            self._minimum_error = total_error
+            self._minimum_error = average_error
         self.put_model_back_to_original_device()
-        return total_error
+        return average_error
