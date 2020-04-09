@@ -12,6 +12,22 @@ class ArchiterturalComponentBase(Module):
         self.output = (1, 1000)
 
 
+class ThreeLayerPerceptron(ArchiterturalComponentBase):
+
+    def __init__(self, input_size: int, output_size: int):
+        super().__init__()
+        self.input = input_size
+        self.output = output_size
+        self.fc1 = nn.Linear(input_size, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, output_size, bias=False)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = functional.relu(self.fc1(x))
+        x = functional.relu(self.fc2(x))
+        return self.fc3(x)
+
+
 class FourLayerReLuEncoder(ArchiterturalComponentBase):
 
     def __init__(self):
