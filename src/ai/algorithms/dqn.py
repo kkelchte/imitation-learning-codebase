@@ -6,18 +6,15 @@ import numpy as np
 
 from tqdm import tqdm
 import gym
-import torch
 import torch.nn as nn
 from torch.distributions.categorical import Categorical
-from torch.distributions.normal import Normal
 from torch.optim import Adam
 import matplotlib.pyplot as plt
 
-from src.ai.algorithms.standalone_scripts.utils import *
+from src.ai.algorithms.utils import *
 
 ##############################################################
 # Settings
-from src.sim.common.noise import OUNoise
 
 result_file_name = 'dqn_cartpole'
 environment_name = 'CartPole-v0'

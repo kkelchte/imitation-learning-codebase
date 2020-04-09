@@ -3,15 +3,13 @@ import os
 import time
 import gym
 import numpy as np
-import torch
 import torch.nn as nn
-import torch.functional as F
 from torch.distributions.categorical import Categorical
 from torch.distributions.normal import Normal
 from torch.optim import Adam
 import matplotlib.pyplot as plt
 
-from src.ai.algorithms.standalone_scripts.utils import *
+from src.ai.algorithms.utils import *
 
 ##############################################################
 # Settings

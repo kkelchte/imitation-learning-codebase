@@ -7,36 +7,35 @@ import numpy as np
 from tqdm import tqdm
 import gym
 from gym.wrappers.time_limit import TimeLimit
-import torch
 import torch.nn as nn
-from torch.distributions.categorical import Categorical
 from torch.distributions.normal import Normal
+import torch.nn.functional as F
 from torch.optim import Adam
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
 
-from src.ai.algorithms.standalone_scripts.utils import *
-from src.sim.common.noise import OUNoise
+from src.ai.algorithms.utils import *
 
 ##############################################################
 # Settings
 
-result_file_name = 'ddpg_pendulum'
-environment_name = 'Pendulum-v0'  # 'MountainCarContinuous-v0'
-actor_learning_rate = 0.00001
-critic_learning_rate = 0.00001
-epochs = 2000
-batch_size = 256
-replay_buffer_prefill = 2000
-replay_buffer_size = 1000000
+result_file_name = 'sac_pendulum'
+environment_name = 'Pendulum-v0'
+actor_learning_rate = 0.001
+critic_learning_rate = 0.001
+epochs = 400
+batch_size = 64
+replay_buffer_prefill = 20000
+replay_buffer_size = 100000
 plot = True
-optimize_every_n_steps = 200
-training_iterations = 200
+optimize_every_n_steps = 100
+training_iterations = 100
 evaluation_iterations = 10
 discount = 0.99
 polyak_average = 0.995  # the closer to one, the slower the target network updates
 prioritized_replay = False
 seed = 123
+update_policy_every_n_q_updates = 2
+entropy_regularization_parameter = 0.2
 ##############################################################
 np.random.seed(seed)
 torch.manual_seed(seed)
@@ -54,30 +53,37 @@ action_higher_bound = environment.action_space.high[0]
 policy = nn.Sequential(
     nn.Linear(observation_dimension, 15), nn.ReLU(inplace=True),
     nn.Linear(15, 15), nn.ReLU(inplace=True),
-    nn.Linear(15, action_dimension), nn.Tanh()
+    nn.Linear(15, 15), nn.ReLU(inplace=True)
 )
+policy_mu_layer = nn.Linear(15, action_dimension)
+policy_log_sigma_layer = nn.Linear(15, action_dimension)
+LOG_STD_MIN = -20
+LOG_STD_MAX = 2
 
-
-q = nn.Sequential(
-    nn.Linear(observation_dimension+action_dimension, 15), nn.ReLU(inplace=True),
+q_first = nn.Sequential(
+    nn.Linear(observation_dimension + action_dimension, 15), nn.ReLU(inplace=True),
+    nn.Linear(15, 15), nn.ReLU(inplace=True),
+    nn.Linear(15, 15), nn.ReLU(inplace=True),
+    nn.Linear(15, 1)
+)
+q_second = nn.Sequential(
+    nn.Linear(observation_dimension + action_dimension, 15), nn.ReLU(inplace=True),
     nn.Linear(15, 15), nn.ReLU(inplace=True),
     nn.Linear(15, 15), nn.ReLU(inplace=True),
     nn.Linear(15, 1)
 )
 
-target_policy = deepcopy(policy)
-target_q = deepcopy(q)
+target_q_first = deepcopy(q_first)
+target_q_second = deepcopy(q_second)
 
-for network in [target_policy, target_q]:
+for network in [target_q_first, target_q_second]:
     for p in network.parameters():
         p.requires_grad = False
 
 policy_optimizer = Adam(policy.parameters(), lr=actor_learning_rate)
-q_optimizer = Adam(q.parameters(), lr=critic_learning_rate)
-epsilon = 1
-exploration = torch.distributions.Uniform(low=action_lower_bound,
-                                          high=action_higher_bound)
-# exploration = OUNoise()
+q_first_optimizer = Adam(q_first.parameters(), lr=critic_learning_rate)
+q_second_optimizer = Adam(q_second.parameters(), lr=critic_learning_rate)
+
 replay_buffer = {
     'state': [],
     'action': [],
@@ -88,28 +94,59 @@ replay_buffer = {
 }
 
 
-def evaluate_policy(observation, evaluate: bool = True):
+def evaluate_policy(observation, deterministic: bool = True, with_log_prob: bool = False):
     if not isinstance(observation, torch.Tensor):
         observation = torch.as_tensor(observation, dtype=torch.float32)
-    action = action_higher_bound * policy.forward(observation)
+    output = policy.forward(observation)
+    mu = policy_mu_layer.forward(output)
+    log_sigma = policy_log_sigma_layer.forward(output).clamp(LOG_STD_MIN, LOG_STD_MAX)
+    std = torch.exp(log_sigma)
 
-    if not evaluate:
-        action += epsilon * torch.as_tensor(exploration.sample(), dtype=torch.float32)
-    return torch.clamp(action, action_lower_bound, action_higher_bound)
+    pi_distribution = Normal(mu, std)
+    if deterministic:
+        # Only used for evaluating policy at test time.
+        action = mu
+    else:
+        action = pi_distribution.rsample()
+
+    if with_log_prob:
+        log_prob = pi_distribution.log_prob(action).sum(axis=-1)
+        log_prob -= (2 * (np.log(2) - action - F.softplus(-2 * action))).sum(axis=-1)
+    else:
+        log_prob = None
+
+    action = torch.tanh(action)
+    action = action_higher_bound * action
+
+    return action, log_prob
 
 
-def evaluate_target_q(observation):
+def evaluate_target_twin_q_with_entropy(observation):
     if not isinstance(observation, torch.Tensor):
         observation = torch.as_tensor(observation, dtype=torch.float32)
-    action = action_higher_bound * target_policy.forward(observation)
+    with torch.no_grad():
+        action, log_prob = evaluate_policy(observation=observation, deterministic=False, with_log_prob=True)
     stacked_tensors = torch.cat((observation, action), dim=-1)
-    return target_q.forward(stacked_tensors).squeeze()
+    # select minimum from twin q functions for target
+    target_q = torch.min(target_q_first.forward(stacked_tensors), target_q_second.forward(stacked_tensors))
+    return target_q - entropy_regularization_parameter * log_prob
 
 
-def evaluate_q(observation):
+def evaluate_twin_q_with_entropy(observation):
     if not isinstance(observation, torch.Tensor):
         observation = torch.as_tensor(observation, dtype=torch.float32)
-    action = action_higher_bound * policy.forward(observation)
+    action, log_prob = evaluate_policy(observation=observation, deterministic=False, with_log_prob=True)
+    stacked_tensors = torch.cat((observation, action), dim=-1)
+    with torch.no_grad():
+        q = torch.min(q_first.forward(stacked_tensors), q_second.forward(stacked_tensors)).squeeze()
+    q -= entropy_regularization_parameter * log_prob
+    return q.squeeze()
+
+
+def evaluate_q(observation, q):
+    if not isinstance(observation, torch.Tensor):
+        observation = torch.as_tensor(observation, dtype=torch.float32)
+    action, log_prob = evaluate_policy(observation=observation, deterministic=False, with_log_prob=False)
     stacked_tensors = torch.cat((observation, action), dim=-1)
     return q.forward(stacked_tensors).squeeze()
 
@@ -148,19 +185,14 @@ def store_loss_for_prioritized_experience_replay(q_loss, batch_indices):
         replay_buffer['probability'][index] = max(0, loss)
 
 
-def update_epsilon():
-    global epsilon
-    epsilon -= (1 - 0.1) / epochs
-
-
 def train_one_epoch(epoch: int, render: bool = False):
-    update_epsilon()
     observation = environment.reset()
     done = False
     step_count = 0
     while True:
-        action = evaluate_policy(observation, evaluate=False).detach().numpy()
-        next_observation, reward, done, info = environment.step(action)
+        with torch.no_grad():
+            action, _ = evaluate_policy(observation, deterministic=False, with_log_prob=False)
+        next_observation, reward, done, info = environment.step(action.detach().numpy())
         step_count += 1
         save_experience(state=observation,
                         action=action,
@@ -180,10 +212,6 @@ def train_one_epoch(epoch: int, render: bool = False):
                     break
 
     q_losses = []
-    q_target_means = []
-    q_target_stds = []
-    q_estimate_mean = []
-    q_estimate_std = []
     policy_objectives = []
     for n in range(training_iterations):
         batch_observations, batch_rewards, batch_actions, batch_next_observations, batch_done, batch_indices = \
@@ -191,43 +219,51 @@ def train_one_epoch(epoch: int, render: bool = False):
         # calculate q target values with bellman update
         with torch.no_grad():
             q_targets = [
-                batch_rewards[index] + discount * (1 - batch_done[index])
-                * evaluate_target_q(batch_next_observations[index]).detach() for index in range(batch_size)
+                batch_rewards[index] + discount * (1-batch_done[index]) *
+                evaluate_target_twin_q_with_entropy(batch_next_observations[index]).detach() for index in range(batch_size)
             ]
-        q_target_means.append(np.mean(q_targets))
-        q_target_stds.append(np.std(q_targets))
-
         # update q-function with one step gradient descent
         for p in policy.parameters():
             p.requires_grad = False
-        q_optimizer.zero_grad()
-        q_estimates = evaluate_q(batch_observations)
-        q_estimate_mean.append(np.mean(q_estimates.detach().numpy()))
-        q_estimate_std.append(np.std(q_estimates.detach().numpy()))
-        q_loss = ((q_estimates - torch.as_tensor(q_targets, dtype=torch.float32)) ** 2)
+        losses = []
+        for optimizer, q in [(q_first_optimizer, q_first), (q_second_optimizer, q_second)]:
+            optimizer.zero_grad()
+            q_loss = ((evaluate_q(batch_observations, q)
+                       - torch.as_tensor(q_targets, dtype=torch.float32))**2)
+            losses.append(q_loss.detach().tolist())
+            q_loss_avg = q_loss.mean()
+            q_loss_avg.backward()
+            optimizer.step()
+            q_losses.append(q_loss_avg.detach().item())
         if prioritized_replay:
-            store_loss_for_prioritized_experience_replay(q_loss.detach().numpy(), batch_indices)
-        q_loss_avg = q_loss.mean()
-        q_loss_avg.backward()
-        q_optimizer.step()
+            store_loss_for_prioritized_experience_replay([losses[0][i]+losses[1][i] for i in range(len(losses[0]))],
+                                                     batch_indices)
         for p in policy.parameters():
             p.requires_grad = True
-        q_losses.append(q_loss_avg.detach().item())
+
+        for p in q_first.parameters():
+            p.requires_grad = False
+
+        for p in q_second.parameters():
+            p.requires_grad = False
 
         # update policy function with one step gradient ascent
-        for p in q.parameters():
-            p.requires_grad = False
         policy_optimizer.zero_grad()
-        policy_objective = -evaluate_q(batch_observations).mean()  # invert for ascent
+        policy_objective = -evaluate_twin_q_with_entropy(batch_observations).mean()  # invert for ascent
         policy_objective.backward()
         policy_optimizer.step()
-        for p in q.parameters():
+        policy_objectives.append(policy_objective.item())
+        for p in q_first.parameters():
             p.requires_grad = True
-        policy_objectives.append(policy_objective.detach().item())
 
+        for p in q_second.parameters():
+            p.requires_grad = True
+
+        
         # update target policy and target q function with polyak average
-        for network, target_network in [(policy, target_policy),
-                                        (q, target_q)]:
+        update_networks = [(q_first, target_q_first),
+                           (q_second, target_q_second)]
+        for network, target_network in update_networks:
             with torch.no_grad():
                 for p, target_p in zip(network.parameters(), target_network.parameters()):
                     # NB: We use an in-place operations "mul_", "add_" to update target
@@ -242,13 +278,14 @@ def train_one_epoch(epoch: int, render: bool = False):
         episode_rewards = []
         done = False
         while not done:
-            action = evaluate_policy(observation, evaluate=True).detach().numpy()
-            observation, reward, done, info = environment.step(action)
+            with torch.no_grad():
+                action, _ = evaluate_policy(observation, deterministic=True, with_log_prob=False)
+            observation, reward, done, info = environment.step(action.detach().numpy())
             if n == 0 and render:
                 environment.render()
             episode_rewards.append(reward)
         epoch_returns.append(sum(episode_rewards))
-    return epoch_returns, q_losses, policy_objectives, q_target_means, q_target_stds, q_estimate_mean, q_estimate_std
+    return epoch_returns, q_losses, policy_objectives
 
 ############################################
 # Loop over epochs and keep returns
@@ -262,30 +299,17 @@ max_returns = []
 
 best_avg_return = -10000
 result_directory = f'{os.environ["HOME"]}/code/imitation-learning-codebase/src/ai/algorithms/standalone_scripts/' \
-                   f'results/ddpg'
+                   f'results/sac'
 os.makedirs(result_directory, exist_ok=True)
 
-linear_regressor = LinearRegression()
-#for epoch in tqdm(range(epochs)):
-for epoch in range(epochs):
-    evaluation_returns, losses, objectives, \
-    q_target_means, q_target_stds, \
-    q_estimate_mean, q_estimate_std = train_one_epoch(epoch=epoch, render=(epoch % 20 == 0) and epoch != 0)
-    loss_coef = linear_regressor.fit(np.arange(len(losses)).reshape((-1, 1)),
-                                     np.asarray(losses).reshape((-1, 1))).coef_.item()
-    objectives_coef = linear_regressor.fit(np.arange(len(objectives)).reshape((-1, 1)),
-                                           np.asarray(objectives).reshape((-1, 1))).coef_.item()
-
+for epoch in tqdm(range(epochs)):
+    evaluation_returns, losses, objectives = train_one_epoch(epoch=epoch, render=(epoch % 20 == 0) and epoch != 0)
     avg_returns.append(np.mean(evaluation_returns))
     min_returns.append(min(evaluation_returns))
     max_returns.append(max(evaluation_returns))
-    print(f'epoch: {epoch} returns: {np.mean(evaluation_returns): 0.3f} [{np.std(evaluation_returns): 0.3f}] '
-          f'critic: {np.mean(losses): 0.3f} [std:{np.std(losses): 0.3f}, d: {loss_coef: 0.3f}], '
-          f'policy: {np.mean(objectives): 0.3f} [std:{np.std(objectives): 0.3f}, d: {objectives_coef: 0.3f}], '
-          f'q_target_means: {np.mean(q_target_means): 0.3f} [std:{np.std(q_target_means): 0.1f}], '
-          f'q_target_stds: {np.mean(q_target_stds): 0.3f}, '
-          f'q_estimate_mean: {np.mean(q_estimate_mean): 0.3f} [std:{np.std(q_estimate_mean): 0.1f}], '
-          f'q_estimate_std: {np.mean(q_estimate_std): 0.3f} ')
+    print(f'epoch: {epoch} \t returns: {np.mean(evaluation_returns): 0.3f} [{np.std(evaluation_returns): 0.3f}] \t'
+          f'critic loss: {np.mean(losses): 0.3f} [{np.std(losses): 0.3f}], '
+          f'policy objective: {np.mean(objectives): 0.3f}[{np.std(objectives): 0.3f}]')
 #          f'replay buffer reward: {np.mean(replay_buffer["reward"])} '
 #          f'[{np.min(replay_buffer["reward"]): 0.3f}: {np.max(replay_buffer["reward"]): 0.3f}]')
     if (epoch % 20 == 10 or epoch == epochs - 1) and plot:
