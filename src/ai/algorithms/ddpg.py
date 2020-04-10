@@ -71,8 +71,8 @@ for network in [target_policy, target_q]:
 policy_optimizer = Adam(policy.parameters(), lr=actor_learning_rate)
 q_optimizer = Adam(q.parameters(), lr=critic_learning_rate)
 epsilon = 1
-exploration = torch.distributions.Uniform(low=action_lower_bound,
-                                          high=action_higher_bound)
+exploration = torch.distributions.Normal(loc=action_lower_bound + (action_higher_bound - action_lower_bound)/2,
+                                         scale=(action_higher_bound - action_lower_bound)/4)
 # exploration = OUNoise()
 replay_buffer = {
     'state': [],
