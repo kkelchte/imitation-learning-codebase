@@ -242,7 +242,10 @@ def calculate_probabilities(data: List[float]) -> List[float]:
 
 
 def calculate_probabilites_per_run(run: Run) -> List[float]:
-    run_length = run.outputs['ros_expert'].size()[0]
+    """Currently broken: inappropriate dependency on ros_expert
+    => should get extra information upon which output type it needs to smoothen."""
+    raise NotImplementedError
+    run_length = len(run)
     probabilities = np.asarray([0.]*run_length)
     for action_dim in range(run.outputs['ros_expert'].size()[-1]):
         data = [float(d) for d in run.outputs['ros_expert'][:, action_dim]]
@@ -252,5 +255,3 @@ def calculate_probabilites_per_run(run: Run) -> List[float]:
     probabilities += 1./run_length
     probabilities = [max(p, 0) for p in probabilities]
     return [p / sum(probabilities) for p in probabilities]
-
-

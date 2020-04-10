@@ -77,6 +77,9 @@ class DataSaver:
         self._config.saving_directory = create_saving_directory(self._config.output_path,
                                                                 self._config.saving_directory_tag)
 
+    def get_saving_directory(self):
+        return self._config.saving_directory
+
     def save(self, state: State, action: Action = None) -> None:
         if state.terminal == TerminalType.Unknown:
             return
