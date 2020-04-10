@@ -16,7 +16,7 @@ from src.condor.helper_functions import create_configs, get_variable_name, strip
 class TestCondorJob(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
 
     def test_virtualenv_job(self):
         config_dict = {

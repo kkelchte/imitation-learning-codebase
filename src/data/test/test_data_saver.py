@@ -2,17 +2,16 @@ import shutil
 import unittest
 import os
 
-from src.data.dataset_loader import DataLoaderConfig, DataLoader
 from src.data.dataset_saver import DataSaver, DataSaverConfig
 from src.data.test.common_utils import state_generator
 from src.sim.common.data_types import TerminalType
 from src.core.utils import get_filename_without_extension
 
 
-class TestDataStorage(unittest.TestCase):
+class TestDataSaver(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
 
@@ -53,6 +52,8 @@ class TestDataStorage(unittest.TestCase):
             expert_controls = f.readlines()
             self.assertEqual(len(expert_controls), total)
         self.assertTrue(not os.path.exists(os.path.join(self.output_dir, 'custom_place', 'depth')))
+
+    #def test_clear_data_saving_directory(self):
 
     def test_create_train_validation_hdf5_files(self):
         # dummy_dataset = '/esat/opal/kkelchte/experimental_data/dummy_dataset'

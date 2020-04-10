@@ -13,7 +13,7 @@ from src.core.utils import get_filename_without_extension, get_date_time_tag
 class TestTrainer(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         architecture = 'tiny_net_v0'

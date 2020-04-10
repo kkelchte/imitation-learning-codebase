@@ -25,7 +25,7 @@ def check_run_lengths(run: Run) -> bool:
 class TestDataLoader(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         self.dummy_dataset = '/esat/opal/kkelchte/experimental_data/dummy_dataset'

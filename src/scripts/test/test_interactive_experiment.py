@@ -11,7 +11,7 @@ from src.core.utils import get_filename_without_extension
 class TestRosExperiments(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
     def test_ros_with_data_collection(self):
