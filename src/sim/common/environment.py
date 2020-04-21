@@ -7,7 +7,7 @@ from dataclasses_json import dataclass_json
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import Action, State, EnvironmentType, ActorType, ProcessState
+from src.sim.common.data_types import Action, Experience, EnvironmentType, ProcessState
 from src.sim.common.actors import Actor, ActorConfig
 
 
@@ -93,13 +93,13 @@ class Environment:
                                   quite=False)
         cprint('initiated', self._logger)
 
-    def step(self, action: Action) -> State:
+    def step(self, action: Action) -> Experience:
         pass
 
-    def reset(self) -> State:
+    def reset(self) -> Experience:
         pass
 
-    def get_actor(self) -> Union[Actor, ActorType]:
+    def get_actor(self) -> Actor:
         pass
 
     def remove(self) -> ProcessState:

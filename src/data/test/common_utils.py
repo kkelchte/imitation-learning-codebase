@@ -1,7 +1,7 @@
 import numpy as np
 
 from src.data.dataset_saver import DataSaver
-from src.sim.common.data_types import State, TerminalType, Action, ActorType
+from src.sim.common.data_types import Experience, TerminationType, Action, ActorType
 
 
 def state_generator(inputs: dict = None, outputs: dict = None):
@@ -9,13 +9,13 @@ def state_generator(inputs: dict = None, outputs: dict = None):
     running = np.random.randint(7, 13)
     ending = 1
     for step in range(starting + running + ending):
-        state = State()
+        state = Experience()
         if step < starting:
-            state.terminal = TerminalType.Unknown
+            state.terminal = TerminationType.Unknown
         elif starting < step < starting + running:
-            state.terminal = TerminalType.NotDone
+            state.terminal = TerminationType.NotDone
         else:
-            state.terminal = TerminalType.Success
+            state.terminal = TerminationType.Success
         state.time_stamp_ms = step
         state.sensor_data = {'camera': np.ones((300, 300, 3)), 'depth': np.ones((360,))} if inputs is None else inputs
         state.actor_data = {'expert': Action(actor_name='expert',
@@ -44,7 +44,7 @@ def generate_dummy_dataset(data_saver: DataSaver, num_runs: int = 2) -> dict:
             inputs=inputs,
             outputs=outputs
         ):
-            if state.terminal != TerminalType.Unknown:
+            if state.terminal != TerminationType.Unknown:
                 episode_length += 1
             data_saver.save(state=state,
                             action=None)

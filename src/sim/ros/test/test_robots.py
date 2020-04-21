@@ -3,7 +3,7 @@ import shutil
 import unittest
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import TerminalType
+from src.sim.common.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
@@ -48,7 +48,7 @@ class TestRobots(unittest.TestCase):
         self.start(robot_name='turtlebot_sim')
         state = self._environment.reset()
         # wait delay evaluation time
-        while state.terminal == TerminalType.Unknown:
+        while state.terminal == TerminationType.Unknown:
             state = self._environment.step()
 
         while self._environment.fsm_state != FsmState.Terminated:
@@ -58,7 +58,7 @@ class TestRobots(unittest.TestCase):
         self.start(robot_name='drone_sim', fsm_config='takeoff_run')
         state = self._environment.reset()
         # wait delay evaluation time
-        while state.terminal == TerminalType.Unknown:
+        while state.terminal == TerminationType.Unknown:
             state = self._environment.step()
 
         while self._environment.fsm_state != FsmState.Terminated:

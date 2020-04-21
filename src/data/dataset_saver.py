@@ -14,7 +14,7 @@ from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_date_time_tag, get_filename_without_extension
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file
 from src.data.data_types import Frame, Dataset, Run
-from src.sim.common.data_types import State, Action, TerminalType
+from src.sim.common.data_types import Experience, Action, TerminationType
 
 """Stores experiences as episodes in dataset.
 
@@ -90,11 +90,11 @@ class DataSaver:
     def get_saving_directory(self):
         return self._config.saving_directory
 
-    def _store_in_dataset(self, state: State, action: Action = Action()) -> None:
+    def _store_in_dataset(self, state: Experience, action: Action = Action()) -> None:
         raise NotImplementedError
 
-    def save(self, state: State, action: Action = None) -> None:
-        if state.terminal == TerminalType.Unknown:
+    def save(self, state: Experience, action: Action = None) -> None:
+        if state.terminal == TerminationType.Unknown:
             return
         if self._config.store_on_ram_only:
             return self._store_in_dataset(state=state, action=action)
@@ -124,10 +124,10 @@ class DataSaver:
                     data=action.value
                 )
             )
-        if state.terminal in [TerminalType.Success, TerminalType.Failure]:
+        if state.terminal in [TerminationType.Success, TerminationType.Failure]:
             self._store_termination(state.terminal)
 
-    def _store_termination(self, terminal: TerminalType, time_stamp: int = -1) -> None:
+    def _store_termination(self, terminal: TerminationType, time_stamp: int = -1) -> None:
         msg = f'{time_stamp}: ' if time_stamp != -1 else ''
         msg += terminal.name + '\n'
         with open(os.path.join(self._config.saving_directory, 'termination'), 'w') as f:

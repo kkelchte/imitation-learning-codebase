@@ -10,7 +10,7 @@ from std_msgs.msg import String, Empty  # Do not remove!
 from sensor_msgs.msg import LaserScan  # Do not remove!
 
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.common.data_types import TerminalType, ProcessState
+from src.sim.common.data_types import TerminationType, ProcessState
 from src.sim.ros.src.process_wrappers import RosWrapper
 
 """ Test FSM in different modes
@@ -113,7 +113,7 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publish_fake_collision_on_scan()
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Terminated.name)
-        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Failure.name)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Failure.name)
         self.stop_test()
 
     @unittest.skip
@@ -134,7 +134,7 @@ class TestFsm(unittest.TestCase):
         time.sleep(1)
         self.ros_topic.publish_fake_odom(x=100, y=100, z=4)
         time.sleep(1)
-        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Success.name)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Success.name)
         self.stop_test()
 
     @unittest.skip
@@ -156,7 +156,7 @@ class TestFsm(unittest.TestCase):
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.TakenOver.name)
         self.ros_topic.publish_fake_finish()
         time.sleep(1)
-        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Unknown.name)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Unknown.name)
         self.stop_test()
 
     @unittest.skip
@@ -176,7 +176,7 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publish_fake_collision_on_scan()
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.DriveBack.name)
-        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Failure.name)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Failure.name)
         self.ros_topic.publish_fake_go()
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Running.name)
@@ -196,14 +196,14 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publish_fake_collision_on_scan()
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Terminated.name)
-        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Failure.name)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Failure.name)
         self.ros_topic.publish_fake_reset()
         time.sleep(rospy.get_param('/world/delay_evaluation') + 0.5)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Running.name)
         self.ros_topic.publish_fake_collision_on_scan()
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Terminated.name)
-        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Failure.name)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Failure.name)
         self.stop_test()
 
     @unittest.skip
@@ -221,7 +221,7 @@ class TestFsm(unittest.TestCase):
 
         self.ros_topic.publish_fake_odom(x=2, y=2, z=0.5)
         time.sleep(1)
-        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminalType.Success.name)
+        self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Success.name)
         self.stop_test()
 
     def stop_test(self) -> None:

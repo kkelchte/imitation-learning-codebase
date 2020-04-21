@@ -7,7 +7,7 @@ import rospy
 import yaml
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import TerminalType, ProcessState
+from src.sim.common.data_types import TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
@@ -35,21 +35,21 @@ class TestRosIntegrated(unittest.TestCase):
         # self.start_test('test_ros_environment')
         state = self._environment.reset()
         # wait delay evaluation time
-        while state.terminal == TerminalType.Unknown:
+        while state.terminal == TerminationType.Unknown:
             state = self._environment.step()
         waypoints = rospy.get_param('/world/waypoints')
         self.assertEqual(waypoints[0], state.sensor_data['current_waypoint'].tolist())
         for waypoint_index, waypoint in enumerate(waypoints[:-1]):
             while state.sensor_data['current_waypoint'].tolist() == waypoint:
                 state = self._environment.step()
-                self.assertTrue(state.terminal != TerminalType.Failure)
+                self.assertTrue(state.terminal != TerminationType.Failure)
             # assert transition to next waypoint occurs
             self.assertEqual(state.sensor_data['current_waypoint'].tolist(),
                              waypoints[(waypoint_index + 1) % len(waypoints)])
         while not self._environment.fsm_state == FsmState.Terminated:
             state = self._environment.step()
         # all waypoints should be reached and environment should have reach success state
-        self.assertEqual(state.terminal, TerminalType.Success)
+        self.assertEqual(state.terminal, TerminationType.Success)
 
     # @unittest.skip
     def test_multiple_resets(self):
@@ -58,14 +58,14 @@ class TestRosIntegrated(unittest.TestCase):
         for _ in range(3):
             state = self._environment.reset()
             # wait delay evaluation time
-            while state.terminal == TerminalType.Unknown:
+            while state.terminal == TerminationType.Unknown:
                 state = self._environment.step()
             self.assertEqual(waypoints[0], state.sensor_data['current_waypoint'].tolist())
             self.assertTrue(np.sum(state.sensor_data['odometry'][:3]) < 0.2)
-            while state.terminal == TerminalType.NotDone:
+            while state.terminal == TerminationType.NotDone:
                 state = self._environment.step()
             self.assertTrue(np.sum(state.sensor_data['odometry'][:3]) > 0.5)
-            self.assertEqual(state.terminal, TerminalType.Success)
+            self.assertEqual(state.terminal, TerminationType.Success)
 
     def tearDown(self) -> None:
         if hasattr(self, '_environment'):

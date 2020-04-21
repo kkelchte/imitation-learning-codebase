@@ -1,7 +1,8 @@
-from typing import Dict
+from typing import Dict, Union
 from enum import IntEnum
 
 import numpy as np
+import torch
 from dataclasses import dataclass
 
 
@@ -12,7 +13,7 @@ class ProcessState(IntEnum):
     Initializing = 3
 
 
-class TerminalType(IntEnum):
+class TerminationType(IntEnum):
     Unknown = -1
     NotDone = 0
     Done = 1
@@ -26,17 +27,9 @@ class EnvironmentType(IntEnum):
     Real = 2
 
 
-class ActorType(IntEnum):
-    Unknown = -1
-    Model = 0
-    Expert = 1
-    User = 2
-
-
 @dataclass
 class Action:
-    actor_type: ActorType = None
-    actor_name: str = None
+    actor_name: str = ''
     value: np.ndarray = None
 
     def __len__(self):
@@ -44,8 +37,9 @@ class Action:
 
 
 @dataclass
-class State:
-    terminal: TerminalType = None
-    actor_data: Dict[str, Action] = None
-    sensor_data: Dict[str, np.ndarray] = None
-    time_stamp_ms: int = 0
+class Experience:
+    observation: Union[np.ndarray, torch.Tensor] = None
+    action: Union[int, float, np.ndarray, torch.Tensor, Action] = None
+    reward: Union[int, float, np.ndarray, torch.Tensor] = None
+    done: TerminationType = None
+    info: Dict = None

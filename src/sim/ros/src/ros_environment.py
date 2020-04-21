@@ -22,7 +22,7 @@ from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm impor
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import Action, State, TerminalType, ActorType, ProcessState
+from src.sim.common.data_types import Action, Experience, TerminationType, ActorType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import process_compressed_image, process_image, process_laser_scan, \
@@ -59,8 +59,8 @@ class RosEnvironment(Environment):
 
         # Fields
         self._step = 0
-        self._state = State(
-            terminal=TerminalType.Unknown,
+        self._state = Experience(
+            terminal=TerminationType.Unknown,
             actor_data={},
             sensor_data={},
             time_stamp_ms=-1
@@ -88,7 +88,7 @@ class RosEnvironment(Environment):
                              String,
                              self._set_field,
                              callback_args='_terminal_state')
-        self._terminal_state = TerminalType.Unknown
+        self._terminal_state = TerminationType.Unknown
 
         sensor_list = rospy.get_param('/robot/sensors', [])
         self._sensor_processors = {}
@@ -199,7 +199,7 @@ class RosEnvironment(Environment):
 
     def _set_field(self, msg: Union[String, ], field_name: str) -> None:
         if field_name == '_terminal_state':
-            self._terminal_state = TerminalType[msg.data]
+            self._terminal_state = TerminationType[msg.data]
         elif field_name == 'fsm_state':
             self.fsm_state = FsmState[msg.data]
         else:
@@ -209,12 +209,12 @@ class RosEnvironment(Environment):
                msg_type=MessageType.debug)
 
     def _internal_update_terminal_state(self):
-        if self.fsm_state == FsmState.Running and self._terminal_state == TerminalType.Unknown:
-            self._terminal_state = TerminalType.NotDone
-        if self._terminal_state == TerminalType.NotDone and \
+        if self.fsm_state == FsmState.Running and self._terminal_state == TerminationType.Unknown:
+            self._terminal_state = TerminationType.NotDone
+        if self._terminal_state == TerminationType.NotDone and \
                 self._config.max_number_of_steps != -1 and \
                 self._config.max_number_of_steps < self._step:
-            self._terminal_state = TerminalType.Failure
+            self._terminal_state = TerminationType.Failure
             cprint(f'reach max number of steps {self._config.max_number_of_steps} < {self._step}', self._logger)
 
     def _pause_gazebo(self):
@@ -256,15 +256,15 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_gazebo()
 
-    def reset(self) -> State:
+    def reset(self) -> Experience:
         cprint(f'resetting', self._logger)
         self._step = 0
-        self._terminal_state = TerminalType.Unknown
+        self._terminal_state = TerminationType.Unknown
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
         self._run_shortly()
-        self._state = State(
+        self._state = Experience(
             terminal=self._terminal_state,
             sensor_data={
                 sensor_name: self._sensor_values[sensor_name] for sensor_name in self._sensor_values.keys()
@@ -284,13 +284,13 @@ class RosEnvironment(Environment):
             actor_name: Action() for actor_name in self._actor_values.keys()
         }
 
-    def step(self, action: Action = None) -> State:
+    def step(self, action: Action = None) -> Experience:
         self._step += 1
         self._internal_update_terminal_state()
         self._clear_sensor_and_actor_values()
         self._run_shortly()
-        assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminalType.Unknown)
-        self._state = State(
+        assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminationType.Unknown)
+        self._state = Experience(
             terminal=self._terminal_state,
             sensor_data={
                 sensor_name: self._sensor_values[sensor_name] for sensor_name in self._sensor_values.keys()
@@ -302,7 +302,7 @@ class RosEnvironment(Environment):
             time_stamp_ms=int(rospy.get_time() * 10**3)
         )
         self._publish_state()
-        self._terminal_state = TerminalType.Unknown
+        self._terminal_state = TerminationType.Unknown
         return self._state
 
     def _publish_state(self):

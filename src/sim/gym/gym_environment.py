@@ -3,7 +3,7 @@ import numpy as np
 from copy import deepcopy
 
 from src.core.logger import cprint, MessageType
-from src.sim.common.data_types import State, TerminalType, Action, ActorType, ProcessState
+from src.sim.common.data_types import Experience, TerminationType, Action, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 
 
@@ -24,42 +24,34 @@ class GymEnvironment(Environment):
                f'{"" if self.discrete else "["+str(self.action_low)+" : "+str(self.action_high)+"]"}\t'
                f'observation space: {self.observation_dimension}', self._logger)
 
-    def reset(self) -> State:
+    def reset(self) -> Experience:
         observation = self._gym.reset()
         self._step_count = 0
         self.previous_observation = observation
-        return State(
-            terminal=TerminalType.NotDone,
-            actor_data={},
-            sensor_data={
-                'observation': deepcopy(self.previous_observation)
-            }
+        return Experience(
+            done=TerminationType.NotDone,
+            observation=deepcopy(self.previous_observation)
         )
 
-    def step(self, action: Action) -> State:
+    def step(self, action: Action) -> Experience:
         self._step_count += 1
         observation, reward, done, info = self._gym.step(action.value)
-        terminal = TerminalType.NotDone if not done and self._step_count < self._config.max_number_of_steps \
-            else TerminalType.Done
-        state = State(
-            terminal=terminal,
-            actor_data={'dnn_actor': action},
-            sensor_data={
-                'done': done,
-                'observation': deepcopy(self.previous_observation),
-                'next_observation': deepcopy(observation),
-                'reward': reward,
-                'info': info
-            }
+        terminal = TerminationType.NotDone if not done and self._step_count < self._config.max_number_of_steps \
+            else TerminationType.Done
+        experience = Experience(
+            done=terminal,
+            observation=deepcopy(self.previous_observation),
+            action=action,
+            reward=reward,
+            info=info
         )
         if self._config.gym_config.render:
             self._gym.render()
         self.previous_observation = observation
-        return state
+        return experience
 
     def get_random_action(self) -> Action:
         return Action(
-            actor_type=ActorType.Unknown,
             actor_name='random',
             value=np.asarray(self._gym.action_space.sample())
         )

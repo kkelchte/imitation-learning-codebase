@@ -16,7 +16,7 @@ from sensor_msgs.msg import Image, LaserScan
 from std_msgs.msg import Empty
 
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import EnvironmentType, ActorType, TerminalType, ProcessState
+from src.sim.common.data_types import EnvironmentType, ActorType, TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper

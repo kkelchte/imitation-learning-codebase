@@ -5,7 +5,7 @@ import unittest
 
 from src.core.utils import get_filename_without_extension
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import EnvironmentType, ProcessState, TerminalType
+from src.sim.common.data_types import EnvironmentType, ProcessState, TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.gym.gym_environment import GymEnvironment
 
@@ -31,9 +31,9 @@ class TestGymEnvironment(unittest.TestCase):
         }
 
         environment = GymEnvironment(EnvironmentConfig().create(config_dict=config))
-        state = environment.reset()
-        while state.terminal != TerminalType.Done:
-            state = environment.step(environment.get_random_action())
+        experience = environment.reset()
+        while experience.done != TerminationType.Done:
+            experience = environment.step(environment.get_random_action())
         return environment.remove() == ProcessState.Terminated
 
     def test_environments(self):

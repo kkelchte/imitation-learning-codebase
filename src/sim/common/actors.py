@@ -8,7 +8,7 @@ from src.ai.model import Model, ModelConfig
 from src.core.config_loader import Config
 from src.core.logger import get_logger
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import Action, ActorType
+from src.sim.common.data_types import Action
 
 
 """Base actor class and dnn actor class
@@ -21,7 +21,6 @@ Depends on ai/architectures/models to call forward pass.
 @dataclass
 class ActorConfig(Config):
     name: str = ''
-    type: ActorType = ActorType.Model
     model_config: ModelConfig = None
     specs: dict = None
     file: str = None
@@ -68,6 +67,5 @@ class DnnActor(Actor):
             output = np.argmax(output)
         return Action(
             actor_name='dnn_actor',
-            actor_type=ActorType.Model,
             value=output  # assuming control is first output
         )
