@@ -1,8 +1,11 @@
 import os
+import shutil
 import time
 from typing import List
 
 from datetime import datetime
+
+import torch
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -10,7 +13,7 @@ from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_date_time_tag, get_filename_without_extension
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file
-from src.data.data_types import Frame
+from src.data.data_types import Frame, Dataset, Run
 from src.sim.common.data_types import State, Action, TerminalType
 
 """Stores experiences as episodes in dataset.
@@ -31,8 +34,10 @@ class DataSaverConfig(Config):
     actors: List[str] = None
     training_validation_split: float = 0.9
     store_hdf5: bool = False
+    store_on_ram_only: bool = True
 
     def __post_init__(self):
+        assert not (self.store_hdf5 and self.store_on_ram_only)
         if self.sensors is None:
             self.sensors = ['all']
         if self.actors is None:
@@ -73,6 +78,11 @@ class DataSaver:
             self._config.saving_directory = os.path.join(os.environ['HOME'],
                                                          self._config.saving_directory)
 
+        if self._config.store_on_ram_only:
+            self._dataset = Dataset(
+                data=[]
+            )
+
     def update_saving_directory(self):
         self._config.saving_directory = create_saving_directory(self._config.output_path,
                                                                 self._config.saving_directory_tag)
@@ -80,9 +90,14 @@ class DataSaver:
     def get_saving_directory(self):
         return self._config.saving_directory
 
+    def _store_in_dataset(self, state: State, action: Action = Action()) -> None:
+        raise NotImplementedError
+
     def save(self, state: State, action: Action = None) -> None:
         if state.terminal == TerminalType.Unknown:
             return
+        if self._config.store_on_ram_only:
+            return self._store_in_dataset(state=state, action=action)
         for sensor in state.sensor_data.keys():
             if sensor in self._config.sensors or self._config.sensors == ['all']:
                 # TODO make multitasked with asyncio
@@ -104,7 +119,7 @@ class DataSaver:
         if action is not None:
             self._store_frame(
                 Frame(
-                    origin='action',
+                    origin=action.actor_name,
                     time_stamp_ms=state.time_stamp_ms,
                     data=action.value
                 )
@@ -142,3 +157,8 @@ class DataSaver:
         validation_runs = runs[number_of_training_runs:]
         create_hdf5_file(filename=os.path.join(self._config.output_path, 'train.hdf5'), runs=train_runs)
         create_hdf5_file(filename=os.path.join(self._config.output_path, 'validation.hdf5'), runs=validation_runs)
+
+    def empty_raw_data_in_output_directory(self) -> None:
+        raw_data_directory = os.path.dirname(self._config.saving_directory)
+        for d in os.listdir(raw_data_directory):
+            shutil.rmtree(os.path.join(raw_data_directory, d))

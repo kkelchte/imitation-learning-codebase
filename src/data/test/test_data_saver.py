@@ -77,6 +77,34 @@ class TestDataSaver(unittest.TestCase):
             count = len(os.listdir(os.path.join(episode_directories[index], 'camera')))
             self.assertEqual(len(run), count)
 
+    def test_empty_saving_directory(self):
+        config_dict = {
+            'output_path': self.output_dir
+        }
+        number_of_runs = 5
+        config = DataSaverConfig().create(config_dict=config_dict)
+        data_saver = DataSaver(config=config)
+        info = generate_dummy_dataset(data_saver, num_runs=number_of_runs)
+        print(info)
+        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), number_of_runs)
+        data_saver.empty_raw_data_in_output_directory()
+        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), 0)
+
+    def test_store_in_ram(self):
+        config_dict = {
+            'output_path': self.output_dir,
+            'store_on_ram_only': True
+        }
+        number_of_runs = 5
+        config = DataSaverConfig().create(config_dict=config_dict)
+        data_saver = DataSaver(config=config)
+        info = generate_dummy_dataset(data_saver, num_runs=number_of_runs)
+        print(info)
+        data_saver.data_set
+        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), number_of_runs)
+        data_saver.empty_raw_data_in_output_directory()
+        self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), 0)
+
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

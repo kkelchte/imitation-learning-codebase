@@ -8,7 +8,7 @@ import torch
 
 """Data types required for defining dataset frames and torch dataset samples.
 
-Mainly used by data_saver for storing states as dataset frames
+Mainly used by data_saver for storing states as frames
  and data_loader for loading dataset frames as pytorch dataset samples.
 Simulation related datatypes are specified in src/sim/common/data_types.py.
 """
