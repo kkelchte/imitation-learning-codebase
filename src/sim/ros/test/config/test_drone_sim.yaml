@@ -2,6 +2,7 @@ factory_key: 0
 max_number_of_steps: -1
 output_path: tmp_test_dir/20-01-28_14-39
 ros_config:
+  observation_topic:
   ros_launch_config:
     control_mapping: true
     control_mapping_config: test_ros_environment
