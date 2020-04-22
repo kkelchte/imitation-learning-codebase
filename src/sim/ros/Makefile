@@ -55,7 +55,7 @@ python2_ros_ws/src:
 
 install_python2_ros_ws: python2_ros_ws/src
 	cd python2_ros_ws && \
-	git clone https://github.com/tu-darmstadt-ros-pkg/hector_quadrotor.git src/hector_quadrotor && \
+	git clone https://github.com/kkelchte/hector_quadrotor.git src/hector_quadrotor && \
 	git clone https://github.com/tu-darmstadt-ros-pkg/hector_localization.git src/hector_localization && \
 	catkin_make -DPYTHON_EXECUTABLE=/usr/bin/python2.7 -DPYTHON_INCLUDE_DIR=/usr/include/python2.7m \
 	-DPYTHON_LIBRARY=/usr/lib/libpython2.7m.so

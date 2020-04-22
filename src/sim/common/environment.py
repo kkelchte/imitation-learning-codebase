@@ -53,17 +53,17 @@ class RosConfig(Config):
     Configuration specific for ROS environment,
     specified here to avoid circular dependencies environment <> ros_environment
     """
-    observation_sensors: str = 'forward_camera'
+    observation: str = 'forward_camera'
     # sensor/sensor_name_0, sensor/sensor_name_1, actor/actor_name_0, ..., current_waypoint, supervised_action
-    info_sensors: List[str] = None
+    info: List[str] = None
     step_rate_fps: float = 10.
     visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None
     actor_configs: List[ActorConfig] = None
 
     def __post_init__(self):
-        if self.info_sensors is None:
-            del self.info_sensors
+        if self.info is None:
+            del self.info
 
 
 @dataclass_json

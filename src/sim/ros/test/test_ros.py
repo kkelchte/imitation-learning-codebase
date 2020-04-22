@@ -9,12 +9,10 @@ import numpy as np
 
 from src.core.utils import count_grep_name
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import TerminationType, EnvironmentType, Action, ActorType, ProcessState
+from src.sim.common.data_types import TerminationType, EnvironmentType, Action, ProcessState
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.ros_actors_DEPRECATED import RosExpert
 from src.sim.ros.src.ros_environment import RosEnvironment
-
 
 
 class TestRos(unittest.TestCase):

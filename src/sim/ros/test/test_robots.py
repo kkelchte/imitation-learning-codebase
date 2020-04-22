@@ -46,20 +46,20 @@ class TestRobots(unittest.TestCase):
 
     def test_turtlebot_sim(self):
         self.start(robot_name='turtlebot_sim')
-        state = self._environment.reset()
+        experience = self._environment.reset()
         # wait delay evaluation time
-        while state.terminal == TerminationType.Unknown:
-            state = self._environment.step()
+        while experience.done == TerminationType.Unknown:
+            experience = self._environment.step()
 
         while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()
 
     def test_drone_sim(self):
         self.start(robot_name='drone_sim', fsm_config='takeoff_run')
-        state = self._environment.reset()
+        experience = self._environment.reset()
         # wait delay evaluation time
-        while state.terminal == TerminationType.Unknown:
-            state = self._environment.step()
+        while experience.done == TerminationType.Unknown:
+            experience = self._environment.step()
 
         while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()

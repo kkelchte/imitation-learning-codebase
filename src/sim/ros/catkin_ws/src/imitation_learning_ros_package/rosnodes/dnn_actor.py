@@ -15,7 +15,7 @@ from sensor_msgs.msg import Image
 from src.ai.model import Model, ModelConfig
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.common.actors import Actor, ActorConfig
-from src.sim.common.data_types import ActorType, Action
+from src.sim.common.data_types import Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_image, get_output_path, adapt_action_to_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
@@ -32,7 +32,6 @@ class DnnActor(Actor):
         super().__init__(
             config=ActorConfig(
                 name='dnn_actor',
-                type=ActorType.Model,
                 specs=specs
             )
         )
@@ -82,7 +81,6 @@ class DnnActor(Actor):
         cprint(f'output predicted {output}', self._logger, msg_type=MessageType.debug)
         action = Action(
             actor_name='dnn_actor',
-            actor_type=ActorType.Model,
             value=output  # assuming control is first output
         )
         self._publisher.publish(adapt_action_to_twist(action))

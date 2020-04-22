@@ -15,7 +15,7 @@ from hector_uav_msgs.srv import EnableMotors
 from src.core.logger import get_logger, cprint
 from src.sim.common.actors import Actor, ActorConfig
 from src.sim.common.noise import *
-from src.sim.common.data_types import ActorType, Action
+from src.sim.common.data_types import Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
     get_output_path, apply_noise_to_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
@@ -29,12 +29,11 @@ class RosExpert(Actor):
         max_duration = 60
         while not rospy.has_param('/actor/ros_expert/specs') and time.time() < stime + max_duration:
             time.sleep(0.01)
-        specs = rospy.get_param('/actor/ros_expert/specs')
+        self._specs = rospy.get_param('/actor/ros_expert/specs')
         super().__init__(
             config=ActorConfig(
                 name='ros_expert',
-                type=ActorType.Expert,
-                specs=specs
+                specs=self._specs
             )
         )
         self._output_path = get_output_path()
@@ -47,9 +46,9 @@ class RosExpert(Actor):
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
         self._reference_height = rospy.get_param('/world/starting_height', -1)
-        self._rate_fps = specs['rate_fps'] if 'rate_fps' in specs.keys() else 20
+        self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 20
         self._next_waypoint = []
-        noise_config = specs['noise'] if 'noise' in specs.keys() else {}
+        noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
 
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
@@ -193,7 +192,6 @@ class RosExpert(Actor):
         assert sensor_data is None
         action = adapt_twist_to_action(self._update_twist())
         action.actor_name = self._name
-        action.actor_type = self._type
         return action
 
     def run(self):

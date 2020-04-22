@@ -22,7 +22,7 @@ add_message_files(
     FILES
     RosSensor.msg
     RosAction.msg
-    RosState.msg
+    RosEnvironmentState.msg
 )
 generate_messages(
   DEPENDENCIES
