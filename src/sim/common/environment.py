@@ -106,8 +106,5 @@ class Environment:
     def reset(self) -> Experience:
         pass
 
-    #def get_actor(self) -> Actor:
-    #    pass
-
     def remove(self) -> ProcessState:
         pass
