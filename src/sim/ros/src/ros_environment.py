@@ -267,6 +267,18 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_gazebo()
 
+    def _update_current_experience(self):
+        self._current_experience = Experience(
+            done=self._terminal_state,
+            observation=self._observation,
+            action=self._action,
+            reward=self._reward,
+            time_stamp=int(rospy.get_time() * 10 ** 3),
+            info={
+                field_name: self._info[field_name] for field_name in self._info.keys()
+            }
+        )
+
     def reset(self) -> Experience:
         cprint(f'resetting', self._logger)
         self._step = 0
@@ -275,16 +287,7 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
         self._run_shortly()
-        self._info['time_stamp_ms'] = int(rospy.get_time() * 10 ** 3)
-        self._current_experience = Experience(
-            done=self._terminal_state,
-            observation=self._observation,
-            action=self._action,
-            reward=self._reward,
-            info={
-                field_name: self._info[field_name] for field_name in self._info.keys()
-            }
-        )
+        self._update_current_experience()
         return self._current_experience
 
     def _clear_experience_values(self):
@@ -299,16 +302,7 @@ class RosEnvironment(Environment):
         self._clear_experience_values()
         self._run_shortly()
         assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminationType.Unknown)
-        self._info['time_stamp_ms'] = int(rospy.get_time() * 10**3)
-        self._current_experience = Experience(
-            done=self._terminal_state,
-            observation=self._observation,
-            action=self._action,
-            reward=self._reward,
-            info={
-                field_name: self._info[field_name] for field_name in self._info.keys()
-            }
-        )
+        self._update_current_experience()
         self._publish_state()
         self._terminal_state = TerminationType.Unknown
         return self._current_experience

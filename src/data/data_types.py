@@ -1,10 +1,11 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 from enum import IntEnum
 
 import numpy as np
 from dataclasses import dataclass
 import torch
 
+from src.sim.common.data_types import Experience
 
 """Data types required for defining dataset frames and torch dataset samples.
 
@@ -14,60 +15,43 @@ Simulation related datatypes are specified in src/sim/common/data_types.py.
 """
 
 
-@dataclass
-class OutcomeType(IntEnum):
-    Failure = 0
-    Success = 1
+def to_torch(value: Union[np.ndarray, int, float],
+             dtype: torch.dtype = torch.float32):
+    return torch.as_tensor(value, dtype=dtype)
 
 
 @dataclass
-class Frame:
-    origin: str = None
-    time_stamp_ms: int = None
-    data: np.array = None
-
-
-@dataclass
-class Episode:
-    frames: List[Frame] = None
-    outcome: OutcomeType = None
-
-    def __len__(self):
-        return len(self.frames)
-
-
-@dataclass
-class Run:
-    outputs: Dict[str, torch.Tensor] = None
-    inputs: Dict[str, torch.Tensor] = None
-    reward: torch.Tensor = None
+class Dataset:  # Preparation for training DNN's in torch => only accept torch tensors
+    observations: List[torch.Tensor] = None
+    actions: List[torch.Tensor] = None
+    rewards: List[torch.Tensor] = None
+    done: List[torch.Tensor] = None  # 0, except on last episode step 1
+    max_size: int = -1
 
     def __post_init__(self):
-        if self.outputs is None:
-            self.outputs = {}
-        if self.inputs is None:
-            self.inputs = {}
-        if self.reward is None:
-            self.reward = torch.Tensor()
+        if self.observations is None:
+            self.observations = []
+        if self.actions is None:
+            self.actions = []
+        if self.rewards is None:
+            self.rewards = []
+        if self.done is None:
+            self.done = []
 
     def __len__(self):
-        return max([len(o) for o in self.outputs.values()] +
-                   [len(i) for i in self.inputs.values()] + [len(self.reward)])
+        return len(self.observations)
 
-    def get_input(self) -> list:
-        return list(self.inputs.values())
+    def pop(self):
+        self.observations.pop(0)
+        self.actions.pop(0)
+        self.rewards.pop(0)
+        self.done.pop(0)
 
-    def get_output(self) -> list:
-        return list(self.outputs.values())
+    def append(self, experience: Experience):
+        self.observations.append(to_torch(experience.observation))
+        self.actions.append(to_torch(experience.action))
+        self.rewards.append(to_torch(experience.reward))
+        self.done.append(to_torch(experience.done))
+        if len(self.observations) > self.max_size != -1:
+            self.pop()
 
-
-@dataclass
-class Dataset:
-    data: List[Run] = None
-
-    def __post_init__(self):
-        if self.data is None:
-            self.data = []
-
-    def __len__(self):
-        return len(self.data)

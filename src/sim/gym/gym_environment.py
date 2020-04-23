@@ -43,6 +43,7 @@ class GymEnvironment(Environment):
             observation=deepcopy(self.previous_observation),
             action=action,
             reward=reward,
+            time_stamp=self._step_count,
             info=info
         )
         if self._config.gym_config.render:

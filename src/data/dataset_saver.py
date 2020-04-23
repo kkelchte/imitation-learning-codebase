@@ -6,6 +6,7 @@ from typing import List
 from datetime import datetime
 
 import torch
+import numpy as np
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -13,7 +14,7 @@ from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_date_time_tag, get_filename_without_extension
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file
-from src.data.data_types import Frame, Dataset, Run
+from src.data.data_types import Dataset
 from src.sim.common.data_types import Experience, Action, TerminationType
 
 """Stores experiences as episodes in dataset.
@@ -30,18 +31,13 @@ Extension:
 class DataSaverConfig(Config):
     saving_directory_tag: str = ''
     saving_directory: str = None
-    sensors: List[str] = None
-    actors: List[str] = None
     training_validation_split: float = 0.9
+    max_size: int = -1
     store_hdf5: bool = False
-    store_on_ram_only: bool = True
+    store_on_ram_only: bool = False
 
     def __post_init__(self):
         assert not (self.store_hdf5 and self.store_on_ram_only)
-        if self.sensors is None:
-            self.sensors = ['all']
-        if self.actors is None:
-            self.actors = ['all']
 
     def iterative_add_output_path(self, output_path: str) -> None:
         self.output_path = output_path
@@ -79,69 +75,59 @@ class DataSaver:
                                                          self._config.saving_directory)
 
         if self._config.store_on_ram_only:
-            self._dataset = Dataset(
-                data=[]
-            )
+            self._dataset = Dataset(max_size=self._config.max_size)
+
+        self._frame_counter = 0  # used to keep track of replay buffer size on file system
 
     def update_saving_directory(self):
         self._config.saving_directory = create_saving_directory(self._config.output_path,
                                                                 self._config.saving_directory_tag)
 
     def get_saving_directory(self):
-        return self._config.saving_directory
+        return self._config.saving_directory if not self._config.store_on_ram_only else 'ram'
 
-    def _store_in_dataset(self, state: Experience, action: Action = Action()) -> None:
-        raise NotImplementedError
+    def get_dataset(self):
+        return self._dataset
 
-    def save(self, state: Experience, action: Action = None) -> None:
-        if state.terminal == TerminationType.Unknown:
-            return
+    def save(self, experience: Experience) -> None:
+        if experience.done == TerminationType.Unknown:
+            return  # don't save experiences in an unknown state
         if self._config.store_on_ram_only:
-            return self._store_in_dataset(state=state, action=action)
-        for sensor in state.sensor_data.keys():
-            if sensor in self._config.sensors or self._config.sensors == ['all']:
-                # TODO make multitasked with asyncio
-                self._store_frame(
-                    Frame(origin=sensor,
-                          time_stamp_ms=state.time_stamp_ms,
-                          data=state.sensor_data[sensor]
-                          )
-                )
-        for actor in state.actor_data.keys():
-            if actor in self._config.actors or self._config.actors == ['all']:
-                if state.actor_data[actor].value is not None:
-                    self._store_frame(
-                        Frame(origin=actor,
-                              time_stamp_ms=state.time_stamp_ms,
-                              data=state.actor_data[actor].value
-                              )
-                    )
-        if action is not None:
-            self._store_frame(
-                Frame(
-                    origin=action.actor_name,
-                    time_stamp_ms=state.time_stamp_ms,
-                    data=action.value
-                )
-            )
-        if state.terminal in [TerminationType.Success, TerminationType.Failure]:
-            self._store_termination(state.terminal)
+            return self._dataset.append(experience)
+        else:
+            return self._store_in_file_system(experience=experience)
 
-    def _store_termination(self, terminal: TerminationType, time_stamp: int = -1) -> None:
-        msg = f'{time_stamp}: ' if time_stamp != -1 else ''
-        msg += terminal.name + '\n'
-        with open(os.path.join(self._config.saving_directory, 'termination'), 'w') as f:
-            f.write(msg)
+    def _store_in_file_system(self, experience: Experience) -> None:
+        for dst, data in zip(['observation', 'action', 'reward', 'done'],
+                             [experience.observation, experience.action, experience.reward, experience.done]):
+            self._store_frame(data=np.asarray(data), dst=dst, time_stamp=experience.time_stamp)
 
-    def _store_frame(self, frame: Frame) -> None:
-        if len(frame.data.shape) in [2, 3]:
-            if not os.path.isdir(os.path.join(self._config.saving_directory, frame.origin)):
-                os.makedirs(os.path.join(self._config.saving_directory, frame.origin), exist_ok=True)
-            store_image(data=frame.data, file_name=os.path.join(self._config.saving_directory, frame.origin,
-                                                                timestamp_to_filename(frame.time_stamp_ms)) + '.jpg')
-        elif len(frame.data.shape) == 1:
-            store_array_to_file(data=frame.data, file_name=os.path.join(self._config.saving_directory, frame.origin),
-                                time_stamp=frame.time_stamp_ms)
+        for key, value in experience.info.items():
+            self._store_frame(data=np.asarray(value), dst=key, time_stamp=experience.time_stamp)
+
+        if experience.done in [TerminationType.Success, TerminationType.Failure]:
+            os.system(f'touch {os.path.join(self._config.saving_directory, experience.done.name)}')
+        self._check_dataset_size_on_file_system()
+
+    def _store_frame(self, data: np.ndarray, dst: str, time_stamp: int) -> None:
+        if len(data.shape) in [2, 3]:
+            if not os.path.isdir(os.path.join(self._config.saving_directory, dst)):
+                os.makedirs(os.path.join(self._config.saving_directory, dst), exist_ok=True)
+            store_image(data=data, file_name=os.path.join(self._config.saving_directory, dst,
+                                                          timestamp_to_filename(time_stamp)) + '.jpg')
+        elif len(data.shape) in [0, 1]:
+            store_array_to_file(data=data, file_name=os.path.join(self._config.saving_directory, dst + '.data'),
+                                time_stamp=time_stamp)
+
+    def _check_dataset_size_on_file_system(self):
+        self._frame_counter += 1
+        # If number of frames exceed max_size, remove oldest run and decrease frame counter
+        if self._frame_counter > self._config.max_size != -1:
+            raw_data_dir = os.path.dirname(self._config.saving_directory)
+            first_run = sorted(os.listdir(raw_data_dir))[0]
+            run_length = len(open(os.path.join(raw_data_dir, first_run, 'done.data'), 'r').readlines())
+            self._frame_counter -= run_length
+            shutil.rmtree(os.path.join(raw_data_dir, first_run), ignore_errors=True)
 
     def create_train_validation_hdf5_files(self) -> None:
         if not self._config.store_hdf5:

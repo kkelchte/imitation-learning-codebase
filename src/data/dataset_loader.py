@@ -13,8 +13,8 @@ from tqdm import tqdm
 from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
 from src.core.utils import get_filename_without_extension
-from src.data.data_types import Dataset, Run
-from src.data.utils import load_and_preprocess_file, filename_to_timestamp, torch_append, \
+from src.data.data_types import Dataset
+from src.data.utils import torch_append, \
     arrange_run_according_timestamps, load_data, load_dataset_from_hdf5, calculate_probabilites_per_run
 
 
@@ -23,17 +23,10 @@ from src.data.utils import load_and_preprocess_file, filename_to_timestamp, torc
 class DataLoaderConfig(Config):
     data_directories: List[str] = None
     hdf5_file: str = ''
-    inputs: List[str] = None
-    outputs: List[str] = None
-    reward: str = ''
     balance_targets: bool = False
     data_sampling_seed: int = 123
 
     def post_init(self):  # add default options
-        if self.inputs is None:
-            self.inputs = ['forward_camera']
-        if self.outputs is None:
-            self.outputs = ['ros_expert']
         if self.data_directories is None:
             del self.data_directories
 

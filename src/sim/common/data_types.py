@@ -30,7 +30,7 @@ class EnvironmentType(IntEnum):
 @dataclass
 class Action:
     actor_name: str = ''
-    value: np.ndarray = None
+    value: Union[int, float, np.ndarray, torch.Tensor] = None
 
     def __len__(self):
         return len(self.value) if self.value is not None else 0
@@ -42,4 +42,5 @@ class Experience:
     action: Union[int, float, np.ndarray, torch.Tensor, Action] = None
     reward: Union[int, float, np.ndarray, torch.Tensor] = None
     done: TerminationType = None
+    time_stamp: int = 999
     info: Dict = None

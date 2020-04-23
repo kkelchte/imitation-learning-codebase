@@ -38,19 +38,18 @@ class EnvironmentRunner:
         cprint('initiated', self._logger)
 
     def _run_episode(self):
-        state = self._environment.reset()
-        while state.terminal == TerminationType.Unknown:
-            state = self._environment.step()
+        experience = self._environment.reset()
+        while experience.terminal == TerminationType.Unknown:
+            experience = self._environment.step()
         cprint(f'environment is running', self._logger)
-        while state.terminal == TerminationType.NotDone:
-            action = self._actor.get_action(state.sensor_data) if self._actor is not None else None
-            state = self._environment.step(action)  # action is not used for ros-gazebo environments.
+        while experience.terminal == TerminationType.NotDone:
+            action = self._actor.get_action(experience.sensor_data) if self._actor is not None else None
+            experience = self._environment.step(action)  # action is not used for ros-gazebo environments.
             if self._data_saver is not None:
-                self._data_saver.save(state=state,
-                                      action=action)
-        cprint(f'environment is terminated with {state.terminal.name}', self._logger)
+                self._data_saver.save(experience=experience)
+        cprint(f'environment is terminated with {experience.terminal.name}', self._logger)
         if self._data_saver is not None:
-            self._data_saver.save(state=state)
+            self._data_saver.save(experience=experience)
 
     def run(self):
         for self._run_index in range(self._config.number_of_episodes):

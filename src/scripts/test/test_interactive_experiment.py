@@ -14,14 +14,18 @@ class TestRosExperiments(unittest.TestCase):
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def test_ros_with_data_collection(self):
-        with open(f'src/scripts/test/config/test_data_collection_in_ros_config.yml', 'r') as f:
+    def configure(self, config_file: str) -> dict:
+        with open(f'src/scripts/test/config/' + config_file, 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         config_dict['output_path'] = self.output_dir
         with open(os.path.join(self.output_dir, 'config.yml'), 'w') as f:
             yaml.dump(config_dict, f)
+        return config_dict
+
+    @unittest.skip
+    def test_ros_with_data_collection(self):
         self.config = InteractiveExperimentConfig().create(
-            config_dict=config_dict
+            config_dict=self.configure('test_data_collection_in_ros_config.yml')
         )
         self.experiment = InteractiveExperiment(self.config)
         self.experiment.run()
@@ -39,7 +43,9 @@ class TestRosExperiments(unittest.TestCase):
             img_numbers = [float(img.split('.')[0]) for img in sorted(os.listdir(os.path.join(run, 'forward_camera')))]
             distances = [img_numbers[i+1] - img_numbers[i] for i in range(len(img_numbers)-1)]
             self.assertTrue(max(distances) < 500)  # asserting the largest delay < 2 FPS or 500ms
+            self.experiment.shutdown()
 
+    @unittest.skip
     def test_ros_with_model_evaluation(self):
         with open(f'src/scripts/test/config/test_online_model_evaluation.yml', 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
@@ -68,10 +74,10 @@ class TestRosExperiments(unittest.TestCase):
                         first_dnn_action = lines[0]
             self.assertEqual(min(file_lengths.values()), max(file_lengths.values()))
             self.assertEqual(first_dnn_action, first_applied_action)
+            self.experiment.shutdown()
 
     def tearDown(self) -> None:
-        self.experiment.shutdown()
-        # shutil.rmtree(self.output_dir, ignore_errors=True)
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':
