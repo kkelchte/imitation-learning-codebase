@@ -1,3 +1,5 @@
+import os
+import shutil
 import time
 import unittest
 
@@ -16,6 +18,8 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber, 
 class TestDnnActor(unittest.TestCase):
 
     def setUp(self) -> None:
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'turtlebot_sim',
             'world_name': 'test_waypoints',
@@ -25,13 +29,13 @@ class TestDnnActor(unittest.TestCase):
             'ros_expert': False,
             'dnn_actor': True,
             'dnn_config_file_path_with_extension': f'src/sim/ros/config/actor/dnn_actor.yml',
-            'output_path': f'test_dir/{get_filename_without_extension(__file__)}',
+            'output_path': self.output_dir,
         }
 
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
 
         # subscribe to command control
         specs = rospy.get_param('/actor/dnn_actor/specs')
@@ -68,8 +72,8 @@ class TestDnnActor(unittest.TestCase):
         self.assertTrue(twist.angular.z != 0)
 
     def tearDown(self) -> None:
-        self.assertEqual(self._ros_process.terminate(),
-                         ProcessState.Terminated)
+        self._ros_process.terminate()
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

@@ -45,7 +45,6 @@ class Actor:
     def __init__(self, config: ActorConfig):
         self._config = config
         self._name = config.name
-        self._type = config.type
 
     def get_action(self, sensor_data: dict) -> Action:
         pass

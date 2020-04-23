@@ -31,42 +31,41 @@ class TestRobots(unittest.TestCase):
                     'yaw_or': 1.57,
                     'z_pos': 0.0,
                 },
+                'actor_configs': [
+                    {
+                        'file': f'src/sim/ros/config/keyboard/{robot_name}.yml',
+                        'name': 'keyboard'
+                    }
+                ],
                 'visible_xterm': True,
             },
-            'actor_configs': [
-                {
-                    'file': f'src/sim/ros/config/keyboard/{robot_name}.yml',
-                    'name': 'keyboard',
-                    'type': 2
-                }
-            ],
         }
         config = EnvironmentConfig().create(config_dict=config_dict)
         self._environment = RosEnvironment(config=config)
 
     def test_turtlebot_sim(self):
         self.start(robot_name='turtlebot_sim')
-        state = self._environment.reset()
+        experience = self._environment.reset()
         # wait delay evaluation time
-        while state.terminal == TerminationType.Unknown:
-            state = self._environment.step()
+        while experience.done == TerminationType.Unknown:
+            experience = self._environment.step()
 
         while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()
 
     def test_drone_sim(self):
         self.start(robot_name='drone_sim', fsm_config='takeoff_run')
-        state = self._environment.reset()
+        experience = self._environment.reset()
         # wait delay evaluation time
-        while state.terminal == TerminationType.Unknown:
-            state = self._environment.step()
+        while experience.done == TerminationType.Unknown:
+            experience = self._environment.step()
 
         while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()
 
     def tearDown(self) -> None:
         if hasattr(self, '_environment'):
-            self.assertTrue(self._environment.remove())
+            self._environment.remove()
         shutil.rmtree(self.output_dir, ignore_errors=True)
 
 

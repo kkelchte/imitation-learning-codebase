@@ -44,9 +44,6 @@ class TestPublisherSubscriber:
 
     def _store(self, msg, topic_name: str):
         self.topic_values[topic_name] = msg if not hasattr(msg, 'data') else msg.data
-        if isinstance(msg, RosState):
-            if len(msg.sensors) != 0:
-                self.last_received_sensor_readings = msg.sensors[:]
 
 
 def compare_odometry(first_msg: Odometry, second_msg: Odometry) -> bool:

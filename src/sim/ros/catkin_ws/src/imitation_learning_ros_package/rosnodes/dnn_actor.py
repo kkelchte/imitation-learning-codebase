@@ -15,7 +15,7 @@ from sensor_msgs.msg import Image
 from src.ai.model import Model, ModelConfig
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.common.actors import Actor, ActorConfig
-from src.sim.common.data_types import ActorType, Action
+from src.sim.common.data_types import Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_image, get_output_path, adapt_action_to_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
@@ -28,12 +28,11 @@ class DnnActor(Actor):
         max_duration = 60
         while not rospy.has_param('/output_path') and time.time() < start_time + max_duration:
             time.sleep(0.1)
-        specs = rospy.get_param('/actor/dnn_actor/specs')
+        self._specs = rospy.get_param('/actor/dnn_actor/specs')
         super().__init__(
             config=ActorConfig(
                 name='dnn_actor',
-                type=ActorType.Model,
-                specs=specs
+                specs=self._specs
             )
         )
         self._output_path = get_output_path()
@@ -41,9 +40,9 @@ class DnnActor(Actor):
         cprint(f'&&&&&&&&&&&&&&&&&& \n {self._specs} \n &&&&&&&&&&&&&&&&&', self._logger)
         with open(os.path.join(self._output_path, 'dnn_actor_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)
-        self._rate_fps = specs['rate_fps'] if 'rate_fps' in specs.keys() else 20
+        self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 20
         self._rate = rospy.Rate(self._rate_fps)
-        config_dict = specs['model_config']
+        config_dict = self._specs['model_config']
         config_dict['output_path'] = self._output_path
         cprint(f'loading model...', self._logger)
         self._model = Model(config=ModelConfig().create(config_dict=config_dict))
@@ -82,7 +81,6 @@ class DnnActor(Actor):
         cprint(f'output predicted {output}', self._logger, msg_type=MessageType.debug)
         action = Action(
             actor_name='dnn_actor',
-            actor_type=ActorType.Model,
             value=output  # assuming control is first output
         )
         self._publisher.publish(adapt_action_to_twist(action))

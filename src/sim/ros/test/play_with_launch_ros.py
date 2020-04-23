@@ -16,7 +16,7 @@ from sensor_msgs.msg import Image, LaserScan
 from std_msgs.msg import Empty
 
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import EnvironmentType, ActorType, TerminationType, ProcessState
+from src.sim.common.data_types import EnvironmentType, TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
@@ -99,12 +99,6 @@ class TestRosEnvironment(unittest.TestCase):
             subscribe_topics=subscribe_topics,
             publish_topics=publish_topics
         )
-
-    # @unittest.skip
-    # def test_ros_launch_in_popen(self):
-    #     self.start_test(config_file='test_empty_config')
-    #     self.assertTrue(self._ros_environment_process.poll() is None)
-    #     time.sleep(10)
 
     def test_ros_environment_barebones_gazebo(self):
         self.start_test(config_file='test_empty_config')

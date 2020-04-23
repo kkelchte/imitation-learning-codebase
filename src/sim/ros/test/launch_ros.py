@@ -30,7 +30,7 @@ def main():
     # try:
     environment = RosEnvironment(config=config)
     state = environment.reset()
-    while state.terminal != TerminationType.Success and state.terminal != TerminationType.Failure:
+    while state.done != TerminationType.Success and state.done != TerminationType.Failure:
         print(f'state: {environment.fsm_state}')
         state = environment.step()
     environment.remove()

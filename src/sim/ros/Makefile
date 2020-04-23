@@ -55,7 +55,7 @@ python2_ros_ws/src:
 
 install_python2_ros_ws: python2_ros_ws/src
 	cd python2_ros_ws && \
-	git clone https://github.com/tu-darmstadt-ros-pkg/hector_quadrotor.git src/hector_quadrotor && \
+	git clone https://github.com/kkelchte/hector_quadrotor.git src/hector_quadrotor && \
 	git clone https://github.com/tu-darmstadt-ros-pkg/hector_localization.git src/hector_localization && \
 	catkin_make -DPYTHON_EXECUTABLE=/usr/bin/python2.7 -DPYTHON_INCLUDE_DIR=/usr/include/python2.7m \
 	-DPYTHON_LIBRARY=/usr/lib/libpython2.7m.so
@@ -64,3 +64,14 @@ python2_ros_ws/devel/setup.bash: $(wildcard python2_ros_ws/src/**/*)
 	cd python2_ros_ws && \
 	catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python2.7 \
 	-DPYTHON_INCLUDE_DIR=/usr/include/python2.7m -DPYTHON_LIBRARY=/usr/lib/x86_64-linux-gnu/libpython2.7m.so
+
+
+#################
+# Test ROS environment
+#################
+
+test_suite: test/test_*.py
+	cd ${HOME} && rm -r suite_output_test && mkdir suite_output_test &&\
+	for f in $^ ; do python3.7 src/sim/ros/$${f} > suite_output_$${f} 2>&1; sleep 5; done && \
+	cd src/sim/ros
+

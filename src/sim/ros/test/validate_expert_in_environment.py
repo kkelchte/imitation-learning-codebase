@@ -43,23 +43,23 @@ class TestRosExpert(unittest.TestCase):
         self.environment = RosEnvironment(
             config=self.environment_config
         )
-        state = self.environment.reset()
+        experience = self.environment.reset()
 
         # wait delay evaluation time
-        while state.terminal == TerminationType.Unknown:
-            state = self.environment.step()
+        while experience.done == TerminationType.Unknown:
+            experience = self.environment.step()
         print(f'finished startup')
         waypoints = rospy.get_param('/world/waypoints')
 
         for waypoint_index, waypoint in enumerate(waypoints[:-1]):
             print(f'started with waypoint: {waypoint}')
-            while state.sensor_data['current_waypoint'].tolist() == waypoint:
-                state = self.environment.step()
+            while experience.info['current_waypoint'].tolist() == waypoint:
+                experience = self.environment.step()
 
         print(f'ending with waypoint {waypoints[-1]}')
         while not self.environment.fsm_state == FsmState.Terminated:
-            state = self.environment.step()
-        print(f'terminal type: {state.terminal.name}')
+            experience = self.environment.step()
+        print(f'terminal type: {experience.done.name}')
 
     def tearDown(self) -> None:
         self.environment.remove()

@@ -16,7 +16,6 @@ from hector_uav_msgs.srv import EnableMotors
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 from src.sim.common.actors import Actor, ActorConfig
-from src.sim.common.data_types import ActorType
 from src.sim.ros.src.utils import get_output_path
 
 roslib.load_manifest('teleop_twist_keyboard')
@@ -34,7 +33,6 @@ class KeyboardActor(Actor):
         super().__init__(
             config=ActorConfig(
                 name='keyboard',
-                type=ActorType.User,
                 specs=self.specs
             )
         )
