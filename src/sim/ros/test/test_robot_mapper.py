@@ -4,8 +4,10 @@ import time
 import unittest
 import os
 import shlex
+from glob import glob
 
 import rospy
+import matplotlib.pyplot as plt
 from nav_msgs.msg import Odometry
 
 from src.core.utils import get_filename_without_extension
@@ -37,7 +39,7 @@ class TestRobotMapper(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
 
         # create publishers for all relevant sensors < sensor expert
         self._pose_topic = rospy.get_param('/robot/odometry_topic')
@@ -76,11 +78,12 @@ class TestRobotMapper(unittest.TestCase):
         # self.publish_odom(x=0, y=1, z=0, yaw=-0.7+1.57)
         # self.publish_odom(x=0, y=1, z=0, yaw=-0.7+1.57)
         self.ros_topic.publishers[self._fsm_topic].publish(FsmState.Terminated.name)
-        self.assertTrue(os.path.isfile(os.path.join(self.output_dir, 'trajectory.png')))
+        time.sleep(1)
+        trajectory = glob(os.path.join(self.output_dir, 'trajectories', '*.png'))[0]
+        self.assertTrue(os.path.isfile(trajectory))
 
     def tearDown(self) -> None:
-        self.assertEqual(self._ros_process.terminate(),
-                         ProcessState.Terminated)
+        self._ros_process.terminate()
         shutil.rmtree(self.output_dir, ignore_errors=True)
 
 

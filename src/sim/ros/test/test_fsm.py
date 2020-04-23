@@ -1,4 +1,5 @@
 import os
+import shutil
 import unittest
 import time
 from typing import List
@@ -101,7 +102,7 @@ class TestFsm(unittest.TestCase):
     def start_test(self, config: dict) -> None:
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
         self.state_topic = rospy.get_param('/fsm/state_topic')
         self.terminal_topic = rospy.get_param('/fsm/terminal_topic')
         topics = [
@@ -122,7 +123,7 @@ class TestFsm(unittest.TestCase):
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Terminated.name)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Failure.name)
-        self.stop_test()
+        self.end_test()
 
     @unittest.skip
     def test_takeoff_run(self):
@@ -139,7 +140,7 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publish_fake_odom(x=100, y=100, z=4)
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Success.name)
-        self.stop_test()
+        self.end_test()
 
     @unittest.skip
     def test_takeover_run(self):
@@ -157,7 +158,7 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publish_fake_finish()
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Unknown.name)
-        self.stop_test()
+        self.end_test()
 
     @unittest.skip
     def test_takeover_run_driveback(self):
@@ -176,7 +177,7 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publish_fake_go()
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Running.name)
-        self.stop_test()
+        self.end_test()
 
     @unittest.skip
     def test_multiple_runs(self):
@@ -196,7 +197,7 @@ class TestFsm(unittest.TestCase):
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Terminated.name)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Failure.name)
-        self.stop_test()
+        self.end_test()
 
     #@unittest.skip
     def test_success_by_reaching_goal(self):
@@ -210,11 +211,11 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publish_fake_odom(x=2, y=2, z=0.5)
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Success.name)
-        self.stop_test()
+        self.end_test()
 
-    def stop_test(self) -> None:
-        self.assertEqual(ProcessState.Terminated,
-                         self._ros_process.terminate())
+    def end_test(self) -> None:
+        self._ros_process.terminate()
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

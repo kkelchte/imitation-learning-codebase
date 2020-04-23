@@ -1,3 +1,5 @@
+import os
+import shutil
 import time
 import unittest
 
@@ -6,6 +8,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Empty
 
 from src.sim.common.data_types import ProcessState
+from src.core.utils import get_filename_without_extension
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig
@@ -17,17 +20,21 @@ For each FSM state, test correct mapping of control.
 
 class TestControlMapper(unittest.TestCase):
 
-    def start_test(self) -> None:
+    def setUp(self) -> None:
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'drone_sim',
             'fsm': False,
             'control_mapping': True,
-            'control_mapping_config': 'test'
+            'control_mapping_config': 'test',
+            'output_path': self.output_dir
         }
+
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
         # subscribe to supervision and command control
         self.command_topic = rospy.get_param('/robot/command_topic')
         self.supervision_topic = rospy.get_param('/control_mapping/supervision_topic')
@@ -60,7 +67,6 @@ class TestControlMapper(unittest.TestCase):
         )
 
     def test_control_mapper(self):
-        self.start_test()
         # for each fsm state
         for fsm_state in [FsmState.Running,
                           FsmState.DriveBack,
@@ -92,8 +98,8 @@ class TestControlMapper(unittest.TestCase):
                 self.assertEqual(received_control.linear.x, solution[original_topic])
 
     def tearDown(self) -> None:
-        self.assertEqual(self._ros_process.terminate(),
-                         ProcessState.Terminated)
+        self._ros_process.terminate()
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

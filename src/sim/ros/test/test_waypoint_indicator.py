@@ -1,3 +1,5 @@
+import os
+import shutil
 import time
 import unittest
 
@@ -6,6 +8,7 @@ import rospy
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32MultiArray
 
+from src.core.utils import get_filename_without_extension
 from src.sim.common.data_types import ProcessState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
@@ -14,7 +17,11 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 class TestWaypointIndicator(unittest.TestCase):
 
     def start_test(self) -> None:
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
         config = {
+            'output_path': self.output_dir,
             'world_name': 'test_waypoints',
             'robot_name': 'turtlebot_sim',
             'gazebo': False,
@@ -27,7 +34,7 @@ class TestWaypointIndicator(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
 
         # subscribe to command control
         self._waypoint_topic = '/waypoint_indicator/current_waypoint'
@@ -83,8 +90,8 @@ class TestWaypointIndicator(unittest.TestCase):
         self._test_transition_of_waypoint()
 
     def tearDown(self) -> None:
-        self.assertEqual(self._ros_process.terminate(),
-                         ProcessState.Terminated)
+        self._ros_process.terminate()
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

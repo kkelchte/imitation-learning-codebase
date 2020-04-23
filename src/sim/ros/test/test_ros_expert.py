@@ -1,3 +1,5 @@
+import os
+import shutil
 import time
 import unittest
 
@@ -14,7 +16,9 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 
 class TestRosExpert(unittest.TestCase):
 
-    def start_test(self, config: str) -> None:
+    def start_test(self) -> None:
+        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'turtlebot_sim',
             'world_name': 'test_waypoints',
@@ -22,14 +26,14 @@ class TestRosExpert(unittest.TestCase):
             'fsm': False,
             'control_mapping': False,
             'ros_expert': True,
-            'output_path': f'test_dir/{get_filename_without_extension(__file__)}',
-            'expert_config_file_path_with_extension': f'src/sim/ros/config/actor/{config}.yml'
+            'output_path': self.output_dir,
+            'ros_expert_config_file_path_with_extension': f'src/sim/ros/config/actor/test.yml'
         }
 
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
 
         # subscribe to command control
         self.command_topic = '/actor/ros_expert/cmd_vel'
@@ -54,7 +58,7 @@ class TestRosExpert(unittest.TestCase):
 
     def send_scan_and_read_twist(self, scan: LaserScan) -> Twist:
         self.ros_topic.publishers[self._depth_topic].publish(scan)
-        time.sleep(1)
+        time.sleep(0.1)
         received_twist: Twist = self.ros_topic.topic_values[self.command_topic]
         return received_twist
 
@@ -116,13 +120,14 @@ class TestRosExpert(unittest.TestCase):
         self.assertEqual(received_twist.angular.z, -1)
 
     def test_ros_expert(self):
-        self.start_test(config='test')
+        self.start_test()
         self._test_collision_avoidance_with_laser_scan()
         self._test_waypoint_following()
+        self.end_test()
 
-    def tearDown(self) -> None:
-        self.assertEqual(self._ros_process.terminate(),
-                         ProcessState.Terminated)
+    def end_test(self) -> None:
+        self._ros_process.terminate()
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

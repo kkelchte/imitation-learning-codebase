@@ -16,7 +16,7 @@ ros_config:
     y_pos: 0.0
     yaw_or: 1.57
     z_pos: 0.0
-  visible_xterm: true
+  visible_xterm: false
   actor_configs:
     - file: src/sim/ros/config/actor/ros_expert.yml
       name: ros_expert

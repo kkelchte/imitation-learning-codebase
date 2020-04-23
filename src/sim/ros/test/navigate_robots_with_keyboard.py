@@ -31,15 +31,14 @@ class TestRobots(unittest.TestCase):
                     'yaw_or': 1.57,
                     'z_pos': 0.0,
                 },
+                'actor_configs': [
+                    {
+                        'file': f'src/sim/ros/config/keyboard/{robot_name}.yml',
+                        'name': 'keyboard'
+                    }
+                ],
                 'visible_xterm': True,
             },
-            'actor_configs': [
-                {
-                    'file': f'src/sim/ros/config/keyboard/{robot_name}.yml',
-                    'name': 'keyboard',
-                    'type': 2
-                }
-            ],
         }
         config = EnvironmentConfig().create(config_dict=config_dict)
         self._environment = RosEnvironment(config=config)
@@ -66,7 +65,7 @@ class TestRobots(unittest.TestCase):
 
     def tearDown(self) -> None:
         if hasattr(self, '_environment'):
-            self.assertTrue(self._environment.remove())
+            self._environment.remove()
         shutil.rmtree(self.output_dir, ignore_errors=True)
 
 

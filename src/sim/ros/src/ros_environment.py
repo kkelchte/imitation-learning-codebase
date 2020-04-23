@@ -141,15 +141,15 @@ class RosEnvironment(Environment):
     def _subscribe_info(self, info_objects: List[str]) -> None:
         sensor_list = [info_obj[7:] for info_obj in info_objects if info_obj.startswith('sensor/')]
         for sensor in sensor_list:
+            sensor_topic = rospy.get_param(f'/robot/{sensor}_topic')
+            sensor_type = rospy.get_param(f'/robot/{sensor}_type')
             try:  # if processing function exist for this sensor name add it to the sensor processing functions
-                sensor_topic = rospy.get_param(f'/robot/{sensor}_topic')
-                sensor_type = rospy.get_param(f'/robot/{sensor}_type')
                 self._sensor_processors[sensor] = eval(f'process_{camelcase_to_snake_format(sensor_type)}')
             except NameError:
                 pass
             else:
-                sensor_args = rospy.get_param(f'/robot/{sensor}_stats') if rospy.has_param(
-                    f'/robot/{sensor}_stats') else {}
+                sensor_args = rospy.get_param(f'/robot/{sensor}_stats') \
+                    if rospy.has_param(f'/robot/{sensor}_stats') else {}
                 rospy.Subscriber(name=sensor_topic,
                                  data_class=eval(sensor_type),
                                  callback=self._set_info_data,
