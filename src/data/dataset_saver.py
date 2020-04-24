@@ -13,7 +13,8 @@ from dataclasses_json import dataclass_json
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_date_time_tag, get_filename_without_extension
-from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file
+from src.data.dataset_loader import DataLoaderConfig, DataLoader
+from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file_from_dataset
 from src.data.data_types import Dataset
 from src.sim.common.data_types import Experience, Action, TerminationType
 
@@ -134,15 +135,23 @@ class DataSaver:
             cprint(f'store_hdf5: {self._config.store_hdf5}', self._logger, msg_type=MessageType.warning)
             return
         raw_data_dir = os.path.dirname(self._config.saving_directory)
-        runs = [
+        all_runs = [
             os.path.join(raw_data_dir, run)
             for run in sorted(os.listdir(raw_data_dir))
         ]
-        number_of_training_runs = int(self._config.training_validation_split*len(runs))
-        train_runs = runs[0:number_of_training_runs]
-        validation_runs = runs[number_of_training_runs:]
-        create_hdf5_file(filename=os.path.join(self._config.output_path, 'train.hdf5'), runs=train_runs)
-        create_hdf5_file(filename=os.path.join(self._config.output_path, 'validation.hdf5'), runs=validation_runs)
+        number_of_training_runs = int(self._config.training_validation_split*len(all_runs))
+        train_runs = all_runs[0:number_of_training_runs]
+        validation_runs = all_runs[number_of_training_runs:]
+
+        for file_name, runs in zip(['train', 'validation'], [train_runs, validation_runs]):
+            config = DataLoaderConfig().create(config_dict={
+                'data_directories': runs,
+                'output_path': self._config.output_path,
+            })
+            data_loader = DataLoader(config=config)
+            data_loader.load_dataset(arrange_according_to_timestamp=False)
+            create_hdf5_file_from_dataset(filename=os.path.join(self._config.output_path, file_name + '.hdf5'),
+                                          dataset=data_loader.get_dataset())
 
     def empty_raw_data_in_output_directory(self) -> None:
         raw_data_directory = os.path.dirname(self._config.saving_directory)

@@ -7,6 +7,7 @@ import numpy as np
 #from src.data.dataset_loader import DataLoaderConfig, DataLoader
 import torch
 
+from src.data.dataset_loader import DataLoader, DataLoaderConfig
 from src.data.dataset_saver import DataSaver, DataSaverConfig
 from src.data.test.common_utils import experience_generator, generate_dummy_dataset  # , generate_dummy_dataset
 from src.sim.common.data_types import TerminationType
@@ -19,26 +20,11 @@ class TestDataSaver(unittest.TestCase):
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
-        #saving_directory_tag: str = ''
-        #saving_directory: str = None
-        #sensors: List[str] = None
-        #actors: List[str] = None
-        #training_validation_split: float = 0.9
-        #store_hdf5: bool = False
-        #store_on_ram_only: bool = True
 
     def test_experience_generator(self):
-        observation = np.random.randint((100, 100, 3), dtype=np.uint8)
-        action = np.random.uniform(-1, 1)
-        reward = np.random.uniform(-1, 1)
-        for count, experience in enumerate(experience_generator(observation=observation,
-                                                                action=action,
-                                                                reward=reward)):
+        for count, experience in enumerate(experience_generator()):
             if count == 0:
                 self.assertEqual(experience.done, TerminationType.Unknown)
-            self.assertEqual(np.sum(experience.observation), np.sum(observation))
-            self.assertEqual(experience.action, action)
-            self.assertEqual(experience.reward, reward)
         self.assertTrue(experience.done in [TerminationType.Done, TerminationType.Success, TerminationType.Failure])
 
     def test_data_storage_in_raw_data(self):
@@ -74,38 +60,32 @@ class TestDataSaver(unittest.TestCase):
         self.assertEqual(count_actual_frames, data_saver._frame_counter)
 
     def test_create_train_validation_hdf5_files(self):
+        num_runs = 10
+        split = 0.7
         config_dict = {
             'output_path': self.output_dir,
-            'training_validation_split': 0.5,
+            'training_validation_split': split,
             'store_hdf5': True
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         data_saver = DataSaver(config=config)
-        info = generate_dummy_dataset(data_saver, num_runs=10)
-        episode_lengths = info['episode_lengths']
-        episode_directories = info['episode_directories']
+        info = generate_dummy_dataset(data_saver, num_runs=num_runs)
         data_saver.create_train_validation_hdf5_files()
 
-        # config_dict = {'output_path': self.output_dir,
-        #                'hdf5_file': 'train.hdf5'}
-        # config = DataLoaderConfig().create(config_dict=config_dict)
-        # training_data_loader = DataLoader(config=config)
-        # training_data_loader.load_dataset()
-        # training_data = training_data_loader.get_data()
-        #
-        # config_dict = {'output_path': self.output_dir,
-        #                'hdf5_file': 'validation.hdf5'}
-        # config = DataLoaderConfig().create(config_dict=config_dict)
-        # validation_data_loader = DataLoader(config=config)
-        # validation_data_loader.load_dataset()
-        # validation = validation_data_loader.get_data()
+        config = DataLoaderConfig().create(config_dict={'output_path': self.output_dir,
+                                                        'hdf5_file': 'train.hdf5'})
+        training_data_loader = DataLoader(config=config)
+        training_data_loader.load_dataset()
+        training_data = training_data_loader.get_dataset()
 
-        self.assertTrue(False)
-        # self.assertEqual(len(data), len(episode_lengths))
-        # for index, run in enumerate(data):
-        #     self.assertEqual(len(run), episode_lengths[index])
-        #     count = len(os.listdir(os.path.join(episode_directories[index], 'camera')))
-        #     self.assertEqual(len(run), count)
+        config = DataLoaderConfig().create(config_dict={'output_path': self.output_dir,
+                                                        'hdf5_file': 'validation.hdf5'})
+        validation_data_loader = DataLoader(config=config)
+        validation_data_loader.load_dataset()
+        validation_data = validation_data_loader.get_dataset()
+
+        self.assertEqual(len(training_data), sum(info['episode_lengths'][:int(split * num_runs)]))
+        self.assertEqual(len(validation_data), sum(info['episode_lengths'][int(split * num_runs):]))
 
     def test_empty_saving_directory(self):
         config_dict = {
@@ -126,7 +106,7 @@ class TestDataSaver(unittest.TestCase):
             'store_on_ram_only': True,
             'max_size': 10
         }
-        number_of_runs = 5
+        number_of_runs = 10
         config = DataSaverConfig().create(config_dict=config_dict)
         data_saver = DataSaver(config=config)
         info = generate_dummy_dataset(data_saver, num_runs=number_of_runs)

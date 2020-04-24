@@ -41,6 +41,6 @@ class Experience:
     observation: Union[np.ndarray, torch.Tensor] = None
     action: Union[int, float, np.ndarray, torch.Tensor, Action] = None
     reward: Union[int, float, np.ndarray, torch.Tensor] = None
-    done: TerminationType = None
+    done: Union[int, np.ndarray, torch.Tensor, TerminationType] = None
     time_stamp: int = 999
     info: Dict = None

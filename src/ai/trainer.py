@@ -55,7 +55,7 @@ class Trainer(Evaluator):
         self._optimizer.zero_grad()
         total_error = []
         for batch in tqdm(self._data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
-            model_outputs = self._model.forward(batch.get_input())
+            model_outputs = self._model.forward(batch.observations)
             total_loss = torch.Tensor([0]).to(self._device)
             for output_index, output in enumerate(model_outputs):
                 targets = batch.get_output()[output_index].to(self._device)
