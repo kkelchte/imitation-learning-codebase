@@ -28,7 +28,7 @@ class TestDataLoader(unittest.TestCase):
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         self.data_saver = DataSaver(config=config)
-        self.info = generate_dummy_dataset(self.data_saver, num_runs=2)
+        self.info = generate_dummy_dataset(self.data_saver, num_runs=20)
 
     def test_data_loading(self):
         config_dict = {
@@ -125,19 +125,23 @@ class TestDataLoader(unittest.TestCase):
         data = np.random.uniform(0, 1, 1000)
         weights = calculate_weights(data)
         print(max(weights) - min(weights))
-        self.assertTrue(max(weights) - min(weights) < 0.001)
+        self.assertTrue(max(weights) - min(weights) < 0.3)
 
     def test_calculate_weights_for_data_balancing_normal(self):
         # normal distributed case:
         data = np.random.normal(0, 1, 1000)
         weights = calculate_weights(data)
-        self.assertTrue(0.2 < max(weights) - min(weights) < 0.8)
+        print(max(weights) - min(weights))
+        self.assertTrue(0.5 < max(weights) - min(weights) < 1.5)
 
     def test_calculate_weights_for_data_balancing_discrete(self):
         # discrete distributions:
         data = [0] * 30 + [1] * 70
         weights = calculate_weights(data)
-        self.assertTrue(max(weights) - min(weights) < 10e-5)
+        self.assertEqual(weights[0], weights[29])
+        self.assertNotEqual(weights[29], weights[30])
+        self.assertTrue(weights[0] - 0.777 < 0.1)
+        self.assertTrue(weights[30] - 0.333 < 0.1)
 
     def test_data_balancing(self):
         # average action variance in batch with action balancing
@@ -149,10 +153,11 @@ class TestDataLoader(unittest.TestCase):
         data_loader = DataLoader(config=config)
         data_loader.load_dataset(arrange_according_to_timestamp=False)
         action_variances_with_balancing = []
-        for batch in data_loader.sample_shuffled_batch(batch_size=10):
+        for batch in data_loader.sample_shuffled_batch(batch_size=20):
             action_variances_with_balancing.append(
-                [np.var([a[dim] for a in batch.actions]) for dim in range(batch.actions[0].size()[0])]
+                [np.std([a[dim] for a in batch.actions]) for dim in range(batch.actions[0].size()[0])]
             )
+        action_variances_with_balancing = np.asarray(action_variances_with_balancing)
 
         config = DataLoaderConfig().create(config_dict={
             'data_directories': self.info['episode_directories'],
@@ -162,48 +167,15 @@ class TestDataLoader(unittest.TestCase):
         data_loader = DataLoader(config=config)
         data_loader.load_dataset(arrange_according_to_timestamp=False)
         action_variances_without_balancing = []
-        for batch in data_loader.sample_shuffled_batch(batch_size=10):
+        for batch in data_loader.sample_shuffled_batch(batch_size=20):
             action_variances_without_balancing.append(
-                [np.var([a[dim] for a in batch.actions]) for dim in range(batch.actions[0].size()[0])]
+                [np.std([a[dim] for a in batch.actions]) for dim in range(batch.actions[0].size()[0])]
             )
 
-        self.assertTrue(np.mean(action_variances_with_balancing) > np.mean(action_variances_without_balancing))
-
-    # def test_data_loaders_data_balancing(self):
-    #     config_dict = {
-    #         'data_directories': self.info['episode_directories'],
-    #         'output_path': self.output_dir,
-    #         'inputs': self.info['inputs'],
-    #         'outputs': self.info['outputs']
-    #     }
-    #     config = DataLoaderConfig().create(config_dict=config_dict)
-    #     data_loader = DataLoader(config=config)
-    #     data_loader.load_dataset()
-    #
-    #     # test calculate probabilities for run
-    #     data = [float(d) for d in data_loader._dataset.data[0].outputs['expert'][:, 5]]
-    #     probabilities = calculate_probabilities(data)
-    #
-    #     # by sampling new data with probabilities and asserting difference among histogram bins is relatively low
-    #     clean_data = []
-    #     for i in range(300):
-    #         clean_data.append(np.random.choice(data, p=probabilities))
-    #     y, x, _ = plt.hist(clean_data, bins=get_ideal_number_of_bins(data))
-    #     relative_height_difference = (max(y) - min(y[y != 0])) / max(y)
-    #     self.assertTrue(relative_height_difference < 0.3)
-    #
-    #     # normalize over all actions should not have impact as all other actions are the same:
-    #     probabilities_all_dimensions = calculate_probabilites_per_run(data_loader._dataset.data[0])
-    #     self.assertTrue(np.abs(min(probabilities_all_dimensions) - min(probabilities)) < 1e-6)
-    #     self.assertTrue(np.abs(max(probabilities_all_dimensions) - max(probabilities)) < 1e-6)
-    #
-    #     # sampling a large batch should have a low relative height
-    #     clean_data = []
-    #     for batch in data_loader.sample_shuffled_batch(batch_size=100):
-    #         clean_data.extend([float(t) for t in batch.outputs['expert'][:, 5]])
-    #     y, x, _ = plt.hist(clean_data, bins=get_ideal_number_of_bins(clean_data))
-    #     relative_height_difference = (max(y) - min(y[y != 0])) / max(y)
-    #     self.assertTrue(relative_height_difference < 0.3)
+        action_variances_without_balancing = np.asarray(action_variances_without_balancing)
+        for dim in range(action_variances_with_balancing.shape[-1]):
+            self.assertTrue(np.mean(action_variances_with_balancing[:, dim]) >=
+                            np.mean(action_variances_without_balancing[:, dim]))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

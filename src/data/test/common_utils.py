@@ -20,13 +20,13 @@ def experience_generator():
         experience.observation = np.random.randint(0, 255, size=(100, 100, 3), dtype=np.uint8)
         # experience.action = np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1]))  # action as float
         experience.action = np.asarray([np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1])),
-                                        np.argmax(np.random.multinomial(1, [0.1, 0.1, 0.8])),
+                                        np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1])),
                                         0])  # action as array
         experience.reward = np.random.normal()
         yield experience
 
 
-def generate_dummy_dataset(data_saver: DataSaver, num_runs: int = 2) -> dict:
+def generate_dummy_dataset(data_saver: DataSaver, num_runs: int = 10) -> dict:
     episode_lengths = []
     episode_dirs = []
     for run in range(num_runs):

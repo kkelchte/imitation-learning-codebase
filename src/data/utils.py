@@ -185,7 +185,7 @@ def calculate_probabilities(data: List[float]) -> List[float]:
 
 
 def calculate_weights(data: List[float], number_of_bins: int = 3) -> List[float]:
-    max_steps = 100
+    max_steps = len(data)
     x_min = min(data)
     x_max = max(data)
     x_width = x_max - x_min
@@ -205,9 +205,10 @@ def calculate_weights(data: List[float], number_of_bins: int = 3) -> List[float]
         delta = 10e-4 * x_width
         for index in range(number_of_bins - 1):
             fresh_borders += [
-                min(bin_borders[index + 2] - 10e-2,  # don't pass higher bound
-                    max(fresh_borders[index] + 10e-2,  # don't pass lower bound
-                        bin_borders[index + 1] + (num_samples_in_bins[index + 1] - num_samples_in_bins[index]) * delta)
+                min(bin_borders[index + 2] - 10e-5,  # don't pass higher bound
+                    max(fresh_borders[index] + 10e-5,  # don't pass lower bound
+                        bin_borders[index + 1] +  # original border
+                        np.sign(num_samples_in_bins[index + 1] - num_samples_in_bins[index]) * delta)  # gradientdescent
                     )]
         fresh_borders += [x_max + 10e-5]
         assert min(np.diff(fresh_borders)) >= 0, f"Non-monotonic bin_borders: {fresh_borders}"
@@ -215,8 +216,10 @@ def calculate_weights(data: List[float], number_of_bins: int = 3) -> List[float]
     else:
         print(f'Failed to converge weight balancing {max_steps} steps with data [{x_min}: {x_max}] '
               f'and {number_of_bins} bins: {bin_borders}')
+    num_samples_in_bins = [sum(np.digitize(data, bin_borders) == index + 1) for index in range(number_of_bins)]
     weights_for_each_bin = [
-        (bin_borders[index+1]-bin_borders[index])/x_width for index in range(number_of_bins)
+        (bin_borders[index+1]-bin_borders[index])/x_width * len(data)/num_samples_in_bins[index]
+        for index in range(number_of_bins)
     ]
     return [weights_for_each_bin[d - 1] for d in np.digitize(data, bin_borders)]
 
@@ -232,10 +235,10 @@ def balance_weights_over_actions(dataset: Dataset) -> List[float]:
         weights = {}
         for dim in range(action_dimension[0]):
             weights[dim] = calculate_weights(data=[float(a[dim]) for a in actions])
-        averaged_over_dimensions = [
-            np.mean([weights[dim][index] for dim in range(action_dimension[0])]) for index in range(len(actions))
+        multiply_over_dimensions = [
+            np.prod([weights[dim][index] for dim in range(action_dimension[0])]) for index in range(len(actions))
         ]
-        return [float(w)/sum(averaged_over_dimensions) for w in averaged_over_dimensions]
+        return [float(w)/sum(multiply_over_dimensions) for w in multiply_over_dimensions]
 
 ###################################################################
 #  Helper functions to create or load HDF5 file                   #

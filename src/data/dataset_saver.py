@@ -53,11 +53,11 @@ def create_saving_directory(output_path: str, saving_directory_tag: str = ''):
     saving_directory = os.path.join(output_path, 'raw_data', f'{get_date_time_tag()}')
     if saving_directory_tag != '':
         saving_directory += f'_{saving_directory_tag}'
-    while os.path.isdir(saving_directory):  # update second if directory is already taken
-        time.sleep(1)
-        saving_directory = os.path.join(output_path, 'raw_data', f'{get_date_time_tag()}')
-        if saving_directory_tag != '':
-            saving_directory += f'_{saving_directory_tag}'
+    original_saving_directory = saving_directory
+    count = 0
+    while os.path.isdir(saving_directory):  # add _0 _1 if directory already exists.
+        saving_directory = original_saving_directory + '_' + str(count)
+        count += 1
     os.makedirs(saving_directory)
     return saving_directory
 
@@ -126,7 +126,8 @@ class DataSaver:
         if self._frame_counter > self._config.max_size != -1:
             raw_data_dir = os.path.dirname(self._config.saving_directory)
             first_run = sorted(os.listdir(raw_data_dir))[0]
-            run_length = len(open(os.path.join(raw_data_dir, first_run, 'done.data'), 'r').readlines())
+            with open(os.path.join(raw_data_dir, first_run, 'done.data'), 'r') as f:
+                run_length = len(f.readlines())
             self._frame_counter -= run_length
             shutil.rmtree(os.path.join(raw_data_dir, first_run), ignore_errors=True)
 

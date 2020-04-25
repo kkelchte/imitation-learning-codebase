@@ -50,6 +50,7 @@ class TestDataSaver(unittest.TestCase):
         data_saver = DataSaver(config=config)
         first_info = generate_dummy_dataset(data_saver, num_runs=2)
         self.assertEqual(sum(first_info['episode_lengths']), data_saver._frame_counter)
+        data_saver.update_saving_directory()
         second_info = generate_dummy_dataset(data_saver, num_runs=2)
         self.assertTrue((sum(first_info['episode_lengths']) + sum(second_info['episode_lengths'])) >
                         config_dict['max_size'])
