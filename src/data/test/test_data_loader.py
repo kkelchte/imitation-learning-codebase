@@ -2,18 +2,14 @@ import shutil
 import unittest
 import os
 from copy import deepcopy
-from typing import List
 
 import numpy as np
-import matplotlib.pyplot as plt
-import torch
 
-from src.data.data_types import Dataset
 from src.data.dataset_loader import DataLoader, DataLoaderConfig
 from src.core.utils import get_filename_without_extension
 from src.data.dataset_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
-from src.data.utils import arrange_run_according_timestamps, calculate_weights, balance_weights_over_actions
+from src.data.utils import arrange_run_according_timestamps, calculate_weights
 
 
 class TestDataLoader(unittest.TestCase):
@@ -91,22 +87,6 @@ class TestDataLoader(unittest.TestCase):
     def test_sample_batch(self):
         batch_size = 3
         max_num_batches = 2
-        config_dict = {
-            'data_directories': self.info['episode_directories'],
-            'output_path': self.output_dir,
-        }
-        config = DataLoaderConfig().create(config_dict=config_dict)
-        data_loader = DataLoader(config=config)
-        data_loader.load_dataset(arrange_according_to_timestamp=False)
-        index = 0
-        for index, batch in enumerate(data_loader.sample_shuffled_batch(batch_size=batch_size,
-                                                                        max_number_of_batches=max_num_batches)):
-            self.assertEqual(len(batch), batch_size)
-        self.assertEqual(index, max_num_batches - 1)
-
-    def test_sample_batch(self):
-        batch_size = 3
-        max_num_batches = 5
         config_dict = {
             'data_directories': self.info['episode_directories'],
             'output_path': self.output_dir,

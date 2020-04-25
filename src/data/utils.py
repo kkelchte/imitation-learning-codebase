@@ -1,8 +1,7 @@
 import os
 import warnings
 from copy import deepcopy
-from typing import List, Tuple, Iterable, Union, Type
-from warnings import warn
+from typing import List, Tuple
 
 import h5py
 import torch
@@ -154,36 +153,6 @@ def load_run(directory: str, arrange_according_to_timestamp: bool = False) -> Li
 ####################################################################
 
 
-def get_ideal_number_of_bins(data: List[float]) -> int:
-    number_of_bins = 1
-    heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
-    while min(heights) > 0.05 * len(data):  # minimal bin should ideally contain 5% of the data
-        number_of_bins += 1
-        heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
-    number_of_bins -= 1
-    return number_of_bins
-
-
-def calculate_probabilities(data: List[float]) -> List[float]:
-    number_of_bins = get_ideal_number_of_bins(data)
-    if number_of_bins == 0:
-        return [1./len(data)]*len(data)
-    heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
-
-    normalized_inverse_heights = heights ** -1 / sum(heights ** -1)
-    probabilities = []
-    for d in data:
-        # loop over boundaries to detect correct bin index
-        index = 0
-        for i, b in enumerate(boundaries[:-1]):
-            index = i
-            if b >= d:
-                break
-        probabilities.append(normalized_inverse_heights[index])
-    # normalize probabilities
-    return [p/sum(probabilities) for p in probabilities]
-
-
 def calculate_weights(data: List[float], number_of_bins: int = 3) -> List[float]:
     max_steps = len(data)
     x_min = min(data)
@@ -240,12 +209,64 @@ def balance_weights_over_actions(dataset: Dataset) -> List[float]:
         ]
         return [float(w)/sum(multiply_over_dimensions) for w in multiply_over_dimensions]
 
+
+def get_ideal_number_of_bins(data: List[float]) -> int:
+    import warnings
+    warnings.warn('DEPRECATED')
+    number_of_bins = 1
+    heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
+    while min(heights) > 0.05 * len(data):  # minimal bin should ideally contain 5% of the data
+        number_of_bins += 1
+        heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
+    number_of_bins -= 1
+    return number_of_bins
+
+
+def calculate_probabilities(data: List[float]) -> List[float]:
+    import warnings
+    warnings.warn('DEPRECATED')
+    number_of_bins = get_ideal_number_of_bins(data)
+    if number_of_bins == 0:
+        return [1./len(data)]*len(data)
+    heights, boundaries, _ = plt.hist(data, bins=number_of_bins)
+
+    normalized_inverse_heights = heights ** -1 / sum(heights ** -1)
+    probabilities = []
+    for d in data:
+        # loop over boundaries to detect correct bin index
+        index = 0
+        for i, b in enumerate(boundaries[:-1]):
+            index = i
+            if b >= d:
+                break
+        probabilities.append(normalized_inverse_heights[index])
+    # normalize probabilities
+    return [p/sum(probabilities) for p in probabilities]
+
 ###################################################################
 #  Helper functions to create or load HDF5 file                   #
 ###################################################################
 
 
+def create_hdf5_file_from_dataset(filename: str, dataset: Dataset) -> None:
+    h5py_file = h5py.File(filename, 'w')
+    h5py_dataset = h5py_file.create_group('dataset')
+    h5py_dataset['observations'] = np.asarray([o.numpy() for o in dataset.observations])
+    h5py_dataset['actions'] = np.asarray([o.numpy() for o in dataset.actions])
+    h5py_dataset['rewards'] = np.asarray([o.numpy() for o in dataset.rewards])
+    h5py_dataset['done'] = np.asarray([o.numpy() for o in dataset.done])
+
+
+def load_dataset_from_hdf5(filename: str) -> Dataset:
+    dataset = Dataset()
+    h5py_file = h5py.File(filename, 'r')
+    dataset.extend(h5py_file['dataset'])
+    return dataset
+
+
 def add_run_to_h5py(h5py_file: h5py.File, run: str) -> h5py.File:
+    import warnings
+    warnings.warn('DEPRECATED')
     data = {}
     time_stamps = {}
     # load all data from run
@@ -287,22 +308,8 @@ def add_run_to_h5py(h5py_file: h5py.File, run: str) -> h5py.File:
 
 
 def create_hdf5_file_from_run_directories(filename: str, runs: List[str]) -> None:
+    import warnings
+    warnings.warn('DEPRECATED')
     h5py_file = h5py.File(filename, 'w')
     for run in tqdm(runs, ascii=True, desc=f'creating {os.path.basename(filename)}'):
         h5py_file = add_run_to_h5py(h5py_file=h5py_file, run=run)
-
-
-def create_hdf5_file_from_dataset(filename: str, dataset: Dataset) -> None:
-    h5py_file = h5py.File(filename, 'w')
-    h5py_dataset = h5py_file.create_group('dataset')
-    h5py_dataset['observations'] = np.asarray([o.numpy() for o in dataset.observations])
-    h5py_dataset['actions'] = np.asarray([o.numpy() for o in dataset.actions])
-    h5py_dataset['rewards'] = np.asarray([o.numpy() for o in dataset.rewards])
-    h5py_dataset['done'] = np.asarray([o.numpy() for o in dataset.done])
-
-
-def load_dataset_from_hdf5(filename: str) -> Dataset:
-    dataset = Dataset()
-    h5py_file = h5py.File(filename, 'r')
-    dataset.extend(h5py_file['dataset'])
-    return dataset

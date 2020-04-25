@@ -1,7 +1,7 @@
 import numpy as np
 
 from src.data.dataset_saver import DataSaver
-from src.sim.common.data_types import Experience, TerminationType, Action
+from src.sim.common.data_types import Experience, TerminationType
 
 
 def experience_generator():
@@ -18,7 +18,7 @@ def experience_generator():
             experience.done = TerminationType.Success
         experience.time_stamp = step
         experience.observation = np.random.randint(0, 255, size=(100, 100, 3), dtype=np.uint8)
-        # experience.action = np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1]))  # action as float
+        # experience.action = np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1]))  # action as unbalanced float
         experience.action = np.asarray([np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1])),
                                         np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1])),
                                         0])  # action as array
