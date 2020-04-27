@@ -10,12 +10,12 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-from src.data.data_types import Dataset
+from src.core.data_types import Dataset
 
 #############################################################
 #  Helper functions to store data used by data_saver.py     #
 #############################################################
-from src.sim.common.data_types import Experience
+from src.core.data_types import Experience
 
 
 def timestamp_to_filename(time_stamp_ms: int) -> str:

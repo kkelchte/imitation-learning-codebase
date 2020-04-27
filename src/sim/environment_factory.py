@@ -1,6 +1,6 @@
 
 from src.core.object_factory import ObjectFactory
-from src.sim.common.data_types import EnvironmentType
+from src.core.data_types import EnvironmentType
 
 from src.sim.gym.gym_environment import GymEnvironment
 try:

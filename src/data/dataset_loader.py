@@ -3,19 +3,18 @@
 """
 import os
 from dataclasses import dataclass
-from typing import List, Tuple, Generator
+from typing import List, Generator
 
 import numpy as np
-import torch
 from dataclasses_json import dataclass_json
 from tqdm import tqdm
 
 from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
 from src.core.utils import get_filename_without_extension
-from src.data.data_types import Dataset
+from src.core.data_types import Dataset
 from src.data.utils import load_run, load_dataset_from_hdf5, balance_weights_over_actions
-from src.sim.common.data_types import Experience, TerminationType
+from src.core.data_types import Experience
 
 
 @dataclass_json

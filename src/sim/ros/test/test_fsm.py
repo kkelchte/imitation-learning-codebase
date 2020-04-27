@@ -7,14 +7,13 @@ from typing import List
 import rospy
 from dataclasses import dataclass
 
-import yaml
 from nav_msgs.msg import Odometry
-from std_msgs.msg import String, Empty  # Do not remove!
+from std_msgs.msg import Empty  # Do not remove!
 from sensor_msgs.msg import LaserScan  # Do not remove!
 
 from src.core.utils import get_filename_without_extension
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.common.data_types import TerminationType, ProcessState
+from src.core.data_types import TerminationType
 from src.sim.ros.src.process_wrappers import RosWrapper
 
 """ Test FSM in different modes

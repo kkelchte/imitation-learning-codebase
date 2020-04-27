@@ -10,7 +10,7 @@ import rospy
 
 from src.core.logger import cprint, MessageType, get_logger
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import ProcessState
+from src.core.data_types import ProcessState
 
 """Interface with other applications such as 
 - xpra

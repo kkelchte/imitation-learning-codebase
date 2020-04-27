@@ -8,7 +8,7 @@ from src.ai.model import Model, ModelConfig
 from src.core.config_loader import Config
 from src.core.logger import get_logger
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import Action
+from src.core.data_types import Action
 
 
 """Base actor class and dnn actor class

@@ -2,8 +2,8 @@ import gym
 import numpy as np
 from copy import deepcopy
 
-from src.core.logger import cprint, MessageType
-from src.sim.common.data_types import Experience, TerminationType, Action, ProcessState
+from src.core.logger import cprint
+from src.core.data_types import Experience, TerminationType, Action, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 
 

@@ -21,7 +21,7 @@ from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm impor
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import Action, Experience, TerminationType, ProcessState
+from src.core.data_types import Action, Experience, TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import process_compressed_image, process_image, process_laser_scan, \

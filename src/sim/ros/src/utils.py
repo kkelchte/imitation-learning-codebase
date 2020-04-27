@@ -13,7 +13,7 @@ from sensor_msgs.msg import Image, LaserScan, Imu
 from std_msgs.msg import Float32MultiArray
 
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import Action
+from src.core.data_types import Action
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 
 bridge = CvBridge()

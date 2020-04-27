@@ -1,7 +1,7 @@
 import numpy as np
 
 from src.data.dataset_saver import DataSaver
-from src.sim.common.data_types import Experience, TerminationType
+from src.core.data_types import Experience, TerminationType
 
 
 def experience_generator():

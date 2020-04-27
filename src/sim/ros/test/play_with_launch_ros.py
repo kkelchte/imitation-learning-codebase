@@ -3,7 +3,6 @@ import shutil
 import subprocess
 import time
 import unittest
-import warnings
 
 from datetime import datetime
 import shlex
@@ -11,18 +10,11 @@ import shlex
 import rospy
 import yaml
 from geometry_msgs.msg import Twist
-from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Image, LaserScan
-from std_msgs.msg import Empty
 
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import EnvironmentType, TerminationType, ProcessState
-from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig, \
-    get_fake_odometry, compare_odometry
+    compare_odometry
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 """

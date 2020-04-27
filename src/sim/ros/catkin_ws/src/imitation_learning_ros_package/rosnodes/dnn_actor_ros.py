@@ -14,16 +14,16 @@ from sensor_msgs.msg import Image
 
 from src.ai.model import Model, ModelConfig
 from src.core.logger import get_logger, cprint, MessageType
-from src.sim.common.actors import Actor, ActorConfig
-from src.sim.common.data_types import Action
+from src.sim.common.actors import Actor, ActorConfig, DnnActor
+from src.core.data_types import Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_image, get_output_path, adapt_action_to_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 
-class DnnActor(Actor):
+class DnnActorRos(DnnActor):
 
     def __init__(self):
-        rospy.init_node('dnn_actor')
+        rospy.init_node('dnn_actor_ros')
         start_time = time.time()
         max_duration = 60
         while not rospy.has_param('/output_path') and time.time() < start_time + max_duration:
@@ -92,5 +92,5 @@ class DnnActor(Actor):
 
 
 if __name__ == "__main__":
-    dnn_actor = DnnActor()
+    dnn_actor = DnnActorRos()
     dnn_actor.run()

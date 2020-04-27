@@ -1,11 +1,10 @@
 import os
 import shutil
-import time
 import unittest
 
 from src.core.utils import get_filename_without_extension
 from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import EnvironmentType, ProcessState, TerminationType
+from src.core.data_types import EnvironmentType, ProcessState, TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.gym.gym_environment import GymEnvironment
 

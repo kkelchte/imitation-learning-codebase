@@ -6,10 +6,8 @@ import unittest
 import numpy as np
 import rospy
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32MultiArray
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import ProcessState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 

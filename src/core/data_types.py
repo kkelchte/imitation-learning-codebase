@@ -1,19 +1,50 @@
-from typing import List, Dict, Union
+from typing import Dict, Union, List
 from enum import IntEnum
 
 import h5py
 import numpy as np
-from dataclasses import dataclass
 import torch
+from dataclasses import dataclass
 
-from src.sim.common.data_types import Experience
 
-"""Data types required for defining dataset frames and torch dataset samples.
+class ProcessState(IntEnum):
+    Running = 0
+    Terminated = 1
+    Unknown = 2
+    Initializing = 3
 
-Mainly used by data_saver for storing states as frames
- and data_loader for loading dataset frames as pytorch dataset samples.
-Simulation related datatypes are specified in src/sim/common/data_types.py.
-"""
+
+class TerminationType(IntEnum):
+    Unknown = -1
+    NotDone = 0
+    Done = 1
+    Success = 2
+    Failure = 3
+
+
+class EnvironmentType(IntEnum):
+    Ros = 0
+    Gym = 1
+    Real = 2
+
+
+@dataclass
+class Action:
+    actor_name: str = ''
+    value: Union[int, float, np.ndarray, torch.Tensor] = None
+
+    def __len__(self):
+        return len(self.value) if self.value is not None else 0
+
+
+@dataclass
+class Experience:
+    observation: Union[np.ndarray, torch.Tensor] = None
+    action: Union[int, float, np.ndarray, torch.Tensor, Action] = None
+    reward: Union[int, float, np.ndarray, torch.Tensor] = None
+    done: Union[int, np.ndarray, torch.Tensor, TerminationType] = None
+    time_stamp: int = 999
+    info: Dict = None
 
 
 def to_torch(value: Union[np.ndarray, int, float],

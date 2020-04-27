@@ -4,17 +4,12 @@ import shutil
 import unittest
 import time
 
-import subprocess
 import rospy
-import numpy as np
 
 from src.core.utils import count_grep_name
 from src.core.utils import get_filename_without_extension
-from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import TerminationType, EnvironmentType, Action, ProcessState
-from src.sim.common.environment import EnvironmentConfig, RosConfig, RosLaunchConfig
+from src.core.data_types import ProcessState
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.ros_environment import RosEnvironment
 
 
 class TestRos(unittest.TestCase):

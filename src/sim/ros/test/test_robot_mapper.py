@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from nav_msgs.msg import Odometry
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import ProcessState
+from src.core.data_types import ProcessState
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import adapt_vector_to_odometry

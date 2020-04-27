@@ -4,7 +4,7 @@ import time
 import warnings
 
 from src.core.config_loader import Parser
-from src.sim.common.data_types import TerminationType
+from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 

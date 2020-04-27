@@ -7,7 +7,7 @@ from src.core.config_loader import Config
 from src.core.utils import get_filename_without_extension
 from src.sim.common.actors import DnnActor
 from src.sim.common.environment import EnvironmentConfig
-from src.sim.common.data_types import TerminationType, EnvironmentType
+from src.core.data_types import TerminationType, EnvironmentType
 from src.sim.environment_factory import EnvironmentFactory
 from src.data.dataset_saver import DataSaver
 

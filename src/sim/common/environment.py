@@ -7,7 +7,7 @@ from dataclasses_json import dataclass_json
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import Action, Experience, EnvironmentType, ProcessState
+from src.core.data_types import Action, Experience, EnvironmentType, ProcessState
 from src.sim.common.actors import Actor, ActorConfig
 
 

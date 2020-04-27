@@ -15,7 +15,7 @@ from hector_uav_msgs.srv import EnableMotors
 from src.core.logger import get_logger, cprint
 from src.sim.common.actors import Actor, ActorConfig
 from src.sim.common.noise import *
-from src.sim.common.data_types import Action
+from src.core.data_types import Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
     get_output_path, apply_noise_to_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension

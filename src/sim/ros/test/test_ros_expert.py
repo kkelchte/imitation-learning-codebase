@@ -9,7 +9,6 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import ProcessState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 

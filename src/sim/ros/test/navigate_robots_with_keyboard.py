@@ -3,7 +3,7 @@ import shutil
 import unittest
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import TerminationType
+from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
