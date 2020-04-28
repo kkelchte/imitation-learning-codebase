@@ -9,7 +9,7 @@ import rospy
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import CompressedImage, Image, LaserScan, Imu
+from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from geometry_msgs.msg import Twist, Pose
 from std_msgs.msg import String, Float32MultiArray, Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
@@ -20,13 +20,11 @@ from src.core.logger import cprint, MessageType
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
-from src.sim.common.actors import ActorConfig
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 from src.core.data_types import Action, Experience, TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import process_compressed_image, process_image, process_laser_scan, \
-    adapt_twist_to_action, process_odometry, process_imu, adapt_action_to_ros_message, adapt_action_to_twist, \
-    adapt_sensor_to_ros_message, quaternion_from_euler
+from src.sim.ros.src.utils import adapt_twist_to_action, quaternion_from_euler
 
 bridge = CvBridge()
 
@@ -300,6 +298,7 @@ class RosEnvironment(Environment):
         self._step += 1
         self._internal_update_terminal_state()
         self._clear_experience_values()
+        # TODO add action publisher: ros_python_interface/cmd_vel
         self._run_shortly()
         assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminationType.Unknown)
         self._update_current_experience()

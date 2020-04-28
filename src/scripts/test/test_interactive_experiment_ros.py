@@ -7,8 +7,51 @@ import yaml
 from src.scripts.interactive_experiment import InteractiveExperimentConfig, InteractiveExperiment
 from src.core.utils import get_filename_without_extension
 
+model_evaluation_config = {
+  "runner_config": {
+    "number_of_episodes": 2,
+    "environment_config": {
+      "actor_configs": [
+        {
+          "type": 0,
+          "name": "dnn_actor",
+          "file": "src/sim/ros/config/actor/dnn_actor.yml"
+        },
+        {
+          "type": 1,
+          "name": "ros_expert",
+          "file": "src/sim/ros/config/actor/ros_expert.yml"
+        }
+      ],
+      "factory_key": 0,
+      "max_number_of_steps": -1,
+      "ros_config": {
+        "visible_xterm": True,
+        "ros_launch_config": {
+          "random_seed": 123,
+          "fsm_config": "single_run",
+          "x_pos": 0.0,
+          "fsm": True,
+          "control_mapping": True,
+          "waypoint_indicator": True,
+          "control_mapping_config": "evaluation",
+          "world_name": "cube_world",
+          "y_pos": 0.0,
+          "robot_name": "turtlebot_sim",
+          "z_pos": 0.0,
+          "gazebo": True,
+          "yaw_or": 1.57
+        },
+        "step_rate_fps": 2
+      }
+    }
+  },
+  "output_path": "/tmp",
+  "data_saver_config": {}
+}
 
-class TestRosExperiments(unittest.TestCase):
+
+class TestRosInteractive(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
@@ -75,6 +118,13 @@ class TestRosExperiments(unittest.TestCase):
             self.assertEqual(min(file_lengths.values()), max(file_lengths.values()))
             self.assertEqual(first_dnn_action, first_applied_action)
             self.experiment.shutdown()
+
+    def test_gym_with_random_policy(self):
+        self.config = InteractiveExperimentConfig().create(
+            config_dict=self.configure('test_data_collection_in_ros_config.yml')
+        )
+        self.experiment = InteractiveExperiment(self.config)
+        self.experiment.run()
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

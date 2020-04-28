@@ -14,9 +14,9 @@ from sensor_msgs.msg import Image
 
 from src.ai.model import Model, ModelConfig
 from src.core.logger import get_logger, cprint, MessageType
-from src.sim.common.actors import Actor, ActorConfig, DnnActor
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig, DnnActor
 from src.core.data_types import Action
-from src.sim.ros.src.utils import adapt_twist_to_action, process_image, get_output_path, adapt_action_to_twist
+from src.sim.ros.src.utils import process_image, get_output_path, adapt_action_to_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 

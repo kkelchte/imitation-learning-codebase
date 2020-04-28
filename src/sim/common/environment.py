@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List
 
 from dataclasses_json import dataclass_json
 
@@ -8,7 +8,7 @@ from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import Action, Experience, EnvironmentType, ProcessState
-from src.sim.common.actors import Actor, ActorConfig
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 
 
 @dataclass_json
@@ -59,7 +59,7 @@ class RosConfig(Config):
     step_rate_fps: float = 10.
     visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None
-    actor_configs: List[ActorConfig] = None
+    actor_configs: List[ActorConfig] = None  # extra ros nodes that can act on robot.
 
     def __post_init__(self):
         if self.info is None:
@@ -76,7 +76,6 @@ class EnvironmentConfig(Config):
     """
     factory_key: EnvironmentType = None
     max_number_of_steps: int = 100
-    actor_config: ActorConfig = None
     # Gazebo specific environment settings
     ros_config: RosConfig = None
     # Gym specific environment settings

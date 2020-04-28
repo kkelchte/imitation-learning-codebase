@@ -28,6 +28,5 @@ evaluator_config:
       - forward_camera
 #      - current_waypoint
     outputs:
-#      - depth_scan
       - ros_expert
 number_of_epochs: 1

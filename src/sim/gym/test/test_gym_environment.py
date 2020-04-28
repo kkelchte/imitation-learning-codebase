@@ -3,7 +3,7 @@ import shutil
 import unittest
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.actors import ActorConfig
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 from src.core.data_types import EnvironmentType, ProcessState, TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.gym.gym_environment import GymEnvironment

@@ -11,11 +11,10 @@ import roslib
 import rospy
 from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist
-from hector_uav_msgs.srv import EnableMotors
 
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
-from src.sim.common.actors import Actor, ActorConfig
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
 from src.sim.ros.src.utils import get_output_path
 
 roslib.load_manifest('teleop_twist_keyboard')

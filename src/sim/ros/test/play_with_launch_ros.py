@@ -4,17 +4,12 @@ import subprocess
 import time
 import unittest
 
-from datetime import datetime
 import shlex
 
 import rospy
 import yaml
-from geometry_msgs.msg import Twist
 
-from src.sim.common.actors import ActorConfig
-from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig, \
-    compare_odometry
+from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 """

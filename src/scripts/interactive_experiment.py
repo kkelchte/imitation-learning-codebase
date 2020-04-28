@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.actors import DnnActor
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import DnnActor
 from src.sim.common.environment import EnvironmentConfig
 from src.core.data_types import TerminationType, EnvironmentType
 from src.sim.environment_factory import EnvironmentFactory
@@ -49,7 +49,7 @@ class InteractiveExperiment:
             experience = self._environment.step()
         cprint(f'environment is running', self._logger)
         while experience.terminal == TerminationType.NotDone:
-            action = self._actor.get_action(experience.sensor_data) if self._actor is not None else None
+            action = self._actor.get_action(experience.observation) if self._actor is not None else None
             experience = self._environment.step(action)  # action is not used for ros-gazebo environments.
             if self._data_saver is not None:
                 self._data_saver.save(experience=experience)

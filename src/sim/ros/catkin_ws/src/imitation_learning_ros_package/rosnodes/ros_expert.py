@@ -13,7 +13,7 @@ from sensor_msgs.msg import LaserScan, Image
 from hector_uav_msgs.srv import EnableMotors
 
 from src.core.logger import get_logger, cprint
-from src.sim.common.actors import Actor, ActorConfig
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
 from src.sim.common.noise import *
 from src.core.data_types import Action
 from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \

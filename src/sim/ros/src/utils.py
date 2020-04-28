@@ -9,10 +9,9 @@ from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
 from geometry_msgs.msg import Twist
-from sensor_msgs.msg import Image, LaserScan, Imu
+from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32MultiArray
 
-from src.sim.common.actors import ActorConfig
 from src.core.data_types import Action
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 
