@@ -25,14 +25,14 @@ Script starts environment runner with dataset_saver object to store the episodes
 @dataclass_json
 @dataclass
 class ExperimentConfig(Config):
-    number_of_epochs: int = -1
+    number_of_epochs: int = 1
     number_of_episodes: int = -1
     environment_config: EnvironmentConfig = None
     data_saver_config: DataSaverConfig = None
     model_config: ModelConfig = None
     trainer_config: TrainerConfig = None
     evaluator_config: EvaluatorConfig = None
-    generate_new_output_path: bool = True  # is overwritten by dag file to predefine output path.
+    generate_new_output_path: bool = False  # is overwritten by dag file to predefine output path.
     tensorboard: bool = False
 
     def __post_init__(self):
@@ -41,6 +41,8 @@ class ExperimentConfig(Config):
             del self.environment_config
         if self.data_saver_config is None:
             del self.data_saver_config
+        if self.model_config is None:
+            del self.model_config
         if self.trainer_config is None:
             del self.trainer_config
         if self.evaluator_config is None:
@@ -81,9 +83,10 @@ class Experiment:
         count_episodes = 0
         while count_episodes < self._config.number_of_episodes or self._config.number_of_episodes == -1:
             experience = self._environment.reset()
-            while experience.terminal == TerminationType.Unknown:
+            while experience.done == TerminationType.Unknown:
                 experience = self._environment.step()
-            while experience.terminal == TerminationType.NotDone:
+            while experience.done == TerminationType.NotDone:
+                #  action = None
                 action = self._model.forward(experience.observation) if self._model is not None else None
                 experience = self._environment.step(action)  # action is not used for ros-gazebo environments off-policy
                 if self._data_saver is not None:
@@ -97,7 +100,7 @@ class Experiment:
 
     def run(self):
         for epoch in range(self._config.number_of_epochs):
-            msg = f'epoch: {epoch} / {self._config.number_of_epochs}'
+            msg = f'epoch: {epoch + 1} / {self._config.number_of_epochs}'
             if self._environment is not None:
                 self._run_episodes()
             if self._trainer is not None:
@@ -109,7 +112,8 @@ class Experiment:
                 self._writer.add_scalar('validation error', validation_error, global_step=epoch)
                 msg += f' validation error: {validation_error}'
             cprint(msg, self._logger)
-        self._writer.close()
+        if self._writer is not None:
+            self._writer.close()
         cprint(f'Finished.', self._logger)
 
     def shutdown(self):

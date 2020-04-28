@@ -85,7 +85,6 @@ class EnvironmentConfig(Config):
         # Avoid None value error by deleting irrelevant fields
         if self.factory_key == EnvironmentType.Ros:
             del self.gym_config
-            del self.actor_config
         elif self.factory_key == EnvironmentType.Gym:
             del self.ros_config
 

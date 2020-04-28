@@ -5,12 +5,29 @@ LOGINCOMMAND="/bin/bash /vagrant/login_remote.sh"
 BUILDCOMMAND="/bin/bash /vagrant/create_image.sh ${version}"
 WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
 
-shell-writable:
+
+
+
+shell-writable-image-linux:
+	sudo singularity shell --bind .:/mnt --writable writable_image
+
+create-writable-image-linux:
+	sudo singularity build --sandbox writable_image image-${version}.sif
+
+build-writable-to-sif-linux:
+	sudo singularity build image-${version}.sif writable_image
+
+push-sif-image-linux-to-esat:
+	#singularity push -U image-${version}.sif library://kkelchte/default/ros-gazebo-cuda:${version}
+	scp image-${version}.sif kkelchte@ssh.esat.kuleuven.be:/users/visics/kkelchte/code/imitation-learning-codebase/rosenvironment/singularity/ros-gazebo-cuda:${version}
+
+
+shell-writable-mac:
 	vagrant up
 	vagrant ssh -- -t sudo singularity shell --writable /usr/data/writable_image
 	# sudo mount -t ntfs /dev/sda2  /usr/data &&
 
-writable_image: #*.sif
+writable_image-mac: #*.sif
 	vagrant up
 	vagrant ssh -- -t ${WRITABLECOMMAND}
 
@@ -49,6 +66,7 @@ push-image: spinoff-vagrant
 	vagrant ssh -- -t ${BUILDCOMMAND}
 
 # Following commands are for on linux machines without vagrant.
+
 update-image:
 	if [ -e *.sif ] ; then \
 		for image in *.sif ; do \

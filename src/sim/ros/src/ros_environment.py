@@ -24,7 +24,8 @@ from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors im
 from src.core.data_types import Action, Experience, TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import adapt_twist_to_action, quaternion_from_euler
+from src.sim.ros.src.utils import adapt_twist_to_action, quaternion_from_euler, adapt_action_to_twist, process_imu, \
+    process_compressed_image, process_image, process_odometry, process_laser_scan
 
 bridge = CvBridge()
 
@@ -57,10 +58,10 @@ class RosEnvironment(Environment):
         # Fields
         self._step = 0
         self._current_experience = None
-        self._default_observation = np.zeros((100, 100, 3), dtype=np.uint8)
-        self._default_action = np.ones((1,), dtype=np.float32) * 999
-        self._default_reward = np.ones((1,), dtype=np.float32) * 999
-        self._default_sensor_value = np.ones((1,), dtype=np.float32) * 999
+        self._default_observation = np.zeros((0,), dtype=np.uint8)
+        self._default_action = np.ones((0,), dtype=np.float32)
+        self._default_reward = np.ones((0,), dtype=np.float32)
+        self._default_sensor_value = np.ones((0,), dtype=np.float32)
         self._info = {}
         self._clear_experience_values()
 
@@ -105,7 +106,7 @@ class RosEnvironment(Environment):
         # Publish state at each step (all except RGB info)
         self._state_publisher = rospy.Publisher('/ros_environment/state', RosEnvironmentState, queue_size=10)
         self._reset_publisher = rospy.Publisher(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, queue_size=10)
-
+        self._action_publisher = rospy.Publisher('/ros_python_interface/cmd_vel', Twist, queue_size=10)
         # Catch kill signals:
         signal.signal(signal.SIGTERM, self._signal_handler)
 
@@ -126,6 +127,8 @@ class RosEnvironment(Environment):
 
     def _subscribe_observation(self, sensor: str) -> None:
         available_sensor_list = rospy.get_param('/robot/sensors', [])
+        if sensor.startswith('sensor/'):
+            sensor = sensor[7:]
         assert sensor in available_sensor_list
         sensor_topic = rospy.get_param(f'/robot/{sensor}_topic')
         sensor_type = rospy.get_param(f'/robot/{sensor}_type')
@@ -298,7 +301,8 @@ class RosEnvironment(Environment):
         self._step += 1
         self._internal_update_terminal_state()
         self._clear_experience_values()
-        # TODO add action publisher: ros_python_interface/cmd_vel
+        if action is not None:
+            self._action_publisher.publish(adapt_action_to_twist(action))
         self._run_shortly()
         assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminationType.Unknown)
         self._update_current_experience()
@@ -309,7 +313,7 @@ class RosEnvironment(Environment):
     def _publish_state(self):
         ros_state = RosEnvironmentState()
         ros_state.robot_name = self._config.ros_config.ros_launch_config.robot_name
-        ros_state.time_stamp_ms = int(self._current_experience.info['time_stamp_ms'])
+        ros_state.time_stamp_ms = int(self._current_experience.time_stamp)
         ros_state.terminal = self._current_experience.done.name
         ros_state.action = self._current_experience.action != self._default_action
         ros_state.reward = self._current_experience.reward != self._default_reward
@@ -318,8 +322,3 @@ class RosEnvironment(Environment):
 
     def remove(self) -> bool:
         return self._ros.terminate() == ProcessState.Terminated
-
-    # def get_actor(self) -> ActorType:
-    #     if self.control_mapping is not {}:
-    #         topic_name = self.control_mapping[self.fsm_state.name]
-    #         return get_type_from_topic_and_actor_configs(self._config.actor_configs, topic_name)

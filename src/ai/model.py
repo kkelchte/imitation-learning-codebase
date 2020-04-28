@@ -3,11 +3,12 @@ import os
 import time
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import List
+from typing import List, Tuple, Union
 
 import torch
-from dataclasses_json import dataclass_json
 from torch import nn
+import numpy as np
+from dataclasses_json import dataclass_json
 
 from src.ai.architectures import *  # Do not remove
 from src.core.config_loader import Config
@@ -31,7 +32,8 @@ class ModelConfig(Config):
     load_checkpoint_dir: str = None
     architecture: str = None
     dropout: float = 0.
-    output_sizes: List[List] = None
+    input_sizes: Union[Tuple, List, int] = None
+    output_sizes: Union[Tuple, List, int] = None
     initialisation_type: InitializationType = InitializationType.Xavier
     pretrained: bool = False
     initialisation_seed: int = 0
@@ -41,8 +43,6 @@ class ModelConfig(Config):
     def __post_init__(self):
         if self.load_checkpoint_dir is None:
             del self.load_checkpoint_dir
-        if self.output_sizes is None:
-            self.output_sizes = [[6]]  # default to six dimensional continuous action space.
 
 
 class Model:
@@ -56,9 +56,10 @@ class Model:
         cprint(f'Started.', self._logger)
         self._checkpoint_directory = os.path.join(self._config.output_path, 'torch_checkpoints')
         os.makedirs(self._checkpoint_directory, exist_ok=True)
-        self._architecture = eval(f'{self._config.architecture}.Net('
-                                  f'dropout={self._config.dropout},'
-                                  f'output_sizes={self._config.output_sizes})')
+        self._architecture = eval(self._config.architecture).Net(
+                                input_sizes=self._config.input_sizes,
+                                output_sizes=self._config.output_sizes,
+                                dropout=self._config.dropout,)
 
         if self._config.load_checkpoint_dir:
             self._config.load_checkpoint_dir = self._config.load_checkpoint_dir \
@@ -72,9 +73,22 @@ class Model:
             "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
         )
 
+    def process_input(self, inputs: Union[List[torch.Tensor],
+                                          torch.Tensor,
+                                          List[np.ndarray],
+                                          np.ndarray]) -> List[torch.Tensor]:
+        if isinstance(inputs, list):
+            processed_inputs = []
+            for shape, data in zip(self._architecture.input_sizes, inputs):
+                if not isinstance(data, torch.Tensor):
+                    data = torch.as_tensor(data, dtype=torch.float32)
+                processed_inputs.append(data.reshape(shape).to(self._device))
+            return processed_inputs
+        else:
+            return [torch.as_tensor(inputs, dtype=torch.float32).reshape(self._architecture.input_sizes[0])]
+
     def forward(self, inputs: List[torch.Tensor], train: bool = False):
-        inputs = [i.to(self._device) for i in inputs]
-        return self._architecture.forward(inputs=inputs, train=train)
+        return self._architecture.forward(inputs=self.process_input(inputs), train=train)
 
     def initialize_architecture_weights(self, initialisation_type: InitializationType = 0):
         torch.manual_seed(self._config.initialisation_seed)

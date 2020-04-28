@@ -77,6 +77,13 @@ def adapt_sensor_to_ros_message(data: np.ndarray, sensor_name: str) -> RosSensor
     return message
 
 
+def adapt_action_to_ros_message(action: Action) -> RosAction:
+    msg = RosAction()
+    msg.value = adapt_action_to_twist(action)
+    msg.name = action.actor_name
+    return msg
+
+
 def adapt_twist_to_action(msg: Twist) -> Action:
     return Action(
         value=np.asarray(
@@ -90,14 +97,6 @@ def adapt_twist_to_action(msg: Twist) -> Action:
             ]
         )
     )
-
-
-def adapt_action_to_ros_message(action: Action) -> RosAction:
-    msg = RosAction()
-    msg.value = adapt_action_to_twist(action)
-    msg.name = action.actor_name
-    msg.type = action.actor_type
-    return msg
 
 
 def adapt_action_to_twist(action: Action) -> Union[Twist, None]:

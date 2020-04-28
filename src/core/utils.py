@@ -50,3 +50,11 @@ def count_grep_name(grep_str: str) -> int:
     processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
                                and 'test' not in line and len(line) > len(grep_str) and 'pycharm' not in line]
     return len(processed_output_string)
+
+
+def get_to_root_dir():
+    # assume you're in a subfolder in the codebase:
+    while 'ROOTDIR' not in os.listdir('.'):
+        os.chdir('..')
+        if os.getcwd() == '/':
+            raise FileNotFoundError

@@ -1,23 +1,17 @@
-from typing import List, Iterator
+from typing import List
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as functional
-from torch.nn import Parameter
 
-from src.ai.architectures.base_net import BaseNet
+from src.ai.architectures.base_net import BaseNet, GetItem
 from src.ai.architectures.components import FourLayerReLuEncoder, ThreeLayerControlDecoder
 
 
 class Net(BaseNet):
 
-    def __init__(self, output_sizes: List[List] = None, dropout: float = 0.0):
-        super().__init__(dropout=dropout)
-        self.input_sizes = [[3, 128, 128]]
-        self.output_sizes = output_sizes if output_sizes is not None else [[1]]
-
-        if self.dropout_rate:
-            self.dropout = nn.Dropout(p=self._config.dropout_rate)
+    def __init__(self, input_sizes: GetItem, output_sizes: GetItem, dropout: float = 0.0):
+        super().__init__(input_sizes=input_sizes, output_sizes=output_sizes)
+        self.dropout = nn.Dropout(p=dropout) if dropout != 0.0 else None
 
         #  To check: if elements gradients are set to zero correctly + to eval/train mode
         self.encoder = FourLayerReLuEncoder()
@@ -33,7 +27,7 @@ class Net(BaseNet):
             self.eval()
         x, = inputs
         x = self.encoder.forward(x)
-        if self.dropout_rate != 0:
+        if self.dropout is not None:
             x = self.dropout(x)
         x = self.decoder.forward(x)
-        return [x]  # List because auxiliary task outputs should be added in more complex architectures
+        return [x]

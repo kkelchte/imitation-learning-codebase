@@ -30,8 +30,6 @@ class ActorConfig(Config):
             del self.file
         if self.specs is None:
             del self.specs
-        if self.model_config is None:
-            del self.model_config
 
 
 class Actor:
