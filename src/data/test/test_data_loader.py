@@ -5,9 +5,9 @@ from copy import deepcopy
 
 import numpy as np
 
-from src.data.dataset_loader import DataLoader, DataLoaderConfig
+from src.data.data_loader import DataLoader, DataLoaderConfig
 from src.core.utils import get_filename_without_extension
-from src.data.dataset_saver import DataSaverConfig, DataSaver
+from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 from src.data.utils import arrange_run_according_timestamps, calculate_weights
 

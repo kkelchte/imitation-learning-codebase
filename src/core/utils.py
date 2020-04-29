@@ -3,7 +3,7 @@
 import os
 import subprocess
 from datetime import datetime
-
+import numpy as np
 
 def get_file_length(file_path: str) -> int:
     with open(file_path, 'r') as f:
@@ -58,3 +58,7 @@ def get_to_root_dir():
         os.chdir('..')
         if os.getcwd() == '/':
             raise FileNotFoundError
+
+
+def generate_random_image(size: tuple) -> np.ndarray:
+    return np.random.randint(0, 255, size=size, dtype=np.uint8)

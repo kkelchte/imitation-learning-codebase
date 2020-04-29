@@ -8,7 +8,7 @@ from dataclasses_json import dataclass_json
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_date_time_tag, get_filename_without_extension
-from src.data.dataset_loader import DataLoaderConfig, DataLoader
+from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file_from_dataset
 from src.core.data_types import Dataset
 from src.core.data_types import Experience, TerminationType

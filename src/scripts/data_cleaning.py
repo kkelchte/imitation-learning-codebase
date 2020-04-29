@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Parser, Config
-from src.data.dataset_saver import DataSaverConfig, DataSaver
+from src.data.data_saver import DataSaverConfig, DataSaver
 
 
 @dataclass_json

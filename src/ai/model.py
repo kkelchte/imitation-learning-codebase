@@ -16,14 +16,15 @@ from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 
 """
-Model contains of architectures (can be modular).
-Model ensures proper initialization and storage of model parameters.
+Model contains an open architecture field used by evaluator, trainer and experiment.
+Model serves as a wrapper over the architecture to:
+    - load and store checkpoint: [can be added to architecture in the end]
+    - initialize architecture
+    
 """
 
 
-class InitializationType(IntEnum):
-    Xavier = 0
-    Constant = 1
+
 
 
 @dataclass_json
@@ -73,58 +74,10 @@ class Model:
             "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
         )
 
-    def process_input(self, inputs: Union[List[torch.Tensor],
-                                          torch.Tensor,
-                                          List[np.ndarray],
-                                          np.ndarray]) -> torch.Tensor:
-        if not isinstance(inputs, list):
-            inputs = [inputs]
-        processed_inputs = []
-        for shape, data in zip(self._architecture.input_sizes, inputs):
-            assert (isinstance(data, np.ndarray) or isinstance(data, torch.Tensor))
-            if not isinstance(data, torch.Tensor):
-                data = torch.as_tensor(data, dtype=torch.float32)
-            if np.argmin(data.size()) != 0:  # assume H,W,C --> C, H, W
-                data = data.permute(2, 0, 1)
-            processed_inputs.append(data.reshape(shape).to(self._device))
-        return torch.stack(processed_inputs, dim=0)
+
 
     def forward(self, inputs: List[torch.Tensor], train: bool = False):
         return self._architecture.forward(inputs=self.process_input(inputs), train=train)
-
-    def initialize_architecture_weights(self, initialisation_type: InitializationType = 0):
-        torch.manual_seed(self._config.initialisation_seed)
-        for p in self.get_parameters():
-            if initialisation_type == InitializationType.Xavier:
-                if len(p.shape) == 1:
-                    nn.init.uniform_(p, a=0, b=1)
-                else:
-                    nn.init.xavier_uniform_(p)
-            elif initialisation_type == InitializationType.Constant:
-                nn.init.constant_(p, 0.001)
-            else:
-                raise NotImplementedError
-
-    def load_from_checkpoint(self, checkpoint_dir: str):
-        if len(os.listdir(checkpoint_dir)) == 0:
-            cprint(f'Could not find suitable checkpoint in {checkpoint_dir}', self._logger, MessageType.error)
-            time.sleep(0.5)
-            raise FileNotFoundError
-        if os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_best')):
-            self._architecture.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'checkpoint_best')))
-        elif os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_latest')):
-            self._architecture.load_state_dict(torch.load(os.path.join(checkpoint_dir, 'checkpoint_latest')))
-        else:
-            checkpoints = {int(f.split('_')[-1]):
-                           os.path.join(checkpoint_dir, f) for f in os.listdir(checkpoint_dir)}
-            latest_checkpoint = checkpoints[max(checkpoints.keys())]
-            self._architecture.load_state_dict(torch.load(latest_checkpoint))
-
-    def save_to_checkpoint(self, tag: str = ''):
-        filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'
-        torch.save(self._architecture.state_dict(), f'{self._checkpoint_directory}/{filename}')
-        torch.save(self._architecture.state_dict(), f'{self._checkpoint_directory}/checkpoint_latest')
-        cprint(f'stored {filename}', self._logger)
 
     def get_input_sizes(self):
         return self._architecture.input_sizes

@@ -12,7 +12,7 @@ from src.core.utils import get_date_time_tag, get_filename_without_extension
 from src.core.data_types import TerminationType
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
-from src.data.dataset_saver import DataSaverConfig, DataSaver
+from src.data.data_saver import DataSaverConfig, DataSaver
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.common.environment_factory import EnvironmentFactory
 

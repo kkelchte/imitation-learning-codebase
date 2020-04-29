@@ -1,6 +1,6 @@
 import numpy as np
 
-from src.data.dataset_saver import DataSaver
+from src.data.data_saver import DataSaver
 from src.core.data_types import Experience, TerminationType
 
 
