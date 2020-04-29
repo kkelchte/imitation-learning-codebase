@@ -71,7 +71,8 @@ python2_ros_ws/devel/setup.bash: $(wildcard python2_ros_ws/src/**/*)
 #################
 
 test_suite: test/test_*.py
-	cd ${HOME} && rm -r suite_output_test && mkdir suite_output_test &&\
-	for f in $^ ; do python3.7 src/sim/ros/$${f} > suite_output_$${f} 2>&1; sleep 5; done && \
-	cd src/sim/ros
+	cd ${HOME} && date &&\
+	if [ -d suite_output_test ] ; then rm -r suite_output_test; fi && mkdir suite_output_test &&\
+	for f in $^ ; do python3.7 src/sim/ros/$${f} > suite_output_$${f} 2>&1; sleep 5; \
+	tail suite_output_$${f}; done && cd src/sim/ros && date
 

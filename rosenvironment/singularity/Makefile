@@ -9,7 +9,7 @@ WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
 
 
 shell-writable-image-linux:
-	sudo singularity shell --bind .:/mnt --writable writable_image
+	sudo singularity shell --bind ../..:/mnt --writable writable_image
 
 create-writable-image-linux:
 	sudo singularity build --sandbox writable_image image-${version}.sif

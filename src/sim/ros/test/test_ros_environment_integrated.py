@@ -22,7 +22,7 @@ config_dict = {
             "sensor/odometry"
         ],
         "observation": "forward_camera",
-        "visible_xterm": True,
+        "visible_xterm": False,
         "step_rate_fps": 2,
         "ros_launch_config": {
           "random_seed": 123,
@@ -74,8 +74,8 @@ class TestRosIntegrated(unittest.TestCase):
                 count += 1
                 experience = self._environment.step()
                 self.assertNotEqual(experience.observation, self._environment._default_observation)
-                self.assertNotEqual(np.sum(experience.action.value),
-                                    np.sum(self._environment._default_action.value))
+                self.assertNotEqual(len(experience.action.value),
+                                    len(self._environment._default_action.value))
             self.assertTrue(np.sum(experience.info['odometry'][:3]) > 0.5)
             self.assertEqual(experience.done, TerminationType.Success)
 

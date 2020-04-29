@@ -47,6 +47,7 @@ apt update
 requirements /
 
 %post
+apt install -y -q python-pydot python-pydot-ng graphviz xdg-utils firefox
 python3.7 -m pip install --user --upgrade pip
 python3.7 -m pip install -r /requirements
 
