@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 import unittest
 
 import numpy as np
@@ -68,10 +69,13 @@ class TestRosIntegrated(unittest.TestCase):
                 experience = self._environment.step()
             self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
             self.assertTrue(np.sum(experience.info['odometry'][:3]) < 0.2)
+            count = 0
             while experience.done == TerminationType.NotDone:
+                count += 1
                 experience = self._environment.step()
-                self.assertTrue(experience.observation != self._environment._default_observation)
-                self.assertTrue(experience.action != self._environment._default_action)
+                self.assertNotEqual(experience.observation, self._environment._default_observation)
+                self.assertNotEqual(np.sum(experience.action.value),
+                                    np.sum(self._environment._default_action.value))
             self.assertTrue(np.sum(experience.info['odometry'][:3]) > 0.5)
             self.assertEqual(experience.done, TerminationType.Success)
 

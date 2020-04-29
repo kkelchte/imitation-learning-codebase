@@ -53,7 +53,7 @@ class RosConfig(Config):
     Configuration specific for ROS environment,
     specified here to avoid circular dependencies environment <> ros_environment
     """
-    observation: str = 'forward_camera'
+    observation: str = ''
     # sensor/sensor_name_0, sensor/sensor_name_1, actor/actor_name_0, ..., current_waypoint, supervised_action
     info: List[str] = None
     step_rate_fps: float = 10.

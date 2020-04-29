@@ -14,7 +14,7 @@ from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.dataset_saver import DataSaverConfig, DataSaver
 from src.sim.common.environment import EnvironmentConfig
-from src.sim.environment_factory import EnvironmentFactory
+from src.sim.common.environment_factory import EnvironmentFactory
 
 """Script for collecting dataset / evaluating a model in simulated or real environment.
 
@@ -82,6 +82,7 @@ class Experiment:
     def _run_episodes(self):
         count_episodes = 0
         while count_episodes < self._config.number_of_episodes or self._config.number_of_episodes == -1:
+            cprint(f'running episode {count_episodes}', self._logger)
             experience = self._environment.reset()
             while experience.done == TerminationType.Unknown:
                 experience = self._environment.step()

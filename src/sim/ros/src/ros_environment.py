@@ -2,6 +2,7 @@
 import os
 import signal
 import sys
+from copy import deepcopy
 from typing import Tuple, Union, List
 
 import numpy as np
@@ -59,7 +60,7 @@ class RosEnvironment(Environment):
         self._step = 0
         self._current_experience = None
         self._default_observation = np.zeros((0,), dtype=np.uint8)
-        self._default_action = np.ones((0,), dtype=np.float32)
+        self._default_action = Action(actor_name='default', value=np.ones((0,), dtype=np.float32))
         self._default_reward = np.ones((0,), dtype=np.float32)
         self._default_sensor_value = np.ones((0,), dtype=np.float32)
         self._info = {}
@@ -88,7 +89,8 @@ class RosEnvironment(Environment):
 
         # Subscribe to observation
         self._observation = self._default_observation
-        self._subscribe_observation(self._config.ros_config.observation)
+        if self._config.ros_config.observation != '':
+            self._subscribe_observation(self._config.ros_config.observation)
 
         # Subscribe to action
         self._action = self._default_action
@@ -119,11 +121,12 @@ class RosEnvironment(Environment):
             while self.fsm_state is None:
                 self._run_shortly()
 
-        # assert dnn model has started properly
-        if 'dnn_actor' in [conf.name for conf in self._config.ros_config.actor_configs]:
-            cprint('Wait till dnn_actor has started properly.', self._logger)
-            while self._action == self._default_action:
+        # assert observations and actions are received:
+        if self._config.ros_config.observation != '':
+            cprint('Wait till observation sensor has started properly.', self._logger)
+            while np.sum(self._observation) == np.sum(self._default_observation):
                 self._run_shortly()
+        cprint('ready', self._logger)
 
     def _subscribe_observation(self, sensor: str) -> None:
         available_sensor_list = rospy.get_param('/robot/sensors', [])
@@ -270,13 +273,13 @@ class RosEnvironment(Environment):
 
     def _update_current_experience(self):
         self._current_experience = Experience(
-            done=self._terminal_state,
-            observation=self._observation,
-            action=self._action,
-            reward=self._reward,
+            done=deepcopy(self._terminal_state),
+            observation=deepcopy(self._observation),
+            action=deepcopy(self._action),
+            reward=deepcopy(self._reward),
             time_stamp=int(rospy.get_time() * 10 ** 3),
             info={
-                field_name: self._info[field_name] for field_name in self._info.keys()
+                field_name: deepcopy(self._info[field_name]) for field_name in self._info.keys()
             }
         )
 

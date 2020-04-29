@@ -25,12 +25,12 @@ model_evaluation_config = {
             "sensor/odometry"
         ],
         "observation": "sensor/forward_camera",
-        "visible_xterm": False,
+        "visible_xterm": True,
         "step_rate_fps": 2,
         "ros_launch_config": {
           "random_seed": 123,
-          "robot_name": "drone_sim",
-          "fsm_config": "takeoff_run",  # file with fsm params loaded from config/fsm
+          "robot_name": "turtlebot_sim",
+          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,

@@ -133,7 +133,7 @@ dmypy.json
 rosenvironment/singularity/cu*
 rosenvironment/singularity/.*
 rosenvironment/singularity/*.sif
-/singularity/writable_image
+rosenvironment/singularity/writable_image
 
 # Pycharm files
 .idea

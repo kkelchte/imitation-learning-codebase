@@ -30,3 +30,4 @@ empy
 tqdm
 h5py
 tablib
+graphviz

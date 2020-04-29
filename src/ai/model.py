@@ -76,16 +76,18 @@ class Model:
     def process_input(self, inputs: Union[List[torch.Tensor],
                                           torch.Tensor,
                                           List[np.ndarray],
-                                          np.ndarray]) -> List[torch.Tensor]:
-        if isinstance(inputs, list):
-            processed_inputs = []
-            for shape, data in zip(self._architecture.input_sizes, inputs):
-                if not isinstance(data, torch.Tensor):
-                    data = torch.as_tensor(data, dtype=torch.float32)
-                processed_inputs.append(data.reshape(shape).to(self._device))
-            return processed_inputs
-        else:
-            return [torch.as_tensor(inputs, dtype=torch.float32).reshape(self._architecture.input_sizes[0])]
+                                          np.ndarray]) -> torch.Tensor:
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+        processed_inputs = []
+        for shape, data in zip(self._architecture.input_sizes, inputs):
+            assert (isinstance(data, np.ndarray) or isinstance(data, torch.Tensor))
+            if not isinstance(data, torch.Tensor):
+                data = torch.as_tensor(data, dtype=torch.float32)
+            if np.argmin(data.size()) != 0:  # assume H,W,C --> C, H, W
+                data = data.permute(2, 0, 1)
+            processed_inputs.append(data.reshape(shape).to(self._device))
+        return torch.stack(processed_inputs, dim=0)
 
     def forward(self, inputs: List[torch.Tensor], train: bool = False):
         return self._architecture.forward(inputs=self.process_input(inputs), train=train)

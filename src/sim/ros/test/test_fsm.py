@@ -8,7 +8,7 @@ import rospy
 from dataclasses import dataclass
 
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Empty  # Do not remove!
+from std_msgs.msg import Empty, String  # Do not remove!
 from sensor_msgs.msg import LaserScan  # Do not remove!
 
 from src.core.utils import get_filename_without_extension
