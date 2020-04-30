@@ -53,9 +53,17 @@ class TestRosModelEvaluation(unittest.TestCase):
 
     def test_continuous_stochastic_pendulum(self):
         experiment_config["environment_config"]["gym_config"]["world_name"] = "Pendulum-v0"
+        experiment_config["architecture_config"]["architecture"] = "pendulum_3_1c_stochastic"
         self.experiment = Experiment(ExperimentConfig().create(config_dict=experiment_config))
         self.experiment.run()
-        # TODO add raw_data assertions
+        raw_data_dirs = [os.path.join(self.output_dir, 'raw_data', d)
+                         for d in os.listdir(os.path.join(self.output_dir, 'raw_data'))]
+        self.assertEqual(len(raw_data_dirs), 1)
+        run_dir = raw_data_dirs[0]
+        with open(os.path.join(run_dir, 'done.data'), 'r') as f:
+            self.assertEqual(len(f.readlines()),
+                             experiment_config["number_of_episodes"] *
+                             experiment_config["environment_config"]["max_number_of_steps"])
         self.experiment.shutdown()
 
     def tearDown(self) -> None:

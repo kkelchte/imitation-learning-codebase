@@ -45,6 +45,7 @@ class ArchitectureConfig(Config):
     weight_decay: Union[float, str] = 'default'
     dropout: Union[float, str] = 'default'
     dtype: str = 'default'
+    log_std: Union[float, str] = 'default'
 
     def __post_init__(self):
         if self.load_checkpoint_dir is None:
