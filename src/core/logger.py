@@ -20,7 +20,7 @@ def get_logger(name: str,
     # add file handler
     if output_path != '':
         os.makedirs(os.path.join(output_path, 'log_files'), exist_ok=True)
-        output_file = os.path.join(output_path, 'log_files', f'{get_date_time_tag()}_{name}')
+        output_file = os.path.join(output_path, 'log_files', f'{get_date_time_tag()}_{name}.log')
     else:
         output_file = f'/tmp/{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}.log'
     f_handler = logging.FileHandler(output_file)

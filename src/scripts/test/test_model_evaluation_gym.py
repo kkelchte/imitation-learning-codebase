@@ -16,38 +16,15 @@ experiment_config = {
         "initialisation_type": InitializationType.Xavier,
         "initialisation_seed": 0,
         "device": 'cpu'},
-    "tensorboard": False,
+    "tensorboard": True,
     "environment_config": {
-      "factory_key": 0,
-      "max_number_of_steps": 10,
-      "ros_config": {
-        "info": [
-            "current_waypoint",
-            "sensor/odometry"
-        ],
-        "observation": "sensor/forward_camera",
-        "visible_xterm": True,
-        "step_rate_fps": 2,
-        "ros_launch_config": {
-          "random_seed": 123,
-          "robot_name": "turtlebot_sim",
-          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
-          "fsm": True,
-          "control_mapping": True,
-          "waypoint_indicator": True,
-          "control_mapping_config": "evaluation",
-          "world_name": "cube_world",
-          "x_pos": 0.0,
-          "y_pos": 0.0,
-          "z_pos": 0.0,
-          "yaw_or": 1.57,
-          "gazebo": True,
+        "factory_key": 1,
+        "max_number_of_steps": 10,
+        "gym_config": {
+            "random_seed": 123,
+            "world_name": None,
+            "render": False,
         },
-        "actor_configs": [{
-              "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert.yml"
-            }],
-      },
     },
 }
 
@@ -57,9 +34,25 @@ class TestRosModelEvaluation(unittest.TestCase):
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
-
-    def test_ros_with_model_evaluation(self):
         experiment_config['output_path'] = self.output_dir
+
+    def test_discrete_stochastic_cart_pole(self):
+        experiment_config["environment_config"]["gym_config"]["world_name"] = "CartPole-v0"
+        experiment_config["architecture_config"]["architecture"] = "cart_pole_4_2d_stochastic"
+        self.experiment = Experiment(ExperimentConfig().create(config_dict=experiment_config))
+        self.experiment.run()
+        raw_data_dirs = [os.path.join(self.output_dir, 'raw_data', d)
+                         for d in os.listdir(os.path.join(self.output_dir, 'raw_data'))]
+        self.assertEqual(len(raw_data_dirs), 1)
+        run_dir = raw_data_dirs[0]
+        with open(os.path.join(run_dir, 'done.data'), 'r') as f:
+            self.assertEqual(len(f.readlines()),
+                             experiment_config["number_of_episodes"] *
+                             experiment_config["environment_config"]["max_number_of_steps"])
+        self.experiment.shutdown()
+
+    def test_continuous_stochastic_pendulum(self):
+        experiment_config["environment_config"]["gym_config"]["world_name"] = "Pendulum-v0"
         self.experiment = Experiment(ExperimentConfig().create(config_dict=experiment_config))
         self.experiment.run()
         # TODO add raw_data assertions

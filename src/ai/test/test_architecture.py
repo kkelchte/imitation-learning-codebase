@@ -3,8 +3,11 @@ import shutil
 import unittest
 
 import torch
+import torch.nn as nn
+import numpy as np
 
 from src.ai.base_net import InitializationType, ArchitectureConfig, BaseNet
+from src.ai.utils import mlp_creator
 from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
 from src.ai.architectures import *  # Do not remove
 
@@ -25,7 +28,7 @@ class ArchitectureTest(unittest.TestCase):
         base_config['output_path'] = self.output_dir
 
     def test_base_net(self):
-        network = BaseNet(config=ArchitectureConfig().create(config_dict=base_config))
+        network = BaseNet(config=ArchitectureConfig().create(config_dict=base_config), quiet=False)
         msg = 'this test rocks.'
         network.save_to_checkpoint(extra_info={'msg': msg})
         network.load_from_checkpoint(os.path.join(self.output_dir, 'torch_checkpoints'))
@@ -83,6 +86,16 @@ class ArchitectureTest(unittest.TestCase):
         # try batch channel last
         self.assertEqual(network.forward(generate_random_image(size=(10, 128, 128, 3))).shape[1:],
                          network.output_size)
+
+    def test_mlp_creator(self):
+        network = mlp_creator(sizes=[4, 10, 10, 1],
+                              activation=nn.ReLU,
+                              output_activation=None)
+        self.assertEqual(len(network), 5)
+        count = 0
+        for p in network.parameters():
+            count += np.prod(p.shape)
+        self.assertEqual(count, 170)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

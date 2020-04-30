@@ -30,6 +30,8 @@ def store_image(data: np.ndarray, file_name: str) -> None:
         data = (data * 255).astype(np.uint8)
     else:
         assert data.dtype == np.uint8
+    if np.argmin(data.shape) == 0 and len(data.shape) == 3:  # got a channel first image
+        data = data.swapaxes(0, 1).swapaxes(1, 2)
     im = Image.fromarray(data)
     im.save(file_name)  # await
 
@@ -149,6 +151,7 @@ def load_run(directory: str, arrange_according_to_timestamp: bool = False) -> Li
 
 
 def calculate_weights(data: List[float], number_of_bins: int = 3) -> List[float]:
+    number_of_bins = min(len(set(data)), number_of_bins)
     max_steps = len(data)
     x_min = min(data)
     x_max = max(data)
@@ -199,10 +202,10 @@ def balance_weights_over_actions(dataset: Dataset) -> List[float]:
         weights = {}
         for dim in range(action_dimension[0]):
             weights[dim] = calculate_weights(data=[float(a[dim]) for a in actions])
-        multiply_over_dimensions = [
-            np.prod([weights[dim][index] for dim in range(action_dimension[0])]) for index in range(len(actions))
+        mean_over_dimensions = [
+            np.mean([weights[dim][index] for dim in range(action_dimension[0])]) for index in range(len(actions))
         ]
-        return [float(w)/sum(multiply_over_dimensions) for w in multiply_over_dimensions]
+        return [float(w)/sum(mean_over_dimensions) for w in mean_over_dimensions]
 
 
 def get_ideal_number_of_bins(data: List[float]) -> int:

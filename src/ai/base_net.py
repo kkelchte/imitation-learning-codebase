@@ -13,6 +13,7 @@ import torch.nn as nn
 from typing_extensions import runtime_checkable, Protocol
 
 from src.core.config_loader import Config
+from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 
@@ -52,16 +53,18 @@ class ArchitectureConfig(Config):
 
 class BaseNet(nn.Module):
 
-    def __init__(self, config: ArchitectureConfig):
+    def __init__(self, config: ArchitectureConfig, quiet: bool = True):
         super().__init__()
         self.input_size = None
         self.output_size = None
+        self.continuous_output = True
         self._config = config
         self.dtype = torch.float32 if config.dtype == 'default' else eval(f"torch.{config.dtype}")
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
                                   quite=False)
-        cprint(f'Started.', self._logger)
+        if not quiet:
+            cprint(f'Started.', self._logger)
         self._checkpoint_output_directory = os.path.join(self._config.output_path, 'torch_checkpoints')
         os.makedirs(self._checkpoint_output_directory, exist_ok=True)
 
@@ -135,7 +138,7 @@ class BaseNet(nn.Module):
         )
         self.to(self._device)
 
-    def forward(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float], train: bool):
+    def forward(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float], train: bool) -> torch.Tensor:
         # adjust gradient saving
         if train:
             self.train()
@@ -143,8 +146,10 @@ class BaseNet(nn.Module):
             self.eval()
         # preprocess inputs
         if not isinstance(inputs, torch.Tensor):
-            inputs = torch.as_tensor(inputs, dtype=self.dtype)
-
+            try:
+                inputs = torch.as_tensor(inputs, dtype=self.dtype)
+            except ValueError:
+                inputs = torch.stack(inputs).type(self.dtype)
         # swap H, W, C --> C, H, W
         if torch.argmin(torch.as_tensor(inputs.size())) != 0 \
                 and self.input_size[0] == inputs.size()[-1]\
@@ -160,5 +165,24 @@ class BaseNet(nn.Module):
         # add batch dimension if required
         if len(self.input_size) == len(inputs.size()):
             inputs = inputs.unsqueeze(0)
+
+        # put inputs on device
+        inputs.to(self._device)
+
         return inputs
 
+    def get_action(self, inputs, train: bool = False) -> Action:
+        raise NotImplementedError
+
+    def get_device(self) -> torch.device:
+        return self._device
+
+    def to_device(self, device: torch.device) -> None:
+        self.to(device)
+        self._device = device
+
+    def count_parameters(self) -> int:
+        count = 0
+        for p in self.parameters():
+            count += np.prod(p.shape)
+        return count

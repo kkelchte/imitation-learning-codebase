@@ -5,6 +5,8 @@ import torch.nn as nn
 
 from src.ai.base_net import BaseNet, ArchitectureConfig
 from src.ai.utils import mlp_creator
+from src.core.data_types import Action
+from src.core.utils import get_filename_without_extension
 
 """
 Tiny four encoding and three decoding layers with dropout.
@@ -40,3 +42,9 @@ class Net(BaseNet):
             x = self.dropout(x)
         x = self.decoder(x)
         return x
+
+    def get_action(self, inputs, train: bool = False) -> Action:
+        output = self.forward(inputs, train=train)
+        return Action(actor_name=get_filename_without_extension(__file__),
+                      value=output.data)
+

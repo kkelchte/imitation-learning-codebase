@@ -7,6 +7,12 @@ import torch
 from dataclasses import dataclass
 
 
+@dataclass
+class Distribution:
+    mean: float = 0
+    std: float = 0
+
+
 class ProcessState(IntEnum):
     Running = 0
     Terminated = 1

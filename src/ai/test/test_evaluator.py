@@ -2,14 +2,14 @@ import os
 import shutil
 import unittest
 
-import torch
+import numpy as np
 
-from src.ai.base_net import InitializationType, ArchitectureConfig, BaseNet
+from src.ai.base_net import InitializationType, ArchitectureConfig
 from src.ai.evaluator import Evaluator, EvaluatorConfig
-from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
+from src.ai.utils import generate_random_dataset_in_raw_data
+from src.core.utils import get_to_root_dir, get_filename_without_extension
 from src.ai.architectures import *  # Do not remove
-from src.data.data_saver import DataSaverConfig, DataSaver
-from src.data.test.common_utils import generate_dummy_dataset
+from src.data.data_loader import DataLoaderConfig, DataLoader
 
 evaluator_base_config = {
     "data_loader_config": {},
@@ -35,26 +35,25 @@ class EvaluatorTest(unittest.TestCase):
         architecture_base_config['output_path'] = self.output_dir
 
     def test_evaluate_model_on_dataset(self):
-        # generate network
-        network = BaseNet(config=ArchitectureConfig().create(config_dict=architecture_base_config))
+        network = eval(architecture_base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=architecture_base_config)
+        )
+        info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
+                                                   input_size=network.input_size,
+                                                   output_size=network.output_size,
+                                                   continuous=network.continuous_output)
 
-        # generate dummy dataset
-        generate_random_dataset(output_dir=self.output_dir,
-                                input_size=network.input_size,
-                                output_size=network.output_size)
-        config_dict = {
-            'output_path': self.output_dir,
-            'store_hdf5': True
+        # generate evaluator with correct data-loader
+        evaluator_base_config['data_loader_config'] = {
+            'data_directories': info['episode_directories'],
+            'batch_size': 5
         }
-        config = DataSaverConfig().create(config_dict=config_dict)
-        self.data_saver = DataSaver(config=config)
-        self.info = generate_dummy_dataset(self.data_saver, num_runs=20)
-
-        # generate evaluator
         evaluator = Evaluator(config=EvaluatorConfig().create(config_dict=evaluator_base_config),
                               network=network)
-
         # evaluate
+        error_distribution = evaluator.evaluate()
+        print(f'error_distribution: {error_distribution}')
+        self.assertFalse(np.isnan(error_distribution.mean))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

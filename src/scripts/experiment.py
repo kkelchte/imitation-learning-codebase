@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 from torch.utils.tensorboard import SummaryWriter
 
+from src.ai.base_net import ArchitectureConfig
 from src.ai.evaluator import EvaluatorConfig, Evaluator
-from src.ai.model import ModelConfig, Model
 from src.ai.trainer import TrainerConfig, Trainer
+from src.ai.architectures import *  # Do not remove
 from src.core.utils import get_date_time_tag, get_filename_without_extension
-from src.core.data_types import TerminationType
+from src.core.data_types import TerminationType, Distribution, Action
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
@@ -29,10 +30,9 @@ class ExperimentConfig(Config):
     number_of_episodes: int = -1
     environment_config: EnvironmentConfig = None
     data_saver_config: DataSaverConfig = None
-    model_config: ModelConfig = None
+    architecture_config: ArchitectureConfig = None
     trainer_config: TrainerConfig = None
     evaluator_config: EvaluatorConfig = None
-    generate_new_output_path: bool = False  # is overwritten by dag file to predefine output path.
     tensorboard: bool = False
 
     def __post_init__(self):
@@ -41,21 +41,12 @@ class ExperimentConfig(Config):
             del self.environment_config
         if self.data_saver_config is None:
             del self.data_saver_config
-        if self.model_config is None:
-            del self.model_config
+        if self.architecture_config is None:
+            del self.architecture_config
         if self.trainer_config is None:
             del self.trainer_config
         if self.evaluator_config is None:
             del self.evaluator_config
-
-    def iterative_add_output_path(self, output_path: str) -> None:
-        # assuming output_path is standard ${experiment_name}
-        if self.generate_new_output_path:
-            self.output_path = os.path.join(output_path, 'models',
-                                            f'{get_date_time_tag()}_{self.model_config.architecture}')
-        for key, value in self.__dict__.items():
-            if isinstance(value, Config):
-                value.iterative_add_output_path(self.output_path)
 
 
 class Experiment:
@@ -71,11 +62,11 @@ class Experiment:
             if self._config.data_saver_config is not None else None
         self._environment = EnvironmentFactory().create(config.environment_config) \
             if self._config.environment_config is not None else None
-        self._model = Model(config=self._config.model_config) \
-            if self._config.model_config is not None else None
-        self._trainer = Trainer(config=self._config.trainer_config, model=self._model) \
+        self._net = eval(config.architecture_config.architecture).Net(config=config.architecture_config) \
+            if self._config.architecture_config is not None else None
+        self._trainer = Trainer(config=self._config.trainer_config, network=self._net) \
             if self._config.trainer_config is not None else None
-        self._evaluator = Evaluator(config=self._config.evaluator_config, model=self._model) \
+        self._evaluator = Evaluator(config=self._config.evaluator_config, network=self._net) \
             if self._config.evaluator_config is not None else None
         cprint(f'Initiated.', self._logger)
 
@@ -87,17 +78,21 @@ class Experiment:
             while experience.done == TerminationType.Unknown:
                 experience = self._environment.step()
             while experience.done == TerminationType.NotDone:
-                #  action = None
-                action = self._model.forward(experience.observation) if self._model is not None else None
+                action = self._net.get_action(inputs=experience.observation,
+                                              train=False) if self._net is not None else None
                 experience = self._environment.step(action)  # action is not used for ros-gazebo environments off-policy
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
-            cprint(f'environment is terminated with {experience.terminal.name}', self._logger)
-            if self._data_saver is not None:
-                self._data_saver.save(experience=experience)
+            cprint(f'environment is terminated with {experience.done.name}', self._logger)
             count_episodes += 1
         if self._data_saver is not None:
             self._data_saver.create_train_validation_hdf5_files()
+
+    def _log_loss(self, name: str, data: Distribution) -> str:
+        if self._writer is not None:
+            self._writer.add_scalar(f"{name} mean", data.mean, global_step=self._net.global_step)
+            self._writer.add_scalar(f"{name} std", data.std, global_step=self._net.global_step)
+        return f' {name} {data.mean: 0.3e} [{data.std: 0.3e}]'
 
     def run(self):
         for epoch in range(self._config.number_of_epochs):
@@ -105,19 +100,17 @@ class Experiment:
             if self._environment is not None:
                 self._run_episodes()
             if self._trainer is not None:
-                training_error = self._trainer.train(epoch=epoch)  # include checkpoint saving.
-                self._writer.add_scalar('training error', training_error, global_step=epoch)
-                msg += f' training error: {training_error}'
+                training_loss_distribution = self._trainer.train(epoch=epoch)  # include checkpoint saving.
+                msg += self._log_loss('training', training_loss_distribution)
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
-                validation_error = self._evaluator.evaluate(save_checkpoints=self._trainer is not None)
-                self._writer.add_scalar('validation error', validation_error, global_step=epoch)
-                msg += f' validation error: {validation_error}'
+                validation_error_distribution = self._evaluator.evaluate(save_checkpoints=self._trainer is not None)
+                msg += self._log_loss('validation', validation_error_distribution)
             cprint(msg, self._logger)
-        if self._writer is not None:
-            self._writer.close()
         cprint(f'Finished.', self._logger)
 
     def shutdown(self):
+        if self._writer is not None:
+            self._writer.close()
         if self._environment is not None:
             result = self._environment.remove()
             cprint(f'Terminated successfully? {result}', self._logger,
@@ -130,5 +123,3 @@ if __name__ == "__main__":
     experiment = Experiment(experiment_config)
     experiment.run()
     experiment.shutdown()
-
-

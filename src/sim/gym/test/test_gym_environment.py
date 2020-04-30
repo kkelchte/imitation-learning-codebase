@@ -20,7 +20,6 @@ class TestGymEnvironment(unittest.TestCase):
             'output_path': self.output_dir,
             'factory_key': EnvironmentType.Gym,
             'max_number_of_steps': 200,
-            'actor_config': ActorConfig(),
             'ros_config': None,
             'gym_config': {
                 'random_seed': 123,

@@ -7,8 +7,8 @@ from dataclasses_json import dataclass_json
 from tqdm import tqdm
 
 from src.ai.base_net import BaseNet
-from src.ai.model import Model
 from src.core.config_loader import Config
+from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 from src.data.data_loader import DataLoaderConfig, DataLoader
@@ -40,7 +40,9 @@ class Evaluator:
         if not quiet:
             cprint(f'Started.', self._logger)
 
-        self._device = torch.device(self._config.device)
+        self._device = torch.device(
+            "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
+        )
         self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._device)')
 
         self._data_loader.load_dataset()
@@ -50,24 +52,25 @@ class Evaluator:
 
     def put_model_on_device(self):
         self._original_model_device = self._net.get_device()
-        self._net.set_device(self._config.device)
+        self._net.to_device(torch.device(self._config.device))
 
     def put_model_back_to_original_device(self):
-        self._net.set_device(self._original_model_device)
+        self._net.to_device(self._original_model_device)
 
-    def evaluate(self, save_checkpoints: bool = False) -> float:
+    def evaluate(self, save_checkpoints: bool = False) -> Distribution:
         self.put_model_on_device()
         total_error = []
-        for run in tqdm(self._data_loader.get_data(), ascii=True, desc='evaluate'):
-            model_outputs = self._net.forward(inputs=run.get_input())
-            for output_index, output in enumerate(model_outputs):
-                targets = run.get_output()[output_index].to(self._config.device)
-                error = self._criterion(output, targets).mean()
-                total_error.append(error)
-                cprint(f'{list(run.outputs.keys())[output_index]}: {error} {self._config.criterion}.', self._logger)
-        average_error = float(torch.as_tensor(total_error).mean())
-        if save_checkpoints and average_error < self._minimum_error:
+        for batch in tqdm(self._data_loader.get_data_batch(), ascii=True, desc='evaluate'):
+            predictions = self._net.forward(batch.observations)
+            error = self._criterion(predictions,
+                                    torch.as_tensor(batch.actions, dtype=self._net.dtype).to(self._device)).mean()
+            total_error.append(error)
+        error_distribution = Distribution(
+                mean=float(torch.as_tensor(total_error).mean()),
+                std=float(torch.as_tensor(total_error).std())
+        )
+        if save_checkpoints and error_distribution.mean < self._minimum_error:
             self._net.save_to_checkpoint(tag='best')
-            self._minimum_error = average_error
+            self._minimum_error = error_distribution.mean
         self.put_model_back_to_original_device()
-        return average_error
+        return error_distribution

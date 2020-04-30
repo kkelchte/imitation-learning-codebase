@@ -24,6 +24,7 @@ class DataLoaderConfig(Config):
     hdf5_file: str = ''
     data_sampling_seed: int = 123
     balance_over_actions: bool = False
+    batch_size: int = 64
 
     def post_init(self):  # add default options
         if self.data_directories is None:
@@ -77,7 +78,22 @@ class DataLoader:
     def get_dataset(self) -> Dataset:
         return self._dataset
 
-    def sample_shuffled_batch(self, batch_size: int = 64, max_number_of_batches: int = 1000) \
+    def get_data_batch(self) -> Generator[Dataset, None, None]:
+        index = 0
+        while index < len(self._dataset):
+            batch = Dataset()
+            batch.observations = self._dataset.observations[index:min(index + self._config.batch_size,
+                                                                      len(self._dataset.observations))]
+            batch.actions = self._dataset.actions[index:min(index + self._config.batch_size,
+                                                            len(self._dataset.actions))]
+            batch.done = self._dataset.done[index:min(index + self._config.batch_size,
+                                                      len(self._dataset.done))]
+            batch.rewards = self._dataset.rewards[index:min(index + self._config.batch_size,
+                                                            len(self._dataset.done))]
+            index += self._config.batch_size
+            yield batch
+
+    def sample_shuffled_batch(self, max_number_of_batches: int = 1000) \
             -> Generator[Dataset, None, None]:
         """
         randomly shuffle data samples in runs in dataset and provide them as ready run objects
@@ -92,10 +108,10 @@ class DataLoader:
             cprint(msg, self._logger, msg_type=MessageType.error)
             raise IOError(msg)
         # Calculate sampling weights according to:
-        number_of_batches = min(max_number_of_batches, int(len(self._dataset) / batch_size))
+        number_of_batches = min(max_number_of_batches, int(len(self._dataset) / self._config.batch_size))
         for batch_index in range(number_of_batches):
             batch = Dataset()
-            for sample in range(batch_size):
+            for sample in range(self._config.batch_size):
                 sample_index = int(np.random.choice(list(range(len(self._dataset))),
                                                     p=self._probabilities
                                                     if len(self._probabilities) != 0 else None))

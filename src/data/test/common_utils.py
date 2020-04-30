@@ -4,7 +4,10 @@ from src.data.data_saver import DataSaver
 from src.core.data_types import Experience, TerminationType
 
 
-def experience_generator():
+def experience_generator(input_size: tuple = (100, 100, 3),
+                         output_size: tuple = (1,),
+                         continuous: bool = True,
+                         fixed_output_value: float = None):
     starting = 5
     running = np.random.randint(10, 12)
     ending = 1
@@ -17,28 +20,44 @@ def experience_generator():
         else:
             experience.done = TerminationType.Success
         experience.time_stamp = step
-        experience.observation = np.random.randint(0, 255, size=(100, 100, 3), dtype=np.uint8)
-        # experience.action = np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1]))  # action as unbalanced float
-        experience.action = np.asarray([np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1])),
-                                        np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1])),
-                                        0])  # action as array
+        experience.observation = np.random.randint(0, 255, size=input_size, dtype=np.uint8)
+        if fixed_output_value is not None:
+            assert len(output_size) == 1
+            experience.action = np.asarray([fixed_output_value] * output_size[0])
+        else:
+            if continuous:
+                experience.action = np.random.random(output_size)
+            else:
+                assert len(output_size) == 1
+                experience.action = np.asarray([np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1]))] * output_size[0])
         experience.reward = np.random.normal()
         yield experience
 
 
-def generate_dummy_dataset(data_saver: DataSaver, num_runs: int = 10) -> dict:
+def generate_dummy_dataset(data_saver: DataSaver,
+                           num_runs: int = 10,
+                           input_size: tuple = (100, 100, 3),
+                           output_size: tuple = (1,),
+                           continuous: bool = True,
+                           fixed_output_value: float = None,
+                           store_hdf5: bool = False) -> dict:
     episode_lengths = []
     episode_dirs = []
     for run in range(num_runs):
         episode_length = 0
         if run > 0:
             data_saver.update_saving_directory()
-        for count, experience in enumerate(experience_generator()):
+        for count, experience in enumerate(experience_generator(input_size=input_size,
+                                                                output_size=output_size,
+                                                                continuous=continuous,
+                                                                fixed_output_value=fixed_output_value)):
             if experience.done != TerminationType.Unknown:
                 episode_length += 1
             data_saver.save(experience=experience)
         episode_lengths.append(episode_length)
         episode_dirs.append(data_saver.get_saving_directory())
+    if store_hdf5:
+        data_saver.create_train_validation_hdf5_files()
     return {
         'episode_lengths': episode_lengths,
         'episode_directories': episode_dirs
