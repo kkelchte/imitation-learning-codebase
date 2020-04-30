@@ -173,3 +173,4 @@ test_dir/
 *CMakeLists.txt*
 /src/ai/algorithms/results
 /test_output
+/suite_output_test
