@@ -8,21 +8,12 @@ from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 
 
-def process_input(self, inputs: Union[List[torch.Tensor],
-                                      torch.Tensor,
-                                      List[np.ndarray],
-                                      np.ndarray]) -> torch.Tensor:
-    if not isinstance(inputs, list):
-        inputs = [inputs]
-    processed_inputs = []
-    for shape, data in zip(self._architecture.input_sizes, inputs):
-        assert (isinstance(data, np.ndarray) or isinstance(data, torch.Tensor))
-        if not isinstance(data, torch.Tensor):
-            data = torch.as_tensor(data, dtype=torch.float32)
-        if np.argmin(data.size()) != 0:  # assume H,W,C --> C, H, W
-            data = data.permute(2, 0, 1)
-        processed_inputs.append(data.reshape(shape).to(self._device))
-    return torch.stack(processed_inputs, dim=0)
+def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
+    try:
+        data = torch.as_tensor(data)
+    except ValueError:
+        data = torch.stack(data)
+    return data
 
 
 def mlp_creator(sizes: List[int], activation: nn.Module, output_activation=nn.Module):

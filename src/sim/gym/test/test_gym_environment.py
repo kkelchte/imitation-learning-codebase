@@ -24,7 +24,7 @@ class TestGymEnvironment(unittest.TestCase):
             'gym_config': {
                 'random_seed': 123,
                 'world_name': name,
-                'render': True
+                'render': False
             }
         }
 

@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from src.ai.base_net import BaseNet
 from src.ai.evaluator import EvaluatorConfig, Evaluator
+from src.ai.utils import data_to_tensor
 from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
@@ -46,7 +47,7 @@ class Trainer(Evaluator):
         total_error = []
         for batch in tqdm(self._data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
             predictions = self._net.forward(batch.observations, train=True)
-            targets = torch.as_tensor(batch.actions, dtype=self._net.dtype).to(self._device)
+            targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
             loss = self._criterion(predictions, targets).mean()
             loss.backward()  # calculate gradients
             self._optimizer.step()  # apply gradients according to optimizer

@@ -7,6 +7,7 @@ from dataclasses_json import dataclass_json
 from tqdm import tqdm
 
 from src.ai.base_net import BaseNet
+from src.ai.utils import data_to_tensor
 from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
@@ -63,7 +64,7 @@ class Evaluator:
         for batch in tqdm(self._data_loader.get_data_batch(), ascii=True, desc='evaluate'):
             predictions = self._net.forward(batch.observations)
             error = self._criterion(predictions,
-                                    torch.as_tensor(batch.actions, dtype=self._net.dtype).to(self._device)).mean()
+                                    data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)).mean()
             total_error.append(error)
         error_distribution = Distribution(
                 mean=float(torch.as_tensor(total_error).mean()),
