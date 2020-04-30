@@ -68,7 +68,7 @@ class TestRosIntegrated(unittest.TestCase):
             while experience.done == TerminationType.Unknown:
                 experience = self._environment.step()
             self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
-            self.assertTrue(np.sum(experience.info['odometry'][:3]) < 0.2)
+            self.assertLess(np.sum(experience.info['odometry'][:3]), 0.2)
             count = 0
             while experience.done == TerminationType.NotDone:
                 count += 1
@@ -76,7 +76,7 @@ class TestRosIntegrated(unittest.TestCase):
                 self.assertNotEqual(experience.observation, self._environment._default_observation)
                 self.assertNotEqual(len(experience.action.value),
                                     len(self._environment._default_action.value))
-            self.assertTrue(np.sum(experience.info['odometry'][:3]) > 0.5)
+            self.assertGreater(np.sum(experience.info['odometry'][:3]), 0.5)
             self.assertEqual(experience.done, TerminationType.Success)
 
     def tearDown(self) -> None:

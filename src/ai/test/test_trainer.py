@@ -20,7 +20,7 @@ trainer_base_config = {
 }
 
 architecture_base_config = {
-    "architecture": "tiny_128_rgb_1c",
+    "architecture": "tiny_128_rgb_6c",
     "load_checkpoint_dir": None,
     "initialisation_type": InitializationType.Xavier,
     "initialisation_seed": 0,

@@ -34,9 +34,9 @@ class ArchitectureTest(unittest.TestCase):
         network.load_from_checkpoint(os.path.join(self.output_dir, 'torch_checkpoints'))
         self.assertEqual(network.extra_checkpoint_info['msg'], msg)
 
-    def test_tiny_128_rgb_1c_initialisation_store_load(self):
+    def test_tiny_128_rgb_6c_initialisation_store_load(self):
         # Test initialisation of different seeds
-        base_config['architecture'] = 'tiny_128_rgb_1c'
+        base_config['architecture'] = 'tiny_128_rgb_6c'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
@@ -68,8 +68,8 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(torch.sum(check_second_network), torch.sum(check_network))
         self.assertNotEqual(torch.sum(check_third_network), torch.sum(check_network))
 
-    def test_tiny_128_rgb_1c_input_failures(self):
-        base_config['architecture'] = 'tiny_128_rgb_1c'
+    def test_tiny_128_rgb_6c_input_failures(self):
+        base_config['architecture'] = 'tiny_128_rgb_6c'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
