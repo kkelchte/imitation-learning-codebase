@@ -59,7 +59,6 @@ class TestConfigLoader(unittest.TestCase):
     def test_load_from_dict(self):
         config = DummyDataCollectionConfig().create(config_dict=self.config_dict)
 
-        print(config)
         self.assertEqual(config.store_data, True)
         self.assertEqual(config.environment_config.number_of_runs, 10)
         self.assertTrue(isinstance(config.model_config, DummyModelConfig))
@@ -67,7 +66,6 @@ class TestConfigLoader(unittest.TestCase):
     def test_load_from_file(self):
         config = DummyDataCollectionConfig().create(config_file=self.config_file)
 
-        print(config)
         self.assertEqual(config.store_data, True)
         self.assertEqual(config.environment_config.number_of_runs, 10)
         self.assertTrue(isinstance(config.model_config, DummyModelConfig))
@@ -85,7 +83,6 @@ class TestConfigLoader(unittest.TestCase):
         del self.config_dict['environment_config']['number_of_runs']
 
         config = DummyDataCollectionConfig().create(config_dict=self.config_dict)
-        print(config)
         self.assertEqual(config.environment_config.number_of_runs, 5)
 
     def test_raise_unknown_value(self):
@@ -97,7 +94,6 @@ class TestConfigLoader(unittest.TestCase):
         config_file = 'src/core/test/config/test_config_loader_config.yml'
         arguments = Parser().parse_args(["--config", config_file])
         config = DummyDataCollectionConfig().create(config_file=arguments.config)
-        print(config)
 
     def test_config_output_path(self):
         config = DummyDataCollectionConfig().create(config_dict=self.config_dict)

@@ -95,7 +95,6 @@ class TestDataSaver(unittest.TestCase):
         config = DataSaverConfig().create(config_dict=config_dict)
         data_saver = DataSaver(config=config)
         info = generate_dummy_dataset(data_saver, num_runs=number_of_runs)
-        print(info)
         self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), number_of_runs)
         data_saver.empty_raw_data_in_output_directory()
         self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), 0)
@@ -110,7 +109,6 @@ class TestDataSaver(unittest.TestCase):
         config = DataSaverConfig().create(config_dict=config_dict)
         data_saver = DataSaver(config=config)
         info = generate_dummy_dataset(data_saver, num_runs=number_of_runs)
-        print(info)
         data = data_saver.get_dataset()
         self.assertEqual(len(data), config_dict['max_size'])
         for lst in [data.observations, data.actions, data.rewards, data.done]:

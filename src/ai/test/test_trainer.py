@@ -57,11 +57,9 @@ class TrainerTest(unittest.TestCase):
         error_distribution = trainer.train()
         self.assertFalse(np.isnan(error_distribution.mean))
         initial_loss_distribution = deepcopy(error_distribution)
-        print(f'error_distribution: {error_distribution}')
         # train long
         for i in range(4):
             error_distribution = trainer.train(epoch=i)
-            print(f'error_distribution: {error_distribution}')
 
         self.assertGreater(initial_loss_distribution.mean, error_distribution.mean)
 

@@ -172,3 +172,4 @@ test_dir/
 /src/sim/ros/python3_ros_ws/src/vision_opencv
 *CMakeLists.txt*
 /src/ai/algorithms/results
+/test_output

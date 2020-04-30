@@ -41,7 +41,6 @@ class TestDataLoader(unittest.TestCase):
             data = eval(f'data_loader.get_dataset().{k}')
             self.assertTrue(len(data) > 0)
             self.assertTrue(sum(data[0].shape) > 0)
-            print(f'loaded {len(data)} data points of shape {data[0].shape}')
 
     def test_arrange_run_according_timestamps(self):
         # Normal usage where all should be kept
@@ -142,14 +141,12 @@ class TestDataLoader(unittest.TestCase):
         # uniform distributed case:
         data = np.random.uniform(0, 1, 1000)
         weights = calculate_weights(data)
-        print(max(weights) - min(weights))
         self.assertTrue(max(weights) - min(weights) < 0.3)
 
     def test_calculate_weights_for_data_balancing_normal(self):
         # normal distributed case:
         data = np.random.normal(0, 1, 1000)
         weights = calculate_weights(data)
-        print(max(weights) - min(weights))
         self.assertTrue(0.5 < max(weights) - min(weights) < 1.5)
 
     def test_calculate_weights_for_data_balancing_discrete(self):

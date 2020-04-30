@@ -61,7 +61,6 @@ class TestLogger(unittest.TestCase):
         log_file = glob(os.path.join(self.TEST_DIR, 'log_files', '*'))[0]
         with open(log_file, 'r') as f:
             log_line = f.readlines()[0].strip()
-            print(log_line)
             self.assertTrue('HELP' in log_line)
 
     def test_object(self):
@@ -69,7 +68,6 @@ class TestLogger(unittest.TestCase):
         log_file = glob(os.path.join(self.TEST_DIR, 'log_files', '*'))[0]
         with open(log_file, 'r') as f:
             log_line = f.readlines()[0].strip()
-            print(log_line)
             self.assertTrue('superclass initiated' in log_line)
 
     def test_child_object(self):
@@ -77,7 +75,6 @@ class TestLogger(unittest.TestCase):
         log_file = glob(os.path.join(self.TEST_DIR, 'log_files', '*'))[0]
         with open(log_file, 'r') as f:
             log_line = f.readlines()[-1].strip()
-            print(log_line)
             self.assertTrue('childclass initiated' in log_line)
 
     def tearDown(self):

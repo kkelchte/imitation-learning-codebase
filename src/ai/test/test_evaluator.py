@@ -52,7 +52,6 @@ class EvaluatorTest(unittest.TestCase):
                               network=network)
         # evaluate
         error_distribution = evaluator.evaluate()
-        print(f'error_distribution: {error_distribution}')
         self.assertFalse(np.isnan(error_distribution.mean))
 
     def tearDown(self) -> None:

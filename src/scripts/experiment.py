@@ -70,10 +70,17 @@ class Experiment:
             if self._config.evaluator_config is not None else None
         cprint(f'Initiated.', self._logger)
 
+    def _enough_episodes_check(self, episode_number: int) -> bool:
+        if self._config.number_of_episodes != -1:
+            return episode_number >= self._config.number_of_episodes
+        else:
+            #  TODO check data save dataset length vs trainer's data loader batch size
+            #  TODO add prefill option in first epoch
+            raise NotImplementedError
+
     def _run_episodes(self):
         count_episodes = 0
-        while count_episodes < self._config.number_of_episodes or self._config.number_of_episodes == -1:
-            cprint(f'running episode {count_episodes}', self._logger)
+        while not self._enough_episodes_check(count_episodes):
             experience = self._environment.reset()
             while experience.done == TerminationType.Unknown:
                 experience = self._environment.step()
@@ -83,7 +90,7 @@ class Experiment:
                 experience = self._environment.step(action)  # action is not used for ros-gazebo environments off-policy
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
-            cprint(f'environment is terminated with {experience.done.name}', self._logger)
+            cprint(f'environment is terminated episode {count_episodes} with {experience.done.name}', self._logger)
             count_episodes += 1
         if self._data_saver is not None:
             self._data_saver.create_train_validation_hdf5_files()
@@ -95,12 +102,12 @@ class Experiment:
         return f' {name} {data.mean: 0.3e} [{data.std: 0.3e}]'
 
     def run(self):
-        for epoch in range(self._config.number_of_epochs):
-            msg = f'epoch: {epoch + 1} / {self._config.number_of_epochs}'
+        for self._epoch in range(self._config.number_of_epochs):
+            msg = f'epoch: {self._epoch + 1} / {self._config.number_of_epochs}'
             if self._environment is not None:
                 self._run_episodes()
             if self._trainer is not None:
-                training_loss_distribution = self._trainer.train(epoch=epoch)  # include checkpoint saving.
+                training_loss_distribution = self._trainer.train(epoch=self._epoch)  # include checkpoint saving.
                 msg += self._log_loss('training', training_loss_distribution)
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
                 validation_error_distribution = self._evaluator.evaluate(save_checkpoints=self._trainer is not None)
