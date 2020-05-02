@@ -3,6 +3,8 @@ import os
 
 from graphviz import Digraph
 
+from src.core.utils import get_to_root_dir
+
 
 def parse_dependencies(file_path: str) -> list:
     module_dependencies = []
@@ -18,10 +20,13 @@ def parse_dependencies(file_path: str) -> list:
     return module_dependencies
 
 
-root = os.path.dirname(os.getcwd())
+get_to_root_dir()
+root = os.getcwd()
+destination = os.path.join(root, 'dependency-graph')
+os.makedirs(destination, exist_ok=True)
 python_files = {}
 exclude_dirs = ['ros', 'algorithms', 'test', 'catkin_generated', 'atomic_configure', 'devel',
-               'installspace', 'rosnodes', 'condor', 'architectures', 'core']
+               'installspace', 'rosnodes', 'architectures', 'core']
 
 for dirpath, dnames, fnames in os.walk(os.path.join(root, 'src')):
     if os.path.basename(dirpath) in exclude_dirs:
@@ -41,7 +46,7 @@ dependencies = {}
 for module in sorted(python_files.keys()):
     dependencies[module] = parse_dependencies(python_files[module])
 
-g = Digraph('G', filename='dependency-graph')
+g = Digraph('G', filename=os.path.join(destination, 'dependency-graph'))
 for node in sorted(dependencies.keys()):
     for edge in sorted(dependencies[node]):
         g.edge(node, edge)
