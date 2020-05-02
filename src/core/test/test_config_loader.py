@@ -107,7 +107,12 @@ class TestConfigLoader(unittest.TestCase):
             config_file=glob(f'{config.output_path}/configs/*dummy_data_collection_config.yml')[0]
         )
         self.assertEqual(restored_config, config)
-        
+
+    def test_load_factory_with_string(self):
+        self.config_dict['environment_config']['factory_type'] = DummyEnvironmentType.Ros
+        config = DummyDataCollectionConfig().create(config_dict=self.config_dict)
+        self.assertEqual(config.environment_config.factory_type, DummyEnvironmentType.Ros)
+
     def tearDown(self):
         shutil.rmtree(self.TEST_DIR, ignore_errors=True)
 

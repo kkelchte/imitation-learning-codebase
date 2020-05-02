@@ -13,12 +13,6 @@ from src.core.data_types import Action, Experience, ProcessState
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 
 
-class EnvironmentType(IntEnum):
-    Ros = 0
-    Gym = 1
-    Real = 2
-
-
 @dataclass_json
 @dataclass
 class GymConfig(Config):
@@ -82,7 +76,7 @@ class EnvironmentConfig(Config):
     Providing post-factory specific configuration classes is tricky due to the .from_dict
     dependency of dataclass_json which complains at unknown variables.
     """
-    factory_key: EnvironmentType = None
+    factory_key: str = None
     max_number_of_steps: int = 100
     # Gazebo specific environment settings
     ros_config: RosConfig = None
@@ -90,10 +84,9 @@ class EnvironmentConfig(Config):
     gym_config: GymConfig = None
 
     def __post_init__(self):
-        # Avoid None value error by deleting irrelevant fields
-        if self.factory_key == EnvironmentType.Ros:
+        if self.gym_config is None:
             del self.gym_config
-        elif self.factory_key == EnvironmentType.Gym:
+        elif self.ros_config is None:
             del self.ros_config
 
 

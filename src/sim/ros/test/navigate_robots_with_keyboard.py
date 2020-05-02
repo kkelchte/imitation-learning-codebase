@@ -16,7 +16,7 @@ class TestRobots(unittest.TestCase):
         os.makedirs(self.output_dir, exist_ok=True)
         config_dict = {
             'output_path': self.output_dir,
-            'factory_key': 0,
+            'factory_key': "ROS",
             'max_number_of_steps': -1,
             'ros_config': {
                 'ros_launch_config': {

@@ -5,7 +5,7 @@ import unittest
 from src.core.utils import get_filename_without_extension
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 from src.core.data_types import ProcessState, TerminationType
-from src.sim.common.environment import EnvironmentConfig, EnvironmentType
+from src.sim.common.environment import EnvironmentConfig
 from src.sim.gym.gym_environment import GymEnvironment
 
 
@@ -18,7 +18,7 @@ class TestGymEnvironment(unittest.TestCase):
     def _test_environment_by_name(self, name: str) -> bool:
         config = {
             'output_path': self.output_dir,
-            'factory_key': EnvironmentType.Gym,
+            'factory_key': "GYM",
             'max_number_of_steps': 200,
             'ros_config': None,
             'gym_config': {

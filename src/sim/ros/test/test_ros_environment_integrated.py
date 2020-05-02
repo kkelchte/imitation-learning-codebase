@@ -14,7 +14,7 @@ from src.sim.ros.src.ros_environment import RosEnvironment
 
 config_dict = {
     "output_path": "/tmp",
-    "factory_key": 0,
+    "factory_key": "ROS",
     "max_number_of_steps": -1,
     "ros_config": {
         "info": [

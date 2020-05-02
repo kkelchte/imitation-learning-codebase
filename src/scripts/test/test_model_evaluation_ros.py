@@ -18,7 +18,7 @@ experiment_config = {
         "device": 'cpu'},
     "tensorboard": False,
     "environment_config": {
-      "factory_key": 0,
+      "factory_key": "ROS",
       "max_number_of_steps": 10,
       "ros_config": {
         "info": [

@@ -1,4 +1,4 @@
-factory_key: 0
+factory_key: ROS
 max_number_of_steps: -1
 output_path: tmp_test_dir/20-01-28_14-39
 ros_config:

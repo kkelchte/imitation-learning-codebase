@@ -11,6 +11,7 @@ from src.core.object_factory import ObjectFactory, ConfigFactory
 from src.core.config_loader import Config
 from src.core.utils import get_filename_without_extension
 
+
 @dataclass_json
 @dataclass
 class DummyEnvironmentConfig(Config):

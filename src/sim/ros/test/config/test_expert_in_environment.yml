@@ -1,4 +1,4 @@
-factory_key: 0
+factory_key: ROS
 max_number_of_steps: 1000
 ros_config:
   info:

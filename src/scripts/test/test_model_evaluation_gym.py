@@ -18,7 +18,7 @@ experiment_config = {
         "device": 'cpu'},
     "tensorboard": True,
     "environment_config": {
-        "factory_key": 1,
+        "factory_key": "GYM",
         "max_number_of_steps": 10,
         "gym_config": {
             "random_seed": 123,
