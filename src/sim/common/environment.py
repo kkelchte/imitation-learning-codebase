@@ -1,4 +1,6 @@
 import os
+from enum import IntEnum
+
 from dataclasses import dataclass
 from typing import List
 
@@ -7,8 +9,14 @@ from dataclasses_json import dataclass_json
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
-from src.core.data_types import Action, Experience, EnvironmentType, ProcessState
+from src.core.data_types import Action, Experience, ProcessState
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
+
+
+class EnvironmentType(IntEnum):
+    Ros = 0
+    Gym = 1
+    Real = 2
 
 
 @dataclass_json

@@ -28,12 +28,6 @@ class TerminationType(IntEnum):
     Failure = 3
 
 
-class EnvironmentType(IntEnum):
-    Ros = 0
-    Gym = 1
-    Real = 2
-
-
 @dataclass
 class Action:
     actor_name: str = ''
