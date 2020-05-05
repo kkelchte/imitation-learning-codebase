@@ -10,11 +10,8 @@ from src.core.utils import get_date_time_tag
 """
 
 
-def get_logger(name: str,
-               output_path: str = '',
-               quite: bool = False) -> logging.Logger:
-    # Create a custom logger
-    logger = logging.getLogger(name)
+def get_logger(name: str, output_path: str = '', quite: bool = False) -> logging.Logger:
+    logger = logging.getLogger(name=name)
     [logger.removeHandler(handler) for handler in logger.handlers]
 
     # add file handler

@@ -2,8 +2,6 @@ import shutil
 import unittest
 import os
 
-import numpy as np
-
 import torch
 
 from src.data.data_loader import DataLoader, DataLoaderConfig
@@ -19,6 +17,7 @@ class TestDataSaver(unittest.TestCase):
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
+        self.data_saver = None
 
     def test_experience_generator(self):
         for count, experience in enumerate(experience_generator()):
@@ -31,8 +30,8 @@ class TestDataSaver(unittest.TestCase):
             'output_path': self.output_dir,
         }
         config = DataSaverConfig().create(config_dict=config_dict)
-        data_saver = DataSaver(config=config)
-        info = generate_dummy_dataset(data_saver, num_runs=2)
+        self.data_saver = DataSaver(config=config)
+        info = generate_dummy_dataset(self.data_saver, num_runs=2)
         for total, episode_dir in zip(info['episode_lengths'], info['episode_directories']):
             self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data', episode_dir, 'observation'))),
                              total)
@@ -46,18 +45,18 @@ class TestDataSaver(unittest.TestCase):
             'max_size': 25
         }
         config = DataSaverConfig().create(config_dict=config_dict)
-        data_saver = DataSaver(config=config)
-        first_info = generate_dummy_dataset(data_saver, num_runs=2)
-        self.assertEqual(sum(first_info['episode_lengths']), data_saver._frame_counter)
-        data_saver.update_saving_directory()
-        second_info = generate_dummy_dataset(data_saver, num_runs=2)
+        self.data_saver = DataSaver(config=config)
+        first_info = generate_dummy_dataset(self.data_saver, num_runs=2)
+        self.assertEqual(sum(first_info['episode_lengths']), self.data_saver._frame_counter)
+        self.data_saver.update_saving_directory()
+        second_info = generate_dummy_dataset(self.data_saver, num_runs=2)
         self.assertTrue((sum(first_info['episode_lengths']) + sum(second_info['episode_lengths'])) >
                         config_dict['max_size'])
-        self.assertTrue(data_saver._frame_counter <= config_dict['max_size'])
-        raw_data_dir = os.path.dirname(data_saver.get_saving_directory())
+        self.assertTrue(self.data_saver._frame_counter <= config_dict['max_size'])
+        raw_data_dir = os.path.dirname(self.data_saver.get_saving_directory())
         count_actual_frames = sum([len(os.listdir(os.path.join(raw_data_dir, episode_dir, 'observation')))
                                    for episode_dir in os.listdir(raw_data_dir)])
-        self.assertEqual(count_actual_frames, data_saver._frame_counter)
+        self.assertEqual(count_actual_frames, self.data_saver._frame_counter)
 
     def test_create_train_validation_hdf5_files(self):
         num_runs = 10
@@ -68,9 +67,9 @@ class TestDataSaver(unittest.TestCase):
             'store_hdf5': True
         }
         config = DataSaverConfig().create(config_dict=config_dict)
-        data_saver = DataSaver(config=config)
-        info = generate_dummy_dataset(data_saver, num_runs=num_runs)
-        data_saver.create_train_validation_hdf5_files()
+        self.data_saver = DataSaver(config=config)
+        info = generate_dummy_dataset(self.data_saver, num_runs=num_runs)
+        self.data_saver.create_train_validation_hdf5_files()
 
         config = DataLoaderConfig().create(config_dict={'output_path': self.output_dir,
                                                         'hdf5_file': 'train.hdf5'})
@@ -93,10 +92,10 @@ class TestDataSaver(unittest.TestCase):
         }
         number_of_runs = 5
         config = DataSaverConfig().create(config_dict=config_dict)
-        data_saver = DataSaver(config=config)
-        info = generate_dummy_dataset(data_saver, num_runs=number_of_runs)
+        self.data_saver = DataSaver(config=config)
+        info = generate_dummy_dataset(self.data_saver, num_runs=number_of_runs)
         self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), number_of_runs)
-        data_saver.empty_raw_data_in_output_directory()
+        self.data_saver.empty_raw_data_in_output_directory()
         self.assertEqual(len(os.listdir(os.path.join(self.output_dir, 'raw_data'))), 0)
 
     def test_store_in_ram(self):
@@ -107,9 +106,9 @@ class TestDataSaver(unittest.TestCase):
         }
         number_of_runs = 10
         config = DataSaverConfig().create(config_dict=config_dict)
-        data_saver = DataSaver(config=config)
-        info = generate_dummy_dataset(data_saver, num_runs=number_of_runs)
-        data = data_saver.get_dataset()
+        self.data_saver = DataSaver(config=config)
+        info = generate_dummy_dataset(self.data_saver, num_runs=number_of_runs)
+        data = self.data_saver.get_dataset()
         self.assertEqual(len(data), config_dict['max_size'])
         for lst in [data.observations, data.actions, data.rewards, data.done]:
             self.assertEqual(len(lst), config_dict['max_size'])

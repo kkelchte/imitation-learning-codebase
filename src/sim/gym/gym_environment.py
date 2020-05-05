@@ -59,4 +59,4 @@ class GymEnvironment(Environment):
 
     def remove(self) -> ProcessState:
         self._gym.close()
-        return ProcessState.Terminated
+        return super().remove()

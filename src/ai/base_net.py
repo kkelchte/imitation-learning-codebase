@@ -5,7 +5,7 @@ from enum import IntEnum
 import torch
 import numpy as np
 from dataclasses import dataclass
-from typing import Union, Any
+from typing import Union, Any, Optional
 
 from dataclasses_json import dataclass_json
 
@@ -38,7 +38,7 @@ class InitializationType(IntEnum):
 @dataclass
 class ArchitectureConfig(Config):
     architecture: str = None  # name of architecture to be loaded
-    load_checkpoint_dir: str = None  # path to checkpoints
+    load_checkpoint_dir: Optional[str] = None  # path to checkpoints
     initialisation_type: InitializationType = InitializationType.Xavier
     initialisation_seed: int = 0
     device: str = 'cpu'
@@ -58,13 +58,14 @@ class BaseNet(nn.Module):
         super().__init__()
         self.input_size = None
         self.output_size = None
-        self.continuous_output = True
+        self.discrete = None
         self._config = config
         self.dtype = torch.float32 if config.dtype == 'default' else eval(f"torch.{config.dtype}")
-        self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                  output_path=config.output_path,
-                                  quite=False)
+
         if not quiet:
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quite=False)
             cprint(f'Started.', self._logger)
         self._checkpoint_output_directory = os.path.join(self._config.output_path, 'torch_checkpoints')
         os.makedirs(self._checkpoint_output_directory, exist_ok=True)
@@ -187,3 +188,7 @@ class BaseNet(nn.Module):
         for p in self.parameters():
             count += np.prod(p.shape)
         return count
+
+    def remove(self):
+        [h.close() for h in self._logger.handlers]
+

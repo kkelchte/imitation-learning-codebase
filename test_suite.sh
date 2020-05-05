@@ -15,6 +15,9 @@ mkdir test_output
 
 EXCLUDE="src/scripts/test/test_model_evaluation_ros.py"
 
+
+
+# src/core src/data src/ai src/sim/common src/sim/gym src/scripts src/condor
 for group in src/core src/data src/ai src/sim/common src/sim/gym src/scripts src/condor ; do
   echo "$(date +%H:%M:%S) ------- ${group}"
   for test in "${group}"/test/test_*.py ; do

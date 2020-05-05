@@ -2,7 +2,7 @@ import os
 from enum import IntEnum
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from dataclasses_json import dataclass_json
 
@@ -79,9 +79,9 @@ class EnvironmentConfig(Config):
     factory_key: str = None
     max_number_of_steps: int = 100
     # Gazebo specific environment settings
-    ros_config: RosConfig = None
+    ros_config: Optional[RosConfig] = None
     # Gym specific environment settings
-    gym_config: GymConfig = None
+    gym_config: Optional[GymConfig] = None
 
     def __post_init__(self):
         if self.gym_config is None:
@@ -106,4 +106,5 @@ class Environment:
         pass
 
     def remove(self) -> ProcessState:
-        pass
+        [h.close() for h in self._logger.handlers]
+        return ProcessState.Terminated

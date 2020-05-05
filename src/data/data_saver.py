@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Optional
 
 import numpy as np
 from dataclasses import dataclass
@@ -10,7 +11,7 @@ from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_date_time_tag, get_filename_without_extension
 from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file_from_dataset
-from src.core.data_types import Dataset
+from src.core.data_types import Dataset, Action
 from src.core.data_types import Experience, TerminationType
 
 """Stores experiences as episodes in dataset.
@@ -26,7 +27,7 @@ Extension:
 @dataclass
 class DataSaverConfig(Config):
     saving_directory_tag: str = ''
-    saving_directory: str = None
+    saving_directory: Optional[str] = None
     training_validation_split: float = 0.9
     max_size: int = -1
     store_hdf5: bool = False
@@ -96,7 +97,8 @@ class DataSaver:
     def _store_in_file_system(self, experience: Experience) -> None:
         for dst, data in zip(['observation', 'action', 'reward', 'done'],
                              [experience.observation, experience.action, experience.reward, experience.done]):
-            self._store_frame(data=np.asarray(data), dst=dst, time_stamp=experience.time_stamp)
+            self._store_frame(data=np.asarray(data.value if isinstance(data, Action) else data),
+                              dst=dst, time_stamp=experience.time_stamp)
 
         for key, value in experience.info.items():
             self._store_frame(data=np.asarray(value), dst=key, time_stamp=experience.time_stamp)
@@ -128,7 +130,7 @@ class DataSaver:
 
     def create_train_validation_hdf5_files(self) -> None:
         if not self._config.store_hdf5:
-            cprint(f'store_hdf5: {self._config.store_hdf5}', self._logger, msg_type=MessageType.warning)
+            # cprint(f'store_hdf5: {self._config.store_hdf5}', self._logger, msg_type=MessageType.warning)
             return
         raw_data_dir = os.path.dirname(self._config.saving_directory)
         all_runs = [
@@ -153,3 +155,6 @@ class DataSaver:
         raw_data_directory = os.path.dirname(self._config.saving_directory)
         for d in os.listdir(raw_data_directory):
             shutil.rmtree(os.path.join(raw_data_directory, d))
+
+    def remove(self):
+        [h.close() for h in self._logger.handlers]

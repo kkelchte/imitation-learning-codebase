@@ -134,16 +134,22 @@ def torch_append(destination: torch.Tensor, source: torch.Tensor) -> torch.Tenso
 def load_run(directory: str, arrange_according_to_timestamp: bool = False) -> List[Experience]:
     run = {}
     time_stamps = {}
-    for x in ['observation', 'action.data', 'reward.data', 'done.data']:
-        time_stamps[x], run[x if not x.endswith('.data') else x[:-5]] = load_data(x, directory)
+    for x in os.listdir(directory):
+        try:
+            time_stamps[x], run[x if not x.endswith('.data') else x[:-5]] = load_data(x, directory)
+        except:
+            pass
     if arrange_according_to_timestamp:
         run = arrange_run_according_timestamps(run, time_stamps)
-    return [Experience(
-        observation=run['observation'][index],
-        action=run['action'][index],
-        reward=run['reward'][index],
-        done=run['done'][index]
-    ) for index in range(len(run['observation']))]
+    if len(run.keys()) == 0:
+        return []
+    else:
+        return [Experience(
+            observation=run['observation'][index],
+            action=run['action'][index],
+            reward=run['reward'][index],
+            done=run['done'][index]
+        ) for index in range(len(run['observation']))]
 
 ####################################################################
 #  Helper functions to upweight data sampling in data_loader.py    #

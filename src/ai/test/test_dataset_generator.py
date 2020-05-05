@@ -46,7 +46,7 @@ class DummyDatasetGeneratorTest(unittest.TestCase):
                                                    num_runs=num_runs,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output,)
+                                                   continuous=not network.discrete,)
         data_loader_config = {
             'output_path': self.output_dir,
             'data_directories': info['episode_directories'],
@@ -68,7 +68,7 @@ class DummyDatasetGeneratorTest(unittest.TestCase):
                                                    num_runs=num_runs,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output,
+                                                   continuous=not network.discrete,
                                                    store_hdf5=True)
         data_loader_config = {
             'output_path': self.output_dir,

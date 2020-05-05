@@ -6,7 +6,7 @@ from src.core.utils import get_filename_without_extension
 from src.scripts.experiment import ExperimentConfig, Experiment
 
 
-class MyTestCase(unittest.TestCase):
+class TestExperiment(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'

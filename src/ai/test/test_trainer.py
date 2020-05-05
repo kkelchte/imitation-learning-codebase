@@ -44,8 +44,8 @@ class TrainerTest(unittest.TestCase):
                                                    num_runs=5,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output,
-                                                   fixed_output_value=0)
+                                                   continuous=not network.discrete,
+                                                   fixed_output_value=np.asarray([0] * network.output_size[0]))
         # generate trainer with correct data-loader
         trainer_base_config['data_loader_config'] = {
             'data_directories': info['episode_directories'],
@@ -54,14 +54,12 @@ class TrainerTest(unittest.TestCase):
         trainer = Trainer(config=TrainerConfig().create(config_dict=trainer_base_config),
                           network=network)
         # train
-        error_distribution = trainer.train()
-        self.assertFalse(np.isnan(error_distribution.mean))
-        initial_loss_distribution = deepcopy(error_distribution)
+        loss_message = trainer.train()
         # train long
         for i in range(4):
-            error_distribution = trainer.train(epoch=i)
-
-        self.assertGreater(initial_loss_distribution.mean, error_distribution.mean)
+            later_message = trainer.train(epoch=i)
+        self.assertGreater(float(loss_message.split(' ')[4]),
+                           float(later_message.split(' ')[4]))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

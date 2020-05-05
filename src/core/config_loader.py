@@ -1,6 +1,7 @@
 import os
 import argparse
 from enum import IntEnum
+from typing import Optional
 
 import yaml
 from dataclasses import dataclass
@@ -21,7 +22,7 @@ def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass
 class Config:
-    output_path: str = None
+    output_path: Optional[str] = None
     """Define config class to translate yaml/dicts to corresponding config objects.
 
     Based on dataclass_json object.

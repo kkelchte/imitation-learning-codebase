@@ -13,6 +13,8 @@ from src.ai.algorithms.utils import *
 
 ##############################################################
 # Settings
+from src.ai.algorithms.utils import generalized_advantage_estimate, reward_to_go
+
 result_file_name = 'reinforce_GAE_cartpole_v0'
 weight_type = 'reward_to_go_with_generalized_advantage_estimate'
 environment_name = 'CartPole-v0'  # 'Acrobot-v1'  # 'CartPole-v1'

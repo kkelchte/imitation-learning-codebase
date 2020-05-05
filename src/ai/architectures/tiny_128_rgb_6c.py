@@ -6,6 +6,7 @@ import torch.nn as nn
 from src.ai.base_net import BaseNet, ArchitectureConfig
 from src.ai.utils import mlp_creator
 from src.core.data_types import Action
+from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
 """
@@ -16,10 +17,16 @@ Expects 3x128x128 inputs and outputs 1c
 
 class Net(BaseNet):
 
-    def __init__(self, config: ArchitectureConfig):
+    def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config)
+        self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                  output_path=config.output_path,
+                                  quite=False)
+        if not quiet:
+            cprint(f'Started.', self._logger)
         self.input_size = (3, 128, 128)
         self.output_size = (6,)
+        self.discrete = False
         self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 32, 4, stride=2),

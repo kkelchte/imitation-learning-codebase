@@ -75,7 +75,8 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
 
     def append(self, experience: Experience):
         self.observations.append(to_torch(experience.observation))
-        self.actions.append(to_torch(experience.action))
+        self.actions.append(to_torch(experience.action.value
+                                     if isinstance(experience.action, Action) else experience.action))
         self.rewards.append(to_torch(experience.reward))
         self.done.append(to_torch(experience.done))
         self._check_length()

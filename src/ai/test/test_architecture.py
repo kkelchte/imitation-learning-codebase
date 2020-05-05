@@ -7,7 +7,7 @@ import torch.nn as nn
 import numpy as np
 
 from src.ai.base_net import InitializationType, ArchitectureConfig, BaseNet
-from src.ai.utils import mlp_creator
+from src.ai.utils import mlp_creator, generate_random_dataset_in_raw_data
 from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
 from src.ai.architectures import *  # Do not remove
 
@@ -38,7 +38,7 @@ class ArchitectureTest(unittest.TestCase):
         # Test initialisation of different seeds
         base_config['architecture'] = 'tiny_128_rgb_6c'
         network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+            config=ArchitectureConfig().create(config_dict=base_config),
         )
         for p in network.parameters():
             check_network = p.data
@@ -96,6 +96,19 @@ class ArchitectureTest(unittest.TestCase):
         for p in network.parameters():
             count += np.prod(p.shape)
         self.assertEqual(count, 170)
+
+    def test_cart_pole_4_2d_stochastic(self):
+        base_config['architecture'] = 'cart_pole_4_2d_stochastic'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
+                                                   num_runs=5,
+                                                   input_size=network.input_size,
+                                                   output_size=network.output_size,
+                                                   continuous=not network.discrete,
+                                                   fixed_output_value=0)
+        # TODO test critic remains constant while actor is trained
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

@@ -30,6 +30,7 @@ class DatasetExperimentsTest(unittest.TestCase):
                 "initialisation_seed": 0,
                 "device": 'cpu'},
             "trainer_config": {
+                "factory_key": "BASE",
                 "save_checkpoint_every_n": 2,
                 "data_loader_config": {"batch_size": 5,
                                        "hdf5_file": "train.hdf5"},

@@ -27,12 +27,13 @@ os.makedirs(destination, exist_ok=True)
 python_files = {}
 exclude_dirs = ['ros', 'algorithms', 'test', 'catkin_generated', 'atomic_configure', 'devel',
                'installspace', 'rosnodes', 'architectures', 'core']
+exclude_files = ['data_cleaning.py', 'utils.py']
 
 for dirpath, dnames, fnames in os.walk(os.path.join(root, 'src')):
     if os.path.basename(dirpath) in exclude_dirs:
         continue
     for f in fnames:
-        if f.endswith(".py"):
+        if f.endswith(".py") and f not in exclude_files:
             module = 'src.'.join(dirpath.split('src')[1:])
             module += f'.{f[:-3]}'
             module = module.replace('/', '.')

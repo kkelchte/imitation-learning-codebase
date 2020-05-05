@@ -29,7 +29,7 @@ experiment_config = {
 }
 
 
-class TestRosModelEvaluation(unittest.TestCase):
+class TestGymModelEvaluation(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'

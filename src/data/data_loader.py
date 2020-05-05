@@ -3,7 +3,7 @@
 """
 import os
 from dataclasses import dataclass
-from typing import List, Generator
+from typing import List, Generator, Optional
 
 import numpy as np
 from dataclasses_json import dataclass_json
@@ -20,7 +20,7 @@ from src.core.data_types import Experience
 @dataclass_json
 @dataclass
 class DataLoaderConfig(Config):
-    data_directories: List[str] = None
+    data_directories: Optional[List[str]] = None
     hdf5_file: str = ''
     data_sampling_seed: int = 123
     balance_over_actions: bool = False
@@ -28,7 +28,7 @@ class DataLoaderConfig(Config):
 
     def post_init(self):  # add default options
         if self.data_directories is None:
-            del self.data_directories
+            self.data_directories = []
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
@@ -59,24 +59,41 @@ class DataLoader:
         self._num_runs = 0
         self._probabilities: List = []
 
+    def update_data_directories_with_raw_data(self):
+        if self._config.data_directories is None:
+            self._config.data_directories = []
+        for d in sorted(os.listdir(os.path.join(self._config.output_path, 'raw_data'))):
+            self._config.data_directories.append(os.path.join(self._config.output_path, 'raw_data', d))
+        self._config.data_directories = list(set(self._config.data_directories))
+
     def load_dataset(self, arrange_according_to_timestamp: bool = False):
         if self._config.hdf5_file is not '':
             self._dataset = load_dataset_from_hdf5(self._config.hdf5_file)
             cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_file}', self._logger,
-                   msg_type=MessageType.error if len(self._dataset.observations) == 0 else MessageType.info)
+                   msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
         else:
-            for directory in tqdm(self._config.data_directories, ascii=True, desc=__name__):
+            directory_generator = tqdm(self._config.data_directories, ascii=True, desc=__name__) \
+                if len(self._config.data_directories) > 10 else self._config.data_directories
+            for directory in directory_generator:
                 run = load_run(directory, arrange_according_to_timestamp)
                 if len(run) != 0:
                     self._dataset.extend(experiences=run)
             cprint(f'Loaded {len(self._dataset)} data points from {len(self._config.data_directories)} directories',
-                   self._logger, msg_type=MessageType.error if len(self._dataset) == 0 else MessageType.info)
+                   self._logger, msg_type=MessageType.warning if len(self._dataset) == 0 else MessageType.info)
 
         if self._config.balance_over_actions:
             self._probabilities = balance_weights_over_actions(self._dataset)
 
     def get_dataset(self) -> Dataset:
         return self._dataset
+
+    def set_dataset(self, ds: Dataset = None) -> None:
+        if ds is not None:
+            self._dataset = ds
+        else:
+            self._dataset = Dataset()
+            self.update_data_directories_with_raw_data()
+            self.load_dataset()
 
     def get_data_batch(self) -> Generator[Dataset, None, None]:
         index = 0
@@ -124,3 +141,6 @@ class DataLoader:
             if len(batch) != 0:
                 yield batch
         return
+
+    def remove(self):
+        [h.close() for h in self._logger.handlers]

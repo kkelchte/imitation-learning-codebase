@@ -13,6 +13,8 @@ from src.ai.algorithms.utils import *
 
 ##############################################################
 # Settings
+from src.ai.algorithms.utils import generalized_advantage_estimate
+
 result_file_name = 'ppo_GAE_cartpole'
 environment_name = 'CartPole-v0'  # 'Acrobot-v1'  # 'CartPole-v1'
 learning_rate = 1e-3

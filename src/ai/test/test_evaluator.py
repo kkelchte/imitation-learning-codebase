@@ -41,7 +41,7 @@ class EvaluatorTest(unittest.TestCase):
         info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output)
+                                                   continuous=not network.discrete)
 
         # generate evaluator with correct data-loader
         evaluator_base_config['data_loader_config'] = {
@@ -51,8 +51,8 @@ class EvaluatorTest(unittest.TestCase):
         evaluator = Evaluator(config=EvaluatorConfig().create(config_dict=evaluator_base_config),
                               network=network)
         # evaluate
-        error_distribution = evaluator.evaluate()
-        self.assertFalse(np.isnan(error_distribution.mean))
+        error_msg = evaluator.evaluate()
+        self.assertFalse('nan' in error_msg)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

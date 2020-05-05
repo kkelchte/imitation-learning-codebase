@@ -62,3 +62,8 @@ def get_to_root_dir():
 
 def generate_random_image(size: tuple) -> np.ndarray:
     return np.random.randint(0, 255, size=size, dtype=np.uint8)
+
+
+def tensorboard_write_distribution(writer, distribution, tag, step) -> None:
+    writer.add_scalar(f"{tag} mean", distribution.mean, global_step=step)
+    writer.add_scalar(f"{tag} std", distribution.std, global_step=step)

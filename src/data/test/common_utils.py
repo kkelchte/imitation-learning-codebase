@@ -22,14 +22,16 @@ def experience_generator(input_size: tuple = (100, 100, 3),
         experience.time_stamp = step
         experience.observation = np.random.randint(0, 255, size=input_size, dtype=np.uint8)
         if fixed_output_value is not None:
-            assert len(output_size) == 1
-            experience.action = np.asarray([fixed_output_value] * output_size[0])
+            experience.action = np.asarray(fixed_output_value)
         else:
             if continuous:
                 experience.action = np.random.random(output_size)
             else:
                 assert len(output_size) == 1
-                experience.action = np.asarray([np.argmax(np.random.multinomial(1, [0.1, 0.8, 0.1]))] * output_size[0])
+                probabilities = [8]
+                probabilities += [1] * (output_size[0] - 1)
+                probabilities = [p/sum(probabilities) for p in probabilities]
+                experience.action = np.asarray([np.argmax(np.random.multinomial(1, probabilities))])
         experience.reward = np.random.normal()
         yield experience
 
