@@ -174,3 +174,6 @@ test_dir/
 /src/ai/algorithms/results
 /test_output
 /suite_output_test
+
+# mac
+*.DS_Store
