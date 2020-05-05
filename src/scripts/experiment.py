@@ -92,6 +92,7 @@ class Experiment:
             while experience.done == TerminationType.NotDone:
                 action = self._net.get_action(inputs=experience.observation,
                                               train=False) if self._net is not None else None
+                cprint(action, self._logger)
                 experience = self._environment.step(action)  # action is not used for ros-gazebo environments off-policy
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)

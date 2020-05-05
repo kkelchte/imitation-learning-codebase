@@ -2,18 +2,12 @@ import os
 import shutil
 import time
 import unittest
-from copy import deepcopy
 from glob import glob
 
-import numpy as np
-
 from src.ai.base_net import InitializationType, ArchitectureConfig
-from src.ai.evaluator import Evaluator, EvaluatorConfig
-from src.ai.trainer import TrainerConfig, Trainer
 from src.ai.utils import generate_random_dataset_in_raw_data
 from src.core.utils import get_to_root_dir, get_filename_without_extension
 from src.ai.architectures import *  # Do not remove
-from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.scripts.experiment import Experiment, ExperimentConfig
 
 
@@ -55,8 +49,7 @@ class DatasetExperimentsTest(unittest.TestCase):
                                                    num_runs=5,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output,
-                                                   fixed_output_value=0,
+                                                   continuous=not network.discrete,
                                                    store_hdf5=True)
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
         experiment.run()
@@ -73,8 +66,7 @@ class DatasetExperimentsTest(unittest.TestCase):
                                                    num_runs=5,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output,
-                                                   fixed_output_value=0,
+                                                   continuous=not network.discrete,
                                                    store_hdf5=True)
         self.experiment_config['tensorboard'] = True
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
@@ -91,8 +83,7 @@ class DatasetExperimentsTest(unittest.TestCase):
                                                    num_runs=5,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output,
-                                                   fixed_output_value=0,
+                                                   continuous=not network.discrete,
                                                    store_hdf5=True)
         self.assertTrue(os.path.isfile(os.path.join(external_dataset, 'train.hdf5')))
         self.assertTrue(os.path.isfile(os.path.join(external_dataset, 'validation.hdf5')))
@@ -119,8 +110,7 @@ class DatasetExperimentsTest(unittest.TestCase):
                                                    num_runs=5,
                                                    input_size=network.input_size,
                                                    output_size=network.output_size,
-                                                   continuous=network.continuous_output,
-                                                   fixed_output_value=0,
+                                                   continuous=not network.discrete,
                                                    store_hdf5=False)
 
         raw_data_directories = [

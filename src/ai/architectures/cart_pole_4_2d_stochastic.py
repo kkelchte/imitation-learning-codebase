@@ -21,10 +21,11 @@ class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
-        self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                  output_path=config.output_path,
-                                  quite=False)
         if not quiet:
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quite=False)
+
             cprint(f'Started.', self._logger)
 
         self.input_size = (4,)
