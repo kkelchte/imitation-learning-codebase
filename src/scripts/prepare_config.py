@@ -23,7 +23,7 @@ def read_config(file_name: str) -> dict:
 
 
 def validate_config(config_dict: dict) -> None:
-    ExperimentConfig().create(config_dict=config_dict)
+    ExperimentConfig().create(config_dict=config_dict, store=False)
     print("validation OK")
 
 

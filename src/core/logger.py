@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from datetime import datetime
 from enum import IntEnum
@@ -32,6 +33,7 @@ def get_logger(name: str, output_path: str = '', quite: bool = False) -> logging
         c_handler.setLevel(logging.INFO)
         c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
         c_handler.setFormatter(c_format)
+        c_handler.setStream(sys.stdout)
         logger.addHandler(c_handler)
 
     logger.setLevel(logging.DEBUG)

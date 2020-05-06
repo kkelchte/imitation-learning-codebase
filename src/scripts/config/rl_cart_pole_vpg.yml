@@ -12,20 +12,20 @@ environment_config:
     random_seed: 123
     render: false
     world_name: CartPole-v0
-  max_number_of_steps: 50
-number_of_episodes: 4
+  max_number_of_steps: -1  # let number of steps depend on environment
+number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 1000
 output_path: code/imitation-learning-codebase/output/rl_cart_pole_vpg
 tensorboard: true
 trainer_config:
   criterion: MSELoss
-  learning_rate: 1e-3
+  learning_rate: 0.001
   data_loader_config:
-    batch_size: 64
+    batch_size: 200
     data_sampling_seed: 123
   device: cpu
   discount: 0.95
   factory_key: VPG
   gae_lambda: 0.5
   phi_key: gae
-  save_checkpoint_every_n: 5
+  save_checkpoint_every_n: 100

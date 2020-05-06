@@ -72,6 +72,7 @@ class VanillaPolicyGradient(Trainer):
         policy_loss = -(log_probability * phi_weights).mean()
         policy_loss.backward()
         self._actor_optimizer.step()
+        self._net.global_step += 1
 
         self._critic_optimizer.zero_grad()
         critic_loss = ((self._net.critic(inputs=batch.observations, train=True) - phi_weights) ** 2).mean()

@@ -36,8 +36,8 @@ class GymEnvironment(Environment):
     def step(self, action: Action) -> Experience:
         self._step_count += 1
         observation, reward, done, info = self._gym.step(action.value)
-        terminal = TerminationType.NotDone if not done and self._step_count < self._config.max_number_of_steps \
-            else TerminationType.Done
+        terminal = TerminationType.Done if done or self._step_count > self._config.max_number_of_steps != -1 \
+            else TerminationType.NotDone
         experience = Experience(
             done=terminal,
             observation=deepcopy(self.previous_observation),

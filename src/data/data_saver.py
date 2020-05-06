@@ -77,6 +77,13 @@ class DataSaver:
             self._dataset = Dataset(max_size=self._config.max_size)
 
         self._frame_counter = 0  # used to keep track of replay buffer size on file system
+        #  TODO: count frames that are already in raw_data
+
+    def __len__(self):
+        if self._config.store_on_ram_only:
+            return len(self._dataset)
+        else:
+            return self._frame_counter
 
     def update_saving_directory(self):
         self._config.saving_directory = create_saving_directory(self._config.output_path,
@@ -129,6 +136,10 @@ class DataSaver:
                 run_length = len(f.readlines())
             self._frame_counter -= run_length
             shutil.rmtree(os.path.join(raw_data_dir, first_run), ignore_errors=True)
+            if not self._config.separate_raw_data_runs:
+                cprint(f"Reached max buffer size and removing all data."
+                       f"Avoid this by setting data_saver_config.separate_raw_data_runs to True.",
+                       msg_type=MessageType.warning, logger=self._logger)
 
     def create_train_validation_hdf5_files(self) -> None:
         raw_data_dir = os.path.dirname(self._config.saving_directory)
@@ -156,6 +167,7 @@ class DataSaver:
             shutil.rmtree(os.path.join(raw_data_directory, d))
 
     def clear_buffer(self) -> None:
+        self._frame_counter = 0
         if self._config.store_on_ram_only:
             self._dataset = Dataset()
         else:

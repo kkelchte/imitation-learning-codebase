@@ -2,6 +2,7 @@
 import os
 from typing import Optional
 
+import numpy as np
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -78,8 +79,9 @@ class Experiment:
     def _enough_episodes_check(self, episode_number: int) -> bool:
         if self._config.number_of_episodes != -1:
             return episode_number >= self._config.number_of_episodes
+        elif self._trainer is not None and self._data_saver is not None:
+            return len(self._data_saver) >= self._config.trainer_config.data_loader_config.batch_size
         else:
-            #  TODO check data save dataset length vs trainer's data loader batch size
             #  TODO add prefill option in first epoch
             raise NotImplementedError
 
@@ -91,22 +93,33 @@ class Experiment:
                 self._data_saver.update_saving_directory()
         count_episodes = 0
         count_success = 0
+        episode_returns = []
         while not self._enough_episodes_check(count_episodes):
+            episode_return = 0
             experience = self._environment.reset()
             while experience.done == TerminationType.Unknown:
                 experience = self._environment.step()
             while experience.done == TerminationType.NotDone:
                 action = self._net.get_action(inputs=experience.observation,
                                               train=False) if self._net is not None else None
-                cprint(action, self._logger)
                 experience = self._environment.step(action)  # action is not used for ros-gazebo environments off-policy
+                episode_return += experience.reward
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
+            episode_returns.append(episode_return)
         if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
             self._data_saver.create_train_validation_hdf5_files()
-        return f" {count_episodes} episodes with {count_success} success"
+        msg = f" {count_episodes} episodes"
+        if count_success != 0:
+            msg += f" with {count_success} success"
+            self._writer.write_scalar(count_success/float(count_episodes), "success")
+        if min(episode_returns) != max(episode_returns):
+            return_distribution = Distribution(mean=np.mean(episode_returns).item(), std=np.std(episode_returns).item())
+            msg += f" with avg return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
+            self._writer.write_distribution(return_distribution, "episode return")
+        return msg
 
     def run(self):
         for self._epoch in range(self._config.number_of_epochs):

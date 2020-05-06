@@ -30,10 +30,11 @@ class Config:
     """
 
     def create(self,
-               config_dict: dict = {},
-               config_file: str = ''):
-        assert not (config_file and config_dict)
-        assert (config_dict or config_file)
+               config_dict: dict = None,
+               config_file: str = '',
+               store: bool = True):
+        assert not (config_file != '' and config_dict is not None)
+        assert (config_file != '' or config_dict is not None)
 
         if config_file:
             if not os.path.exists(config_file):
@@ -46,7 +47,8 @@ class Config:
         instant.iterative_add_output_path(output_path=instant.output_path)
         instant.post_init()
         instant.iterative_check_for_none()
-        instant.save_config_file()
+        if store:
+            instant.save_config_file()
         return instant
 
     def iterative_check_for_none(self) -> None:
