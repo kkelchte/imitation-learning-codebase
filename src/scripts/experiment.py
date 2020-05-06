@@ -84,7 +84,13 @@ class Experiment:
             raise NotImplementedError
 
     def _run_episodes(self) -> str:
+        if self._data_saver is not None:
+            if self._config.data_saver_config.clear_buffer_before_episode:
+                self._data_saver.clear_buffer()
+            if self._config.data_saver_config.separate_raw_data_runs:
+                self._data_saver.update_saving_directory()
         count_episodes = 0
+        count_success = 0
         while not self._enough_episodes_check(count_episodes):
             experience = self._environment.reset()
             while experience.done == TerminationType.Unknown:
@@ -96,11 +102,11 @@ class Experiment:
                 experience = self._environment.step(action)  # action is not used for ros-gazebo environments off-policy
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
-            # cprint(f'environment is terminated episode {count_episodes} with {experience.done.name}', self._logger)
+            count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
-        if self._data_saver is not None:
+        if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
             self._data_saver.create_train_validation_hdf5_files()
-        return f" {count_episodes} episodes"
+        return f" {count_episodes} episodes with {count_success} success"
 
     def run(self):
         for self._epoch in range(self._config.number_of_epochs):
@@ -117,6 +123,7 @@ class Experiment:
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
                 msg += self._evaluator.evaluate(save_checkpoints=self._trainer is not None,
                                                 writer=self._writer)
+            #  TODO add interactive evaluation
             cprint(msg, self._logger)
         cprint(f'Finished.', self._logger)
 

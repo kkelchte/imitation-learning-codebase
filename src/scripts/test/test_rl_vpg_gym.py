@@ -19,11 +19,14 @@ experiment_config = {
             "render": False,
         },
     },
-    "data_saver_config": {},  # provide empty dict for default data_saving config, if None --> no data saved.
+    "data_saver_config": {
+        "store_on_ram_only": True,
+        "clear_buffer_before_episode": True,
+    },
     "architecture_config": {
         "architecture": "cart_pole_4_2d_stochastic",
         "load_checkpoint_dir": None,
-        "initialisation_type": InitializationType.Xavier,
+        "initialisation_type": 0,
         "initialisation_seed": 0,
         "device": 'cpu',
     },
@@ -49,6 +52,8 @@ class TestVPGGym(unittest.TestCase):
         experiment_config['output_path'] = self.output_dir
 
     def test_vpg_cart_pole_fs(self):
+        experiment_config['data_saver_config']['store_on_ram_only'] = False
+        experiment_config['data_saver_config']['separate_raw_data_runs'] = True
         self.experiment = Experiment(ExperimentConfig().create(config_dict=experiment_config))
         self.experiment.run()
         self.experiment.shutdown()

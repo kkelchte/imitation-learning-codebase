@@ -26,7 +26,7 @@ destination = os.path.join(root, 'dependency-graph')
 os.makedirs(destination, exist_ok=True)
 python_files = {}
 exclude_dirs = ['ros', 'algorithms', 'test', 'catkin_generated', 'atomic_configure', 'devel',
-               'installspace', 'rosnodes', 'architectures', 'core']
+                'installspace', 'rosnodes', 'architectures', 'core']
 exclude_files = ['data_cleaning.py', 'utils.py']
 
 for dirpath, dnames, fnames in os.walk(os.path.join(root, 'src')):

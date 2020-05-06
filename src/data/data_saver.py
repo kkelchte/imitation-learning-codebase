@@ -32,6 +32,8 @@ class DataSaverConfig(Config):
     max_size: int = -1
     store_hdf5: bool = False
     store_on_ram_only: bool = False
+    clear_buffer_before_episode: bool = False
+    separate_raw_data_runs: bool = False
 
     def __post_init__(self):
         assert not (self.store_hdf5 and self.store_on_ram_only)
@@ -129,9 +131,6 @@ class DataSaver:
             shutil.rmtree(os.path.join(raw_data_dir, first_run), ignore_errors=True)
 
     def create_train_validation_hdf5_files(self) -> None:
-        if not self._config.store_hdf5:
-            # cprint(f'store_hdf5: {self._config.store_hdf5}', self._logger, msg_type=MessageType.warning)
-            return
         raw_data_dir = os.path.dirname(self._config.saving_directory)
         all_runs = [
             os.path.join(raw_data_dir, run)
@@ -155,6 +154,12 @@ class DataSaver:
         raw_data_directory = os.path.dirname(self._config.saving_directory)
         for d in os.listdir(raw_data_directory):
             shutil.rmtree(os.path.join(raw_data_directory, d))
+
+    def clear_buffer(self) -> None:
+        if self._config.store_on_ram_only:
+            self._dataset = Dataset()
+        else:
+            self.empty_raw_data_in_output_directory()
 
     def remove(self):
         [h.close() for h in self._logger.handlers]

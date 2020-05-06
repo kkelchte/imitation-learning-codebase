@@ -1,0 +1,31 @@
+architecture_config:
+  architecture: cart_pole_4_2d_stochastic
+  device: cpu
+  initialisation_seed: 0
+  initialisation_type: 0
+data_saver_config:
+  clear_buffer_before_episode: true
+  store_on_ram_only: true
+environment_config:
+  factory_key: GYM
+  gym_config:
+    random_seed: 123
+    render: false
+    world_name: CartPole-v0
+  max_number_of_steps: 50
+number_of_episodes: 4
+number_of_epochs: 1000
+output_path: code/imitation-learning-codebase/output/rl_cart_pole_vpg
+tensorboard: true
+trainer_config:
+  criterion: MSELoss
+  learning_rate: 1e-3
+  data_loader_config:
+    batch_size: 64
+    data_sampling_seed: 123
+  device: cpu
+  discount: 0.95
+  factory_key: VPG
+  gae_lambda: 0.5
+  phi_key: gae
+  save_checkpoint_every_n: 5
