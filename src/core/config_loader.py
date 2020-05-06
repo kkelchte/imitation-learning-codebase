@@ -23,6 +23,7 @@ def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
 @dataclass
 class Config:
     output_path: Optional[str] = None
+    store: Optional[bool] = True
     """Define config class to translate yaml/dicts to corresponding config objects.
 
     Based on dataclass_json object.
@@ -111,3 +112,4 @@ class Parser(argparse.ArgumentParser):
     def __init__(self):
         super().__init__()
         self.add_argument("--config", type=str, default=None)
+        self.add_argument("--rm", action='store_true', help="remove current output dir before start")

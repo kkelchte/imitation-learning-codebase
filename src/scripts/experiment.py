@@ -1,18 +1,20 @@
 #!/usr/bin/python3.7
+import logging
 import os
+import shutil
 from typing import Optional
 
-import numpy as np
+import yaml
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
 from src.ai.base_net import ArchitectureConfig
 from src.ai.evaluator import EvaluatorConfig, Evaluator
-from src.ai.trainer import TrainerConfig, Trainer
+from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
-from src.core.utils import get_date_time_tag, get_filename_without_extension
-from src.core.data_types import TerminationType, Distribution, Action
+from src.core.utils import get_filename_without_extension
+from src.core.data_types import TerminationType, Distribution
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
@@ -74,6 +76,10 @@ class Experiment:
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
+            #  Avoid bug of Tensorboard that print on same logger...
+            for handler in self._logger.handlers:
+                if not isinstance(handler, logging.FileHandler):
+                    self._logger.removeHandler(handler)
         cprint(f'Initiated.', self._logger)
 
     def _enough_episodes_check(self, episode_number: int) -> bool:
@@ -116,7 +122,7 @@ class Experiment:
             msg += f" with {count_success} success"
             self._writer.write_scalar(count_success/float(count_episodes), "success")
         if min(episode_returns) != max(episode_returns):
-            return_distribution = Distribution(mean=np.mean(episode_returns).item(), std=np.std(episode_returns).item())
+            return_distribution = Distribution(episode_returns)
             msg += f" with avg return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
             self._writer.write_distribution(return_distribution, "episode return")
         return msg
@@ -159,7 +165,14 @@ class Experiment:
 
 
 if __name__ == "__main__":
-    config_file = Parser().parse_args().config
+    arguments = Parser().parse_args()
+    config_file = arguments.config
+    if arguments.rm:
+        with open(config_file, 'r') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+        if not config['output_path'].startswith('/'):
+            config['output_path'] = os.path.join(os.environ['HOME'], config['output_path'])
+        shutil.rmtree(config['output_path'], ignore_errors=True)
     experiment_config = ExperimentConfig().create(config_file=config_file)
     experiment = Experiment(experiment_config)
     experiment.run()

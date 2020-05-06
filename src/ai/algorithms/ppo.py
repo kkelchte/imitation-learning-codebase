@@ -31,6 +31,9 @@ epsilon_ppo = 0.2
 # Global variables:
 
 environment = gym.make(environment_name)
+environment.seed(123)
+np.random.seed(0)
+
 discrete = isinstance(environment.action_space, gym.spaces.Discrete)
 
 observation_dimension = environment.observation_space.shape[0]
@@ -118,7 +121,6 @@ def train_one_epoch():
     # optimize policy with policy gradient step
 
     def compute_loss(obs, act, adv, logp):
-        policy_forward(observation=torch.as_tensor(obs, dtype=torch.float32))
         new_log_probabilities = policy_forward(observation=torch.as_tensor(obs, dtype=torch.float32)).log_prob(act)
         ratio = torch.exp(new_log_probabilities - logp)
         batch_loss = -torch.min(ratio * adv, ratio.clamp(1-epsilon_ppo, 1+epsilon_ppo) * adv).mean()

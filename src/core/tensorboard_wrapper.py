@@ -19,6 +19,8 @@ class TensorboardWrapper(SummaryWriter):
     def write_distribution(self, distribution: Distribution, tag: str = ""):
         self.add_scalar(f"{tag}_mean" if tag != "" else "mean", distribution.mean, global_step=self.step)
         self.add_scalar(f"{tag}_std" if tag != "" else "std", distribution.std, global_step=self.step)
+        self.add_scalar(f"{tag}_min" if tag != "" else "min", distribution.min, global_step=self.step)
+        self.add_scalar(f"{tag}_max" if tag != "" else "max", distribution.max, global_step=self.step)
 
     def write_scalar(self, data: float, tag: str):
         self.add_scalar(tag, data, global_step=self.step)

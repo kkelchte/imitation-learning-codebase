@@ -1,4 +1,4 @@
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Iterator
 from enum import IntEnum
 
 import h5py
@@ -7,10 +7,27 @@ import torch
 from dataclasses import dataclass
 
 
-@dataclass
 class Distribution:
     mean: float = 0
     std: float = 0
+    min: float = 0
+    max: float = 0
+
+    def __init__(self, data: Iterator):
+        if isinstance(data, torch.Tensor):
+            if not isinstance(data, torch.FloatTensor):
+                data = data.type(torch.float32)
+            self.mean = data.mean().item()
+            self.std = data.std().item()
+            self.min = data.min().item()
+            self.max = data.max().item()
+        else:
+            if not isinstance(data, np.ndarray):
+                data = np.asarray(data)
+            self.mean = np.mean(data).item()
+            self.std = np.std(data).item()
+            self.min = np.min(data)
+            self.max = np.max(data)
 
 
 class ProcessState(IntEnum):

@@ -62,14 +62,11 @@ class Evaluator:
         self.put_model_on_device()
         total_error = []
         for batch in tqdm(self.data_loader.get_data_batch(), ascii=True, desc='evaluate'):
-            predictions = self._net.forward(batch.observations)
+            predictions = self._net.forward(batch.observations, train=False)
             error = self._criterion(predictions,
                                     data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)).mean()
             total_error.append(error)
-        error_distribution = Distribution(
-                mean=float(torch.as_tensor(total_error).mean()),
-                std=float(torch.as_tensor(total_error).std())
-        )
+        error_distribution = Distribution(total_error)
         if save_checkpoints and error_distribution.mean < self._minimum_error:
             self._net.save_to_checkpoint(tag='best')
             self._minimum_error = error_distribution.mean

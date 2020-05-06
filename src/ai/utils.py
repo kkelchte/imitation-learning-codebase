@@ -23,7 +23,8 @@ def mlp_creator(sizes: List[int], activation: nn.Module, output_activation=nn.Mo
     layers = []
     for j in range(len(sizes)-1):
         is_not_last_layer = j < len(sizes)-2
-        layers += [nn.Linear(sizes[j], sizes[j+1], bias=is_not_last_layer)]
+#        layers += [nn.Linear(sizes[j], sizes[j+1], bias=is_not_last_layer)]
+        layers += [nn.Linear(sizes[j], sizes[j+1], bias=True)]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act()]

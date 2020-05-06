@@ -1,18 +1,11 @@
 #!/usr/bin/python3.7
-from enum import IntEnum
-
-from dataclasses import dataclass
-from typing import List, Tuple
 
 import torch
-from torch import nn, optim
-from dataclasses_json import dataclass_json
-from tqdm import tqdm
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import Trainer, TrainerConfig
-from src.ai.utils import data_to_tensor, get_returns, get_reward_to_go, get_generalized_advantage_estimate
-from src.core.data_types import Distribution, Dataset
+from src.ai.utils import get_returns, get_reward_to_go, get_generalized_advantage_estimate
+from src.core.data_types import Dataset
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
@@ -25,19 +18,21 @@ Allows combination of outputs as weighted sum in one big backward pass.
 
 class VanillaPolicyGradient(Trainer):
 
-    def __init__(self, config: TrainerConfig, network: BaseNet):
+    def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
         super().__init__(config, network, quiet=True)
         # Set default config params
         self._config.phi_key = 'gae' if self._config.phi_key == 'default' else self._config.phi_key
         self._config.discount = 0.95 if self._config.discount == 'default' else self._config.discount
         self._config.gae_lambda = 0.95 if self._config.gae_lambda == 'default' else self._config.gae_lambda
 
-        self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                  output_path=config.output_path,
-                                  quite=False)
-        cprint(f'Started.', self._logger)
+        if not quiet:
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quite=False)
+            cprint(f'Started.', self._logger)
+
         self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_actor_parameters(),
-                                                                               lr=self._config.learning_rate)
+                                                                              lr=self._config.learning_rate)
         self._critic_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_critic_parameters(),
                                                                                lr=self._config.learning_rate)
 
@@ -61,34 +56,36 @@ class VanillaPolicyGradient(Trainer):
         else:
             raise NotImplementedError
 
-    def train(self, epoch: int = -1, writer=None) -> str:
-        self.put_model_on_device()
-        batch = self.data_loader.get_dataset()
-        assert len(batch) != 0
-        phi_weights = self._calculate_phi(batch)
-
+    def _train_actor(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._actor_optimizer.zero_grad()
         log_probability = self._net.policy_log_probabilities(batch.observations, batch.actions, train=True)
         policy_loss = -(log_probability * phi_weights).mean()
         policy_loss.backward()
         self._actor_optimizer.step()
-        self._net.global_step += 1
+        return policy_loss.detach()
 
+    def _train_critic(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._critic_optimizer.zero_grad()
         critic_loss = ((self._net.critic(inputs=batch.observations, train=True) - phi_weights) ** 2).mean()
         critic_loss.backward()
         self._critic_optimizer.step()
+        return critic_loss.detach()
+
+    def train(self, epoch: int = -1, writer=None) -> str:
+        self.put_model_on_device()
+        batch = self.data_loader.get_dataset()
+        assert len(batch) != 0
+
+        phi_weights = self._calculate_phi(batch)
+        policy_loss = self._train_actor(batch, phi_weights)
+        critic_loss = self._train_critic(batch, phi_weights)
+        self._net.global_step += 1
+
+        self._save_checkpoint()
+        self.put_model_back_to_original_device()
 
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_scalar(policy_loss.data, "policy_loss")
             writer.write_scalar(critic_loss.data, "critic_loss")
-
-        if epoch != -1:
-            if epoch % self._config.save_checkpoint_every_n == 0:
-                self._net.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
-        else:
-            self._net.save_to_checkpoint()
-        self.put_model_back_to_original_device()
-
         return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.data: 0.3e}"

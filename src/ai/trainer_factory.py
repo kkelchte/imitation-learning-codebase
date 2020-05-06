@@ -1,3 +1,4 @@
+from src.ai.ppo import ProximatePolicyGradient
 from src.ai.trainer import Trainer
 from src.ai.vpg import VanillaPolicyGradient
 from src.core.object_factory import ObjectFactory
@@ -14,5 +15,7 @@ class TrainerFactory(ObjectFactory):
             "BASE": Trainer,
             "VPG": VanillaPolicyGradient,
             "VanillaPolicyGradient": VanillaPolicyGradient,
+            "ProximatePolicyGradient": ProximatePolicyGradient,
+            "PPO": ProximatePolicyGradient,
         }
         super().__init__(self._class_dict)

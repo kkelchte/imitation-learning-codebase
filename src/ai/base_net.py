@@ -191,4 +191,3 @@ class BaseNet(nn.Module):
 
     def remove(self):
         [h.close() for h in self._logger.handlers]
-

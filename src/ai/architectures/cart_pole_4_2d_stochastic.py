@@ -31,11 +31,11 @@ class Net(BaseNet):
         self.input_size = (4,)
         self.output_size = (2,)
         self.discrete = True
-        self._actor = mlp_creator(sizes=[self.input_size[0], 25, 25, self.output_size[0]],
+        self._actor = mlp_creator(sizes=[self.input_size[0], 20, 20, 20, self.output_size[0]],
                                   activation=nn.ReLU,
                                   output_activation=None)
 
-        self._critic = mlp_creator(sizes=[self.input_size[0], 25, 25, 1],
+        self._critic = mlp_creator(sizes=[self.input_size[0], 20, 20, 20, 1],
                                    activation=nn.ReLU,
                                    output_activation=None)
 
@@ -58,10 +58,8 @@ class Net(BaseNet):
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
         inputs = super().forward(inputs=inputs, train=train)
         actions = super().forward(inputs=actions, train=train)
-        return self._policy_distribution(inputs).log_prob(actions)
+        return self._policy_distribution(inputs, train=train).log_prob(actions)
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
         inputs = super().forward(inputs=inputs, train=train)
         return self._critic(inputs)
-
-

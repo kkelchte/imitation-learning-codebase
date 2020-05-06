@@ -76,8 +76,18 @@ class DataSaver:
         if self._config.store_on_ram_only:
             self._dataset = Dataset(max_size=self._config.max_size)
 
-        self._frame_counter = 0  # used to keep track of replay buffer size on file system
-        #  TODO: count frames that are already in raw_data
+        # used to keep track of replay buffer size on file system
+        if not self._config.store_on_ram_only:
+            data_loader = DataLoader(config=DataLoaderConfig().create(config_dict={
+                'data_directories': [os.path.join(os.path.dirname(self._config.saving_directory), run)
+                                     for run in sorted(os.listdir(os.path.dirname(self._config.saving_directory)))],
+                'output_path': self._config.output_path,
+                'store': False  # don't store config
+            }))
+            data_loader.load_dataset()
+            self._frame_counter = len(data_loader.get_dataset())
+        else:
+            self._frame_counter = 0
 
     def __len__(self):
         if self._config.store_on_ram_only:
