@@ -58,7 +58,7 @@ class VanillaPolicyGradient(Trainer):
 
     def _train_actor(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._actor_optimizer.zero_grad()
-        log_probability = self._net.policy_log_probabilities(batch.observations, batch.actions, train=True)
+        log_probability = self._net.policy_log_probabilities(batch.observations, batch.actions, train=True).squeeze()
         policy_loss = -(log_probability * phi_weights).mean()
         policy_loss.backward()
         self._actor_optimizer.step()
@@ -66,7 +66,7 @@ class VanillaPolicyGradient(Trainer):
 
     def _train_critic(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._critic_optimizer.zero_grad()
-        critic_loss = ((self._net.critic(inputs=batch.observations, train=True) - phi_weights) ** 2).mean()
+        critic_loss = ((self._net.critic(inputs=batch.observations, train=True).squeeze() - phi_weights) ** 2).mean()
         critic_loss.backward()
         self._critic_optimizer.step()
         return critic_loss.detach()

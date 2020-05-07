@@ -64,7 +64,6 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         batch = self.data_loader.get_dataset()
-        print(len(batch))
         assert len(batch) != 0
 
         phi_weights = self._calculate_phi(batch)
