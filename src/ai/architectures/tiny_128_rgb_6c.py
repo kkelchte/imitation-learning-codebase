@@ -37,6 +37,7 @@ class Net(BaseNet):
         self.decoder = mlp_creator(sizes=[256 * 6 * 6, 128, 128, self.output_size[0]],
                                    activation=nn.ReLU,
                                    output_activation=nn.Tanh)
+        self.load_network_weights()
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
         """

@@ -82,6 +82,34 @@ class VPGTest(unittest.TestCase):
         after_check = get_checksum_network_parameters(network.parameters())
         self.assertNotEqual(before_check, after_check)
 
+    def test_actor_critic_separate_training(self):
+        network = eval(architecture_base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=architecture_base_config)
+        )
+        # checksum network
+        before_check = get_checksum_network_parameters(network.parameters())
+        info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
+                                                   num_runs=5,
+                                                   input_size=network.input_size,
+                                                   output_size=network.output_size,
+                                                   continuous=not network.discrete)
+        before_check_actor = get_checksum_network_parameters(network.get_actor_parameters())
+        before_check_critic = get_checksum_network_parameters(network.get_critic_parameters())
+
+        trainer_base_config['data_loader_config'] = {
+            'data_directories': info['episode_directories'],
+        }
+        trainer_base_config['phi_key'] = 'gae'
+        trainer = VanillaPolicyGradient(config=TrainerConfig().create(config_dict=trainer_base_config),
+                                        network=network)
+        batch = trainer.data_loader.get_dataset()
+        phi_weights = trainer._calculate_phi(batch)
+        trainer._train_actor(batch, phi_weights)
+        self.assertNotEqual(get_checksum_network_parameters(network.get_actor_parameters()), before_check_actor)
+        self.assertEqual(get_checksum_network_parameters(network.get_critic_parameters()), before_check_critic)
+        trainer._train_critic(batch, phi_weights)
+        self.assertNotEqual(get_checksum_network_parameters(network.get_critic_parameters()), before_check_critic)
+
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

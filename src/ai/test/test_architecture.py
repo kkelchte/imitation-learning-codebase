@@ -1,6 +1,7 @@
 import os
 import shutil
 import unittest
+from copy import deepcopy
 
 import torch
 import torch.nn as nn
@@ -108,7 +109,16 @@ class ArchitectureTest(unittest.TestCase):
                                                    output_size=network.output_size,
                                                    continuous=not network.discrete,
                                                    fixed_output_value=0)
-        # TODO test critic remains constant while actor is trained
+
+    def test_to_device_impact(self):
+        base_config['architecture'] = 'cart_pole_4_2d_stochastic'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        initial_network = deepcopy(network)
+        for _ in range(10000):
+            network.to_device(torch.device('cpu'))
+        self.assertEqual((initial_network._actor[0].weight - network._actor[0].weight).sum(), 0)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

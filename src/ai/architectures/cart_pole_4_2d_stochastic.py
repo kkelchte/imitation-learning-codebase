@@ -38,6 +38,7 @@ class Net(BaseNet):
         self._critic = mlp_creator(sizes=[self.input_size[0], 20, 20, 20, 1],
                                    activation=nn.ReLU,
                                    output_activation=None)
+        self.load_network_weights()
 
     def get_actor_parameters(self) -> Iterator:
         return self._actor.parameters()
@@ -56,7 +57,6 @@ class Net(BaseNet):
                       value=output.item())
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        inputs = super().forward(inputs=inputs, train=train)
         actions = super().forward(inputs=actions, train=train)
         return self._policy_distribution(inputs, train=train).log_prob(actions)
 

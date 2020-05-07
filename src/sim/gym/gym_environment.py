@@ -12,6 +12,7 @@ class GymEnvironment(Environment):
     def __init__(self, config: EnvironmentConfig):
         super(GymEnvironment, self).__init__(config=config)
         self._gym = gym.make(self._config.gym_config.world_name)
+        self._gym.seed(self._config.gym_config.random_seed)
         self.discrete = isinstance(self._gym.action_space, gym.spaces.Discrete)
         self.previous_observation = None
         self.observation_dimension = self._gym.observation_space

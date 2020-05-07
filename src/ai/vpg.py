@@ -81,7 +81,7 @@ class VanillaPolicyGradient(Trainer):
         critic_loss = self._train_critic(batch, phi_weights)
         self._net.global_step += 1
 
-        self._save_checkpoint()
+        self._save_checkpoint(epoch)
         self.put_model_back_to_original_device()
 
         if writer is not None:

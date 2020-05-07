@@ -12,6 +12,7 @@ from dataclasses_json import dataclass_json
 import torch.nn as nn
 from typing_extensions import runtime_checkable, Protocol
 
+from src.ai.utils import get_checksum_network_parameters
 from src.core.config_loader import Config
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
@@ -71,6 +72,13 @@ class BaseNet(nn.Module):
         os.makedirs(self._checkpoint_output_directory, exist_ok=True)
 
         self.extra_checkpoint_info = None
+        self._device = torch.device(
+            "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
+        )
+
+        self.global_step = torch.as_tensor(0, dtype=torch.int32)
+
+    def load_network_weights(self):
         if self._config.load_checkpoint_dir:
             self._config.load_checkpoint_dir = self._config.load_checkpoint_dir \
                 if self._config.load_checkpoint_dir.endswith('torch_checkpoints') \
@@ -78,12 +86,7 @@ class BaseNet(nn.Module):
             self.load_from_checkpoint(checkpoint_dir=self._config.load_checkpoint_dir)
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)
-
-        self._device = torch.device(
-            "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
-        )
-
-        self.global_step = torch.as_tensor(0, dtype=torch.int32)
+        cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
 
     def initialize_architecture_weights(self, initialisation_type: InitializationType = 0):
         torch.manual_seed(self._config.initialisation_seed)
@@ -152,6 +155,7 @@ class BaseNet(nn.Module):
                 inputs = torch.as_tensor(inputs, dtype=self.dtype)
             except ValueError:
                 inputs = torch.stack(inputs).type(self.dtype)
+        inputs.type(self.dtype)
         # swap H, W, C --> C, H, W
         if torch.argmin(torch.as_tensor(inputs.size())) != 0 \
                 and self.input_size[0] == inputs.size()[-1]\

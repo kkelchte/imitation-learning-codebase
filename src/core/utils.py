@@ -3,11 +3,21 @@
 import os
 import subprocess
 from datetime import datetime
+from typing import List
+
 import numpy as np
+
 
 def get_file_length(file_path: str) -> int:
     with open(file_path, 'r') as f:
         return len(f.readlines())
+
+
+def get_check_sum_list(data: List[np.ndarray]) -> float:
+    check_sum = 0
+    for e in data:
+        check_sum += np.sum(np.asarray(e))
+    return check_sum
 
 
 def read_file_to_output(file_path: str) -> None:

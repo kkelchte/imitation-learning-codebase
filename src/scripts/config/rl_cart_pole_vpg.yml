@@ -1,7 +1,7 @@
 architecture_config:
   architecture: cart_pole_4_2d_stochastic
   device: cpu
-  initialisation_seed: 0
+  initialisation_seed: 239
   initialisation_type: 0
 data_saver_config:
   clear_buffer_before_episode: true
@@ -28,4 +28,4 @@ trainer_config:
   factory_key: VPG
   gae_lambda: 0.95
   phi_key: gae
-  save_checkpoint_every_n: 100
+  save_checkpoint_every_n: 1000

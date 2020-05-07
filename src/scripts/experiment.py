@@ -1,10 +1,12 @@
 #!/usr/bin/python3.7
 import logging
 import os
+import sys
 import shutil
 from typing import Optional
 
 import yaml
+import numpy as np
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -13,8 +15,9 @@ from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
+from src.ai.utils import get_checksum_network_parameters
 from src.core.utils import get_filename_without_extension
-from src.core.data_types import TerminationType, Distribution
+from src.core.data_types import TerminationType, Distribution, Action
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
@@ -58,6 +61,7 @@ class ExperimentConfig(Config):
 class Experiment:
 
     def __init__(self, config: ExperimentConfig):
+        np.random.seed(123)
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
@@ -120,10 +124,11 @@ class Experiment:
         msg = f" {count_episodes} episodes"
         if count_success != 0:
             msg += f" with {count_success} success"
-            self._writer.write_scalar(count_success/float(count_episodes), "success")
-        if min(episode_returns) != max(episode_returns):
-            return_distribution = Distribution(episode_returns)
-            msg += f" with avg return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
+            if self._writer is not None:
+                self._writer.write_scalar(count_success/float(count_episodes), "success")
+        return_distribution = Distribution(episode_returns)
+        msg += f" with avg return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
+        if self._writer is not None:
             self._writer.write_distribution(return_distribution, "episode return")
         return msg
 
@@ -173,6 +178,7 @@ if __name__ == "__main__":
         if not config['output_path'].startswith('/'):
             config['output_path'] = os.path.join(os.environ['HOME'], config['output_path'])
         shutil.rmtree(config['output_path'], ignore_errors=True)
+
     experiment_config = ExperimentConfig().create(config_file=config_file)
     experiment = Experiment(experiment_config)
     experiment.run()

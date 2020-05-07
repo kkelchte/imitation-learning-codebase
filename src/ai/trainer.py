@@ -5,6 +5,7 @@ from typing import Union
 
 from dataclasses_json import dataclass_json
 from tqdm import tqdm
+import torch  # Don't remove
 
 from src.ai.base_net import BaseNet
 from src.ai.evaluator import EvaluatorConfig, Evaluator

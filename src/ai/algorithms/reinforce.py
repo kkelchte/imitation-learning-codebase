@@ -1,5 +1,6 @@
 #!/usr/bin/python3.7
 import os
+import sys
 import time
 import gym
 import numpy as np
@@ -14,6 +15,8 @@ from src.ai.algorithms.utils import *
 ##############################################################
 # Settings
 from src.ai.algorithms.utils import generalized_advantage_estimate, reward_to_go
+from src.ai.utils import get_checksum_network_parameters
+from src.core.utils import get_check_sum_list
 
 result_file_name = 'reinforce_GAE_cartpole_v0'
 weight_type = 'reward_to_go_with_generalized_advantage_estimate'
@@ -24,10 +27,11 @@ batch_size = 200
 discount = 0.95
 gae_lambda = 0.95
 plot = True
+seed = 123
 ##############################################################
 # Global variables:
-
 environment = gym.make(environment_name)
+environment.seed(seed)
 discrete = isinstance(environment.action_space, gym.spaces.Discrete)
 
 observation_dimension = environment.observation_space.shape[0]
@@ -49,6 +53,17 @@ value_network = nn.Sequential(
     nn.Linear(20, 1)
 )
 value_optimizer = Adam(value_network.parameters(), lr=learning_rate)
+
+torch.manual_seed(seed)
+for network in [policy_network, value_network]:
+    for p in network.parameters():
+        if len(p.shape) == 1:
+            nn.init.uniform_(p, a=0, b=1)
+        else:
+            nn.init.xavier_uniform_(p)
+
+print(get_checksum_network_parameters(list(policy_network.parameters())))
+print(get_checksum_network_parameters(list(value_network.parameters())))
 
 
 def policy_forward(observation):
@@ -110,7 +125,7 @@ def train_one_epoch():
     elif 'generalized_advantage_estimate' in weight_type:
         batch_weights = generalized_advantage_estimate(batch_rewards=batch_rewards,
                                                        batch_done=batch_done,
-                                                       batch_values=[v for v in values],
+                                                       batch_values=[v.detach().item() for v in values],
                                                        discount=discount,
                                                        gae_lambda=gae_lambda)
     # optimize policy with policy gradient step
@@ -140,7 +155,7 @@ def train_one_epoch():
         value_loss.backward()
         value_optimizer.step()
 
-    return batch_loss, epoch_returns, episode_lengths
+    return batch_loss, value_loss.detach(), epoch_returns
 
 ############################################
 # Loop over epochs and keep returns
@@ -158,7 +173,7 @@ result_directory = f'{os.environ["HOME"]}/code/imitation-learning-codebase/src/a
 os.makedirs(result_directory, exist_ok=True)
 
 for i in range(epochs):
-    batch_loss, batch_returns, batch_lengths = train_one_epoch()
+    batch_loss, value_loss, batch_returns = train_one_epoch()
     avg_returns.append(np.mean(batch_returns))
     min_returns.append(min(batch_returns))
     max_returns.append(max(batch_returns))
@@ -177,3 +192,5 @@ print(f'total duration : {time.time()-start_time}s')
 results = np.asarray([avg_returns, min_returns, max_returns])
 np.save(os.path.join(result_directory, result_file_name + '.npy'), results)
 
+print(get_checksum_network_parameters(list(policy_network.parameters())))
+print(get_checksum_network_parameters(list(value_network.parameters())))
