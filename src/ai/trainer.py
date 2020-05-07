@@ -43,16 +43,17 @@ class TrainerConfig(EvaluatorConfig):
 
 class Trainer(Evaluator):
 
-    def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
+    def __init__(self, config: TrainerConfig, network: BaseNet, super_init: bool = False):
+        # use super if this called from sub class.
         super().__init__(config, network, quiet=True)
 
-        if not quiet:
+        if not super_init:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
                                       quite=False)
             cprint(f'Started.', self._logger)
-        self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
-                                                                        lr=self._config.learning_rate)
+            self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
+                                                                            lr=self._config.learning_rate)
 
     def _save_checkpoint(self, epoch: int = -1):
         if epoch != -1:

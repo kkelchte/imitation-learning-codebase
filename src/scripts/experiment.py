@@ -106,13 +106,12 @@ class Experiment:
         episode_returns = []
         while not self._enough_episodes_check(count_episodes):
             episode_return = 0
-            experience = self._environment.reset()
+            experience, next_observation = self._environment.reset()
             while experience.done == TerminationType.Unknown:
-                experience = self._environment.step()
+                experience, next_observation = self._environment.step()
             while experience.done == TerminationType.NotDone:
-                action = self._net.get_action(inputs=experience.observation,
-                                              train=False) if self._net is not None else None
-                experience = self._environment.step(action)  # action is not used for ros-gazebo environments off-policy
+                action = self._net.get_action(next_observation, train=False) if self._net is not None else None
+                experience, next_observation = self._environment.step(action)
                 episode_return += experience.reward
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)

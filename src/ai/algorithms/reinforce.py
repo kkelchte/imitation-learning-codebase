@@ -11,11 +11,15 @@ from torch.optim import Adam
 import matplotlib.pyplot as plt
 
 from src.ai.algorithms.utils import *
-
+from src.ai.architectures.cart_pole_4_2d_stochastic import Net
 ##############################################################
 # Settings
 from src.ai.algorithms.utils import generalized_advantage_estimate, reward_to_go
+from src.ai.base_net import ArchitectureConfig
+from src.ai.trainer import TrainerConfig
 from src.ai.utils import get_checksum_network_parameters
+from src.ai.vpg import VanillaPolicyGradient
+from src.core.data_types import Dataset
 from src.core.utils import get_check_sum_list
 
 result_file_name = 'reinforce_GAE_cartpole_v0'
@@ -36,42 +40,68 @@ discrete = isinstance(environment.action_space, gym.spaces.Discrete)
 
 observation_dimension = environment.observation_space.shape[0]
 action_dimension = environment.action_space.n if discrete else environment.action_space.shape[0]
-policy_network = nn.Sequential(
-    nn.Linear(observation_dimension, 20), nn.ReLU(inplace=True),
-    nn.Linear(20, 20), nn.ReLU(inplace=True),
-    nn.Linear(20, 20), nn.ReLU(inplace=True),
-    nn.Linear(20, action_dimension),
-)
-if not discrete:
-    log_std = torch.nn.Parameter(torch.as_tensor(-0.5 * np.ones(action_dimension, dtype=np.float32)))
+# policy_network = nn.Sequential(
+#     nn.Linear(observation_dimension, 20), nn.ReLU(inplace=True),
+#     nn.Linear(20, 20), nn.ReLU(inplace=True),
+#     nn.Linear(20, 20), nn.ReLU(inplace=True),
+#     nn.Linear(20, action_dimension),
+# )
+# if not discrete:
+#     log_std = torch.nn.Parameter(torch.as_tensor(-0.5 * np.ones(action_dimension, dtype=np.float32)))
+#
 
-optimizer = Adam(policy_network.parameters(), lr=learning_rate)
-value_network = nn.Sequential(
-    nn.Linear(observation_dimension, 20), nn.ReLU(inplace=True),
-    nn.Linear(20, 20), nn.ReLU(inplace=True),
-    nn.Linear(20, 20), nn.ReLU(inplace=True),
-    nn.Linear(20, 1)
-)
-value_optimizer = Adam(value_network.parameters(), lr=learning_rate)
+# value_network = nn.Sequential(
+#     nn.Linear(observation_dimension, 20), nn.ReLU(inplace=True),
+#     nn.Linear(20, 20), nn.ReLU(inplace=True),
+#     nn.Linear(20, 20), nn.ReLU(inplace=True),
+#     nn.Linear(20, 1)
+# )
+# for network in [policy_network, value_network]:
+#     for p in network.parameters():
+#         if len(p.shape) == 1:
+#             nn.init.uniform_(p, a=0, b=1)
+#         else:
+#             nn.init.xavier_uniform_(p)
 
+#
 torch.manual_seed(seed)
-for network in [policy_network, value_network]:
-    for p in network.parameters():
-        if len(p.shape) == 1:
-            nn.init.uniform_(p, a=0, b=1)
-        else:
-            nn.init.xavier_uniform_(p)
+net = Net(config=ArchitectureConfig().create(config_dict={
+    'output_path': os.path.join(os.getcwd(), 'output_dir', 'reinforce'),
+    'architecture': 'cart_pole_4_2d_stochastic',
+    'device': 'cpu',
+    'initialisation_seed': 123,
+    'initialisation_type': 0,
+}))
 
+policy_network = net._actor
+value_network = net._critic
 print(get_checksum_network_parameters(list(policy_network.parameters())))
 print(get_checksum_network_parameters(list(value_network.parameters())))
+# optimizer = Adam(net.get_actor_parameters(), lr=learning_rate)
+# value_optimizer = Adam(net.get_critic_parameters(), lr=learning_rate)
+
+trainer = VanillaPolicyGradient(config=TrainerConfig().create(config_dict={
+                                        'output_path': os.path.join(os.getcwd(), 'output_dir', 'reinforce'),
+                                        "criterion": "MSELoss",
+                                        "device": "cpu",
+                                        "learning_rate": 0.001,
+                                        "optimizer": "Adam",
+                                        "data_loader_config": {"batch_size": 200},
+                                        "discount": 0.95,
+                                        "factory_key": "VPG",
+                                        "gae_lambda": 0.95,
+                                        "phi_key": "gae",
+                                        "save_checkpoint_every_n": 1000
+                                }), network=net)
 
 
 def policy_forward(observation):
-    logits = policy_network(observation)
-    if discrete:
-        return Categorical(logits=logits)
-    else:
-        return Normal(logits, torch.exp(log_std))
+    return net._policy_distribution(observation, train=True)
+    # logits = policy_network(observation)
+    # if discrete:
+    #     return Categorical(logits=logits)
+    # else:
+    #     return Normal(logits, torch.exp(log_std))
 
 
 def evaluate_policy(observation):
@@ -96,7 +126,8 @@ def train_one_epoch():
     episode_rewards = []
     while True:
         batch_observations.append(observation.copy())
-        action = evaluate_policy(observation)
+        #action = evaluate_policy(observation)
+        action = net.get_action(observation, train=False).value
         observation, reward, done, info = environment.step(action)
         episode_rewards.append(reward)
         batch_actions.append(action)
@@ -118,44 +149,19 @@ def train_one_epoch():
             if len(batch_observations) > batch_size:
                 break
 
-    # optimize value with supervised learning step
-    values = value_network(torch.as_tensor(batch_observations, dtype=torch.float32))
-    if 'value_baseline' in weight_type:
-        batch_weights = [batch_weights[i] - values[i] for i in range(len(values))]
-    elif 'generalized_advantage_estimate' in weight_type:
-        batch_weights = generalized_advantage_estimate(batch_rewards=batch_rewards,
-                                                       batch_done=batch_done,
-                                                       batch_values=[v.detach().item() for v in values],
-                                                       discount=discount,
-                                                       gae_lambda=gae_lambda)
-    # optimize policy with policy gradient step
-    optimizer.zero_grad()
+    batch = Dataset(
+        observations=[torch.as_tensor(o) for o in batch_observations],
+        actions=[torch.as_tensor(x, dtype=torch.float32) for x in batch_actions],
+        rewards=[torch.as_tensor(x, dtype=torch.float32) for x in batch_rewards],
+        done=[torch.as_tensor(x, dtype=torch.float32) for x in batch_done]
+    )
 
-    def compute_loss(obs, act, weights):
-        if discrete:
-            log_probability = policy_forward(obs).log_prob(act)
-        else:
-            log_probability = policy_forward(obs).log_prob(act).sum(axis=-1)
-        return -(log_probability * weights).mean()
+    trainer.data_loader.set_dataset(batch)
+    trainer.train(epoch=1)
+    batch_loss = 0
+    value_loss = 0
 
-    batch_loss = compute_loss(obs=torch.as_tensor(batch_observations, dtype=torch.float32),
-                              act=torch.as_tensor(batch_actions, dtype=torch.float32),
-                              weights=torch.as_tensor(batch_weights, dtype=torch.float32))
-    batch_loss.backward()
-    optimizer.step()
-
-    if 'value_baseline' in weight_type or 'generalized_advantage_estimate' in weight_type:
-        value_optimizer.zero_grad()
-
-        def compute_value_loss(obs, trgt):
-            return ((value_network(obs) - trgt) ** 2).mean()
-
-        value_loss = compute_value_loss(obs=torch.as_tensor(batch_observations, dtype=torch.float32),
-                                        trgt=torch.as_tensor(batch_weights, dtype=torch.float32))
-        value_loss.backward()
-        value_optimizer.step()
-
-    return batch_loss, value_loss.detach(), epoch_returns
+    return batch_loss, value_loss, epoch_returns
 
 ############################################
 # Loop over epochs and keep returns
@@ -177,9 +183,9 @@ for i in range(epochs):
     avg_returns.append(np.mean(batch_returns))
     min_returns.append(min(batch_returns))
     max_returns.append(max(batch_returns))
-    print(f'epoch: {i} \t loss: {batch_loss:0.3f} \t '
+    print(f'epoch: {i} \t actor loss: {batch_loss:0.3f} \t '
           f'returns: {np.mean(batch_returns): 0.3f} [{np.std(batch_returns): 0.3f}] \t'
-          f'lengths: {np.mean(batch_lengths): 0.3f} [{np.std(batch_lengths): 0.3f}]')
+          f'value loss: {value_loss: 0.3f}')
     if (i % 20 == 10 or i == epochs - 1) and plot:
         plt.fill_between(range(len(avg_returns)), min_returns, max_returns, color='blue', alpha=0.5)
         plt.plot(avg_returns, color='b')

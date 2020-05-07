@@ -19,7 +19,7 @@ Allows combination of outputs as weighted sum in one big backward pass.
 class VanillaPolicyGradient(Trainer):
 
     def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
-        super().__init__(config, network, quiet=True)
+        super().__init__(config, network, super_init=True)
         # Set default config params
         self._config.phi_key = 'gae' if self._config.phi_key == 'default' else self._config.phi_key
         self._config.discount = 0.95 if self._config.discount == 'default' else self._config.discount
@@ -58,7 +58,9 @@ class VanillaPolicyGradient(Trainer):
 
     def _train_actor(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._actor_optimizer.zero_grad()
-        log_probability = self._net.policy_log_probabilities(batch.observations, batch.actions, train=True).squeeze()
+        log_probability = self._net.policy_log_probabilities(torch.stack(batch.observations).type(torch.float32),
+                                                             torch.stack(batch.actions).type(torch.float32),
+                                                             train=True)
         policy_loss = -(log_probability * phi_weights).mean()
         policy_loss.backward()
         self._actor_optimizer.step()
@@ -71,12 +73,13 @@ class VanillaPolicyGradient(Trainer):
         self._critic_optimizer.step()
         return critic_loss.detach()
 
-    def train(self, epoch: int = -1, writer=None) -> str:
+    def train(self, epoch: int = -1, writer=None, phi_weights=None) -> str:
         self.put_model_on_device()
         batch = self.data_loader.get_dataset()
         assert len(batch) != 0
 
-        phi_weights = self._calculate_phi(batch)
+        if phi_weights is None:
+            phi_weights = self._calculate_phi(batch)
         policy_loss = self._train_actor(batch, phi_weights)
         critic_loss = self._train_critic(batch, phi_weights)
         self._net.global_step += 1

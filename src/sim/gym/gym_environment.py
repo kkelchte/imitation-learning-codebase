@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import gym
 import numpy as np
 from copy import deepcopy
@@ -28,20 +30,20 @@ class GymEnvironment(Environment):
     def reset(self) -> Experience:
         observation = self._gym.reset()
         self._step_count = 0
-        self.previous_observation = observation
+        self.previous_observation = observation.copy()
         return Experience(
             done=TerminationType.NotDone,
-            observation=deepcopy(self.previous_observation)
-        )
+            observation=observation
+        ), observation
 
-    def step(self, action: Action) -> Experience:
+    def step(self, action: Action) -> Tuple[Experience, np.ndarray]:
         self._step_count += 1
         observation, reward, done, info = self._gym.step(action.value)
         terminal = TerminationType.Done if done or self._step_count > self._config.max_number_of_steps != -1 \
             else TerminationType.NotDone
         experience = Experience(
             done=terminal,
-            observation=deepcopy(self.previous_observation),
+            observation=self.previous_observation.copy(),
             action=action,
             reward=reward,
             time_stamp=self._step_count,
@@ -50,7 +52,7 @@ class GymEnvironment(Environment):
         if self._config.gym_config.render:
             self._gym.render()
         self.previous_observation = observation
-        return experience
+        return experience, observation
 
     def get_random_action(self) -> Action:
         return Action(

@@ -82,4 +82,4 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             writer.write_distribution(actor_loss_distribution, "policy_loss")
             writer.write_distribution(critic_loss_distribution, "critic_loss")
         return f" training policy loss {actor_loss_distribution.mean: 0.3e} [{actor_loss_distribution.std: 0.2e}], " \
-               f"critic loss {critic_loss_distribution.mean: 0.3e} []{critic_loss_distribution.std: 0.3e}"
+               f"critic loss {critic_loss_distribution.mean: 0.3e} [{critic_loss_distribution.std: 0.3e}]"

@@ -155,7 +155,7 @@ class BaseNet(nn.Module):
                 inputs = torch.as_tensor(inputs, dtype=self.dtype)
             except ValueError:
                 inputs = torch.stack(inputs).type(self.dtype)
-        inputs.type(self.dtype)
+        inputs = inputs.type(self.dtype)
         # swap H, W, C --> C, H, W
         if torch.argmin(torch.as_tensor(inputs.size())) != 0 \
                 and self.input_size[0] == inputs.size()[-1]\
