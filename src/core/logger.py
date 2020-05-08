@@ -11,7 +11,7 @@ from src.core.utils import get_date_time_tag
 """
 
 
-def get_logger(name: str, output_path: str = '', quite: bool = False) -> logging.Logger:
+def get_logger(name: str, output_path: str = '', quiet: bool = False) -> logging.Logger:
     logger = logging.getLogger(name=name)
     [logger.removeHandler(handler) for handler in logger.handlers]
 
@@ -28,7 +28,7 @@ def get_logger(name: str, output_path: str = '', quite: bool = False) -> logging
     logger.addHandler(f_handler)
 
     # add stream handler
-    if not quite:
+    if not quiet:
         c_handler = logging.StreamHandler()
         c_handler.setLevel(logging.INFO)
         c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')

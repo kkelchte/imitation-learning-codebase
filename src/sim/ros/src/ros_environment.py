@@ -59,10 +59,13 @@ class RosEnvironment(Environment):
         # Fields
         self._step = 0
         self._current_experience = None
+        self._previous_observation = None
+
         self._default_observation = np.zeros((0,), dtype=np.uint8)
         self._default_action = Action(actor_name='default', value=np.ones((0,), dtype=np.float32))
         self._default_reward = np.ones((0,), dtype=np.float32)
         self._default_sensor_value = np.ones((0,), dtype=np.float32)
+
         self._info = {}
         self._clear_experience_values()
 
@@ -274,7 +277,8 @@ class RosEnvironment(Environment):
     def _update_current_experience(self):
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
-            observation=deepcopy(self._observation),
+            observation=deepcopy(self._previous_observation
+                                 if self._previous_observation is not None else self._observation),
             action=deepcopy(self._action),
             reward=deepcopy(self._reward),
             time_stamp=int(rospy.get_time() * 10 ** 3),
@@ -282,8 +286,9 @@ class RosEnvironment(Environment):
                 field_name: deepcopy(self._info[field_name]) for field_name in self._info.keys()
             }
         )
+        self._previous_observation = deepcopy(self._observation)
 
-    def reset(self) -> Experience:
+    def reset(self) -> Tuple[Experience, np.ndarray]:
         cprint(f'resetting', self._logger)
         self._step = 0
         self._terminal_state = TerminationType.Unknown
@@ -292,7 +297,7 @@ class RosEnvironment(Environment):
             self._reset_gazebo()
         self._run_shortly()
         self._update_current_experience()
-        return self._current_experience
+        return self._current_experience, deepcopy(self._observation)
 
     def _clear_experience_values(self):
         self._observation = self._default_observation
@@ -300,7 +305,7 @@ class RosEnvironment(Environment):
         self._reward = self._default_reward
         self._info = {}
 
-    def step(self, action: Action = None) -> Experience:
+    def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:
         self._step += 1
         self._internal_update_terminal_state()
         self._clear_experience_values()
@@ -311,7 +316,7 @@ class RosEnvironment(Environment):
         self._update_current_experience()
         self._publish_state()
         self._terminal_state = TerminationType.Unknown
-        return self._current_experience
+        return self._current_experience, deepcopy(self._observation)
 
     def _publish_state(self):
         ros_state = RosEnvironmentState()

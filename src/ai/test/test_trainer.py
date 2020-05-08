@@ -5,7 +5,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from src.ai.base_net import InitializationType, ArchitectureConfig
+from src.ai.base_net import ArchitectureConfig
 from src.ai.evaluator import Evaluator, EvaluatorConfig
 from src.ai.trainer import TrainerConfig, Trainer
 from src.ai.utils import generate_random_dataset_in_raw_data
@@ -16,13 +16,13 @@ from src.data.data_loader import DataLoaderConfig, DataLoader
 trainer_base_config = {
     "data_loader_config": {},
     "criterion": "MSELoss",
-    "device": "cpu"
+    "device": "cpu",
 }
 
 architecture_base_config = {
     "architecture": "tiny_128_rgb_6c",
     "load_checkpoint_dir": None,
-    "initialisation_type": InitializationType.Xavier,
+    "initialisation_type": 'xavier',
     "initialisation_seed": 0,
     "device": 'cpu',
 }
@@ -52,12 +52,13 @@ class TrainerTest(unittest.TestCase):
             'batch_size': 5
         }
         trainer = Trainer(config=TrainerConfig().create(config_dict=trainer_base_config),
-                          network=network)
+                          network=network, super_init=False)
         # train
         loss_message = trainer.train()
         # train long
         for i in range(4):
             later_message = trainer.train(epoch=i)
+            print(later_message)
         self.assertGreater(float(loss_message.split(' ')[4]),
                            float(later_message.split(' ')[4]))
 

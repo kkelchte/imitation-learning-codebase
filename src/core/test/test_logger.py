@@ -11,7 +11,7 @@ class SuperClass:
     def __init__(self, output_path: str):
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=output_path,
-                                  quite=False)
+                                  quiet=False)
         cprint('superclass initiated', self._logger)
 
 
@@ -55,7 +55,7 @@ class TestLogger(unittest.TestCase):
     def test_cprint(self):
         current_logger = get_logger(name=get_filename_without_extension(__file__),
                                     output_path=self.TEST_DIR,
-                                    quite=True)
+                                    quiet=True)
         cprint('HELP', current_logger)
 
         log_file = glob(os.path.join(self.TEST_DIR, 'log_files', '*'))[0]

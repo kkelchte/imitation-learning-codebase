@@ -52,7 +52,7 @@ class DataLoader:
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
-                                  quite=False)
+                                  quiet=False)
         cprint(f'Started.', self._logger)
         np.random.seed(self._config.data_sampling_seed)
         self._dataset = Dataset()
@@ -99,14 +99,12 @@ class DataLoader:
         index = 0
         while index < len(self._dataset):
             batch = Dataset()
-            batch.observations = self._dataset.observations[index:min(index + self._config.batch_size,
-                                                                      len(self._dataset.observations))]
-            batch.actions = self._dataset.actions[index:min(index + self._config.batch_size,
-                                                            len(self._dataset.actions))]
-            batch.done = self._dataset.done[index:min(index + self._config.batch_size,
-                                                      len(self._dataset.done))]
-            batch.rewards = self._dataset.rewards[index:min(index + self._config.batch_size,
-                                                            len(self._dataset.done))]
+            end_index = min(index + self._config.batch_size, len(self._dataset)) \
+                if self._config.batch_size != -1 else len(self._dataset)
+            batch.observations = self._dataset.observations[index:end_index]
+            batch.actions = self._dataset.actions[index:end_index]
+            batch.done = self._dataset.done[index:end_index]
+            batch.rewards = self._dataset.rewards[index:end_index]
             index += self._config.batch_size
             yield batch
 

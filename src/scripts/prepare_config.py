@@ -4,7 +4,7 @@ from src.core.utils import get_to_root_dir
 from src.scripts.experiment import ExperimentConfig
 
 CONFIG_DICT = {}
-CONFIG_FILENAME = ".yml"
+CONFIG_FILENAME = "il_evaluate_interactive_cube_world.yml"
 CONFIG_FILE = f"src/scripts/config/{CONFIG_FILENAME}"
 get_to_root_dir()
 
@@ -29,7 +29,7 @@ def validate_config(config_dict: dict) -> None:
 
 if __name__ == "__main__":
     pass
-    # base_config = read_config("src/scripts/config/rl_cart_pole_vpg.yml")
+    config = read_config(CONFIG_FILE)
     # adjust config if needed here
-    # validate_config(base_config)
+    validate_config(config)
     # write_config(destination, base_config)

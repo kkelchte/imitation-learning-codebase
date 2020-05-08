@@ -65,7 +65,7 @@ class Experiment:
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
-                                  quite=False)
+                                  quiet=False)
         self._data_saver = DataSaver(config=config.data_saver_config) \
             if self._config.data_saver_config is not None else None
         self._environment = EnvironmentFactory().create(config.environment_config) \

@@ -29,9 +29,9 @@ class TestGymEnvironment(unittest.TestCase):
         }
 
         environment = GymEnvironment(EnvironmentConfig().create(config_dict=config))
-        experience = environment.reset()
+        experience, _ = environment.reset()
         while experience.done != TerminationType.Done:
-            experience = environment.step(environment.get_random_action())
+            experience, _ = environment.step(environment.get_random_action())
         return environment.remove() == ProcessState.Terminated
 
     def test_environments(self):

@@ -2,7 +2,8 @@ import os
 from enum import IntEnum
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
+import numpy as np
 
 from dataclasses_json import dataclass_json
 
@@ -96,13 +97,13 @@ class Environment:
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=self._config.output_path,
-                                  quite=False)
+                                  quiet=False)
         cprint('initiated', self._logger)
 
-    def step(self, action: Action) -> Experience:
+    def step(self, action: Action) -> Tuple[Experience, np.ndarray]:
         pass
 
-    def reset(self) -> Experience:
+    def reset(self) -> Tuple[Experience, np.ndarray]:
         pass
 
     def remove(self) -> ProcessState:

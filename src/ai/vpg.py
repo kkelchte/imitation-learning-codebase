@@ -28,7 +28,7 @@ class VanillaPolicyGradient(Trainer):
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
-                                      quite=False)
+                                      quiet=True)
             cprint(f'Started.', self._logger)
 
         self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_actor_parameters(),
@@ -61,17 +61,18 @@ class VanillaPolicyGradient(Trainer):
         log_probability = self._net.policy_log_probabilities(torch.stack(batch.observations).type(torch.float32),
                                                              torch.stack(batch.actions).type(torch.float32),
                                                              train=True)
-        policy_loss = -(log_probability * phi_weights).mean()
-        policy_loss.backward()
+        policy_loss = -(log_probability * phi_weights)
+        policy_loss.mean().backward()
         self._actor_optimizer.step()
-        return policy_loss.detach()
+        return policy_loss.mean().detach()
 
     def _train_critic(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._critic_optimizer.zero_grad()
-        critic_loss = ((self._net.critic(inputs=batch.observations, train=True).squeeze() - phi_weights) ** 2).mean()
-        critic_loss.backward()
+        critic_loss = self._criterion(self._net.critic(inputs=batch.observations, train=True).squeeze(), phi_weights)
+        # critic_loss = ((self._net.critic(inputs=batch.observations, train=True).squeeze() - phi_weights) ** 2).mean()
+        critic_loss.mean().backward()
         self._critic_optimizer.step()
-        return critic_loss.detach()
+        return critic_loss.mean().detach()
 
     def train(self, epoch: int = -1, writer=None, phi_weights=None) -> str:
         self.put_model_on_device()

@@ -66,7 +66,7 @@ class DataSaver:
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=self._config.output_path,
-                                  quite=False)
+                                  quiet=False)
         cprint(f'initiate', self._logger)
 
         if not self._config.saving_directory.startswith('/'):

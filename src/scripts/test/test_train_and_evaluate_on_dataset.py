@@ -4,7 +4,7 @@ import time
 import unittest
 from glob import glob
 
-from src.ai.base_net import InitializationType, ArchitectureConfig
+from src.ai.base_net import ArchitectureConfig
 from src.ai.utils import generate_random_dataset_in_raw_data
 from src.core.utils import get_to_root_dir, get_filename_without_extension
 from src.ai.architectures import *  # Do not remove
@@ -20,7 +20,7 @@ class DatasetExperimentsTest(unittest.TestCase):
             "architecture_config": {
                 "architecture": "tiny_128_rgb_6c",
                 "load_checkpoint_dir": None,
-                "initialisation_type": InitializationType.Xavier,
+                "initialisation_type": 'xavier',
                 "initialisation_seed": 0,
                 "device": 'cpu'},
             "trainer_config": {

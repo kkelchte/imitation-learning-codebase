@@ -2,7 +2,6 @@ import shutil
 import unittest
 import os
 
-from src.ai.base_net import InitializationType
 from src.scripts.experiment import ExperimentConfig, Experiment
 from src.core.utils import get_filename_without_extension, get_to_root_dir
 
@@ -13,13 +12,13 @@ experiment_config = {
     "architecture_config": {
         "architecture": "tiny_128_rgb_6c",
         "load_checkpoint_dir": None,
-        "initialisation_type": InitializationType.Xavier,
+        "initialisation_type": 'xavier',
         "initialisation_seed": 0,
         "device": 'cpu'},
     "tensorboard": True,
     "environment_config": {
         "factory_key": "GYM",
-        "max_number_of_steps": 10,
+        "max_number_of_steps": 5,
         "gym_config": {
             "random_seed": 123,
             "world_name": None,
@@ -47,9 +46,9 @@ class TestGymModelEvaluation(unittest.TestCase):
         self.assertEqual(len(raw_data_dirs), 1)
         run_dir = raw_data_dirs[0]
         with open(os.path.join(run_dir, 'done.data'), 'r') as f:
-            self.assertEqual(len(f.readlines()),
-                             experiment_config["number_of_episodes"] *
-                             experiment_config["environment_config"]["max_number_of_steps"])
+            self.assertEqual(experiment_config["number_of_episodes"] *
+                             experiment_config["environment_config"]["max_number_of_steps"],
+                             len(f.readlines()))
         self.experiment.shutdown()
 
     def test_continuous_stochastic_pendulum(self):

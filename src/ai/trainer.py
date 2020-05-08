@@ -50,7 +50,7 @@ class Trainer(Evaluator):
         if not super_init:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
-                                      quite=False)
+                                      quiet=True)
             cprint(f'Started.', self._logger)
             self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
                                                                             lr=self._config.learning_rate)
@@ -64,9 +64,9 @@ class Trainer(Evaluator):
 
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
-        self._optimizer.zero_grad()
         total_error = []
         for batch in tqdm(self.data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
+            self._optimizer.zero_grad()
             predictions = self._net.forward(batch.observations, train=True)
             targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
             loss = self._criterion(predictions, targets).mean()
@@ -74,7 +74,7 @@ class Trainer(Evaluator):
             self._optimizer.step()  # apply gradients according to optimizer
             self._net.global_step += 1
             total_error.append(loss.cpu().detach())
-
+        print(total_error)
         self.put_model_back_to_original_device()
         self._save_checkpoint(epoch)
 

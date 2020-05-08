@@ -24,7 +24,7 @@ class Net(BaseNet):
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
-                                      quite=False)
+                                      quiet=False)
 
             cprint(f'Started.', self._logger)
 

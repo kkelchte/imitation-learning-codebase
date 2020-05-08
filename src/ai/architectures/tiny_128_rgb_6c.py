@@ -21,7 +21,7 @@ class Net(BaseNet):
         super().__init__(config=config)
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
-                                  quite=False)
+                                  quiet=False)
         if not quiet:
             cprint(f'Started.', self._logger)
         self.input_size = (3, 128, 128)

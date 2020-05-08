@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dataclasses import dataclass
 import yaml
 from dataclasses_json import dataclass_json
@@ -16,7 +18,7 @@ Depends on ai/architectures/models to call forward pass.
 @dataclass
 class ActorConfig(Config):
     name: str = ''
-    specs: dict = None
+    specs: Optional[dict] = None
     file: str = None
 
     def __post_init__(self):

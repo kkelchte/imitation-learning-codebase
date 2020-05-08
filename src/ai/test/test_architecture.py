@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from src.ai.base_net import InitializationType, ArchitectureConfig, BaseNet
+from src.ai.base_net import ArchitectureConfig, BaseNet
 from src.ai.utils import mlp_creator, generate_random_dataset_in_raw_data
 from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
 from src.ai.architectures import *  # Do not remove
@@ -15,7 +15,7 @@ from src.ai.architectures import *  # Do not remove
 base_config = {
     "architecture": "",
     "load_checkpoint_dir": None,
-    "initialisation_type": InitializationType.Xavier,
+    "initialisation_type": 'xavier',
     "initialisation_seed": 0,
     "device": 'cpu',
 }

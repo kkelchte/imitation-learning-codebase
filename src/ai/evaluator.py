@@ -38,7 +38,7 @@ class Evaluator:
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
-                                      quite=False) if type(self) == Evaluator else None
+                                      quiet=True) if type(self) == Evaluator else None
             cprint(f'Started.', self._logger)
 
         self._device = torch.device(

@@ -23,7 +23,7 @@ config_dict = {
         ],
         "observation": "forward_camera",
         "visible_xterm": False,
-        "step_rate_fps": 2,
+        "step_rate_fps": 10,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",

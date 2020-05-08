@@ -87,7 +87,7 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual(result, 'dataset_experiment')
 
     def test_config_creation(self):
-        base_file = 'src/scripts/config/data_collection_config.yml'
+        base_file = 'src/scripts/config/il_data_collection_cube_world.yml'
         with open(base_file, 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         variable_values = ['src/sim/ros/config/actor/ros_expert_noisy.yml',

@@ -1,15 +1,10 @@
 import os
 import shutil
 import unittest
-from copy import deepcopy
 
-import numpy as np
 import torch
 
-from src.ai.base_net import InitializationType, ArchitectureConfig
-from src.ai.evaluator import Evaluator, EvaluatorConfig
-from src.ai.trainer import TrainerConfig, Trainer
-from src.ai.utils import generate_random_dataset_in_raw_data, get_returns, get_reward_to_go, \
+from src.ai.utils import get_returns, get_reward_to_go, \
     get_generalized_advantage_estimate
 from src.core.data_types import Dataset, Experience
 from src.core.utils import get_to_root_dir, get_filename_without_extension
@@ -17,7 +12,7 @@ from src.ai.architectures import *  # Do not remove
 from src.data.data_loader import DataLoaderConfig, DataLoader
 
 
-class TrainerTest(unittest.TestCase):
+class PhiWeightTest(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'

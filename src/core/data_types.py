@@ -14,6 +14,9 @@ class Distribution:
     max: float = 0
 
     def __init__(self, data: Iterator):
+        if isinstance(data, list):
+            if isinstance(data[0], torch.Tensor):
+                data = torch.stack(data)
         if isinstance(data, torch.Tensor):
             if not isinstance(data, torch.FloatTensor):
                 data = data.type(torch.float32)

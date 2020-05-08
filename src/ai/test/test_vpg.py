@@ -1,13 +1,9 @@
 import os
 import shutil
 import unittest
-from copy import deepcopy
 
-import numpy as np
-
-from src.ai.base_net import InitializationType, ArchitectureConfig
-from src.ai.evaluator import Evaluator, EvaluatorConfig
-from src.ai.trainer import TrainerConfig, Trainer
+from src.ai.base_net import ArchitectureConfig
+from src.ai.trainer import TrainerConfig
 from src.ai.utils import generate_random_dataset_in_raw_data, get_checksum_network_parameters
 from src.ai.vpg import VanillaPolicyGradient
 from src.core.utils import get_to_root_dir, get_filename_without_extension
@@ -24,7 +20,7 @@ trainer_base_config = {
 architecture_base_config = {
     "architecture": "cart_pole_4_2d_stochastic",
     "load_checkpoint_dir": None,
-    "initialisation_type": InitializationType.Xavier,
+    "initialisation_type": 'xavier',
     "initialisation_seed": 0,
     "device": 'cpu',
 }

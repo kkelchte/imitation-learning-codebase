@@ -2,7 +2,6 @@ import shutil
 import unittest
 import os
 
-from src.ai.base_net import InitializationType
 from src.scripts.experiment import ExperimentConfig, Experiment
 from src.core.utils import get_filename_without_extension, get_to_root_dir
 
@@ -13,7 +12,7 @@ experiment_config = {
     "architecture_config": {
         "architecture": "tiny_128_rgb_6c",
         "load_checkpoint_dir": None,
-        "initialisation_type": InitializationType.Xavier,
+        "initialisation_type": 'xavier',
         "initialisation_seed": 0,
         "device": 'cpu'},
     "tensorboard": False,

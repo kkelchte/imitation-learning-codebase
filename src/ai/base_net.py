@@ -1,6 +1,5 @@
 import os
 import time
-from enum import IntEnum
 
 import torch
 import numpy as np
@@ -30,17 +29,12 @@ class GetItem(Protocol):
     def __getitem__(self: 'GetItem', key: Any) -> Any: pass
 
 
-class InitializationType(IntEnum):
-    Xavier = 0
-    Constant = 1
-
-
 @dataclass_json
 @dataclass
 class ArchitectureConfig(Config):
     architecture: str = None  # name of architecture to be loaded
     load_checkpoint_dir: Optional[str] = None  # path to checkpoints
-    initialisation_type: InitializationType = InitializationType.Xavier
+    initialisation_type: str = 'xavier'
     initialisation_seed: int = 0
     device: str = 'cpu'
     weight_decay: Union[float, str] = 'default'
@@ -66,7 +60,7 @@ class BaseNet(nn.Module):
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
-                                      quite=False)
+                                      quiet=True)
             cprint(f'Started.', self._logger)
         self._checkpoint_output_directory = os.path.join(self._config.output_path, 'torch_checkpoints')
         os.makedirs(self._checkpoint_output_directory, exist_ok=True)
@@ -88,16 +82,16 @@ class BaseNet(nn.Module):
             self.initialize_architecture_weights(self._config.initialisation_type)
         cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
 
-    def initialize_architecture_weights(self, initialisation_type: InitializationType = 0):
+    def initialize_architecture_weights(self, initialisation_type: str = 'xavier'):
         torch.manual_seed(self._config.initialisation_seed)
         for p in self.parameters():
-            if initialisation_type == InitializationType.Xavier:
+            if initialisation_type == 'xavier':
                 if len(p.shape) == 1:
-                    nn.init.uniform_(p, a=0, b=1)
+                    nn.init.uniform_(p, a=-0.03, b=0.03)
                 else:
                     nn.init.xavier_uniform_(p)
-            elif initialisation_type == InitializationType.Constant:
-                nn.init.constant_(p, 0.001)
+            elif initialisation_type == 'constant':
+                nn.init.constant_(p, 0.03)
             else:
                 raise NotImplementedError
 
