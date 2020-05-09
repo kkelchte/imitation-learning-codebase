@@ -144,11 +144,12 @@ def load_run(directory: str, arrange_according_to_timestamp: bool = False) -> Li
     if len(run.keys()) == 0:
         return []
     else:
+
         return [Experience(
-            observation=run['observation'][index],
-            action=run['action'][index],
-            reward=run['reward'][index],
-            done=run['done'][index]
+            observation=run['observation'][index] if 'observation' in run.keys() else None,
+            action=run['action'][index] if 'action' in run.keys() else None,
+            reward=run['reward'][index] if 'reward' in run.keys() else None,
+            done=run['done'][index] if 'done' in run.keys() else None
         ) for index in range(len(run['observation']))]
 
 ####################################################################

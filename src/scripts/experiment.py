@@ -109,6 +109,7 @@ class Experiment:
             experience, next_observation = self._environment.reset()
             while experience.done == TerminationType.Unknown:
                 experience, next_observation = self._environment.step()
+            cprint("running episode", self._logger)
             while experience.done == TerminationType.NotDone:
                 action = self._net.get_action(next_observation, train=False) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
