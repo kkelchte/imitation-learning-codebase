@@ -33,7 +33,6 @@ class GymEnvironment(Environment):
         self.previous_observation = observation.copy()
         return Experience(
             done=TerminationType.NotDone,
-            observation=observation
         ), observation
 
     def step(self, action: Action) -> Tuple[Experience, np.ndarray]:

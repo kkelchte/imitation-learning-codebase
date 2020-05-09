@@ -23,7 +23,7 @@ config_dict = {
         ],
         "observation": "forward_camera",
         "visible_xterm": False,
-        "step_rate_fps": 10,
+        "step_rate_fps": 2,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",
@@ -63,16 +63,16 @@ class TestRosIntegrated(unittest.TestCase):
     def test_multiple_resets(self):
         waypoints = rospy.get_param('/world/waypoints')
         for _ in range(2):
-            experience = self._environment.reset()
+            experience, observation = self._environment.reset()
             # wait delay evaluation time
             while experience.done == TerminationType.Unknown:
-                experience = self._environment.step()
+                experience, observation = self._environment.step()
             self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
             self.assertLess(np.sum(experience.info['odometry'][:3]), 0.2)
             count = 0
             while experience.done == TerminationType.NotDone:
                 count += 1
-                experience = self._environment.step()
+                experience, observation = self._environment.step()
                 self.assertNotEqual(experience.observation, self._environment._default_observation)
                 self.assertNotEqual(len(experience.action.value),
                                     len(self._environment._default_action.value))

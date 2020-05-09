@@ -65,7 +65,6 @@ class RosEnvironment(Environment):
         self._default_action = Action(actor_name='default', value=np.ones((0,), dtype=np.float32))
         self._default_reward = np.ones((0,), dtype=np.float32)
         self._default_sensor_value = np.ones((0,), dtype=np.float32)
-
         self._info = {}
         self._clear_experience_values()
 
@@ -207,7 +206,7 @@ class RosEnvironment(Environment):
                                                  value=adapt_twist_to_action(msg).value)
         else:
             self._info[info_object_name] = np.asarray(msg.data)
-        cprint(f'set info {info_object_name}', self._logger)
+        cprint(f'set info {info_object_name}', self._logger, msg_type=MessageType.debug)
 
     def _set_field(self, msg: Union[String, Twist, Image, CompressedImage], args: Tuple) -> None:
         field_name, sensor_stats = args
@@ -227,7 +226,8 @@ class RosEnvironment(Environment):
                msg_type=MessageType.debug)
 
     def _internal_update_terminal_state(self):
-        if self.fsm_state == FsmState.Running and self._terminal_state == TerminationType.Unknown:
+        if self.fsm_state == FsmState.Running and \
+                self._terminal_state == TerminationType.Unknown:
             self._terminal_state = TerminationType.NotDone
         if self._terminal_state == TerminationType.NotDone and \
                 self._config.max_number_of_steps != -1 and \
@@ -275,6 +275,8 @@ class RosEnvironment(Environment):
             self._pause_gazebo()
 
     def _update_current_experience(self):
+        if self._config.ros_config.observation != '':
+            assert self._observation != self._default_observation
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._previous_observation
