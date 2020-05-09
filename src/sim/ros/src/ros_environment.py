@@ -275,8 +275,8 @@ class RosEnvironment(Environment):
             self._pause_gazebo()
 
     def _update_current_experience(self):
-        if self._config.ros_config.observation != '':
-            assert self._observation != self._default_observation
+#        if self._config.ros_config.observation != '':
+#            assert self._observation != self._default_observation
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._previous_observation
