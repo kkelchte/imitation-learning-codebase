@@ -63,6 +63,7 @@ class RosConfig(Config):
     visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None
     actor_configs: List[ActorConfig] = None  # extra ros nodes that can act on robot.
+    max_update_wait_period_s: float = 10  # max wall time waiting duration till update.
 
     def __post_init__(self):
         if self.info is None:

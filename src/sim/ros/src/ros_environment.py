@@ -2,6 +2,7 @@
 import os
 import signal
 import sys
+import time
 from copy import deepcopy
 from typing import Tuple, Union, List
 
@@ -90,7 +91,7 @@ class RosEnvironment(Environment):
                          callback_args=('terminal_state', {}))
 
         # Subscribe to observation
-        self._observation = self._default_observation
+        self._observation = None
         if self._config.ros_config.observation != '':
             self._subscribe_observation(self._config.ros_config.observation)
 
@@ -123,11 +124,8 @@ class RosEnvironment(Environment):
             while self.fsm_state is None:
                 self._run_shortly()
 
-        # assert observations and actions are received:
-        if self._config.ros_config.observation != '':
-            cprint('Wait till observation sensor has started properly.', self._logger)
-            while np.sum(self._observation) == np.sum(self._default_observation):
-                self._run_shortly()
+        # assert all experience fields are updated once:
+        self._run_shortly()
         cprint('ready', self._logger)
 
     def _subscribe_observation(self, sensor: str) -> None:
@@ -267,28 +265,56 @@ class RosEnvironment(Environment):
         except ResourceWarning:
             pass
 
+    def _clear_experience_values(self):
+        """Set all experience fields to None"""
+        self._observation = None
+        self._action = None
+        self._reward = None
+        self._info = {k: None for k in self._info.keys()}
+
+    def _update_current_experience(self) -> bool:
+        """
+        If all experience fields are updated,
+        store all experience fields in _current_experience fields end return True
+        else False.
+        :return: Bool whether all fields are updated
+        """
+        if self._observation is None or \
+                self._action is None or \
+                self._reward is None or \
+                None in self._info.values():
+            return False
+        else:
+            self._current_experience = Experience(
+                done=deepcopy(self._terminal_state),
+                observation=deepcopy(self._previous_observation
+                                     if self._previous_observation is not None else self._observation),
+                action=deepcopy(self._action),
+                reward=deepcopy(self._reward),
+                time_stamp=int(rospy.get_time() * 10 ** 3),
+                info={
+                    field_name: deepcopy(self._info[field_name]) for field_name in self._info.keys()
+                }
+            )
+            self._previous_observation = deepcopy(self._observation)
+            return True
+
     def _run_shortly(self):
+        self._clear_experience_values()
         if self._config.ros_config.ros_launch_config.gazebo:
             self._unpause_gazebo()
-        rospy.sleep(self._pause_period)
+        start_time = time.time()
+        while not self._update_current_experience():
+            rospy.sleep(self._pause_period)
+            if time.time() - start_time > self._config.ros_config.max_update_wait_period_s:
+                cprint(f"ros seems to be stuck, waiting for more than "
+                       f"{self._config.ros_config.max_update_wait_period_s}s, so exit.",
+                       self._logger,
+                       msg_type=MessageType.warning)
+                self.remove()
+                sys.exit(1)
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_gazebo()
-
-    def _update_current_experience(self):
-#        if self._config.ros_config.observation != '':
-#            assert self._observation != self._default_observation
-        self._current_experience = Experience(
-            done=deepcopy(self._terminal_state),
-            observation=deepcopy(self._previous_observation
-                                 if self._previous_observation is not None else self._observation),
-            action=deepcopy(self._action),
-            reward=deepcopy(self._reward),
-            time_stamp=int(rospy.get_time() * 10 ** 3),
-            info={
-                field_name: deepcopy(self._info[field_name]) for field_name in self._info.keys()
-            }
-        )
-        self._previous_observation = deepcopy(self._observation)
 
     def reset(self) -> Tuple[Experience, np.ndarray]:
         cprint(f'resetting', self._logger)
@@ -298,14 +324,7 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
         self._run_shortly()
-        self._update_current_experience()
         return self._current_experience, deepcopy(self._observation)
-
-    def _clear_experience_values(self):
-        self._observation = self._default_observation
-        self._action = self._default_action
-        self._reward = self._default_reward
-        self._info = {}
 
     def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:
         self._step += 1
@@ -314,21 +333,8 @@ class RosEnvironment(Environment):
         if action is not None:
             self._action_publisher.publish(adapt_action_to_twist(action))
         self._run_shortly()
-        assert not (self.fsm_state == FsmState.Terminated and self._terminal_state == TerminationType.Unknown)
-        self._update_current_experience()
-        self._publish_state()
         self._terminal_state = TerminationType.Unknown
         return self._current_experience, deepcopy(self._observation)
-
-    def _publish_state(self):
-        ros_state = RosEnvironmentState()
-        ros_state.robot_name = self._config.ros_config.ros_launch_config.robot_name
-        ros_state.time_stamp_ms = int(self._current_experience.time_stamp)
-        ros_state.terminal = self._current_experience.done.name
-        ros_state.action = self._current_experience.action != self._default_action
-        ros_state.reward = self._current_experience.reward != self._default_reward
-        ros_state.observation = self._current_experience.observation != self._default_observation
-        self._state_publisher.publish(ros_state)
 
     def remove(self) -> bool:
         return self._ros.terminate() == ProcessState.Terminated
