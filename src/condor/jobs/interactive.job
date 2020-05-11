@@ -1,0 +1,13 @@
+###########################
+# Submit an interactive job
+###########################
+
+RequestCpus     = 12
+RequestMemory   = 10G
++RequestWallTime = 5*60*60
+Request_GPUS    = 0
+
+# If you want X11 forwarding, uncomment this
+#Requirements = ( HasX11 == True )
+
+Queue
