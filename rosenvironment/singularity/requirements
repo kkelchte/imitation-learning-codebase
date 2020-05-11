@@ -17,6 +17,7 @@ tensorboard
 roslibpy
 frozendict
 gym==0.10.*
+atari-py
 box2d-py==2.3.8
 pyglet==1.3.2
 dataclasses-json
@@ -28,3 +29,5 @@ opencv-python
 empy
 tqdm
 h5py
+tablib
+graphviz

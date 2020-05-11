@@ -11,6 +11,7 @@ from src.core.object_factory import ObjectFactory, ConfigFactory
 from src.core.config_loader import Config
 from src.core.utils import get_filename_without_extension
 
+
 @dataclass_json
 @dataclass
 class DummyEnvironmentConfig(Config):
@@ -50,7 +51,8 @@ class DummyGymEnvironment:
 
 class DummyGazeboEnvironment:
 
-    def __init__(self, config: DummyGazeboEnvironmentConfig):
+    def __init__(self, config: DummyGazeboEnvironmentConfig, with_arguments: bool = False):
+        self.with_arguments = with_arguments
         if not config.robot_type:
             raise IOError('Configuration not successful.')
 
@@ -96,6 +98,19 @@ class TestObjectFactory(unittest.TestCase):
         config = DummyEnvironmentConfigFactory().create(config=self.config)
         instant = DummyEnvironmentFactory().create(config=config)
         self.assertTrue(instant, DummyGazeboEnvironment)
+
+    def test_create_instant_with_arguments(self):
+        self.config['factory_key'] = 'gazebo'
+        self.config['robot_type'] = 'turtle'
+        config = DummyEnvironmentConfigFactory().create(config=self.config)
+        env = DummyEnvironmentFactory().create(config=config, with_arguments=True)
+        self.assertTrue(env.with_arguments)
+        env = DummyEnvironmentFactory().create(config=config, with_arguments=False)
+        self.assertFalse(env.with_arguments)
+        env = DummyEnvironmentFactory().create(config, True)
+        self.assertTrue(env.with_arguments)
+        env = DummyEnvironmentFactory().create(config, False)
+        self.assertFalse(env.with_arguments)
 
     def tearDown(self):
         shutil.rmtree(self.TEST_DIR, ignore_errors=True)

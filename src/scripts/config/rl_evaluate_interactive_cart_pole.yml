@@ -1,0 +1,18 @@
+architecture_config:
+  architecture: cart_pole_4_2d_stochastic
+  device: cpu
+  load_checkpoint_dir: /tmp/experimental_data/cart_pole_vpg
+data_saver_config:
+  clear_buffer_before_episode: false
+  store_on_ram_only: false
+environment_config:
+  factory_key: GYM
+  gym_config:
+    random_seed: 123
+    render: true
+    world_name: CartPole-v0
+  max_number_of_steps: -1
+number_of_episodes: 10
+number_of_epochs: 1
+output_path: /tmp/experimental_data/cart_pole_vpg
+tensorboard: true

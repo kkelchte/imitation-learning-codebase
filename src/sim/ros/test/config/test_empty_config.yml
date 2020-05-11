@@ -1,4 +1,4 @@
-factory_key: 0
+factory_key: ROS
 max_number_of_steps: -1
 output_path: /tmp
 ros_config:
@@ -12,5 +12,5 @@ ros_config:
     robot_name: dummy
     waypoint_indicator: false
     world_name: empty_world
-  visible_xterm: true
-actor_configs: []
+  visible_xterm: false
+  actor_configs: []

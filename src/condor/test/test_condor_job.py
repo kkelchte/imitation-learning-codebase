@@ -16,7 +16,7 @@ from src.condor.helper_functions import create_configs, get_variable_name, strip
 class TestCondorJob(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
 
     def test_virtualenv_job(self):
         config_dict = {
@@ -87,7 +87,7 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual(result, 'dataset_experiment')
 
     def test_config_creation(self):
-        base_file = 'src/scripts/config/data_collection_config.yml'
+        base_file = 'src/scripts/config/il_data_collection_cube_world.yml'
         with open(base_file, 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         variable_values = ['src/sim/ros/config/actor/ros_expert_noisy.yml',

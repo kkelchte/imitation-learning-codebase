@@ -3,7 +3,7 @@ mapping:
   Unknown: {}
   Terminated: {}
   Running:
-    command: '/actor/dnn_actor/cmd_vel'
+    command: '/ros_python_interface/cmd_vel'
     supervision: '/actor/ros_expert/cmd_vel'
   TakeOff: {}
   TakenOver: {}

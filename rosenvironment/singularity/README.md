@@ -1,12 +1,26 @@
 # Instructions
 
-### Get shell in singularity image
+### Get shell in singularity image on linux
 
 ```bash
 make launch-image
 ```
 
-### Writable image (sandbox)
+### Use writable image on linux
+
+```bash
+# Launch existing image to modify:
+$ make shell-writable-image-linux
+# create a writable image from existing sif image:
+$ create-writable-image-linux
+# create an updated sif image from existing writable.
+# ! Don't forget to bump the VERSION
+$ build-writable-to-sif-linux
+# push current sif image to esat
+$ push-sif-image-linux-to-esat
+```
+
+### Use writable image in vagrant on mac
 
 __Create__
 
@@ -31,7 +45,6 @@ CTR+D
 $ sudo singularity build /vagrant/image-${VERSION}.sif writable_image
 CTR+D
 ```
-
 
 ### Create singularity image on Mac from scratch
 
@@ -66,7 +79,6 @@ Should only be done if vagrant VM should be destroyed.
 ```bash
 make clean-vm
 ```
-
 
 ### Installation of VB and Vagrant on Mac
 

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 from datetime import datetime
 from enum import IntEnum
@@ -10,17 +11,14 @@ from src.core.utils import get_date_time_tag
 """
 
 
-def get_logger(name: str,
-               output_path: str = '',
-               quite: bool = False) -> logging.Logger:
-    # Create a custom logger
-    logger = logging.getLogger(name)
+def get_logger(name: str, output_path: str = '', quiet: bool = False) -> logging.Logger:
+    logger = logging.getLogger(name=name)
     [logger.removeHandler(handler) for handler in logger.handlers]
 
     # add file handler
     if output_path != '':
         os.makedirs(os.path.join(output_path, 'log_files'), exist_ok=True)
-        output_file = os.path.join(output_path, 'log_files', f'{get_date_time_tag()}_{name}')
+        output_file = os.path.join(output_path, 'log_files', f'{get_date_time_tag()}_{name}.log')
     else:
         output_file = f'/tmp/{datetime.strftime(datetime.now(), "%d-%m-%y_%H-%M")}.log'
     f_handler = logging.FileHandler(output_file)
@@ -30,11 +28,12 @@ def get_logger(name: str,
     logger.addHandler(f_handler)
 
     # add stream handler
-    if not quite:
+    if not quiet:
         c_handler = logging.StreamHandler()
         c_handler.setLevel(logging.INFO)
         c_format = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
         c_handler.setFormatter(c_format)
+        c_handler.setStream(sys.stdout)
         logger.addHandler(c_handler)
 
     logger.setLevel(logging.DEBUG)

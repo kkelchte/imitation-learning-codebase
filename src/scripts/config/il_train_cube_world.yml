@@ -1,0 +1,34 @@
+output_path: '/tmp/experimental_data/cube_world'
+number_of_epochs: 100
+number_of_episodes: -1
+architecture_config:
+  architecture: tiny_128_rgb_6c
+  load_checkpoint_dir: none
+  initialisation_type: xavier
+  initialisation_seed: 123
+  device: cpu
+  weight_decay: default
+  dropout: default
+  dtype: default
+  log_std: default
+trainer_config:
+  optimizer: SGD
+  learning_rate: 0.01
+  save_checkpoint_every_n: 10
+  factory_key: BASE
+  data_loader_config:
+    hdf5_file: train.hdf5
+    data_sampling_seed: 123
+    balance_over_actions: false
+    batch_size: 64
+  criterion: MSELoss
+  device: gpu
+evaluator_config:
+  data_loader_config:
+    hdf5_file: validation.hdf5
+    data_sampling_seed: 123
+    balance_over_actions: false
+    batch_size: -1
+  criterion: MSELoss
+  device: cpu
+tensorboard: true

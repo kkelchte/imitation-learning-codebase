@@ -6,7 +6,7 @@ import rospy
 import yaml
 
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import TerminalType
+from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
@@ -43,23 +43,23 @@ class TestRosExpert(unittest.TestCase):
         self.environment = RosEnvironment(
             config=self.environment_config
         )
-        state = self.environment.reset()
+        experience = self.environment.reset()
 
         # wait delay evaluation time
-        while state.terminal == TerminalType.Unknown:
-            state = self.environment.step()
+        while experience.done == TerminationType.Unknown:
+            experience = self.environment.step()
         print(f'finished startup')
         waypoints = rospy.get_param('/world/waypoints')
 
         for waypoint_index, waypoint in enumerate(waypoints[:-1]):
             print(f'started with waypoint: {waypoint}')
-            while state.sensor_data['current_waypoint'].tolist() == waypoint:
-                state = self.environment.step()
+            while experience.info['current_waypoint'].tolist() == waypoint:
+                experience = self.environment.step()
 
         print(f'ending with waypoint {waypoints[-1]}')
         while not self.environment.fsm_state == FsmState.Terminated:
-            state = self.environment.step()
-        print(f'terminal type: {state.terminal.name}')
+            experience = self.environment.step()
+        print(f'terminal type: {experience.done.name}')
 
     def tearDown(self) -> None:
         self.environment.remove()

@@ -1,77 +1,89 @@
 import os
 import shutil
+import time
 import unittest
 
 import numpy as np
 import rospy
-import yaml
 
-from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import TerminalType, ProcessState
+from src.core.utils import get_filename_without_extension, get_to_root_dir
+from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+
+
+config_dict = {
+    "output_path": "/tmp",
+    "factory_key": "ROS",
+    "max_number_of_steps": -1,
+    "ros_config": {
+        "info": [
+            "current_waypoint",
+            "sensor/odometry"
+        ],
+        "observation": "forward_camera",
+        "visible_xterm": False,
+        "step_rate_fps": 2,
+        "ros_launch_config": {
+          "random_seed": 123,
+          "robot_name": "turtlebot_sim",
+          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
+          "fsm": True,
+          "control_mapping": True,
+          "waypoint_indicator": True,
+          "control_mapping_config": "debug",
+          "world_name": "object_world",
+          "x_pos": 0.0,
+          "y_pos": 0.0,
+          "z_pos": 0.0,
+          "yaw_or": 1.57,
+          "gazebo": True,
+        },
+        "actor_configs": [{
+              "name": "ros_expert",
+              "file": "src/sim/ros/config/actor/ros_expert_noisy.yml"
+            }],
+    }
+}
 
 
 class TestRosIntegrated(unittest.TestCase):
 
     def setUp(self) -> None:
-        config_file = 'test_ros_environment'
         self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
-        with open(f'src/sim/ros/test/config/{config_file}.yml', 'r') as f:
-            config_dict = yaml.load(f, Loader=yaml.FullLoader)
         config_dict['output_path'] = self.output_dir
-        with open(os.path.join(self.output_dir, 'config.yml'), 'w') as f:
-            yaml.dump(config_dict, f)
         config = EnvironmentConfig().create(
-            config_file=os.path.join(self.output_dir, 'config.yml')
+            config_dict=config_dict
         )
         self._environment = RosEnvironment(
             config=config
         )
 
-    def test_waypoints_in_object_world(self):
-        # self.start_test('test_ros_environment')
-        state = self._environment.reset()
-        # wait delay evaluation time
-        while state.terminal == TerminalType.Unknown:
-            state = self._environment.step()
-        waypoints = rospy.get_param('/world/waypoints')
-        self.assertEqual(waypoints[0], state.sensor_data['current_waypoint'].tolist())
-        for waypoint_index, waypoint in enumerate(waypoints[:-1]):
-            while state.sensor_data['current_waypoint'].tolist() == waypoint:
-                state = self._environment.step()
-                self.assertTrue(state.terminal != TerminalType.Failure)
-            # assert transition to next waypoint occurs
-            self.assertEqual(state.sensor_data['current_waypoint'].tolist(),
-                             waypoints[(waypoint_index + 1) % len(waypoints)])
-        while not self._environment.fsm_state == FsmState.Terminated:
-            state = self._environment.step()
-        # all waypoints should be reached and environment should have reach success state
-        self.assertEqual(state.terminal, TerminalType.Success)
-
-    # @unittest.skip
     def test_multiple_resets(self):
-        # self.start_test('test_ros_environment')
         waypoints = rospy.get_param('/world/waypoints')
-        for _ in range(3):
-            state = self._environment.reset()
+        for _ in range(2):
+            experience, observation = self._environment.reset()
             # wait delay evaluation time
-            while state.terminal == TerminalType.Unknown:
-                state = self._environment.step()
-            self.assertEqual(waypoints[0], state.sensor_data['current_waypoint'].tolist())
-            self.assertTrue(np.sum(state.sensor_data['odometry'][:3]) < 0.2)
-            while state.terminal == TerminalType.NotDone:
-                state = self._environment.step()
-            self.assertTrue(np.sum(state.sensor_data['odometry'][:3]) > 0.5)
-            self.assertEqual(state.terminal, TerminalType.Success)
+            while experience.done == TerminationType.Unknown:
+                experience, observation = self._environment.step()
+            self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
+            self.assertLess(np.sum(experience.info['odometry'][:3]), 0.2)
+            count = 0
+            while experience.done == TerminationType.NotDone:
+                count += 1
+                experience, observation = self._environment.step()
+                self.assertNotEqual(experience.observation, self._environment._default_observation)
+                self.assertNotEqual(len(experience.action.value),
+                                    len(self._environment._default_action.value))
+            self.assertGreater(np.sum(experience.info['odometry'][:3]), 0.5)
+            self.assertEqual(experience.done, TerminationType.Success)
 
     def tearDown(self) -> None:
-        if hasattr(self, '_environment'):
-            self.assertTrue(self._environment.remove())
+        self._environment.remove()
         shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':
+    get_to_root_dir()
     unittest.main()

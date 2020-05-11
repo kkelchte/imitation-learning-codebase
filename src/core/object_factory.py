@@ -11,11 +11,11 @@ class ObjectFactory:
     def _register_builder(self, key, builder):
         self._builders[key] = builder
 
-    def create(self, config: Config):
+    def create(self, config: Config, *args, **kwargs):
         builder = self._builders.get(config.factory_key)
         if not builder:
             raise ValueError(config.factory_key)
-        return builder(config)
+        return builder(config, *args, **kwargs)
 
 
 class ConfigFactory(ObjectFactory):

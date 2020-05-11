@@ -1,155 +1,198 @@
 import shutil
 import unittest
 import os
+from copy import deepcopy
 
 import numpy as np
-import matplotlib.pyplot as plt
-import torch
 
-from src.data.data_types import Run
-from src.data.dataset_loader import DataLoader, DataLoaderConfig, arrange_run_according_timestamps
+from src.data.data_loader import DataLoader, DataLoaderConfig
 from src.core.utils import get_filename_without_extension
-from src.data.utils import calculate_probabilities, get_ideal_number_of_bins, calculate_probabilites_per_run
-
-
-def check_run_lengths(run: Run) -> bool:
-    # assert all data streams have equal lengths, otherwise timestamp arranging failed
-    stream_lengths = [
-                         len(run.inputs[k]) for k in run.inputs.keys()
-                     ] + [
-                         len(run.outputs[k]) for k in run.outputs.keys()
-                     ]
-    return min(stream_lengths) == max(stream_lengths)
+from src.data.data_saver import DataSaverConfig, DataSaver
+from src.data.test.common_utils import generate_dummy_dataset
+from src.data.utils import arrange_run_according_timestamps, calculate_weights
 
 
 class TestDataLoader(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
-        self.dummy_dataset = '/esat/opal/kkelchte/experimental_data/dummy_dataset'
+        config_dict = {
+            'output_path': self.output_dir,
+            'store_hdf5': True
+        }
+        config = DataSaverConfig().create(config_dict=config_dict)
+        self.data_saver = DataSaver(config=config)
+        self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
+                                           continuous=False)
+
+    def test_data_loading(self):
+        config_dict = {
+            'data_directories': self.info['episode_directories'],
+            'output_path': self.output_dir,
+        }
+        config = DataLoaderConfig().create(config_dict=config_dict)
+        data_loader = DataLoader(config=config)
+        data_loader.load_dataset(arrange_according_to_timestamp=False)
+
+        # assert nothing is empty
+        for k in ['observations', 'actions', 'rewards', 'done']:
+            data = eval(f'data_loader.get_dataset().{k}')
+            self.assertTrue(len(data) > 0)
+            self.assertTrue(sum(data[0].shape) > 0)
 
     def test_arrange_run_according_timestamps(self):
-        run = Run()
-        time_stamps = {}
-        # 9 values with only the third good to be kept
-        run.inputs['sensor'] = torch.Tensor([[1], [1], [2]]*3)
-        time_stamps['sensor'] = list(range(9))
-        run.outputs['steering'] = torch.Tensor([[5]]*3)
-        time_stamps['steering'] = [2+x*3 for x in range(3)]
+        # Normal usage where all should be kept
+        num = 3
+        run = {
+            'a': list(range(num)),
+            'b': list(range(num))
+        }
+        backup_run = deepcopy(run)
+        time_stamps = {
+            'a': list(range(num)),
+            'b': list(range(num))
+        }
+        result = arrange_run_according_timestamps(run=run, time_stamps=time_stamps)
+        self.assertEqual(result, backup_run)
+        # Rearrange required
+        num = 3
+        run = {
+            'a': list(range(num)),
+            'b': list(range(num))
+        }
+        backup_run = deepcopy(run)
+        time_stamps = {
+            'a': list(range(num)),
+            'b': [i+1 for i in range(num)]
+        }
+        result = arrange_run_according_timestamps(run=run, time_stamps=time_stamps)
+        self.assertEqual(result['a'], backup_run['a'][1:])
+        self.assertEqual(result['b'], backup_run['b'][:-1])
 
-        arranged_run = arrange_run_according_timestamps(run=run, time_stamps=time_stamps)
-        self.assertTrue(check_run_lengths(run=arranged_run))
-        # assert only correct values with corresponding control are kept
-        self.assertTrue(sum(v == 2 for v in arranged_run.inputs['sensor']), len(arranged_run.inputs['sensor']))
-
-    def test_data_storage_of_all_sensors(self):
+    def test_data_loader_with_relative_paths(self):
         config_dict = {
-            'data_directories': [os.path.join(self.dummy_dataset, 'raw_data', d)
-                                 for d in os.listdir(os.path.join(self.dummy_dataset, 'raw_data'))],
+            'data_directories': ['raw_data/' + os.path.basename(p) for p in self.info['episode_directories']],
             'output_path': self.output_dir,
-            'inputs': ['forward_camera',
-                       'current_waypoint'],
-            'outputs': ['ros_expert',
-                        'depth_scan']
         }
         config = DataLoaderConfig().create(config_dict=config_dict)
         data_loader = DataLoader(config=config)
         data_loader.load_dataset()
 
-        # assert nothing is empty
-        for x in config.inputs:
-            self.assertTrue(x in data_loader.get_data()[0].inputs.keys())
-            self.assertTrue(sum(data_loader.get_data()[0].inputs[x].shape) > 0)
-        for y in config.outputs:
-            self.assertTrue(y in data_loader.get_data()[0].outputs.keys())
-            self.assertTrue(sum(data_loader.get_data()[0].outputs[y].shape) > 0)
-        # assert lengths are equal
-        for run in data_loader.get_data():
-            self.assertTrue(check_run_lengths(run=run))
-
-    def test_data_storage_with_input_sizes(self):
-        config_dict = {
-            'data_directories': [os.path.join(self.dummy_dataset, 'raw_data', d)
-                                 for d in os.listdir(os.path.join(self.dummy_dataset, 'raw_data'))],
-            'output_path': self.output_dir,
-            'inputs': ['forward_camera',
-                       'current_waypoint'],
-            'outputs': ['ros_expert',
-                        'depth_scan']
-        }
-        config = DataLoaderConfig().create(config_dict=config_dict)
-        data_loader = DataLoader(config=config)
-        data_loader.load_dataset(input_sizes=[[3, 64, 64], [1, 1, 2]])
-        self.assertTrue(data_loader.get_data()[0].inputs['forward_camera'][0].size() == (3, 64, 64))
-        self.assertTrue(data_loader.get_data()[0].inputs['current_waypoint'][0].size() == (1, 1, 2))
-
-    def test_data_loader_with_relative_paths(self):
-        config_dict = {'output_path': '/esat/opal/kkelchte/experimental_data/dummy_dataset',
-                       'data_directories': ['raw_data/20-02-06_13-32-24',
-                                            'raw_data/20-02-06_13-32-43'],
-                       'inputs': ['forward_camera'],
-                       'outputs': ['ros_expert']}
         config = DataLoaderConfig().create(config_dict=config_dict)
         for d in config.data_directories:
             self.assertTrue(os.path.isdir(d))
-        data_loader = DataLoader(config=config)
-        data_loader.load_dataset(input_sizes=[[3, 128, 128]],
-                                 output_sizes=[[6]])
-        self.assertTrue(len(data_loader.get_data()) != 0)
 
-    def test_data_loader_with_hdf5_file(self):
-        # dataset_name = '/esat/opal/kkelchte/experimental_data/dummy_dataset'
-        dataset_name = '/esat/opal/kkelchte/experimental_data/cube_world'
-        config_dict = {'output_path': dataset_name,
-                       'hdf5_file': 'train.hdf5',
-                       'inputs': ['forward_camera'],
-                       'outputs': ['ros_expert']}
-        config = DataLoaderConfig().create(config_dict=config_dict)
-        data_loader = DataLoader(config=config)
+    def test_data_batch(self):
+        config_dict = {
+            'data_directories': self.info['episode_directories'],
+            'output_path': self.output_dir,
+            'data_sampling_seed': 1,
+            'batch_size': 3
+        }
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
         data_loader.load_dataset()
 
-    def test_data_loaders_data_balancing(self):
-        dummy_dataset = False
-        config_dict = {'inputs': ['forward_camera'],
-                       'outputs': ['ros_expert'],
-                       'balance_targets': True}
-        if dummy_dataset:
-            config_dict['output_path'] = '/esat/opal/kkelchte/experimental_data/dummy_dataset'
-            config_dict['data_directories'] = ['raw_data/20-02-06_13-32-24',
-                                               'raw_data/20-02-06_13-32-43']
-        else:
-            config_dict['hdf5_file'] = 'validation.hdf5'
-            config_dict['output_path'] = '/esat/opal/kkelchte/experimental_data/cube_world'
-        config = DataLoaderConfig().create(config_dict=config_dict)
-        data_loader = DataLoader(config=config)
+        for batch in data_loader.get_data_batch():
+            self.assertEqual(len(batch), config_dict['batch_size'])
+            break
+
+
+    def test_sample_batch(self):
+        max_num_batches = 2
+        config_dict = {
+            'data_directories': self.info['episode_directories'],
+            'output_path': self.output_dir,
+            'data_sampling_seed': 1,
+            'batch_size': 3
+        }
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
         data_loader.load_dataset()
+        first_batch = []
+        index = 0
+        for index, batch in enumerate(data_loader.sample_shuffled_batch(max_number_of_batches=max_num_batches)):
+            if index == 0:
+                first_batch = deepcopy(batch)
+            self.assertEqual(len(batch), config_dict['batch_size'])
+        self.assertEqual(index, max_num_batches - 1)
 
-        # test calculate probabilities for run
-        data = [float(d) for d in data_loader._dataset.data[0].outputs['ros_expert'][:, 5]]
-        probabilities = calculate_probabilities(data)
+        # test sampling seed for reproduction
+        config_dict['data_sampling_seed'] = 2
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
+        data_loader.load_dataset()
+        second_batch = []
+        for index, batch in enumerate(data_loader.sample_shuffled_batch(max_number_of_batches=max_num_batches)):
+            second_batch = deepcopy(batch)
+            break
+        self.assertNotEqual(np.sum(np.asarray(first_batch.observations[0])),
+                            np.sum(np.asarray(second_batch.observations[0])))
+        config_dict['data_sampling_seed'] = 1
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
+        data_loader.load_dataset()
+        third_batch = []
+        for index, batch in enumerate(data_loader.sample_shuffled_batch(max_number_of_batches=max_num_batches)):
+            third_batch = deepcopy(batch)
+            break
+        self.assertEqual(np.sum(np.asarray(first_batch.observations[0])),
+                         np.sum(np.asarray(third_batch.observations[0])))
 
-        # by sampling new data with probabilities and asserting difference among histogram bins is relatively low
-        clean_data = []
-        for i in range(300):
-            clean_data.append(np.random.choice(data, p=probabilities))
-        y, x, _ = plt.hist(clean_data, bins=get_ideal_number_of_bins(data))
-        relative_height_difference = (max(y) - min(y[y != 0])) / max(y)
-        self.assertTrue(relative_height_difference < 0.3)
+    def test_calculate_weights_for_data_balancing_uniform(self):
+        # uniform distributed case:
+        data = np.random.uniform(0, 1, 1000)
+        weights = calculate_weights(data)
+        self.assertTrue(max(weights) - min(weights) < 0.3)
 
-        # normalize over all actions should not have impact as all other actions are the same:
-        probabilities_all_dimensions = calculate_probabilites_per_run(data_loader._dataset.data[0])
-        self.assertTrue(np.abs(min(probabilities_all_dimensions) - min(probabilities)) < 1e-6)
-        self.assertTrue(np.abs(max(probabilities_all_dimensions) - max(probabilities)) < 1e-6)
+    def test_calculate_weights_for_data_balancing_normal(self):
+        # normal distributed case:
+        data = np.random.normal(0, 1, 1000)
+        weights = calculate_weights(data)
+        self.assertTrue(0.5 < max(weights) - min(weights) < 1.5)
 
-        # sampling a large batch should have a low relative height
-        clean_data = []
-        for batch in data_loader.sample_shuffled_batch(batch_size=100):
-            clean_data.extend([float(t) for t in batch.outputs['ros_expert'][:, 5]])
-        y, x, _ = plt.hist(clean_data, bins=get_ideal_number_of_bins(clean_data))
-        relative_height_difference = (max(y) - min(y[y != 0])) / max(y)
-        self.assertTrue(relative_height_difference < 0.3)
+    def test_calculate_weights_for_data_balancing_discrete(self):
+        # discrete distributions:
+        data = [0] * 30 + [1] * 70
+        weights = calculate_weights(data)
+        self.assertEqual(weights[0], weights[29])
+        self.assertNotEqual(weights[29], weights[30])
+        self.assertTrue(weights[0] - 2. < 0.1)
+        self.assertTrue(weights[30] - 0.57157 < 0.1)
+
+    # def test_data_balancing(self): TODO
+    #     # average action variance in batch with action balancing
+    #     config = DataLoaderConfig().create(config_dict={
+    #         'data_directories': self.info['episode_directories'],
+    #         'output_path': self.output_dir,
+    #         'balance_over_actions': True,
+    #         'batch_size': 20
+    #     })
+    #     balanced_data_loader = DataLoader(config=config)
+    #     balanced_data_loader.load_dataset(arrange_according_to_timestamp=False)
+    #     action_variances_with_balancing = []
+    #     for b_batch in balanced_data_loader.sample_shuffled_batch():
+    #         action_variances_with_balancing.append(
+    #             [np.std([a[dim] for a in b_batch.actions]) for dim in range(b_batch.actions[0].size()[0])]
+    #         )
+    #     action_variances_with_balancing = np.asarray(action_variances_with_balancing)
+    #
+    #     config = DataLoaderConfig().create(config_dict={
+    #         'data_directories': self.info['episode_directories'],
+    #         'output_path': self.output_dir,
+    #         'balance_over_actions': False,
+    #         'batch_size': 20
+    #     })
+    #     unbalanced_data_loader = DataLoader(config=config)
+    #     unbalanced_data_loader.load_dataset(arrange_according_to_timestamp=False)
+    #     action_variances_without_balancing = []
+    #     for u_batch in unbalanced_data_loader.sample_shuffled_batch():
+    #         action_variances_without_balancing.append(
+    #             [np.std([a[dim] for a in u_batch.actions]) for dim in range(u_batch.actions[0].size()[0])]
+    #         )
+    #
+    #     action_variances_without_balancing = np.asarray(action_variances_without_balancing)
+    #
+    #     self.assertGreaterEqual(np.mean(action_variances_with_balancing),
+    #                             np.mean(action_variances_without_balancing))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

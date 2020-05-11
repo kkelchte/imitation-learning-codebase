@@ -1,6 +1,7 @@
 import os
 import argparse
 from enum import IntEnum
+from typing import Optional
 
 import yaml
 from dataclasses import dataclass
@@ -21,7 +22,8 @@ def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
 @dataclass_json(undefined=Undefined.RAISE)
 @dataclass
 class Config:
-    output_path: str = None
+    output_path: Optional[str] = None
+    store: Optional[bool] = True
     """Define config class to translate yaml/dicts to corresponding config objects.
 
     Based on dataclass_json object.
@@ -29,10 +31,11 @@ class Config:
     """
 
     def create(self,
-               config_dict: dict = {},
-               config_file: str = ''):
-        assert not (config_file and config_dict)
-        assert (config_dict or config_file)
+               config_dict: dict = None,
+               config_file: str = '',
+               store: bool = True):
+        assert not (config_file != '' and config_dict is not None)
+        assert (config_file != '' or config_dict is not None)
 
         if config_file:
             if not os.path.exists(config_file):
@@ -40,10 +43,13 @@ class Config:
             with open(config_file, 'r') as f:
                 config_dict = yaml.load(f, Loader=yaml.FullLoader)
         instant = self.from_dict(config_dict)
+        if not instant.output_path.startswith('/'):
+            instant.output_path = f'{os.environ["HOME"]}/{instant.output_path}'
         instant.iterative_add_output_path(output_path=instant.output_path)
         instant.post_init()
         instant.iterative_check_for_none()
-        instant.save_config_file()
+        if store:
+            instant.save_config_file()
         return instant
 
     def iterative_check_for_none(self) -> None:
@@ -106,3 +112,4 @@ class Parser(argparse.ArgumentParser):
     def __init__(self):
         super().__init__()
         self.add_argument("--config", type=str, default=None)
+        self.add_argument("--rm", action='store_true', help="remove current output dir before start")

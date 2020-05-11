@@ -76,7 +76,10 @@ class RobotMapper:
         self._robot_type = rospy.get_param('/robot/robot_type', 'turtlebot_sim')
         self._gui_camera_height = rospy.get_param('/world/gui_camera_height',
                                                   20 if 'turtle' in self._robot_type else 50)
-        self._background_file = rospy.get_param('/world/background_file')
+        self._background_file = rospy.get_param('/world/background_file', None)
+        if self._background_file is None:
+            cprint('Could not find background file so exit.', self._logger)
+            sys.exit(0)
         if not self._background_file.startswith('/'):
             self._background_file = os.path.join(os.environ['HOME'], self._background_file)
         self._background_image = Image.open(self._background_file)
@@ -135,8 +138,8 @@ class RobotMapper:
                                                              msg.pose.pose.orientation.y,
                                                              msg.pose.pose.orientation.z,
                                                              msg.pose.pose.orientation.w))
-        cprint(f'robot_global_translation: {robot_global_translation}', self._logger)
-        cprint(f'robot_global_orientation: {robot_global_orientation}', self._logger)
+        #cprint(f'robot_global_translation: {robot_global_translation}', self._logger)
+        #cprint(f'robot_global_orientation: {robot_global_orientation}', self._logger)
         points_global_frame = transform(points=self._local_frame,
                                         orientation=robot_global_orientation,
                                         translation=robot_global_translation)

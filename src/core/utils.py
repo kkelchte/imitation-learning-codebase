@@ -3,11 +3,21 @@
 import os
 import subprocess
 from datetime import datetime
+from typing import List
+
+import numpy as np
 
 
 def get_file_length(file_path: str) -> int:
     with open(file_path, 'r') as f:
         return len(f.readlines())
+
+
+def get_check_sum_list(data: List[np.ndarray]) -> float:
+    check_sum = 0
+    for e in data:
+        check_sum += np.sum(np.asarray(e))
+    return check_sum
 
 
 def read_file_to_output(file_path: str) -> None:
@@ -50,3 +60,20 @@ def count_grep_name(grep_str: str) -> int:
     processed_output_string = [line for line in output_string.split('\\n') if 'grep' not in line
                                and 'test' not in line and len(line) > len(grep_str) and 'pycharm' not in line]
     return len(processed_output_string)
+
+
+def get_to_root_dir():
+    # assume you're in a subfolder in the codebase:
+    while 'ROOTDIR' not in os.listdir('.'):
+        os.chdir('..')
+        if os.getcwd() == '/':
+            raise FileNotFoundError
+
+
+def generate_random_image(size: tuple) -> np.ndarray:
+    return np.random.randint(0, 255, size=size, dtype=np.uint8)
+
+
+def tensorboard_write_distribution(writer, distribution, tag, step) -> None:
+    writer.add_scalar(f"{tag} mean", distribution.mean, global_step=step)
+    writer.add_scalar(f"{tag} std", distribution.std, global_step=step)

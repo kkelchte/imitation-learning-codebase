@@ -4,7 +4,7 @@ import time
 import warnings
 
 from src.core.config_loader import Parser
-from src.sim.common.data_types import TerminalType
+from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
@@ -30,7 +30,7 @@ def main():
     # try:
     environment = RosEnvironment(config=config)
     state = environment.reset()
-    while state.terminal != TerminalType.Success and state.terminal != TerminalType.Failure:
+    while state.done != TerminationType.Success and state.done != TerminationType.Failure:
         print(f'state: {environment.fsm_state}')
         state = environment.step()
     environment.remove()

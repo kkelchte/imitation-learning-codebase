@@ -1,0 +1,37 @@
+output_path: /tmp/experimental_data/cube_world
+number_of_epochs: 1
+number_of_episodes: 10
+architecture_config:
+  architecture: tiny_128_rgb_6c
+  load_checkpoint_dir: /tmp/experimental_data/cube_world
+  device: cpu
+environment_config:
+  factory_key: ROS
+  max_number_of_steps: 1000
+  ros_config:
+    info:
+      -current_waypoint
+      -sensor/odometry
+    observation: forward_camera
+    visible_xterm: False
+    step_rate_fps: 10
+    ros_launch_config:
+      random_seed: 123
+      robot_name: turtlebot_sim
+      fsm_config: single_run
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: true
+      control_mapping_config: evaluation
+      world_name: cube_world
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 0.0
+      yaw_or: 1.57
+      gazebo: True
+    actor_configs:
+      - name: ros_expert
+        file: src/sim/ros/config/actor/ros_expert.yml
+data_saver_config:
+  store_hdf5: false
+  separate_raw_data_runs: true

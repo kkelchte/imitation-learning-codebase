@@ -10,7 +10,7 @@ import rospy
 
 from src.core.logger import cprint, MessageType, get_logger
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import ProcessState
+from src.core.data_types import ProcessState
 
 """Interface with other applications such as 
 - xpra
@@ -32,7 +32,7 @@ class ProcessWrapper:
         self._process_popen = None
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=output_path,
-                                  quite=False)
+                                  quiet=False)
         cprint(f'initiate', self._logger)
 
     def get_state(self) -> ProcessState:

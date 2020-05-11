@@ -16,7 +16,7 @@ from std_msgs.msg import String
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import TerminalType
+from src.core.data_types import TerminationType
 from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path
 
 bridge = CvBridge()
@@ -91,7 +91,7 @@ class Fsm:
     def _subscribe(self):
         """Subscribe to relevant topics depending on the mode"""
         rospy.Subscriber(rospy.get_param('/fsm/finish_topic', '/finish'), Empty, self._shutdown_run,
-                         callback_args=TerminalType.Unknown)
+                         callback_args=TerminationType.Unknown)
         rospy.Subscriber(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, self._reset)
         if rospy.has_param('/robot/depth_scan_topic'):
             rospy.Subscriber(rospy.get_param('/robot/depth_scan_topic'),
@@ -173,7 +173,7 @@ class Fsm:
     def _takeover(self, msg: Empty = None):
         self._set_state(FsmState.TakenOver)
 
-    def _shutdown_run(self, msg: Empty = None, outcome: TerminalType = TerminalType.Unknown):
+    def _shutdown_run(self, msg: Empty = None, outcome: TerminationType = TerminationType.Unknown):
         # Invocation for next run
         self._is_shuttingdown = True
         self._terminal_outcome_pub.publish(outcome.name)
@@ -188,7 +188,7 @@ class Fsm:
         run_duration_s = rospy.get_time() - self._start_time if self._start_time != -1 else 0
         if self._start_time != -1 and run_duration_s > self._max_duration != -1 and not self._is_shuttingdown:
             cprint(f'duration: {run_duration_s} > {self._max_duration}', self._logger)
-            self._shutdown_run(outcome=TerminalType.Success)
+            self._shutdown_run(outcome=TerminationType.Success)
         # cprint(f'check time: duration = {run_duration_s}, start_time = {self._start_time}',
         #        self._logger,
         #        msg_type=MessageType.debug)
@@ -205,7 +205,7 @@ class Fsm:
             return
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
             cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
-            self._shutdown_run(outcome=TerminalType.Failure)
+            self._shutdown_run(outcome=TerminationType.Failure)
 
     def _check_depth_image(self, msg: Image) -> None:
         if not self._update_state():
@@ -250,26 +250,26 @@ class Fsm:
         if self._check_distance(self._max_travelled_distance, self.travelled_distance):
             cprint(f'Travelled distance {self.travelled_distance} > max {self._max_travelled_distance}',
                    self._logger)
-            self._shutdown_run(outcome=TerminalType.Success)
+            self._shutdown_run(outcome=TerminationType.Success)
 
         if self._check_distance(self._max_distance_from_start, self.distance_from_start):
             cprint(f'Max distance {self.distance_from_start} > max {self._max_distance_from_start}',
                    self._logger)
-            self._shutdown_run(outcome=TerminalType.Success)
+            self._shutdown_run(outcome=TerminationType.Success)
 
         if self._goal and not self._is_shuttingdown and \
                 self._goal['x']['max'] > self._current_pos[0] > self._goal['x']['min'] and \
                 self._goal['y']['max'] > self._current_pos[1] > self._goal['y']['min'] and \
                 self._goal['z']['max'] > self._current_pos[2] > self._goal['z']['min']:
             cprint(f'Reached goal on location {self._current_pos}', self._logger)
-            self._shutdown_run(outcome=TerminalType.Success)
+            self._shutdown_run(outcome=TerminationType.Success)
 
     def _check_wrench(self, msg: WrenchStamped) -> None:
         if not self._update_state():
             return
         if msg.wrench.force.z < 0:
             cprint(f"found drag force: {msg.wrench.force.z}, so robot must be upside-down.", self._logger)
-            self._shutdown_run(outcome=TerminalType.Failure)
+            self._shutdown_run(outcome=TerminationType.Failure)
 
     def run(self):
         rate = rospy.Rate(1)

@@ -1,7 +1,9 @@
-factory_key: 0
+factory_key: ROS
 max_number_of_steps: -1
 output_path: tmp_test_dir/20-01-28_14-39
 ros_config:
+  info:
+    - current_waypoint
   ros_launch_config:
     control_mapping: true
     control_mapping_config: test_ros_environment
@@ -16,11 +18,11 @@ ros_config:
     y_pos: 0.0
     yaw_or: 1.57
     z_pos: 0.0
-  visible_xterm: true
-actor_configs:
-  - file: src/sim/ros/config/keyboard/drone_sim.yml
-    name: keyboard
-    type: 2
-  - file: src/sim/ros/config/actor/ros_drone_expert.yml
-    name: ros_expert
-    type: 1
+  visible_xterm: false
+  actor_configs:
+    - file: src/sim/ros/config/keyboard/drone_sim.yml
+      name: keyboard
+      type: 2
+    - file: src/sim/ros/config/actor/ros_drone_expert.yml
+      name: ros_expert
+      type: 1

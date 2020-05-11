@@ -1,14 +1,17 @@
 import os
+from enum import IntEnum
+
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Optional, Tuple
+import numpy as np
 
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
-from src.sim.common.data_types import Action, State, EnvironmentType, ActorType, ProcessState
-from src.sim.common.actors import Actor, ActorConfig
+from src.core.data_types import Action, Experience, ProcessState
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 
 
 @dataclass_json
@@ -20,6 +23,7 @@ class GymConfig(Config):
     """
     random_seed: int = 123
     world_name: str = None
+    render: bool = False
 
 
 @dataclass_json
@@ -52,9 +56,17 @@ class RosConfig(Config):
     Configuration specific for ROS environment,
     specified here to avoid circular dependencies environment <> ros_environment
     """
+    observation: str = ''
+    # sensor/sensor_name_0, sensor/sensor_name_1, actor/actor_name_0, ..., current_waypoint, supervised_action
+    info: List[str] = None
     step_rate_fps: float = 10.
     visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None
+    actor_configs: List[ActorConfig] = None  # extra ros nodes that can act on robot.
+
+    def __post_init__(self):
+        if self.info is None:
+            del self.info
 
 
 @dataclass_json
@@ -65,19 +77,17 @@ class EnvironmentConfig(Config):
     Providing post-factory specific configuration classes is tricky due to the .from_dict
     dependency of dataclass_json which complains at unknown variables.
     """
-    factory_key: EnvironmentType = None
+    factory_key: str = None
     max_number_of_steps: int = 100
-    actor_configs: List[ActorConfig] = None
     # Gazebo specific environment settings
-    ros_config: RosConfig = None
+    ros_config: Optional[RosConfig] = None
     # Gym specific environment settings
-    gym_config: GymConfig = None
+    gym_config: Optional[GymConfig] = None
 
     def __post_init__(self):
-        # Avoid None value error by deleting irrelevant fields
-        if self.factory_key == EnvironmentType.Ros:
+        if self.gym_config is None:
             del self.gym_config
-        elif self.factory_key == EnvironmentType.Gym:
+        elif self.ros_config is None:
             del self.ros_config
 
 
@@ -87,17 +97,15 @@ class Environment:
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=self._config.output_path,
-                                  quite=False)
-        cprint(f'initiate', self._logger)
+                                  quiet=False)
+        cprint('initiated', self._logger)
 
-    def step(self, action: Action) -> State:
+    def step(self, action: Action) -> Tuple[Experience, np.ndarray]:
         pass
 
-    def reset(self) -> State:
-        pass
-
-    def get_actor(self) -> Union[Actor, ActorType]:
+    def reset(self) -> Tuple[Experience, np.ndarray]:
         pass
 
     def remove(self) -> ProcessState:
-        pass
+        [h.close() for h in self._logger.handlers]
+        return ProcessState.Terminated

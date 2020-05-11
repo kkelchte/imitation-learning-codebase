@@ -1,0 +1,36 @@
+architecture_config:
+  architecture: cart_pole_4_2d_stochastic
+  device: cpu
+  initialisation_seed: 123
+  initialisation_type: xavier
+data_saver_config:
+  clear_buffer_before_episode: true
+  store_on_ram_only: true
+environment_config:
+  factory_key: GYM
+  gym_config:
+    random_seed: 123
+    render: false
+    world_name: CartPole-v0
+  max_number_of_steps: -1  # let number of steps depend on environment
+number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
+number_of_epochs: 1000
+output_path: /tmp/experimental_data/cart_pole_ppo
+tensorboard: true
+trainer_config:
+  criterion: L1Loss
+  learning_rate: 0.001
+  optimizer: Adam
+  data_loader_config:
+    batch_size: 200
+    data_sampling_seed: 123
+  device: cpu
+  discount: 0.95
+  factory_key: PPO
+  gae_lambda: 0.95
+  phi_key: gae
+  save_checkpoint_every_n: 100
+  max_actor_training_iterations: 10
+  max_critic_training_iterations: 3
+  ppo_epsilon: 0.2
+  kl_target: 0.01

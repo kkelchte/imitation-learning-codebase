@@ -50,7 +50,7 @@ number_of_jobs:
   - 3
   - 3
 base_config_files:
-  - src/scripts/config/data_collection_config.yml
+  - src/scripts/config/il_data_collection_cube_world.yml
   - src/scripts/config/data_cleaning_config.yml
   - src/scripts/config/training_config.yml
   - src/scripts/config/evaluate_model_config.yml

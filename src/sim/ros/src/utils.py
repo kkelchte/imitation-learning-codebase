@@ -9,11 +9,10 @@ from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
 from geometry_msgs.msg import Twist
-from sensor_msgs.msg import Image, LaserScan, Imu
+from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32MultiArray
 
-from src.sim.common.actors import ActorConfig
-from src.sim.common.data_types import Action, ActorType
+from src.core.data_types import Action
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 
 bridge = CvBridge()
@@ -42,13 +41,6 @@ def get_current_actor() -> str:
     actor_command_topic = rospy.get_param('/control_mapping/mapping/Running/command')
     actor_name = actor_command_topic.split('cmd_vel')[0].split('/actor')[-1].split('/')[1]
     return actor_name
-
-
-def get_type_from_topic_and_actor_configs(actor_configs: List[ActorConfig], topic_name: str) -> ActorType:
-    for actor_config in actor_configs:
-        if actor_config.specs['command_topic'] == topic_name:
-            return actor_config.type
-    return ActorType.Unknown
 
 
 def get_distance(a: Union[tuple, list, np.ndarray], b: Union[tuple, list, np.ndarray]) -> float:
@@ -85,6 +77,13 @@ def adapt_sensor_to_ros_message(data: np.ndarray, sensor_name: str) -> RosSensor
     return message
 
 
+def adapt_action_to_ros_message(action: Action) -> RosAction:
+    msg = RosAction()
+    msg.value = adapt_action_to_twist(action)
+    msg.name = action.actor_name
+    return msg
+
+
 def adapt_twist_to_action(msg: Twist) -> Action:
     return Action(
         value=np.asarray(
@@ -98,14 +97,6 @@ def adapt_twist_to_action(msg: Twist) -> Action:
             ]
         )
     )
-
-
-def adapt_action_to_ros_message(action: Action) -> RosAction:
-    msg = RosAction()
-    msg.value = adapt_action_to_twist(action)
-    msg.name = action.actor_name
-    msg.type = action.actor_type
-    return msg
 
 
 def adapt_action_to_twist(action: Action) -> Union[Twist, None]:

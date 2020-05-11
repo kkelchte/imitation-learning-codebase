@@ -15,4 +15,4 @@ job_configs:
 number_of_jobs:
   - 3
 base_config_files:
-  - src/scripts/config/data_collection_config.yml
+  - src/scripts/config/il_data_collection_cube_world.yml

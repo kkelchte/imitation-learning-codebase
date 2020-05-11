@@ -1,15 +1,16 @@
 #!/usr/bin/python3.7
-from dataclasses import dataclass
-from typing import List
 
-import torch
-from torch import nn, optim
+from dataclasses import dataclass
+from typing import Union
+
 from dataclasses_json import dataclass_json
 from tqdm import tqdm
+import torch  # Don't remove
 
+from src.ai.base_net import BaseNet
 from src.ai.evaluator import EvaluatorConfig, Evaluator
-from src.ai.model import Model
-from src.core.config_loader import Config
+from src.ai.utils import data_to_tensor
+from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
@@ -24,52 +25,61 @@ Allows combination of outputs as weighted sum in one big backward pass.
 @dataclass
 class TrainerConfig(EvaluatorConfig):
     optimizer: str = 'SGD'
-    output_weights: List[float] = None  # for each model output specify impact amount of loss in optimizer step
     learning_rate: float = 0.01
     save_checkpoint_every_n: int = 10
-    batch_size: int = None
+    factory_key: str = "BASE"
+    phi_key: str = "default"
+    discount: Union[str, float] = "default"
+    gae_lambda: Union[str, float] = "default"
+    ppo_epsilon: Union[str, float] = "default"
+    kl_target: Union[str, float] = "default"
+    max_actor_training_iterations: Union[str, int] = "default"
+    max_critic_training_iterations: Union[str, int] = "default"
 
-    def post_init(self):
-        if self.output_weights is not None:
-            assert len(self.output_weights) == len(self.data_loader_config.outputs)
-        else:
-            self.output_weights = [1./len(self.data_loader_config.outputs)] * len(self.data_loader_config.outputs)
-        for key, value in self.__dict__.items():
-            if isinstance(value, Config):
-                value.post_init()
+    def __post_init__(self):
+        # add options in post_init so they are easy to find
+        assert self.phi_key in ["default", "gae", "reward-to-go", "return", "value-baseline"]
 
 
 class Trainer(Evaluator):
 
-    def __init__(self, config: TrainerConfig, model: Model):
-        super().__init__(config, model, quiet=True)
-        self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                  output_path=config.output_path,
-                                  quite=False)
-        cprint(f'Started.', self._logger)
-        self._optimizer = eval(f'torch.optim.{self._config.optimizer}(params=self._model.get_parameters(),'
-                               f'lr=self._config.learning_rate)')
+    def __init__(self, config: TrainerConfig, network: BaseNet, super_init: bool = False):
+        # use super if this called from sub class.
+        super().__init__(config, network, quiet=True)
 
-    def train(self, epoch: int = -1) -> float:
-        self.put_model_on_device()
-        self._optimizer.zero_grad()
-        total_error = []
-        for batch in tqdm(self._data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
-            model_outputs = self._model.forward(batch.get_input())
-            total_loss = torch.Tensor([0]).to(self._device)
-            for output_index, output in enumerate(model_outputs):
-                targets = batch.get_output()[output_index].to(self._device)
-                loss = self._criterion(output, targets).mean()
-                cprint(f'{list(batch.outputs.keys())[output_index]}: {loss} {self._config.criterion}.', self._logger)
-                total_loss += self._config.output_weights[output_index] * loss
-            total_loss.backward()  # calculate gradients
-            self._optimizer.step()  # apply gradients according to optimizer
-            total_error.append(total_loss.cpu().detach())
+        if not super_init:
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quiet=True)
+            cprint(f'Started.', self._logger)
+            self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
+                                                                            lr=self._config.learning_rate)
 
+    def _save_checkpoint(self, epoch: int = -1):
         if epoch != -1:
             if epoch % self._config.save_checkpoint_every_n == 0:
-                self._model.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
+                self._net.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
         else:
-            self._model.save_to_checkpoint()
+            self._net.save_to_checkpoint()
+
+    def train(self, epoch: int = -1, writer=None) -> str:
+        self.put_model_on_device()
+        total_error = []
+        for batch in tqdm(self.data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
+            self._optimizer.zero_grad()
+            predictions = self._net.forward(batch.observations, train=True)
+            targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
+            loss = self._criterion(predictions, targets).mean()
+            loss.backward()  # calculate gradients
+            self._optimizer.step()  # apply gradients according to optimizer
+            self._net.global_step += 1
+            total_error.append(loss.cpu().detach())
+        print(total_error)
         self.put_model_back_to_original_device()
-        return float(torch.Tensor(total_error).mean())
+        self._save_checkpoint(epoch)
+
+        error_distribution = Distribution(total_error)
+        if writer is not None:
+            writer.set_step(self._net.global_step)
+            writer.write_distribution(error_distribution, 'training')
+        return f'training error mean {error_distribution.mean: 0.3e} [{error_distribution.std: 0.2e}]'

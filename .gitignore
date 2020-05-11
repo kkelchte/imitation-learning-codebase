@@ -133,7 +133,7 @@ dmypy.json
 rosenvironment/singularity/cu*
 rosenvironment/singularity/.*
 rosenvironment/singularity/*.sif
-/singularity/writable_image
+rosenvironment/singularity/writable_image
 
 # Pycharm files
 .idea
@@ -171,4 +171,12 @@ test_dir/
 /src/sim/ros/python2_ros_ws/src/hector_quadrotor
 /src/sim/ros/python3_ros_ws/src/vision_opencv
 *CMakeLists.txt*
-experimental_data
+
+/experimental_data
+/src/ai/algorithms/results
+/test_output
+/suite_output_test
+
+# mac
+*.DS_Store
+
