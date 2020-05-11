@@ -116,7 +116,7 @@ class RobotMapper:
         self._frame_points = []
 
         rospy.init_node('robot_mapper')
-        self._rate = rospy.Rate(10)
+        self._rate = rospy.Rate(30)
         cprint(f'specifications: \n'
                f'cy: {self._cy}\n'
                f'cx: {self._cx}\n'

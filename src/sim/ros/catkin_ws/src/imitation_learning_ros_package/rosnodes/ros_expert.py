@@ -46,7 +46,7 @@ class RosExpert(Actor):
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
         self._reference_height = rospy.get_param('/world/starting_height', -1)
-        self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 20
+        self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 10
         self._next_waypoint = []
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None

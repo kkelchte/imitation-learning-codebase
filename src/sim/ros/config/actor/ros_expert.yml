@@ -8,4 +8,4 @@ specs:
   waypoint_following_weight: 1
   waypoint_reached_distance: 0.2
   max_yaw_deviation_waypoint: 5
-  rate_fps: 20
+  rate_fps: 10

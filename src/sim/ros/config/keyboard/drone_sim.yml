@@ -21,7 +21,7 @@ specs:
                e: /enable_motors"
   speed: 0.5
   turn: 1.0
-  rate_fps: 20
+  rate_fps: 10
   moveBindings:
     k:
     - 1

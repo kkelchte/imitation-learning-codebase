@@ -11,7 +11,7 @@ specs:
          "
   speed: 0.2
   turn: 0.8
-  rate_fps: 20
+  rate_fps: 10
   moveBindings:
     i:
     - 1

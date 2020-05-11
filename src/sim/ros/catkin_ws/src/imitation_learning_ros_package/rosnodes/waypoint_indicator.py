@@ -81,7 +81,7 @@ class WaypointIndicator:
             self._adjust_yaw_waypoint_following = 0
 
     def run(self):
-        rate = rospy.Rate(50)
+        rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             current_waypoint = self._waypoints[self._current_waypoint_index]
             multi_array = Float32MultiArray()

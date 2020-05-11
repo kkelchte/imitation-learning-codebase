@@ -272,7 +272,7 @@ class Fsm:
             self._shutdown_run(outcome=TerminationType.Failure)
 
     def run(self):
-        rate = rospy.Rate(1)
+        rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             # cprint(f'state: {self._state.name}', self._logger, msg_type=MessageType.debug)
             self._state_pub.publish(self._state.name)
