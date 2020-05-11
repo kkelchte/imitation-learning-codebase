@@ -305,6 +305,7 @@ class RosEnvironment(Environment):
             self._unpause_gazebo()
         start_time = time.time()
         while not self._update_current_experience():
+            cprint("waiting...", self._logger)
             rospy.sleep(self._pause_period)
             if time.time() - start_time > self._config.ros_config.max_update_wait_period_s:
                 cprint(f"ros seems to be stuck, waiting for more than "
