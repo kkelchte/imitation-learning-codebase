@@ -74,8 +74,8 @@ class CondorLauncher:
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)
 
-    def prepare_train_model(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
-                            number_of_jobs: int = None):
+    def prepare_train(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+                      number_of_jobs: int = None):
         base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
         job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
@@ -93,8 +93,8 @@ class CondorLauncher:
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)
 
-    def prepare_evaluate_model(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
-                               number_of_jobs: int = None):
+    def prepare_evaluate_interactively(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+                                       number_of_jobs: int = None):
         base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
         job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
