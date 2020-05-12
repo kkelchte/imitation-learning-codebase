@@ -1,0 +1,16 @@
+###########################
+# Submit an interactive job
+###########################
+Universe 	= vanilla
+RequestCpus     = 12
+RequestMemory   = 10 G
+RequestDisk	= 50 G
+# max time 4h... should probably ask less
++RequestWallTime = 30*60
+Request_GPUS    = 0
+Requirements = (machineowner == "Visics") && HasSingularity
+
+# If you want X11 forwarding, uncomment this
+#Requirements = ( HasX11 == True )
+
+Queue
