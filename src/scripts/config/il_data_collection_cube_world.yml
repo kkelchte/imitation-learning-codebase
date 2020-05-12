@@ -1,13 +1,11 @@
 output_path: experimental_data/cube_world
 number_of_epochs: 1
-number_of_episodes: 3
+number_of_episodes: 10
 environment_config:
   factory_key: ROS
   max_number_of_steps: 1000
   ros_config:
-    info:
-      -current_waypoint
-      -sensor/odometry
+    info: [current_waypoint, sensor/odometry]
     observation: forward_camera
     visible_xterm: false
     step_rate_fps: 30

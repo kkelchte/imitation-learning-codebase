@@ -2,7 +2,6 @@ import copy
 import os
 import time
 from dataclasses import dataclass
-from enum import IntEnum
 from typing import List
 
 import yaml
@@ -11,26 +10,20 @@ from dataclasses_json import dataclass_json
 from src.condor.condor_job import CondorJobConfig, CondorJob
 from src.condor.helper_functions import create_configs, Dag
 from src.core.config_loader import Parser, Config
-from src.core.utils import camelcase_to_snake_format, get_date_time_tag
-
-
-class CondorLauncherMode(IntEnum):
-    DataCollection = 0
-    TrainModel = 1
-    EvaluateModel = 2
-    DataCleaning = 3
-    DagDataCollection = 4
-    DagTrainEvaluate = 5
-    DagDataCollectionTrainEvaluate = 6
+from src.core.utils import get_date_time_tag
 
 
 @dataclass_json
 @dataclass
 class CondorLauncherConfig(Config):
-    mode: CondorLauncherMode = None
+    mode: str = None
     number_of_jobs: List[int] = 1
     base_config_files: List[str] = None
     job_configs: List[CondorJobConfig] = None
+
+    def post_init(self):
+        assert self.mode in ['data_collection', 'train', 'evaluate_interactive', 'clean_data',
+                             'data_collection_dag', 'train_evaluate_dag', 'data_collection_train_evaluate_dag']
 
 
 class CondorLauncher:
@@ -44,21 +37,14 @@ class CondorLauncher:
         self.prepare_factory()
 
     def launch(self):
-        if self._config.mode in [CondorLauncherMode.DataCollection,
-                                 CondorLauncherMode.TrainModel,
-                                 CondorLauncherMode.EvaluateModel,
-                                 CondorLauncherMode.DataCleaning]:
-            for job in self._jobs:
-                job.submit()
-        elif self._config.mode in [CondorLauncherMode.DagDataCollection,
-                                   CondorLauncherMode.DagTrainEvaluate,
-                                   CondorLauncherMode.DagDataCollectionTrainEvaluate]:
+        if 'dag' in self._config.mode:
             self._dag.submit()
         else:
-            raise NotImplementedError
+            for job in self._jobs:
+                job.submit()
 
     def prepare_factory(self):
-        eval(f'self.prepare_{camelcase_to_snake_format(self._config.mode.name)}()')
+        eval(f'self.prepare_{self._config.mode}()')
 
     def create_jobs_from_job_config_files(self,
                                           job_config_files: List[str],
@@ -83,7 +69,7 @@ class CondorLauncher:
                                       output_path=self._config.output_path,
                                       adjustments={
                                           '[\"data_saver_config\"][\"saving_directory_tag\"]':
-                                              list(range(number_of_jobs))
+                                              [f'runner_{i}' for i in range(number_of_jobs)]
                                       })
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)

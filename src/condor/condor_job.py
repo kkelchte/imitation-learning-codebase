@@ -39,11 +39,13 @@ class CondorJobConfig(Config):
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
 
-    def post_init(self):  # add default options
+    def __post_init__(self):
         if self.black_list is None:
             del self.black_list
         if self.green_list is None:
             del self.green_list
+
+    def post_init(self):  # add default options
         if not self.output_path.startswith('/'):
             self.output_path = os.path.join(self.codebase_dir, self.output_path)
 
@@ -200,4 +202,7 @@ class CondorJob:
         subprocess.call(shlex.split("chmod 711 {0}".format(self.executable_file)))
 
     def submit(self) -> int:
-        return subprocess.call(shlex.split(f'condor_submit {self.job_file}'))
+        try:
+            return subprocess.call(shlex.split(f'condor_submit {self.job_file}'))
+        except:
+            return -1
