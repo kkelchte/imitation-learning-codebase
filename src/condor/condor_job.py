@@ -24,12 +24,12 @@ class CondorJobConfig(Config):
     command: str = None
     config_file: str = ''
     codebase_dir: str = f'{os.environ["HOME"]}/code/imitation-learning-codebase'
-    cpus: int = 4
-    gpus: int = 1
+    cpus: int = 2
+    gpus: int = 0
     cpu_mem_gb: int = 17
     disk_mem_gb: int = 52
     nice: bool = False
-    wall_time_s: int = 60 * 60 * 3
+    wall_time_s: int = 15 * 60
     gpu_mem_mb: int = 1900
     black_list: Optional[List] = None
     green_list: Optional[List] = None

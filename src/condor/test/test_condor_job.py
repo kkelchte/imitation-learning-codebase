@@ -17,6 +17,7 @@ class TestCondorJob(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir)
 
     #@unittest.skip
     def test_virtualenv_job(self):
