@@ -4,6 +4,7 @@
 
 RequestCpus     = 12
 RequestMemory   = 10G
+# max time 4h... should probably ask less
 +RequestWallTime = 4*60*59
 Request_GPUS    = 0
 
