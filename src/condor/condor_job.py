@@ -6,7 +6,7 @@ import glob
 import os
 import subprocess
 import shlex
-from typing import List
+from typing import List, Optional
 
 from dataclasses import dataclass
 
@@ -31,8 +31,8 @@ class CondorJobConfig(Config):
     nice: bool = False
     wall_time_s: int = 60 * 60 * 3
     gpu_mem_mb: int = 1900
-    black_list: List = None
-    green_list: List = None
+    black_list: Optional[List] = None
+    green_list: Optional[List] = None
     use_singularity: bool = True
     singularity_file: str = sorted(glob.glob(f'{os.environ["HOME"]}/code/imitation-learning-codebase/'
                                              f'rosenvironment/singularity/*.sif'))[-1]
