@@ -1,4 +1,5 @@
 supervision_topic: '/control_mapper/supervision'
+rate_fps: 100
 mapping:
   Unknown: {}
   Terminated: {}

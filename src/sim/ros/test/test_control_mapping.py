@@ -32,7 +32,7 @@ class TestControlMapper(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=False)
+                                       visible=Fals)
         # subscribe to supervision and command control
         self.command_topic = rospy.get_param('/robot/command_topic')
         self.supervision_topic = rospy.get_param('/control_mapping/supervision_topic')

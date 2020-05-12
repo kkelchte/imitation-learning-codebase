@@ -69,7 +69,7 @@ class Experience:
 
 def to_torch(value: Union[np.ndarray, int, float],
              dtype: torch.dtype = torch.float32):
-    return torch.as_tensor(value, dtype=dtype)
+    return torch.as_tensor(value, dtype=dtype) if value is not None else None
 
 
 @dataclass

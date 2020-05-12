@@ -31,7 +31,7 @@ import rospy
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 
-from src.core.logger import get_logger, cprint
+from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.utils import get_output_path
@@ -60,7 +60,9 @@ class ControlMapper:
             'supervision': rospy.Publisher(rospy.get_param('/control_mapping/supervision_topic'),
                                            Twist, queue_size=10)
         }
-
+        self._messages = {}
+        self._rate_fps = rospy.get_param('/control_mapping/rate_fps', 100)
+        self.count = 0
         self._subscribe()
         rospy.init_node('control_mapper')
 
@@ -80,8 +82,9 @@ class ControlMapper:
             rospy.Subscriber(topic, Twist, self._control_callback, callback_args=topic)
 
     def _fsm_state_update(self, msg: String):
+        self.count = 0
         if self._fsm_state != FsmState[msg.data]:
-            cprint(f'update fsm state to {FsmState[msg.data]}', self._logger)
+            cprint(f'update fsm state to {FsmState[msg.data]}', self._logger, msg_type=MessageType.debug)
         self._fsm_state = FsmState[msg.data]
         if self._fsm_state.name not in self._mapping.keys():
             raise KeyError(f'Unrecognised Fsm state {self._fsm_state}.\n Not in current mapping: {self._mapping}.\n'
@@ -90,22 +93,32 @@ class ControlMapper:
     def _control_callback(self, msg: Twist, topic_name):
         if 'command' in self._mapping[self._fsm_state.name].keys() \
                 and topic_name == self._mapping[self._fsm_state.name]['command']:
-            self._publishers['command'].publish(msg)
+            self._messages['command'] = msg
         if 'supervision' in self._mapping[self._fsm_state.name].keys() \
                 and topic_name == self._mapping[self._fsm_state.name]['supervision']:
-            self._publishers['supervision'].publish(msg)
+            self._messages['supervision'] = msg
 
+    def publish(self):
+        for key in self._messages.keys():
+            self._publishers[key].publish(self._messages[key])
 
-def run():
-    rate = rospy.Rate(100)
-    while not rospy.is_shutdown():
-        # TODO extension 1 (see up)
-        # if (current_time - control_time) > max_time:
-        #     self.cmd_pub.publish(Twist())
-        #     control_time = current_time
-        rate.sleep()
+    def run(self):
+        rate = rospy.Rate(self._rate_fps)
+        while not rospy.is_shutdown():
+            self.publish()
+            # TODO extension 1 (see up)
+            # if (current_time - control_time) > max_time:
+            #     self.cmd_pub.publish(Twist())
+            #     control_time = current_time
+            rate.sleep()
+            self.count += 1
+            if self.count % self._rate_fps == 0:
+                msg = f"{rospy.get_time(): 0.0f}ms:"
+                for key in self._messages.keys():
+                    msg += f" {key} {self._messages[key]}\n"
+                cprint(msg, self._logger, msg_type=MessageType.debug)
 
 
 if __name__ == "__main__":
     control_mapper = ControlMapper()
-    run()
+    control_mapper.run()

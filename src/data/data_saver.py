@@ -116,8 +116,9 @@ class DataSaver:
     def _store_in_file_system(self, experience: Experience) -> None:
         for dst, data in zip(['observation', 'action', 'reward', 'done'],
                              [experience.observation, experience.action, experience.reward, experience.done]):
-            self._store_frame(data=np.asarray(data.value if isinstance(data, Action) else data),
-                              dst=dst, time_stamp=experience.time_stamp)
+            if data is not None:
+                self._store_frame(data=np.asarray(data.value if isinstance(data, Action) else data),
+                                  dst=dst, time_stamp=experience.time_stamp)
 
         for key, value in experience.info.items():
             self._store_frame(data=np.asarray(value), dst=key, time_stamp=experience.time_stamp)

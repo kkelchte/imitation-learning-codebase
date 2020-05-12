@@ -4,7 +4,7 @@ import signal
 import sys
 import time
 from copy import deepcopy
-from typing import Tuple, Union, List
+from typing import Tuple, Union, List, Iterable
 
 import numpy as np
 import rospy
@@ -108,8 +108,6 @@ class RosEnvironment(Environment):
             self._subscribe_info(self._config.ros_config.info)
 
         # Publishers
-        # Publish state at each step (all except RGB info)
-        self._state_publisher = rospy.Publisher('/ros_environment/state', RosEnvironmentState, queue_size=10)
         self._reset_publisher = rospy.Publisher(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, queue_size=10)
         self._action_publisher = rospy.Publisher('/ros_python_interface/cmd_vel', Twist, queue_size=10)
         # Catch kill signals:
@@ -125,7 +123,11 @@ class RosEnvironment(Environment):
                 self._run_shortly()
 
         # assert all experience fields are updated once:
-        self._run_shortly()
+        if self._config.ros_config.observation != '':
+            cprint('Wait till observation sensor has started properly.', self._logger)
+            while self._observation is None:
+                self._run_shortly()
+
         cprint('ready', self._logger)
 
     def _subscribe_observation(self, sensor: str) -> None:
@@ -279,34 +281,45 @@ class RosEnvironment(Environment):
         else False.
         :return: Bool whether all fields are updated
         """
-        if self._observation is None or \
-                self._action is None or \
-                self._reward is None or \
-                None in self._info.values():
+        if self._config.ros_config.observation != '' and self._observation is None:
+            cprint("waiting for observation", self._logger, msg_type=MessageType.debug)
             return False
-        else:
-            self._current_experience = Experience(
-                done=deepcopy(self._terminal_state),
-                observation=deepcopy(self._previous_observation
-                                     if self._previous_observation is not None else self._observation),
-                action=deepcopy(self._action),
-                reward=deepcopy(self._reward),
-                time_stamp=int(rospy.get_time() * 10 ** 3),
-                info={
-                    field_name: deepcopy(self._info[field_name]) for field_name in self._info.keys()
-                }
-            )
-            self._previous_observation = deepcopy(self._observation)
-            return True
+        if self._config.ros_config.store_reward and self._reward is None:
+            cprint("waiting for reward", self._logger, msg_type=MessageType.debug)
+            return False
+        if self._config.ros_config.store_action and self._action is None:
+            cprint("waiting for action", self._logger, msg_type=MessageType.debug)
+            return False
+        if None in [v for v in self._info.values() if not isinstance(v, Iterable)]:
+            cprint("waiting for info", self._logger, msg_type=MessageType.debug)
+            return False
+
+        self._current_experience = Experience(
+            done=deepcopy(self._terminal_state),
+            observation=deepcopy(self._previous_observation
+                                 if self._previous_observation is not None else self._observation),
+            action=deepcopy(self._action) if self._config.ros_config.store_action else None,
+            reward=deepcopy(self._reward) if self._config.ros_config.store_reward else None,
+            time_stamp=int(rospy.get_time() * 10 ** 3),
+            info={
+                field_name: deepcopy(self._info[field_name]) for field_name in self._info.keys()
+            }
+        )
+        self._previous_observation = deepcopy(self._observation)
+        return True
 
     def _run_shortly(self):
-        self._clear_experience_values()
         if self._config.ros_config.ros_launch_config.gazebo:
             self._unpause_gazebo()
+        rospy.sleep(self._pause_period)
+        if self._config.ros_config.ros_launch_config.gazebo:
+            self._pause_gazebo()
+
+    def _run_and_update_experience(self):
+        self._clear_experience_values()
         start_time = time.time()
         while not self._update_current_experience():
-            cprint("waiting...", self._logger)
-            rospy.sleep(self._pause_period)
+            self._run_shortly()
             if time.time() - start_time > self._config.ros_config.max_update_wait_period_s:
                 cprint(f"ros seems to be stuck, waiting for more than "
                        f"{self._config.ros_config.max_update_wait_period_s}s, so exit.",
@@ -314,8 +327,6 @@ class RosEnvironment(Environment):
                        msg_type=MessageType.warning)
                 self.remove()
                 sys.exit(1)
-        if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_gazebo()
 
     def reset(self) -> Tuple[Experience, np.ndarray]:
         cprint(f'resetting', self._logger)
@@ -324,7 +335,7 @@ class RosEnvironment(Environment):
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
-        self._run_shortly()
+        self._run_and_update_experience()
         return self._current_experience, deepcopy(self._observation)
 
     def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:
@@ -333,7 +344,7 @@ class RosEnvironment(Environment):
         self._clear_experience_values()
         if action is not None:
             self._action_publisher.publish(adapt_action_to_twist(action))
-        self._run_shortly()
+        self._run_and_update_experience()
         self._terminal_state = TerminationType.Unknown
         return self._current_experience, deepcopy(self._observation)
 

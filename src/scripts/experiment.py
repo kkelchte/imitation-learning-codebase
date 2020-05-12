@@ -99,12 +99,12 @@ class Experiment:
         if self._data_saver is not None:
             if self._config.data_saver_config.clear_buffer_before_episode:
                 self._data_saver.clear_buffer()
-            if self._config.data_saver_config.separate_raw_data_runs:
-                self._data_saver.update_saving_directory()
         count_episodes = 0
         count_success = 0
         episode_returns = []
         while not self._enough_episodes_check(count_episodes):
+            if self._data_saver is not None and self._config.data_saver_config.separate_raw_data_runs:
+                self._data_saver.update_saving_directory()
             episode_return = 0
             experience, next_observation = self._environment.reset()
             while experience.done == TerminationType.Unknown:
@@ -113,7 +113,7 @@ class Experiment:
             while experience.done == TerminationType.NotDone:
                 action = self._net.get_action(next_observation, train=False) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
-                episode_return += experience.reward
+                episode_return += experience.reward if experience.reward is not None else 0
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
