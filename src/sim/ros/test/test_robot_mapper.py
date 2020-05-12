@@ -67,6 +67,8 @@ class TestRobotMapper(unittest.TestCase):
         while time.time() < stime + max_duration \
                 and not rospy.has_param('/output_path'):
             time.sleep(0.1)
+
+        self.ros_topic.publishers[self._fsm_topic].publish(FsmState.Running.name)
         self.publish_odom(x=0, y=0, z=0, yaw=0)
         self.publish_odom(x=1, y=0, z=0, yaw=0)
         self.publish_odom(x=0, y=2, z=0, yaw=0)

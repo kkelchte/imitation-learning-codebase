@@ -122,22 +122,21 @@ class DataLoader:
                   f'make sure you call DataLoader.load_dataset()'
             cprint(msg, self._logger, msg_type=MessageType.error)
             raise IOError(msg)
-        # Calculate sampling weights according to:
-        number_of_batches = min(max_number_of_batches, int(len(self._dataset) / self._config.batch_size))
-        for batch_index in range(number_of_batches):
-            batch = Dataset()
-            for sample in range(self._config.batch_size):
-                sample_index = int(np.random.choice(list(range(len(self._dataset))),
-                                                    p=self._probabilities
-                                                    if len(self._probabilities) != 0 else None))
-                batch.append(Experience(
-                    observation=self._dataset.observations[sample_index],
-                    action=self._dataset.actions[sample_index],
-                    reward=self._dataset.rewards[sample_index],
-                    done=self._dataset.done[sample_index],
-                ))
-            if len(batch) != 0:
-                yield batch
+        # Get data indices:
+        batch_count = 0
+        while batch_count < min(len(self._dataset), max_number_of_batches * self._config.batch_size):
+            sample_indices = np.random.choice(list(range(len(self._dataset))),
+                                              size=self._config.batch_size,
+                                              p=self._probabilities
+                                              if len(self._probabilities) != 0 else None)
+            batch = Dataset(
+                observations=[self._dataset.observations[sample_index] for sample_index in sample_indices],
+                actions=[self._dataset.actions[sample_index] for sample_index in sample_indices],
+                rewards=[self._dataset.rewards[sample_index] for sample_index in sample_indices],
+                done=[self._dataset.done[sample_index] for sample_index in sample_indices],
+            )
+            batch_count += len(batch)
+            yield batch
         return
 
     def remove(self):

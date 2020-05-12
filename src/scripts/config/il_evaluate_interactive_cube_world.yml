@@ -1,9 +1,9 @@
-output_path: /tmp/experimental_data/cube_world
+output_path: experimental_data/cube_world
 number_of_epochs: 1
-number_of_episodes: 10
+number_of_episodes: 3
 architecture_config:
   architecture: tiny_128_rgb_6c
-  load_checkpoint_dir: /tmp/experimental_data/cube_world
+  load_checkpoint_dir: experimental_data/cube_world
   device: cpu
 environment_config:
   factory_key: ROS
@@ -13,8 +13,8 @@ environment_config:
       -current_waypoint
       -sensor/odometry
     observation: forward_camera
-    visible_xterm: False
-    step_rate_fps: 10
+    visible_xterm: false
+    step_rate_fps: 30
     ros_launch_config:
       random_seed: 123
       robot_name: turtlebot_sim
@@ -35,3 +35,4 @@ environment_config:
 data_saver_config:
   store_hdf5: false
   separate_raw_data_runs: true
+  saving_directory_tag: evaluate

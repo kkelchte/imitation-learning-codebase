@@ -1,4 +1,4 @@
-output_path: /tmp/experimental_data/cube_world
+output_path: experimental_data/cube_world
 number_of_epochs: 1
 number_of_episodes: 3
 environment_config:
@@ -9,8 +9,8 @@ environment_config:
       -current_waypoint
       -sensor/odometry
     observation: forward_camera
-    visible_xterm: False
-    step_rate_fps: 2
+    visible_xterm: false
+    step_rate_fps: 30
     ros_launch_config:
       random_seed: 123
       robot_name: turtlebot_sim
@@ -32,3 +32,4 @@ data_saver_config:
   training_validation_split: 0.9
   store_hdf5: true
   separate_raw_data_runs: true
+  saving_directory_tag: expert

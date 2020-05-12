@@ -256,10 +256,10 @@ def calculate_probabilities(data: List[float]) -> List[float]:
 def create_hdf5_file_from_dataset(filename: str, dataset: Dataset) -> None:
     h5py_file = h5py.File(filename, 'w')
     h5py_dataset = h5py_file.create_group('dataset')
-    h5py_dataset['observations'] = np.asarray([o.numpy() for o in dataset.observations])
-    h5py_dataset['actions'] = np.asarray([o.numpy() for o in dataset.actions])
-    h5py_dataset['rewards'] = np.asarray([o.numpy() for o in dataset.rewards])
-    h5py_dataset['done'] = np.asarray([o.numpy() for o in dataset.done])
+    for tag, data in zip(['observations', 'actions', 'rewards', 'done'],
+                         [dataset.observations, dataset.actions, dataset.rewards, dataset.done]):
+        if None not in data:
+            h5py_dataset[tag] = np.asarray([o.numpy() for o in data])
 
 
 def load_dataset_from_hdf5(filename: str) -> Dataset:

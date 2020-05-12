@@ -329,13 +329,26 @@ class RosEnvironment(Environment):
                 sys.exit(1)
 
     def reset(self) -> Tuple[Experience, np.ndarray]:
+        """
+        reset gazebo, reset fsm, wait till fsm in 'running' state
+        return experience without reward or action
+        """
         cprint(f'resetting', self._logger)
         self._step = 0
         self._terminal_state = TerminationType.Unknown
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
-        self._run_and_update_experience()
+        self._clear_experience_values()
+        while self.fsm_state != FsmState.Running:
+            self._run_shortly()
+        self._internal_update_terminal_state()
+        self._current_experience = Experience(
+            done=deepcopy(self._terminal_state),
+            observation=deepcopy(self._observation),
+            time_stamp=int(rospy.get_time() * 10 ** 3),
+        )
+        self._previous_observation = deepcopy(self._observation)
         return self._current_experience, deepcopy(self._observation)
 
     def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:

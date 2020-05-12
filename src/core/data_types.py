@@ -113,10 +113,12 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
 
     def extend(self, experiences: Union[List[Experience], h5py.Group]):
         if isinstance(experiences, h5py.Group):
-            self.observations.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences['observations']])
-            self.actions.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences['actions']])
-            self.rewards.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences['rewards']])
-            self.done.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences['done']])
+            for tag, field in zip(['observations', 'actions', 'rewards', 'done'],
+                                  [self.observations, self.actions, self.rewards, self.done]):
+                if tag in experiences.keys():
+                    field.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences[tag]])
+                else:
+                    field.extend([torch.zeros(0) for _ in experiences['observations']])
             self._check_length()
         else:
             for exp in experiences:

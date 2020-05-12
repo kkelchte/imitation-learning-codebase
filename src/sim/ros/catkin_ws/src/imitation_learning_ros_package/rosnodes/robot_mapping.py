@@ -116,7 +116,7 @@ class RobotMapper:
         self._frame_points = []
 
         rospy.init_node('robot_mapper')
-        self._rate = rospy.Rate(30)
+        self._rate = rospy.Rate(100)
         cprint(f'specifications: \n'
                f'cy: {self._cy}\n'
                f'cx: {self._cx}\n'
@@ -126,11 +126,13 @@ class RobotMapper:
                f'camera_translation: {self._camera_global_translation}\n', self._logger)
 
     def _update_fsm_state(self, msg: String):
-        self._fsm_state = FsmState[msg.data]
-        if self._fsm_state == FsmState.Terminated:
+        if self._fsm_state == FsmState.Running and FsmState[msg.data] == FsmState.Terminated:
             self._write_image()
+        self._fsm_state = FsmState[msg.data]
 
     def _odometry_callback(self, msg: Odometry):
+        if self._fsm_state != FsmState.Running:
+            return
         robot_global_translation = np.asarray([msg.pose.pose.position.x,
                                                msg.pose.pose.position.y,
                                                msg.pose.pose.position.z])
@@ -138,8 +140,6 @@ class RobotMapper:
                                                              msg.pose.pose.orientation.y,
                                                              msg.pose.pose.orientation.z,
                                                              msg.pose.pose.orientation.w))
-        #cprint(f'robot_global_translation: {robot_global_translation}', self._logger)
-        #cprint(f'robot_global_orientation: {robot_global_orientation}', self._logger)
         points_global_frame = transform(points=self._local_frame,
                                         orientation=robot_global_orientation,
                                         translation=robot_global_translation)

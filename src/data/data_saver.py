@@ -56,7 +56,6 @@ def create_saving_directory(output_path: str, saving_directory_tag: str = ''):
     while os.path.isdir(saving_directory):  # add _0 _1 if directory already exists.
         saving_directory = original_saving_directory + '_' + str(count)
         count += 1
-    os.makedirs(saving_directory)
     return saving_directory
 
 
@@ -111,6 +110,7 @@ class DataSaver:
         if self._config.store_on_ram_only:
             return self._dataset.append(experience)
         else:
+            os.makedirs(self._config.saving_directory, exist_ok=True)
             return self._store_in_file_system(experience=experience)
 
     def _store_in_file_system(self, experience: Experience) -> None:
@@ -171,6 +171,7 @@ class DataSaver:
             data_loader.load_dataset(arrange_according_to_timestamp=False)
             create_hdf5_file_from_dataset(filename=os.path.join(self._config.output_path, file_name + '.hdf5'),
                                           dataset=data_loader.get_dataset())
+            cprint(f'created {file_name}.hdf5', self._logger)
 
     def empty_raw_data_in_output_directory(self) -> None:
         raw_data_directory = os.path.dirname(self._config.saving_directory)

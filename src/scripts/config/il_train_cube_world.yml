@@ -1,9 +1,8 @@
-output_path: '/tmp/experimental_data/cube_world'
+output_path: experimental_data/cube_world
 number_of_epochs: 100
 number_of_episodes: -1
 architecture_config:
   architecture: tiny_128_rgb_6c
-  load_checkpoint_dir: none
   initialisation_type: xavier
   initialisation_seed: 123
   device: cpu
@@ -22,13 +21,13 @@ trainer_config:
     balance_over_actions: false
     batch_size: 64
   criterion: MSELoss
-  device: gpu
+  device: cpu
 evaluator_config:
   data_loader_config:
     hdf5_file: validation.hdf5
     data_sampling_seed: 123
     balance_over_actions: false
-    batch_size: -1
+    batch_size: 64
   criterion: MSELoss
   device: cpu
 tensorboard: true

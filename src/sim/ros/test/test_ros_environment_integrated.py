@@ -25,7 +25,7 @@ config_dict = {
         "max_update_wait_period_s": 120,
         "store_action": True,
         "store_reward": False,
-        "visible_xterm": True,
+        "visible_xterm": False,
         "step_rate_fps": 30,
         "ros_launch_config": {
           "random_seed": 123,
@@ -44,7 +44,7 @@ config_dict = {
         },
         "actor_configs": [{
               "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert_noisy.yml"
+              "file": "src/sim/ros/config/actor/ros_expert.yml"
             }],
     }
 }
@@ -67,13 +67,13 @@ class TestRosIntegrated(unittest.TestCase):
         waypoints = rospy.get_param('/world/waypoints')
         for _ in range(2):
             experience, observation = self._environment.reset()
-            # wait delay evaluation time
-            while experience.done == TerminationType.Unknown:
-                experience, observation = self._environment.step()
-            self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
-            self.assertLess(np.sum(experience.info['odometry'][:3]), 0.2)
+            self.assertTrue(experience.action is None)
+            self.assertEqual(experience.done, TerminationType.NotDone)
             count = 0
             while experience.done == TerminationType.NotDone:
+                if count == 1:
+                    self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
+                    self.assertLess(np.sum(experience.info['odometry'][:3]), 0.2)
                 count += 1
                 experience, observation = self._environment.step()
                 self.assertTrue(experience.observation is not None)

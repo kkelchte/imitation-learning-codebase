@@ -81,9 +81,9 @@ class Experiment:
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
             #  Avoid bug of Tensorboard that print on same logger...
-            for handler in self._logger.handlers:
-                if not isinstance(handler, logging.FileHandler):
-                    self._logger.removeHandler(handler)
+            #for handler in self._logger.handlers:
+            #    if not isinstance(handler, logging.FileHandler):
+            #        self._logger.removeHandler(handler)
         cprint(f'Initiated.', self._logger)
 
     def _enough_episodes_check(self, episode_number: int) -> bool:
@@ -107,8 +107,6 @@ class Experiment:
                 self._data_saver.update_saving_directory()
             episode_return = 0
             experience, next_observation = self._environment.reset()
-            while experience.done == TerminationType.Unknown:
-                experience, next_observation = self._environment.step()
             cprint("running episode", self._logger)
             while experience.done == TerminationType.NotDone:
                 action = self._net.get_action(next_observation, train=False) if self._net is not None else None

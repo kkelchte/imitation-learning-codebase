@@ -65,7 +65,8 @@ class Trainer(Evaluator):
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         total_error = []
-        for batch in tqdm(self.data_loader.sample_shuffled_batch(), ascii=True, desc='train'):  # type(batch) == Run
+#        for batch in tqdm(self.data_loader.sample_shuffled_batch(), ascii=True, desc='train'):
+        for batch in self.data_loader.sample_shuffled_batch():
             self._optimizer.zero_grad()
             predictions = self._net.forward(batch.observations, train=True)
             targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
@@ -74,7 +75,6 @@ class Trainer(Evaluator):
             self._optimizer.step()  # apply gradients according to optimizer
             self._net.global_step += 1
             total_error.append(loss.cpu().detach())
-        print(total_error)
         self.put_model_back_to_original_device()
         self._save_checkpoint(epoch)
 
@@ -82,4 +82,4 @@ class Trainer(Evaluator):
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(error_distribution, 'training')
-        return f'training error mean {error_distribution.mean: 0.3e} [{error_distribution.std: 0.2e}]'
+        return f' training {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
