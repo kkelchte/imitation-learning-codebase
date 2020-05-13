@@ -167,7 +167,7 @@ class BaseNet(nn.Module):
             inputs = inputs.unsqueeze(0)
 
         # put inputs on device
-        inputs.to(self._device)
+        inputs = inputs.to(self._device)
 
         return inputs
 
