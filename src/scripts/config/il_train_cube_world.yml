@@ -21,7 +21,7 @@ trainer_config:
     balance_over_actions: false
     batch_size: 64
   criterion: MSELoss
-  device: cpu
+  device: cuda
 evaluator_config:
   data_loader_config:
     hdf5_file: /esat/opal/kkelchte/experimental_data/cube_world/validation.hdf5
