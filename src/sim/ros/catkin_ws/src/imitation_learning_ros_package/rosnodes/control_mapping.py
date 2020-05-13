@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/bin/python3.8
 """Listens to FSM state and changes controls accordingly
 
 Configuration defines which FSM state corresponds to which control connection

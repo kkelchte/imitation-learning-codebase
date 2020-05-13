@@ -175,8 +175,9 @@ class DataSaver:
 
     def empty_raw_data_in_output_directory(self) -> None:
         raw_data_directory = os.path.dirname(self._config.saving_directory)
-        for d in os.listdir(raw_data_directory):
-            shutil.rmtree(os.path.join(raw_data_directory, d))
+        if os.path.isdir(raw_data_directory):
+            for d in os.listdir(raw_data_directory):
+                shutil.rmtree(os.path.join(raw_data_directory, d))
 
     def clear_buffer(self) -> None:
         self._frame_counter = 0

@@ -1,7 +1,7 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world
 mode: data_cleaning
 job_configs:
-  - command: python3.7 src/scripts/data_cleaning.py
+  - command: python src/scripts/data_cleaning.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 2
     gpus: 0

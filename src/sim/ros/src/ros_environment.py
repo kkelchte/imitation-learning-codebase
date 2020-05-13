@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/bin/python3.8
 import os
 import signal
 import sys

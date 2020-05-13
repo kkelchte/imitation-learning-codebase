@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/bin/python3.8
 
 """Extract waypoints from rosparam provided by config/world/...
 Keep track of current position and next waypoint.

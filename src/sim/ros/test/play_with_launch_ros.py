@@ -31,7 +31,7 @@ class TestRosEnvironment(unittest.TestCase):
 
         self._ros_environment_process = subprocess.Popen(
             shlex.split(
-                f'python3.7 src/sim/ros/test/launch_ros.py --config {self.output_dir}/config.yml'
+                f'python3.8 src/sim/ros/test/launch_ros.py --config {self.output_dir}/config.yml'
             )
         )
 

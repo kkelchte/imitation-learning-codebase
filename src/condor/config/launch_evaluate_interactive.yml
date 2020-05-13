@@ -1,7 +1,7 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world
 mode: evaluate_interactive
 job_configs:
-  - command: python3.7 src/scripts/experiment.py
+  - command: python src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 11
     gpus: 1

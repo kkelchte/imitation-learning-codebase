@@ -1,4 +1,4 @@
-#!/usr/bin/python3.7
+#!/usr/bin/python3.8
 
 """ Listen to the robot's odometry and create a figure of the trajectory.
 
