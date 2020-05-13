@@ -45,11 +45,11 @@ Contain specific shell scripts used to by launched in subprocesses by process_wr
        - robot_name: defines robot_config 
 
 _src_
-Contains all frontend python3.7 code containing ros_environment.py as well as helper functions,
+Contains all frontend python code containing ros_environment.py as well as helper functions,
  such as environment generators.
 
 _test_
-Contains integrated frontend tests to be run in python3.7 singularity environment.
+Contains integrated frontend tests to be run in python singularity environment.
 
 # Installation:
 
@@ -64,7 +64,7 @@ source entrypoint.sh
 You can add pycharm sourcing scripts to interactively code and debug in pycharm 
 with the correct python interpreter environment.
 
-The ROS frontend code is written in python3.7 and expects ROS installation.
+The ROS frontend code is written in python and expects ROS installation.
 Add the specific `pycharm_singularity` alias to your bash script:
 
 ```shell script

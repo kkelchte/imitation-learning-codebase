@@ -1,4 +1,4 @@
-#!/usr/python3.7
+#!/usr/python
 import sys
 import time
 
