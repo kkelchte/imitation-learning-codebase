@@ -93,7 +93,7 @@ class CondorLauncher:
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)
 
-    def prepare_evaluate_interactively(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+    def prepare_evaluate_interactive(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
                                        number_of_jobs: int = None):
         base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
         job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
@@ -165,10 +165,10 @@ class CondorLauncher:
                         dag_directory=os.path.join(self._config.output_path, 'dag', get_date_time_tag()))
 
     def prepare_dag_train_evaluate(self):
-        self.prepare_train_model(base_config_file=self._config.base_config_files[0],
+        self.prepare_train(base_config_file=self._config.base_config_files[0],
                                  job_config_object=self._config.job_configs[0],
                                  number_of_jobs=self._config.number_of_jobs[0])
-        self.prepare_evaluate_model(base_config_file=self._config.base_config_files[1],
+        self.prepare_evaluate_interactive(base_config_file=self._config.base_config_files[1],
                                     job_config_object=self._config.job_configs[1],
                                     number_of_jobs=self._config.number_of_jobs[1])
         dag_lines = '# prepare_dag_train_evaluate: \n'

@@ -76,7 +76,7 @@ class DataSaver:
             self._dataset = Dataset(max_size=self._config.max_size)
 
         # used to keep track of replay buffer size on file system
-        if not self._config.store_on_ram_only:
+        if not self._config.store_on_ram_only and os.path.isdir(os.path.dirname(self._config.saving_directory)):
             data_loader = DataLoader(config=DataLoaderConfig().create(config_dict={
                 'data_directories': [os.path.join(os.path.dirname(self._config.saving_directory), run)
                                      for run in sorted(os.listdir(os.path.dirname(self._config.saving_directory)))],
