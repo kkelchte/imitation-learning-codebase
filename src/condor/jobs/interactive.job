@@ -6,7 +6,7 @@ RequestCpus     = 12
 RequestMemory   = 10G
 # max time 4h... should probably ask less
 +RequestWallTime = 15*60
-Request_GPUS    = 0
+Request_GPUS    = 1
 
 # If you want X11 forwarding, uncomment this
 #Requirements = ( HasX11 == True )
