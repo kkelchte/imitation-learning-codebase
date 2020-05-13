@@ -1,3 +1,5 @@
+import os
+
 import yaml
 
 from src.core.utils import get_to_root_dir
@@ -29,7 +31,8 @@ def validate_config(config_dict: dict) -> None:
 
 if __name__ == "__main__":
     pass
-    config = read_config(CONFIG_FILE)
+    config = read_config(f'{os.environ["HOME"]}/experimental_data/cube_world/condor/'
+                         f'20-05-13_08-46-59_initialisation_seed_5100/adjusted_config.yml')
     # adjust config if needed here
     validate_config(config)
     # write_config(destination, base_config)

@@ -86,8 +86,7 @@ class CondorLauncher:
         config_files = create_configs(base_config=base_config,
                                       output_path=self._config.output_path,
                                       adjustments={
-                                          '[\"model_config\"][\"initialisation_seed\"]': seeds,
-                                          '[\"generate_new_output_path\"]': [False] * number_of_jobs,
+                                          '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
                                           '[\"output_path\"]': self._model_paths,
                                       })
         self.create_jobs_from_job_config_files(job_config_files=config_files,

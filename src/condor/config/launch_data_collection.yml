@@ -3,10 +3,11 @@ mode: data_collection
 job_configs:
   - command: python3.7 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 4
+    cpus: 12
     gpus: 0
-    cpu_mem_gb: 17
+    cpu_mem_gb: 25
     disk_mem_gb: 52
+    wall_time_s: 60 * 60
     nice: false
     use_singularity: true
     check_if_ros_already_in_use: false
