@@ -28,6 +28,6 @@ environment_config:
         file: src/sim/ros/config/actor/ros_expert_noisy.yml
 data_saver_config:
   training_validation_split: 0.9
-  store_hdf5: true
+  store_hdf5: false
   separate_raw_data_runs: true
   saving_directory_tag: expert

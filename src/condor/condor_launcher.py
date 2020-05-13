@@ -22,7 +22,7 @@ class CondorLauncherConfig(Config):
     job_configs: List[CondorJobConfig] = None
 
     def post_init(self):
-        assert self.mode in ['data_collection', 'train', 'evaluate_interactive', 'clean_data',
+        assert self.mode in ['data_collection', 'data_cleaning', 'train', 'evaluate_interactive',
                              'data_collection_dag', 'train_evaluate_dag', 'data_collection_train_evaluate_dag']
 
 
@@ -74,6 +74,24 @@ class CondorLauncher:
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)
 
+    def prepare_data_cleaning(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
+                              number_of_jobs: int = None):
+        """Launch condor job in virtualenv to clean raw_data in output_path/raw_data and create hdf5 file"""
+        base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
+        job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
+        number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
+        if number_of_jobs == 0:
+            return
+        cleaning_config = create_configs(base_config=base_config,
+                                         output_path=self._config.output_path,
+                                         adjustments={})
+        job_config_object.command += f' --config {cleaning_config[0]}'
+        condor_job = CondorJob(config=job_config_object)
+        condor_job.write_job_file()
+        condor_job.write_executable_file()
+        self._jobs.append(condor_job)
+        time.sleep(1)
+
     def prepare_train(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
                       number_of_jobs: int = None):
         base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
@@ -93,7 +111,7 @@ class CondorLauncher:
                                                job_config_object=job_config_object)
 
     def prepare_evaluate_interactive(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
-                                       number_of_jobs: int = None):
+                                     number_of_jobs: int = None):
         base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
         job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
@@ -105,43 +123,16 @@ class CondorLauncher:
         else:
             model_directories = self._model_paths
         model_directories = model_directories[-min(number_of_jobs, len(model_directories)):]
-        with open('src/sim/ros/config/actor/dnn_actor.yml', 'r') as f:
-            actor_base_config = yaml.load(f, Loader=yaml.FullLoader)
-        actor_base_config['output_path'] = self._config.output_path
-        actor_tags = [f'evaluate_{os.path.basename(d)}' for d in model_directories]
-        actor_config_files = create_configs(base_config=actor_base_config,
-                                            output_path=self._config.output_path,
-                                            adjustments={
-                                                '[\"specs\"][\"model_config\"][\"load_checkpoint_dir\"]':
-                                                    model_directories
-                                            })
         config_files = create_configs(base_config=base_config,
                                       output_path=self._config.output_path,
                                       adjustments={
-                                          '[\"data_saver_config\"][\"saving_directory_tag\"]': actor_tags,
-                                          '[\"runner_config\"][\"environment_config\"]'
-                                          '[\"actor_configs\"][0][\"file\"]': actor_config_files
+                                          '[\"data_saver_config\"][\"saving_directory_tag\"]':
+                                              [os.path.basename(d) for d in model_directories],
+                                          '[\"architecture_config\"][\"load_checkpoint_dir\"]':
+                                              model_directories,
                                       })
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)
-
-    def prepare_data_cleaning(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
-                              number_of_jobs: int = None):
-        """Launch condor job in virtualenv to clean raw_data in output_path/raw_data and create hdf5 file"""
-        base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
-        job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
-        number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
-        if number_of_jobs == 0:
-            return
-        cleaning_config = create_configs(base_config=base_config,
-                                         output_path=self._config.output_path,
-                                         adjustments={})
-        job_config_object.command += f' --config {cleaning_config[0]}'
-        condor_job = CondorJob(config=job_config_object)
-        condor_job.write_job_file()
-        condor_job.write_executable_file()
-        self._jobs.append(condor_job)
-        time.sleep(1)
 
     def prepare_dag_data_collection(self):
         self.prepare_data_collection(base_config_file=self._config.base_config_files[0],
