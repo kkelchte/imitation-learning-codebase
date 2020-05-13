@@ -7,7 +7,7 @@ job_configs:
     gpus: 1
     cpu_mem_gb: 10
     disk_mem_gb: 52
-    wall_time: 60 * 60 * 2
+    wall_time_s: 60 * 60 * 2
     nice: False
     gpu_mem_mb: 1900
     use_singularity: true
