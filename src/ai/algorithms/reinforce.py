@@ -1,6 +1,8 @@
 #!/usr/bin/python3.7
 import os
 import time
+from copy import deepcopy
+
 import gym
 import numpy as np
 import torch.nn as nn
@@ -103,6 +105,7 @@ def train_one_epoch():
 
     # optimize value with supervised learning step
     values = value_network(torch.as_tensor(batch_observations, dtype=torch.float32))
+    batch_returns = deepcopy(batch_weights)
     if 'value_baseline' in weight_type:
         batch_weights = [batch_weights[i] - values[i] for i in range(len(values))]
     elif 'generalized_advantage_estimate' in weight_type:
@@ -134,7 +137,7 @@ def train_one_epoch():
             return ((value_network(obs).squeeze() - trgt).abs()).mean()
 
         value_loss = compute_value_loss(obs=torch.as_tensor(batch_observations, dtype=torch.float32),
-                                        trgt=torch.as_tensor(batch_weights, dtype=torch.float32))
+                                        trgt=torch.as_tensor(batch_returns, dtype=torch.float32))
         value_loss.backward()
         value_optimizer.step()
 

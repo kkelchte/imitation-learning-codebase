@@ -17,10 +17,10 @@ from src.ai.algorithms.utils import generalized_advantage_estimate
 
 result_file_name = 'ppo_GAE_cartpole'
 environment_name = 'CartPole-v0'  # 'Acrobot-v1'  # 'CartPole-v1'
-learning_rate = 1e-3
+learning_rate = 1e-4
 epochs = 1000
-batch_size = 1000
-discount = 0.95
+batch_size = 100
+discount = 0.99
 gae_lambda = 0.95
 plot = True
 policy_training_iterations = 10
@@ -82,6 +82,7 @@ def train_one_epoch():
     batch_done = []
     epoch_returns = []
     episode_lengths = []
+    batch_returns = []
 
     observation = environment.reset()
     done = False
@@ -101,6 +102,7 @@ def train_one_epoch():
         if done:
             episode_return = sum(episode_rewards)
             episode_length = len(episode_rewards)
+            batch_returns += list(reward_to_go(episode_rewards))
             epoch_returns.append(episode_return)
             episode_lengths.append(episode_length)
             observation = environment.reset()
@@ -117,7 +119,6 @@ def train_one_epoch():
                                                       batch_values=[v for v in values],
                                                       discount=discount,
                                                       gae_lambda=gae_lambda)
-
     # optimize policy with policy gradient step
 
     def compute_loss(obs, act, adv, logp):
@@ -141,12 +142,12 @@ def train_one_epoch():
 
     # optimize value estimator
     def compute_value_loss(obs, trgt):
-        return ((value_network(obs) - trgt) ** 2).mean()
+        return ((value_network(obs).squeeze() - trgt)**2).mean()
 
     for value_train_it in range(value_training_iterations):
         value_optimizer.zero_grad()
         value_loss = compute_value_loss(obs=torch.as_tensor(batch_observations, dtype=torch.float32),
-                                        trgt=torch.as_tensor(batch_advantages, dtype=torch.float32))
+                                        trgt=torch.as_tensor(batch_returns, dtype=torch.float32))
         value_loss.backward()
         value_optimizer.step()
 

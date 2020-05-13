@@ -3,6 +3,7 @@ import torch
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import TrainerConfig
+from src.ai.utils import get_reward_to_go
 from src.ai.vpg import VanillaPolicyGradient
 from src.core.data_types import Distribution, Dataset
 from src.core.logger import get_logger, cprint
@@ -55,10 +56,10 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             actor_loss.append(batch_loss.detach())
         return Distribution(torch.stack(actor_loss))
 
-    def _train_critic(self, batch: Dataset, phi_weights: torch.Tensor) -> Distribution:
+    def _train_critic(self, batch: Dataset, targets: torch.Tensor) -> Distribution:
         critic_loss = []
         for value_train_it in range(self._config.max_critic_training_iterations):
-            critic_loss.append(super()._train_critic(batch, phi_weights))
+            critic_loss.append(super()._train_critic(batch, targets))
         return Distribution(torch.stack(critic_loss))
 
     def train(self, epoch: int = -1, writer=None) -> str:
@@ -71,7 +72,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                                                         actions=batch.actions,
                                                                         train=False).detach()
         actor_loss_distribution = self._train_actor_ppo(batch, phi_weights, original_log_probabilities)
-        critic_loss_distribution = self._train_critic(batch, phi_weights)
+        critic_loss_distribution = self._train_critic(batch, get_reward_to_go(batch))
         self._net.global_step += 1
 
         self._save_checkpoint(epoch=epoch)
