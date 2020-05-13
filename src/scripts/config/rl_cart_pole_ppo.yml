@@ -19,7 +19,7 @@ output_path: /tmp/experimental_data/cart_pole_ppo
 tensorboard: true
 trainer_config:
   criterion: MSELoss
-  learning_rate: 0.0001
+  learning_rate: 0.001
   optimizer: Adam
   data_loader_config:
     batch_size: 100
@@ -30,7 +30,7 @@ trainer_config:
   gae_lambda: 0.95
   phi_key: gae
   save_checkpoint_every_n: 100
-  max_actor_training_iterations: 3
-  max_critic_training_iterations: 10
+  max_actor_training_iterations: 10
+  max_critic_training_iterations: 3
   ppo_epsilon: 0.2
   kl_target: 0.01
