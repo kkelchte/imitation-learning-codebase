@@ -40,7 +40,7 @@ apt install -y -q software-properties-common
 apt update && \
 add-apt-repository ppa:deadsnakes/ppa
 apt update && \
-apt install -y -q python3.7-dev
+apt install -y -q python3.8-dev
 apt update
 
 %files
@@ -48,8 +48,8 @@ requirements /
 
 %post
 apt install -y -q python-pydot python-pydot-ng graphviz xdg-utils firefox
-python3.7 -m pip install --user --upgrade pip
-python3.7 -m pip install -r /requirements
+python3.8 -m pip install --user --upgrade pip
+python3.8 -m pip install -r /requirements
 
 # ---- GAZEBO ----
 echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable bionic main" > /etc/apt/sources.list.d/gazebo-stable.list

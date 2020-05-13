@@ -88,7 +88,7 @@ update-image:
 test-image: *.sif test/singularity_sanity_check.py
 	cd $(CODEDIR) && \
 	singularity run --nv rosenvironment/singularity/*.sif \
-	./rosenvironment/entrypoint.sh 'python3.7 rosenvironment/singularity/test/singularity_sanity_check.py'
+	./rosenvironment/entrypoint.sh 'python3.8 rosenvironment/singularity/test/singularity_sanity_check.py'
 
 singularity-shell:
 	cd $(CODEDIR) && \
