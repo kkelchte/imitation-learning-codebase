@@ -5,7 +5,7 @@
 RequestCpus     = 12
 RequestMemory   = 10G
 # max time 4h... should probably ask less
-+RequestWallTime = 4*60*59
++RequestWallTime = 15*60
 Request_GPUS    = 0
 
 # If you want X11 forwarding, uncomment this
