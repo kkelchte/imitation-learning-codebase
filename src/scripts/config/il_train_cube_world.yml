@@ -16,7 +16,7 @@ trainer_config:
   save_checkpoint_every_n: 10
   factory_key: BASE
   data_loader_config:
-    hdf5_file: train.hdf5
+    hdf5_file: /esat/opal/kkelchte/experimental_data/cube_world/train.hdf5
     data_sampling_seed: 123
     balance_over_actions: false
     batch_size: 64
@@ -24,7 +24,7 @@ trainer_config:
   device: cpu
 evaluator_config:
   data_loader_config:
-    hdf5_file: validation.hdf5
+    hdf5_file: /esat/opal/kkelchte/experimental_data/cube_world/validation.hdf5
     data_sampling_seed: 123
     balance_over_actions: false
     batch_size: 64
