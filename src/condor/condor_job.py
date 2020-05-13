@@ -71,6 +71,7 @@ class CondorJob:
             'RequestDisk': f'{self._config.disk_mem_gb} G',
             'Niceuser': self._config.nice,
             '+RequestWalltime': self._config.wall_time_s,
+            'OpSysAndVer': '\"Fedora32\"'
         }
 
         # files and directories
@@ -87,7 +88,7 @@ class CondorJob:
         self._original_output_path = None
 
     def _get_requirements(self) -> str:
-        requirements = f'(machineowner == \"Visics\") && (machine =!= LastRemoteHost) && (OpSysAndVer = \"Fedora32\")'
+        requirements = f'(machineowner == \"Visics\") && (machine =!= LastRemoteHost) '
         for i in range(6):
             requirements += f' && (target.name =!= LastMatchName{i})'
         if self._config.gpus != 0:
