@@ -18,7 +18,7 @@ number_of_epochs: 1000
 output_path: /tmp/experimental_data/cart_pole_ppo
 tensorboard: true
 trainer_config:
-  criterion: L2Loss
+  criterion: MSELoss
   learning_rate: 0.001
   optimizer: Adam
   data_loader_config:
