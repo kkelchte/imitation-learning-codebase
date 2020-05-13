@@ -67,7 +67,7 @@ class DataLoader:
         self._config.data_directories = list(set(self._config.data_directories))
 
     def load_dataset(self, arrange_according_to_timestamp: bool = False):
-        if self._config.hdf5_file is not '':
+        if self._config.hdf5_file != '':
             self._dataset = load_dataset_from_hdf5(self._config.hdf5_file)
             cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_file}', self._logger,
                    msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
