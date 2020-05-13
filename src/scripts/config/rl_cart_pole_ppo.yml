@@ -18,11 +18,11 @@ number_of_epochs: 1000
 output_path: /tmp/experimental_data/cart_pole_ppo
 tensorboard: true
 trainer_config:
-  criterion: L1Loss
+  criterion: L2Loss
   learning_rate: 0.001
   optimizer: Adam
   data_loader_config:
-    batch_size: 200
+    batch_size: 1000
     data_sampling_seed: 123
   device: cpu
   discount: 0.95
