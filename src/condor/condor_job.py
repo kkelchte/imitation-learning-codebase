@@ -87,7 +87,7 @@ class CondorJob:
         self._original_output_path = None
 
     def _get_requirements(self) -> str:
-        requirements = f'(machineowner == \"Visics\") && (machine =!= LastRemoteHost) && (OpSysAndVer = "Fedora32")'
+        requirements = f'(machineowner == \"Visics\") && (machine =!= LastRemoteHost) && (OpSysAndVer = \"Fedora32\")'
         for i in range(6):
             requirements += f' && (target.name =!= LastMatchName{i})'
         if self._config.gpus != 0:
@@ -172,7 +172,8 @@ class CondorJob:
         return f'mkdir -p {self.local_output_path} \n'
 
     def _add_lines_to_copy_local_data_back(self) -> str:
-        lines = f'cp -r {self.local_output_path}/* {self._original_output_path} \n'
+        lines = f'mkdir -p {self._original_output_path} \n'
+        lines += f'cp -r {self.local_output_path}/* {self._original_output_path} \n'
         lines += f'rm -r {self.local_output_path} \n'
         return lines
 
