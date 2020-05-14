@@ -15,7 +15,7 @@ environment_config:
   max_number_of_steps: -1  # let number of steps depend on environment
 number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 400
-output_path: /tmp/experimental_data/cart_pole_vpg
+output_path: cart_pole_vpg
 tensorboard: true
 trainer_config:
   criterion: L1Loss

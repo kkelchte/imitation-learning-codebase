@@ -77,6 +77,9 @@ class BaseNet(nn.Module):
             self._config.load_checkpoint_dir = self._config.load_checkpoint_dir \
                 if self._config.load_checkpoint_dir.endswith('torch_checkpoints') \
                 else os.path.join(self._config.load_checkpoint_dir, 'torch_checkpoints')
+            if not self._config.load_checkpoint_dir.startswith('/'):
+                self._config.load_checkpoint_dir = f'{os.environ["DATADIR"]}/{self._config.load_checkpoint_dir}'\
+                    if "DATADIR" in os.environ.keys() else f'{os.environ["HOME"]}/{self._config.load_checkpoint_dir}'
             self.load_from_checkpoint(checkpoint_dir=self._config.load_checkpoint_dir)
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)

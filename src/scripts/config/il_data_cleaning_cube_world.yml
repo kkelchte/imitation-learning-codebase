@@ -1,4 +1,4 @@
-output_path: experimental_data/cube_world
+output_path: cube_world
 data_saver_config:
   training_validation_split: 0.7
   store_hdf5: true

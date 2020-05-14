@@ -1,9 +1,9 @@
-output_path: experimental_data/cube_world
+output_path: cube_world
 number_of_epochs: 1
 number_of_episodes: 3
 architecture_config:
   architecture: tiny_128_rgb_6c
-  load_checkpoint_dir: experimental_data/cube_world
+  load_checkpoint_dir: cube_world
   device: cuda
 environment_config:
   factory_key: ROS
