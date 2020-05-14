@@ -142,6 +142,7 @@ class BaseNet(nn.Module):
         try:
             self.to(self._device)
         except AssertionError:
+            cprint(f'failed to work on {self._device} so working on cpu', self._logger, msg_type=MessageType.warning)
             self._device = torch.device('cpu')
             self.to(self._device)
 
@@ -184,10 +185,6 @@ class BaseNet(nn.Module):
 
     def get_device(self) -> torch.device:
         return self._device
-
-    def to_device(self, device: torch.device) -> None:
-        self.to(device)
-        self._device = device
 
     def count_parameters(self) -> int:
         count = 0

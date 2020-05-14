@@ -53,10 +53,10 @@ class Evaluator:
 
     def put_model_on_device(self):
         self._original_model_device = self._net.get_device()
-        self._net.to_device(torch.device(self._config.device))
+        self._net.set_device(torch.device(self._config.device))
 
     def put_model_back_to_original_device(self):
-        self._net.to_device(self._original_model_device)
+        self._net.set_device(self._original_model_device)
 
     def evaluate(self, save_checkpoints: bool = False, writer=None) -> str:
         self.put_model_on_device()
