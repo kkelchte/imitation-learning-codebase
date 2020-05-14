@@ -92,7 +92,7 @@ class CondorJob:
             requirements += f' && (target.name =!= LastMatchName{i})'
         if self._config.gpus != 0:
             requirements += f' && (CUDAGlobalMemoryMb >= {self._config.gpu_mem_mb})' \
-                            f' && (CUDACapability >= 3.5)'
+                            f' && (CUDACapability >= 3.7)'
         if self._config.use_singularity:
             requirements += ' && (HasSingularity)'
         if self._config.black_list is not None:
