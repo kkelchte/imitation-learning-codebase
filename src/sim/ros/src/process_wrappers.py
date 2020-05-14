@@ -185,10 +185,15 @@ class RosWrapper(ProcessWrapper):
                   f'-hold -e {executable}'
         if not visible:
             command = f'xvfb-run -a {command}'
-        assert self._run(command,
-                         strict_check=False,
-                         shell=False,
-                         background=True)
+        count_retries = 0
+        while not self._run(command,
+                            strict_check=False,
+                            shell=False,
+                            background=True):
+            cprint(f'Failed to start, so terminate and try again...', self._logger, msg_type=MessageType.warning)
+            self.terminate()
+            count_retries += 1
+            assert count_retries < 10
         if 'gazebo' in config.keys() and config['gazebo'] == 'true':
             cprint(f'Check if gzserver is running...', self._logger)
             while not self._check_running_process_with_ps('gzserver'):
@@ -223,7 +228,6 @@ class RosWrapper(ProcessWrapper):
 
     def terminate(self) -> ProcessState:
         self._terminate_by_pid()
-
         start_time = time.time()
         max_duration = 20
         while not self._all_terminated_by_name('ros', 'gz', 'xterm', 'xvfb') \
