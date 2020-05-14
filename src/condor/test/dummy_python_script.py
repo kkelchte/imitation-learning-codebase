@@ -1,4 +1,4 @@
-#!/usr/python3.7
+#!/usr/python
 import shlex
 import subprocess
 import sys

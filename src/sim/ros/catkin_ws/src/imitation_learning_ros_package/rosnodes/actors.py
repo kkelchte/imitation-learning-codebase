@@ -38,7 +38,7 @@ class Actor:
 
     def __init__(self, config: ActorConfig):
         self._config = config
-        self._name = config.name if config.name is not '' else 'no_name'
+        self._name = config.name if config.name != '' else 'no_name'
 
     def get_name(self):
         return self._name

@@ -1,4 +1,4 @@
-#!/bin/python3.7
+#!/bin/python3.8
 
 import torch
 import torch.nn as nn

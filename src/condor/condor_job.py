@@ -88,8 +88,7 @@ class CondorJob:
         self._original_output_path = None
 
     def _get_requirements(self) -> str:
-        requirements = f'(machineowner == \"Visics\") && (machine =!= LastRemoteHost) && ' \
-                       f'(TARGET.OpSysAndVer == \"Fedora32\")'
+        requirements = f'(machineowner == \"Visics\") && (machine =!= LastRemoteHost) && (OpSysAndVer == \"Fedora32\")'
         for i in range(6):
             requirements += f' && (target.name =!= LastMatchName{i})'
         if self._config.gpus != 0:

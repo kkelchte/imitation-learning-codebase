@@ -1,7 +1,7 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world_fresh
 mode: 5  # dag train evaluate mode
 job_configs:
-  - command: python3.7 src/scripts/dataset_experiment.py
+  - command: python src/scripts/dataset_experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 8
     gpus: 1
@@ -12,7 +12,7 @@ job_configs:
     use_singularity: False
     check_if_ros_already_in_use: False
     save_locally: False
-  - command: python3.7 src/scripts/interactive_experiment.py
+  - command: python src/scripts/interactive_experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 11
     gpus: 1

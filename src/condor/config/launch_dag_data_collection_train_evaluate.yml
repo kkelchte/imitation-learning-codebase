@@ -1,7 +1,7 @@
 output_path: /esat/opal/kkelchte/experimental_data/cube_world_test
 mode: 6  # dag data_collection_train_evaluate mode
 job_configs:
-  - command: python3.7 src/scripts/interactive_experiment.py
+  - command: python src/scripts/interactive_experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 10
     gpus: 1
@@ -12,7 +12,7 @@ job_configs:
     use_singularity: True
     check_if_ros_already_in_use: False
     save_locally: True
-  - command: python3.7 src/scripts/data_cleaning.py
+  - command: python src/scripts/data_cleaning.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 2
     gpus: 0
@@ -22,7 +22,7 @@ job_configs:
     use_singularity: False
     check_if_ros_already_in_use: False
     save_locally: False
-  - command: python3.7 src/scripts/dataset_experiment.py
+  - command: python src/scripts/dataset_experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 8
     gpus: 1
@@ -33,7 +33,7 @@ job_configs:
     use_singularity: False
     check_if_ros_already_in_use: False
     save_locally: False
-  - command: python3.7 src/scripts/interactive_experiment.py
+  - command: python src/scripts/interactive_experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 11
     gpus: 1

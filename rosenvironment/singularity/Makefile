@@ -6,7 +6,8 @@ BUILDCOMMAND="/bin/bash /vagrant/create_image.sh ${version}"
 WRITABLECOMMAND="/bin/bash /vagrant/build_writable_image.sh ${version}"
 
 
-
+create-sif-linux:
+	sudo singularity build image-${version}.sif singularity.def
 
 shell-writable-image-linux:
 	sudo singularity shell --bind ../..:/mnt --writable writable_image
@@ -88,7 +89,7 @@ update-image:
 test-image: *.sif test/singularity_sanity_check.py
 	cd $(CODEDIR) && \
 	singularity run --nv rosenvironment/singularity/*.sif \
-	./rosenvironment/entrypoint.sh 'python3.7 rosenvironment/singularity/test/singularity_sanity_check.py'
+	./rosenvironment/entrypoint.sh 'python3.8 rosenvironment/singularity/test/singularity_sanity_check.py'
 
 singularity-shell:
 	cd $(CODEDIR) && \

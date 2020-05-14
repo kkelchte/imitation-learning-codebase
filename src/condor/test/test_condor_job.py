@@ -23,7 +23,7 @@ class TestCondorJob(unittest.TestCase):
     def test_virtualenv_job(self):
         config_dict = {
             'output_path': self.output_dir,
-            'command': 'python3.7 src/condor/test/dummy_python_script.py',
+            'command': 'python src/condor/test/dummy_python_script.py',
             'use_singularity': False
         }
         config = CondorJobConfig().create(config_dict=config_dict)
@@ -52,7 +52,7 @@ class TestCondorJob(unittest.TestCase):
     def test_singularity_job(self):
         config_dict = {
             'output_path': self.output_dir,
-            'command': 'python3.7 src/condor/test/dummy_python_script.py',
+            'command': 'python src/condor/test/dummy_python_script.py',
             'use_singularity': True
         }
         config = CondorJobConfig().create(config_dict=config_dict)
@@ -86,7 +86,7 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual(strip_variable(0.001), '1e-03')
 
     def test_strip_command(self):
-        result = strip_command('python3.7 src/scripts/dataset_experiment.py --config src/scripts/config/train.yml')
+        result = strip_command('python src/scripts/dataset_experiment.py --config src/scripts/config/train.yml')
         self.assertEqual(result, 'dataset_experiment')
 
     def test_config_creation(self):
@@ -143,7 +143,7 @@ class TestCondorJob(unittest.TestCase):
         # launch job
         config_dict = {
             'output_path': self.output_dir,
-            'command': 'python3.7 src/condor/test/dummy_python_script.py --config src/condor/test/dummy_config.yml',
+            'command': 'python src/condor/test/dummy_python_script.py --config src/condor/test/dummy_config.yml',
             'use_singularity': True,
             'save_locally': True
         }
@@ -180,7 +180,7 @@ class TestCondorJob(unittest.TestCase):
     #     # launch first 'ros' job
     #     config_dict = {
     #         'output_path': self.output_dir,
-    #         'command': 'python3.7 src/condor/test/dummy_ros_script.py',
+    #         'command': 'python src/condor/test/dummy_ros_script.py',
     #         'use_singularity': True,
     #         'gpus': 0,
     #         'check_if_ros_already_in_use': True,
@@ -195,7 +195,7 @@ class TestCondorJob(unittest.TestCase):
     #     # launch first 'second' job
     #     config_dict = {
     #         'output_path': self.output_dir,
-    #         'command': 'python3.7 src/condor/test/dummy_python_script.py --config src/condor/test/dummy_config.yml',
+    #         'command': 'python src/condor/test/dummy_python_script.py --config src/condor/test/dummy_config.yml',
     #         'use_singularity': True,
     #         'gpus': 0,
     #         'green_list': ['ricotta'],
