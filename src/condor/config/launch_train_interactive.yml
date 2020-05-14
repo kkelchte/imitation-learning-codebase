@@ -1,4 +1,4 @@
-output_path: experimental_data/cart_pole
+output_path: /esat/opal/kkelchte/experimental_data/cart_pole
 mode: default
 job_configs:
   - command: python3.8 src/scripts/experiment.py
