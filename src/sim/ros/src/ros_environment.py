@@ -338,7 +338,7 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
         self._clear_experience_values()
-        while self.fsm_state != FsmState.Running:
+        while self.fsm_state != FsmState.Running or self._observation is None:
             self._run_shortly()
         self._internal_update_terminal_state()
         self._current_experience = Experience(
