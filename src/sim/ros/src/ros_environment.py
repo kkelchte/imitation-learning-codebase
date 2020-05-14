@@ -229,7 +229,7 @@ class RosEnvironment(Environment):
             self._terminal_state = TerminationType.NotDone
         if self._terminal_state == TerminationType.NotDone and \
                 self._config.max_number_of_steps != -1 and \
-                self._config.max_number_of_steps < self._step:
+                self._config.max_number_of_steps <= self._step:
             self._terminal_state = TerminationType.Done
             cprint(f'reach max number of steps {self._config.max_number_of_steps} < {self._step}', self._logger)
 

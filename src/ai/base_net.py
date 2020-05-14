@@ -81,6 +81,7 @@ class BaseNet(nn.Module):
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)
         cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
+        self.to_device(self._device)
 
     def initialize_architecture_weights(self, initialisation_type: str = 'xavier'):
         torch.manual_seed(self._config.initialisation_seed)

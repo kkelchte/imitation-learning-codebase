@@ -18,7 +18,7 @@ experiment_config = {
     "tensorboard": False,
     "environment_config": {
       "factory_key": "ROS",
-      "max_number_of_steps": 10,
+      "max_number_of_steps": 5,
       "ros_config": {
         "info": [
             "current_waypoint",
@@ -66,9 +66,9 @@ class TestRosModelEvaluation(unittest.TestCase):
         self.assertEqual(len(raw_data_dirs), 1)
         run_dir = raw_data_dirs[0]
         with open(os.path.join(run_dir, 'done.data'), 'r') as f:
-            self.assertEqual(len(f.readlines()),
-                             experiment_config["number_of_episodes"] *
-                             experiment_config["environment_config"]["max_number_of_steps"])
+            self.assertEqual(experiment_config["number_of_episodes"] *
+                             experiment_config["environment_config"]["max_number_of_steps"],
+                             len(f.readlines()))
         self.experiment.shutdown()
 
     def tearDown(self) -> None:
