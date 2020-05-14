@@ -117,7 +117,7 @@ class CondorLauncher:
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
         if number_of_jobs == 0:
             return
-        if self._model_paths is None:
+        if len(self._model_paths) == 0:
             model_directories = [os.path.join(self._config.output_path, 'models', d)
                                  for d in os.listdir(os.path.join(self._config.output_path, 'models'))]
         else:
