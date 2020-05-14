@@ -162,6 +162,9 @@ class CondorJob:
         with open(config_file, 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         self._original_output_path = config_dict['output_path']
+        if not self._original_output_path.startswith('/'):
+            self._original_output_path = f'{os.environ["DATADIR"]}/{self._original_output_path}' \
+                if "DATADIR" in os.environ.keys() else f'{os.environ["HOME"]}/{self._original_output_path}'
         config_dict['output_path'] = self.local_output_path
         adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
         # store adjust config file in condor dir and make command point to adjust config file
@@ -193,6 +196,8 @@ class CondorJob:
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
+                if 'DATADIR' in os.environ.keys():
+                    executable.write(f'export DATADIR=${os.environ["DATADIR"]}\n')
                 executable.write(f'{self._config.command}\n')
             executable.write("retVal=$? \n")
             executable.write("echo \"got exit code $retVal\" \n")

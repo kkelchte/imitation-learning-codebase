@@ -95,4 +95,4 @@ singularity-shell:
 	cd $(CODEDIR) && \
 	echo "DO NOT FORGET TO SOURCE ENVIRONMENT:" && \
 	echo "source rosenvironment/entrypoint.sh" && \
-	singularity shell --nv rosenvironment/singularity/*.sif
+	singularity shell --nv rosenvironment/singularity/image-${version}.sif

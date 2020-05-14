@@ -44,7 +44,8 @@ class Config:
                 config_dict = yaml.load(f, Loader=yaml.FullLoader)
         instant = self.from_dict(config_dict)
         if not instant.output_path.startswith('/'):
-            instant.output_path = f'{os.environ["HOME"]}/{instant.output_path}'
+            instant.output_path = f'{os.environ["DATADIR"]}/{instant.output_path}' if "DATADIR" in os.environ.keys() \
+                else f'{os.environ["HOME"]}/{instant.output_path}'
         instant.iterative_add_output_path(output_path=instant.output_path)
         instant.post_init()
         instant.iterative_check_for_none()
