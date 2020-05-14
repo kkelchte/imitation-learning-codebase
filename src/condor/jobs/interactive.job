@@ -9,6 +9,6 @@ RequestMemory   = 10G
 Request_GPUS    = 1
 
 # If you want X11 forwarding, uncomment this
-#Requirements = ( HasX11 == True )
+Requirements = ( OpSysAndVer == "Fedora32" )
 
 Queue

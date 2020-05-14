@@ -8,7 +8,7 @@ RequestDisk	= 50 G
 # max time 4h... should probably ask less
 +RequestWallTime = 30*60
 Request_GPUS    = 0
-Requirements = (machineowner == "Visics") && HasSingularity
+Requirements = (machineowner == "Visics") && HasSingularity && ( OpSysAndVer == "Fedora32" ) 
 
 # If you want X11 forwarding, uncomment this
 #Requirements = ( HasX11 == True )
