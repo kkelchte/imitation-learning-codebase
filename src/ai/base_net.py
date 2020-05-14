@@ -84,7 +84,7 @@ class BaseNet(nn.Module):
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)
         cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
-        self.to_device(self._device)
+        self.set_device(self._device)
 
     def initialize_architecture_weights(self, initialisation_type: str = 'xavier'):
         torch.manual_seed(self._config.initialisation_seed)
@@ -135,11 +135,15 @@ class BaseNet(nn.Module):
         torch.save(checkpoint, f'{self._checkpoint_output_directory}/checkpoint_latest.ckpt')
         cprint(f'stored {filename}', self._logger)
 
-    def set_device(self, device: str):
+    def set_device(self, device: Union[str, torch.device]):
         self._device = torch.device(
             "cuda" if device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
-        )
-        self.to(self._device)
+        ) if isinstance(device, str) else device
+        try:
+            self.to(self._device)
+        except AssertionError:
+            self._device = torch.device('cpu')
+            self.to(self._device)
 
     def forward(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float], train: bool) -> torch.Tensor:
         # adjust gradient saving
