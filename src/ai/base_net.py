@@ -120,6 +120,7 @@ class BaseNet(nn.Module):
         self.load_state_dict(checkpoint['model_state'])
         del checkpoint['model_state']
         self.extra_checkpoint_info = checkpoint  # store extra parameters e.g. optimizer / loss params
+        cprint(f'loaded network from {checkpoint_file}', self._logger)
 
     def save_to_checkpoint(self, tag: str = '', extra_info: dict = None):
         filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'

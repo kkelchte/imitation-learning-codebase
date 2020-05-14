@@ -11,6 +11,18 @@ Directory contains python virtual environment which requires to be sourced to ru
 ### /src
 Directory contains source code of total project.
 
+# Example usage
+
+__imitation learning in cube world__
+
+python3.8 src/scripts/experiment.py --config src/scripts/config/il_data_collection_cube_world.yml
+
+python3.8 src/scripts/data_cleaning.py --config src/scripts/config/il_data_cleaning_cube_world.yml 
+
+python3.8 src/scripts/experiment.py --config src/scripts/config/il_train_cube_world.yml 
+
+python3.8 src/scripts/experiment.py --config src/scripts/config/il_evaluate_interactive_cube_world.yml 
+
 # Troubleshoot
 
 __Module Not Found__
