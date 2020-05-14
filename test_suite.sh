@@ -3,15 +3,15 @@
 echo "
 Test all code base ROS exclusive from low to high dependent code.
 "
-date
+start_time="$(date)"
 
 source virtualenvironment/venv/bin/activate
 export PYTHONPATH=$PWD:$PYTHONPATH
 
-if [ -d test_output ] ; then
-  rm -r test_output;
+if [ -d test_dir ] ; then
+  rm -r test_dir;
 fi
-mkdir test_output
+mkdir test_dir
 
 EXCLUDE="src/scripts/test/test_model_evaluation_ros.py"
 
@@ -24,18 +24,21 @@ for group in src/core src/data src/ai src/sim/common src/sim/gym src/scripts src
     [[ ${EXCLUDE} =~ (^|[[:space:]])${test}($|[[:space:]]) ]]
     if [ $? = 1 ] ; then
       echo "${test} "
-      python "${test}" > test_output/"$(basename "$test" | cut -d '.' -f 1)" 2>&1
+      destination=test_dir/"$(basename "$test" | cut -d '.' -f 1)"
+      if [ -d "$destination" ]; then
+        rm -r "$destination"
+      fi
+      python "${test}" > "$destination".out 2>&1
       exitcode=$?
       if [ $exitcode = 0 ] ; then
-        OK=$(cat "test_output/$(basename "$test" | cut -d '.' -f 1)" | grep OK)
-        echo "exit 0 --> ${OK}"
+        OK=$(cat "$destination".out | grep OK)
+        echo " --> ${OK}"
       else
-        echo "ERROR $exitcode --> $(tail "test_output/$(basename "$test" | cut -d '.' -f 1)")"
+        echo "ERROR $exitcode --> $(tail ${destination}.out)"
       fi
     else
       echo "EXCLUDE ${test}"
     fi
   done
 done
-echo "FINISHED"
-date
+echo "FINISHED: $start_time -> $(date)"

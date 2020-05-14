@@ -34,8 +34,7 @@ class CondorJobConfig(Config):
     black_list: Optional[List] = None
     green_list: Optional[List] = None
     use_singularity: bool = True
-    singularity_file: str = sorted(glob.glob(f'{os.environ["HOME"]}/code/imitation-learning-codebase/'
-                                             f'rosenvironment/singularity/*.sif'))[-1]
+    singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1]
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
 

@@ -22,7 +22,7 @@ class CondorLauncherConfig(Config):
     job_configs: List[CondorJobConfig] = None
 
     def post_init(self):
-        assert self.mode in ['data_collection', 'data_cleaning', 'train', 'evaluate_interactive',
+        assert self.mode in ['default', 'data_collection', 'train', 'evaluate_interactive',
                              'data_collection_dag', 'train_evaluate_dag', 'data_collection_train_evaluate_dag']
 
 
@@ -74,23 +74,23 @@ class CondorLauncher:
         self.create_jobs_from_job_config_files(job_config_files=config_files,
                                                job_config_object=job_config_object)
 
-    def prepare_data_cleaning(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
-                              number_of_jobs: int = None):
-        """Launch condor job in virtualenv to clean raw_data in output_path/raw_data and create hdf5 file"""
+    def prepare_default(self, base_config_file: str = None,
+                        job_config_object: CondorJobConfig = None,
+                        number_of_jobs: int = None):
+        """Launch number of condor_jobs performing script with base_config"""
         base_config = self._config.base_config_files[0] if base_config_file is None else base_config_file
         job_config_object = self._config.job_configs[0] if job_config_object is None else job_config_object
         number_of_jobs = self._config.number_of_jobs[0] if number_of_jobs is None else number_of_jobs
         if number_of_jobs == 0:
             return
-        cleaning_config = create_configs(base_config=base_config,
+        default_configs = create_configs(base_config=base_config,
                                          output_path=self._config.output_path,
-                                         adjustments={})
-        job_config_object.command += f' --config {cleaning_config[0]}'
-        condor_job = CondorJob(config=job_config_object)
-        condor_job.write_job_file()
-        condor_job.write_executable_file()
-        self._jobs.append(condor_job)
-        time.sleep(1)
+                                         adjustments={
+                                            '[\"output_path\"]':
+                                            [self._config.output_path+'_'+str(i) for i in range(number_of_jobs)],
+                                         } if number_of_jobs > 1 else {})
+        self.create_jobs_from_job_config_files(default_configs,
+                                               job_config_object=job_config_object)
 
     def prepare_train(self, base_config_file: str = None, job_config_object: CondorJobConfig = None,
                       number_of_jobs: int = None):
