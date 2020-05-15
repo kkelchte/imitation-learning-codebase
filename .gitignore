@@ -181,3 +181,4 @@ test_dir/
 # mac
 *.DS_Store
 
+/rosenvironment/singularity/writable_image_p37/
