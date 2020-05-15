@@ -7,7 +7,7 @@ import numpy as np
 import rospy
 
 from geometry_msgs.msg import WrenchStamped
-from std_msgs.msg import Empty
+from std_msgs.msg import Empty, Float32
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
@@ -80,7 +80,7 @@ class Fsm:
         self._state = FsmState.Unknown
         self._state_pub = rospy.Publisher(rospy.get_param('/fsm/state_topic'), String, queue_size=10)
         self._terminal_outcome_pub = rospy.Publisher(rospy.get_param('/fsm/terminal_topic'), String, queue_size=10)
-        # self._pause_physics_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
+        self._reward_pub = rospy.Publisher(rospy.get_param('/fsm/reward_topic'), Float32, queue_size=10)
         self._subscribe()
         rospy.init_node('fsm', anonymous=True)
         self._run_number = 0
@@ -129,6 +129,7 @@ class Fsm:
         self._max_travelled_distance = rospy.get_param('world/max_travelled_distance', -1)
         self._max_distance_from_start = rospy.get_param('world/max_distance_from_start', -1)
         self._goal = rospy.get_param('world/goal', {})
+        self._reward = rospy.get_param('world/reward', {})
 
     def _reset(self, msg: Empty = None):
         """Add entrance of idle state all field variables are reset
@@ -205,6 +206,8 @@ class Fsm:
             return
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
             cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
+            if 'collision' in self._reward.keys():
+                self._reward_pub.publish(self._reward['collision'])
             self._shutdown_run(outcome=TerminationType.Failure)
 
     def _check_depth_image(self, msg: Image) -> None:
@@ -250,11 +253,15 @@ class Fsm:
         if self._check_distance(self._max_travelled_distance, self.travelled_distance):
             cprint(f'Travelled distance {self.travelled_distance} > max {self._max_travelled_distance}',
                    self._logger)
+            if 'distance' in self._reward.keys():
+                self._reward_pub.publish(self._reward['distance'])
             self._shutdown_run(outcome=TerminationType.Success)
 
         if self._check_distance(self._max_distance_from_start, self.distance_from_start):
             cprint(f'Max distance {self.distance_from_start} > max {self._max_distance_from_start}',
                    self._logger)
+            if 'distance' in self._reward.keys():
+                self._reward_pub.publish(self._reward['distance'])
             self._shutdown_run(outcome=TerminationType.Success)
 
         if self._goal and not self._is_shuttingdown and \
@@ -262,6 +269,8 @@ class Fsm:
                 self._goal['y']['max'] > self._current_pos[1] > self._goal['y']['min'] and \
                 self._goal['z']['max'] > self._current_pos[2] > self._goal['z']['min']:
             cprint(f'Reached goal on location {self._current_pos}', self._logger)
+            if 'goal' in self._reward.keys():
+                self._reward_pub.publish(self._reward['goal'])
             self._shutdown_run(outcome=TerminationType.Success)
 
     def _check_wrench(self, msg: WrenchStamped) -> None:
@@ -269,6 +278,8 @@ class Fsm:
             return
         if msg.wrench.force.z < 0:
             cprint(f"found drag force: {msg.wrench.force.z}, so robot must be upside-down.", self._logger)
+            if 'collision' in self._reward.keys():
+                self._reward_pub.publish(self._reward['collision'])
             self._shutdown_run(outcome=TerminationType.Failure)
 
     def run(self):
@@ -276,6 +287,8 @@ class Fsm:
         while not rospy.is_shutdown():
             # cprint(f'state: {self._state.name}', self._logger, msg_type=MessageType.debug)
             self._state_pub.publish(self._state.name)
+            if 'step' in self._reward.keys() and self._state == FsmState.Running:
+                self._reward_pub.publish(self._reward['step'])
             rate.sleep()
 
 

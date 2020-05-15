@@ -8,7 +8,7 @@ import rospy
 from dataclasses import dataclass
 
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Empty, String  # Do not remove!
+from std_msgs.msg import Empty, Float32, String  # Do not remove!
 from sensor_msgs.msg import LaserScan  # Do not remove!
 
 from src.core.utils import get_filename_without_extension
@@ -101,18 +101,21 @@ class TestFsm(unittest.TestCase):
     def start_test(self, config: dict) -> None:
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=False)
+                                       visible=True)
         self.state_topic = rospy.get_param('/fsm/state_topic')
         self.terminal_topic = rospy.get_param('/fsm/terminal_topic')
+        self.reward_topic = rospy.get_param('/fsm/reward_topic')
         topics = [
             TopicConfig(name=rospy.get_param('/fsm/terminal_topic'), msg_type="String"),
             TopicConfig(name=rospy.get_param('/fsm/state_topic'), msg_type="String"),
+            TopicConfig(name=rospy.get_param('/fsm/reward_topic'), msg_type="Float32"),
         ]
         self.ros_topic = TestPublisherSubscriber(topics)
 
     @unittest.skip
     def test_single_run(self):
         self.config['fsm_config'] = 'single_run'
+        self.config['world_name'] = 'object_world'
         self.start_test(config=self.config)
         time.sleep(1)
         self.ros_topic.publish_fake_reset()
@@ -120,6 +123,7 @@ class TestFsm(unittest.TestCase):
         time.sleep(1)
         self.ros_topic.publish_fake_collision_on_scan()
         time.sleep(1)
+        self.assertEqual(self.ros_topic.topic_values[self.reward_topic], rospy.get_param('world/reward/collision'))
         self.assertEqual(self.ros_topic.topic_values[self.state_topic], FsmState.Terminated.name)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Failure.name)
         self.end_test()
@@ -206,10 +210,12 @@ class TestFsm(unittest.TestCase):
         time.sleep(rospy.get_param('/world/delay_evaluation'))
         self.ros_topic.publish_fake_reset()
         time.sleep(rospy.get_param('/world/delay_evaluation') + 0.5)
+        self.assertEqual(self.ros_topic.topic_values[self.reward_topic], -1)
 
         self.ros_topic.publish_fake_odom(x=2, y=2, z=0.5)
         time.sleep(1)
         self.assertEqual(self.ros_topic.topic_values[self.terminal_topic], TerminationType.Success.name)
+        self.assertEqual(self.ros_topic.topic_values[self.reward_topic], 100)
         self.end_test()
 
     def end_test(self) -> None:

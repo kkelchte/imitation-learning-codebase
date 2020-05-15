@@ -6,3 +6,4 @@
 fsm_mode: 0
 terminal_topic: '/terminal_outcome'
 state_topic: '/fsm/state'
+reward_topic: '/fsm/reward'

@@ -18,3 +18,7 @@ waypoints:
   - [1, 2]
   - [2, 2]
 waypoint_reached_distance: 0.1
+reward:
+  collision: -100
+  step: -1
+  goal: 100
