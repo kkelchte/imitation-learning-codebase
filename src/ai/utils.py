@@ -10,6 +10,21 @@ from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 
 
+class DiscreteActionMapper:
+
+    def __init__(self, action_values: List[torch.Tensor]):
+        self.action_values = action_values
+
+    def tensor_to_index(self, action_as_tensor: torch.Tensor) -> int:
+        for index, action in enumerate(self.action_values):
+            if (action - action_as_tensor).sum() < 0.001:
+                return index
+        raise SyntaxError(f'Could not map action {action_as_tensor}')
+
+    def index_to_tensor(self, action_as_index: int) -> torch.Tensor:
+        return self.action_values[action_as_index]
+
+
 def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
     """Prepare data as tensor"""
     try:

@@ -24,7 +24,7 @@ config_dict = {
         "observation": "forward_camera",
         "max_update_wait_period_s": 120,
         "store_action": True,
-        "store_reward": False,
+        "store_reward": True,
         "visible_xterm": False,
         "step_rate_fps": 30,
         "ros_launch_config": {
@@ -78,6 +78,10 @@ class TestRosIntegrated(unittest.TestCase):
                 experience, observation = self._environment.step()
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
+                if experience.done == TerminationType.NotDone:
+                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/step'))
+                else:
+                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/goal'))
             self.assertGreater(np.sum(experience.info['odometry'][:3]), 0.5)
             self.assertEqual(experience.done, TerminationType.Success)
 

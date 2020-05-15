@@ -11,8 +11,11 @@ environment_config:
     info:
       -sensor/odometry
     observation: depth_scan
+    store_action: true
+    store_reward: true
     visible_xterm: false
     step_rate_fps: 30
+    max_update_wait_period_s: 10
     ros_launch_config:
       random_seed: 123
       robot_name: turtlebot_sim
@@ -33,7 +36,7 @@ data_saver_config:
 tensorboard: true
 trainer_config:
   criterion: MSELoss
-  learning_rate: 0.001
+  learning_rate: 0.0001
   optimizer: Adam
   data_loader_config:
     batch_size: 500
@@ -45,6 +48,6 @@ trainer_config:
   phi_key: gae
   save_checkpoint_every_n: 100
   max_actor_training_iterations: 10
-  max_critic_training_iterations: 3
+  max_critic_training_iterations: 10
   ppo_epsilon: 0.2
   kl_target: 0.01

@@ -14,3 +14,7 @@ goal:
     max: 1
 waypoint_reached_distance: 0.25
 background_file: src/sim/ros/gazebo/background_images/straight_corridor_0_4_11.jpg
+reward:
+  collision: -100
+  step: -1
+  goal: 100

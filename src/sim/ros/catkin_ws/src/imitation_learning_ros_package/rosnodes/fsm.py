@@ -174,10 +174,13 @@ class Fsm:
     def _takeover(self, msg: Empty = None):
         self._set_state(FsmState.TakenOver)
 
-    def _shutdown_run(self, msg: Empty = None, outcome: TerminationType = TerminationType.Unknown):
+    def _shutdown_run(self, msg: Empty = None, outcome: TerminationType = TerminationType.Unknown,
+                      reward: float = None):
         # Invocation for next run
         self._is_shuttingdown = True
         self._terminal_outcome_pub.publish(outcome.name)
+        if reward is not None:
+            self._reward_pub.publish(reward)
         # pause_physics_client(EmptyRequest())
         cprint(f'Terminated with {outcome.name}', self._logger)
         if self.mode == FsmMode.TakeOverRunDriveBack:
@@ -206,9 +209,8 @@ class Fsm:
             return
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
             cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
-            if 'collision' in self._reward.keys():
-                self._reward_pub.publish(self._reward['collision'])
-            self._shutdown_run(outcome=TerminationType.Failure)
+            self._shutdown_run(outcome=TerminationType.Failure,
+                               reward=self._reward['collision'] if 'collision' in self._reward.keys() else None)
 
     def _check_depth_image(self, msg: Image) -> None:
         if not self._update_state():
@@ -253,41 +255,37 @@ class Fsm:
         if self._check_distance(self._max_travelled_distance, self.travelled_distance):
             cprint(f'Travelled distance {self.travelled_distance} > max {self._max_travelled_distance}',
                    self._logger)
-            if 'distance' in self._reward.keys():
-                self._reward_pub.publish(self._reward['distance'])
-            self._shutdown_run(outcome=TerminationType.Success)
+            self._shutdown_run(outcome=TerminationType.Success,
+                               reward=self._reward['distance'] if 'distance' in self._reward.keys() else None)
 
         if self._check_distance(self._max_distance_from_start, self.distance_from_start):
             cprint(f'Max distance {self.distance_from_start} > max {self._max_distance_from_start}',
                    self._logger)
-            if 'distance' in self._reward.keys():
-                self._reward_pub.publish(self._reward['distance'])
-            self._shutdown_run(outcome=TerminationType.Success)
+            self._shutdown_run(outcome=TerminationType.Success,
+                               reward=self._reward['distance'] if 'distance' in self._reward.keys() else None)
 
         if self._goal and not self._is_shuttingdown and \
                 self._goal['x']['max'] > self._current_pos[0] > self._goal['x']['min'] and \
                 self._goal['y']['max'] > self._current_pos[1] > self._goal['y']['min'] and \
                 self._goal['z']['max'] > self._current_pos[2] > self._goal['z']['min']:
             cprint(f'Reached goal on location {self._current_pos}', self._logger)
-            if 'goal' in self._reward.keys():
-                self._reward_pub.publish(self._reward['goal'])
-            self._shutdown_run(outcome=TerminationType.Success)
+            self._shutdown_run(outcome=TerminationType.Success,
+                               reward=self._reward['goal'] if 'goal' in self._reward.keys() else None)
 
     def _check_wrench(self, msg: WrenchStamped) -> None:
         if not self._update_state():
             return
         if msg.wrench.force.z < 0:
             cprint(f"found drag force: {msg.wrench.force.z}, so robot must be upside-down.", self._logger)
-            if 'collision' in self._reward.keys():
-                self._reward_pub.publish(self._reward['collision'])
-            self._shutdown_run(outcome=TerminationType.Failure)
+            self._shutdown_run(outcome=TerminationType.Failure,
+                               reward=self._reward['collision'] if 'collision' in self._reward.keys() else None)
 
     def run(self):
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             # cprint(f'state: {self._state.name}', self._logger, msg_type=MessageType.debug)
             self._state_pub.publish(self._state.name)
-            if 'step' in self._reward.keys() and self._state == FsmState.Running:
+            if not self._is_shuttingdown and 'step' in self._reward.keys() and self._state == FsmState.Running:
                 self._reward_pub.publish(self._reward['step'])
             rate.sleep()
 

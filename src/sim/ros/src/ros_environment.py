@@ -13,7 +13,7 @@ from gazebo_msgs.srv import SetModelState
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from geometry_msgs.msg import Twist, Pose
-from std_msgs.msg import String, Float32MultiArray, Empty
+from std_msgs.msg import String, Float32MultiArray, Empty, Float32
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 from src.core.logger import cprint, MessageType
@@ -60,11 +60,6 @@ class RosEnvironment(Environment):
         self._step = 0
         self._current_experience = None
         self._previous_observation = None
-
-        self._default_observation = np.zeros((0,), dtype=np.uint8)
-        self._default_action = Action(actor_name='default', value=np.ones((0,), dtype=np.float32))
-        self._default_reward = np.ones((0,), dtype=np.float32)
-        self._default_sensor_value = np.ones((0,), dtype=np.float32)
         self._info = {}
         self._clear_experience_values()
 
@@ -78,16 +73,23 @@ class RosEnvironment(Environment):
         # Subscribers
         # FSM
         self.fsm_state = None
-        self._terminal_state = TerminationType.Unknown
         rospy.Subscriber(name=rospy.get_param('/fsm/state_topic'),
                          data_class=String,
                          callback=self._set_field,
                          callback_args=('fsm_state', {}))
         # Terminal topic
+        self._terminal_state = TerminationType.Unknown
         rospy.Subscriber(name=rospy.get_param('/fsm/terminal_topic', ''),
                          data_class=String,
                          callback=self._set_field,
                          callback_args=('terminal_state', {}))
+
+        # Reward topic
+        self._reward = None
+        rospy.Subscriber(name=rospy.get_param('/fsm/reward_topic', ''),
+                         data_class=Float32,
+                         callback=self._set_field,
+                         callback_args=('reward', {}))
 
         # Subscribe to observation
         self._observation = None
@@ -95,7 +97,7 @@ class RosEnvironment(Environment):
             self._subscribe_observation(self._config.ros_config.observation)
 
         # Subscribe to action
-        self._action = self._default_action
+        self._action = None
         rospy.Subscriber(name=rospy.get_param('/robot/command_topic', ''),
                          data_class=Twist,
                          callback=self._set_field,
@@ -159,7 +161,7 @@ class RosEnvironment(Environment):
                                  data_class=eval(sensor_type),
                                  callback=self._set_info_data,
                                  callback_args=(sensor, sensor_args))
-                self._info[sensor]: np.ndarray = self._default_sensor_value
+                self._info[sensor]: np.ndarray = None
 
         if 'current_waypoint' in info_objects:
             # add waypoint subscriber as extra sensor
@@ -167,7 +169,7 @@ class RosEnvironment(Environment):
                              data_class=Float32MultiArray,
                              callback=self._set_info_data,
                              callback_args=('current_waypoint', {}))
-            self._info['current_waypoint'] = self._default_sensor_value
+            self._info['current_waypoint'] = None
 
         actor_name_list = [info_obj[6:] for info_obj in info_objects if info_obj.startswith('actor/')]
         actor_configs = [config for config in self._config.ros_config.actor_configs if config.name in actor_name_list] \
@@ -184,7 +186,7 @@ class RosEnvironment(Environment):
             )
 
         for actor_config in actor_configs:
-            self._info[actor_config.name] = self._default_action
+            self._info[actor_config.name] = None
             rospy.Subscriber(name=f'{actor_config.specs["command_topic"]}',
                              data_class=Twist,
                              callback=self._set_info_data,
@@ -219,6 +221,8 @@ class RosEnvironment(Environment):
         elif field_name == 'action':
             self._action = Action(actor_name='applied_action',
                                   value=adapt_twist_to_action(msg).value)
+        elif field_name == 'reward':
+            self._reward = float(msg.data)
         else:
             raise NotImplementedError
         cprint(f'set field {field_name}',

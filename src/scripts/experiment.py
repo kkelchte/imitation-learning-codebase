@@ -174,7 +174,8 @@ if __name__ == "__main__":
         with open(config_file, 'r') as f:
             config = yaml.load(f, Loader=yaml.FullLoader)
         if not config['output_path'].startswith('/'):
-            config['output_path'] = os.path.join(os.environ['HOME'], config['output_path'])
+            config['output_path'] = os.path.join(os.environ['DATADIR'], config['output_path']) \
+                if 'DATADIR' is os.environ.keys() else os.path.join(os.environ['HOME'], config['output_path'])
         shutil.rmtree(config['output_path'], ignore_errors=True)
 
     experiment_config = ExperimentConfig().create(config_file=config_file)
