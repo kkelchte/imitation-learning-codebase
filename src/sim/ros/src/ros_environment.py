@@ -298,7 +298,7 @@ class RosEnvironment(Environment):
         if None in [v for v in self._info.values() if not isinstance(v, Iterable)]:
             cprint("waiting for info", self._logger, msg_type=MessageType.debug)
             return False
-
+        cprint("update current experience", self._logger, msg_type=MessageType.debug)
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._previous_observation
