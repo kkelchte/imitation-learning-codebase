@@ -225,9 +225,10 @@ class RosEnvironment(Environment):
             self._reward = float(msg.data)
         else:
             raise NotImplementedError
-        cprint(f'set field {field_name}',
-               self._logger,
-               msg_type=MessageType.debug)
+        if not field_name == "observation":  # observation is ros node which keeps on running during gazebo pause.
+            cprint(f'set field {field_name}',
+                   self._logger,
+                   msg_type=MessageType.debug)
 
     def _internal_update_terminal_state(self):
         if self.fsm_state == FsmState.Running and \
