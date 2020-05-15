@@ -166,6 +166,18 @@ class CondorJob:
             self._original_output_path = f'{os.environ["DATADIR"]}/{self._original_output_path}' \
                 if "DATADIR" in os.environ.keys() else f'{os.environ["HOME"]}/{self._original_output_path}'
         config_dict['output_path'] = self.local_output_path
+
+        # TODO: make hacky solution clean, make relative path to hdf5 work
+        for key in ['trainer_config', 'evaluator_config']:
+            if key in config_dict.keys():
+                if 'data_loader_config' in config_dict[key]:
+                    if 'hdf5_file' in config_dict[key]['data_loader_config']:
+                        if not config_dict[key]['data_loader_config']['hdf5_file'].startswith('/'):
+                            config_dict[key]['data_loader_config']['hdf5_file'] = \
+                                os.path.join(self._original_output_path if 'models' not in self._original_output_path
+                                             else self._original_output_path.split('models')[0],
+                                             config_dict[key]['data_loader_config']['hdf5_file'])
+
         adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
         # store adjust config file in condor dir and make command point to adjust config file
         with open(adjusted_config_file, 'w') as f:
