@@ -20,7 +20,7 @@ config_dict = {
         "info": [
             "sensor/odometry"
         ],
-        "observation": "forward_camera",
+        "observation": "depth_scan",
         "max_update_wait_period_s": 120,
         "store_action": True,
         "store_reward": False,
@@ -63,7 +63,7 @@ class ValidateExpert(unittest.TestCase):
         )
 
     def test_multiple_runs(self):
-        for _ in range(1):
+        for _ in range(3):
             experience, observation = self._environment.reset()
             self.assertTrue(experience.action is None)
             self.assertEqual(experience.done, TerminationType.NotDone)

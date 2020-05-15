@@ -1,6 +1,6 @@
 architecture_config:
   architecture: cart_pole_4_2d_stochastic
-  device: gpu
+  device: cuda
   initialisation_seed: 123
   initialisation_type: xavier
 data_saver_config:
@@ -24,7 +24,7 @@ trainer_config:
   data_loader_config:
     batch_size: 500
     data_sampling_seed: 123
-  device: gpu
+  device: cuda
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95

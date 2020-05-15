@@ -43,11 +43,12 @@ class RosEnvironment(Environment):
             roslaunch_arguments['drone_sim'] = True \
                 if config.ros_config.ros_launch_config.robot_name == 'drone_sim' else False
 
-        for actor_config in config.ros_config.actor_configs:
-            roslaunch_arguments[actor_config.name] = True
-            config_file = actor_config.file if actor_config.file.startswith('/') \
-                else os.path.join(os.environ['HOME'], actor_config.file)
-            roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
+        if config.ros_config.actor_configs is not None:
+            for actor_config in config.ros_config.actor_configs:
+                roslaunch_arguments[actor_config.name] = True
+                config_file = actor_config.file if actor_config.file.startswith('/') \
+                    else os.path.join(os.environ['HOME'], actor_config.file)
+                roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
 
         self._ros = RosWrapper(
             config=roslaunch_arguments,
@@ -169,7 +170,8 @@ class RosEnvironment(Environment):
             self._info['current_waypoint'] = self._default_sensor_value
 
         actor_name_list = [info_obj[6:] for info_obj in info_objects if info_obj.startswith('actor/')]
-        actor_configs = [config for config in self._config.ros_config.actor_configs if config.name in actor_name_list]
+        actor_configs = [config for config in self._config.ros_config.actor_configs if config.name in actor_name_list] \
+            if self._config.ros_config.actor_configs is not None else []
 
         if 'supervised_action' in info_objects and rospy.has_param('/control_mapping/supervision_topic'):
             actor_configs.append(

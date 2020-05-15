@@ -70,6 +70,8 @@ class RosConfig(Config):
     def __post_init__(self):
         if self.info is None:
             del self.info
+        if self.actor_configs is None:
+            del self.actor_configs
 
 
 @dataclass_json

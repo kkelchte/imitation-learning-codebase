@@ -1,0 +1,50 @@
+output_path: straight_corridor_ppo
+number_of_epochs: 10000
+number_of_episodes: -1
+architecture_config:
+  architecture: straight_corridor_depth_30_3d_stochastic
+  device: cpu
+environment_config:
+  factory_key: ROS
+  max_number_of_steps: 1000
+  ros_config:
+    info:
+      -sensor/odometry
+    observation: depth_scan
+    visible_xterm: false
+    step_rate_fps: 30
+    ros_launch_config:
+      random_seed: 123
+      robot_name: turtlebot_sim
+      fsm_config: single_run
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: true
+      control_mapping_config: evaluation
+      world_name: straight_corridor
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 0.0
+      yaw_or: 1.57
+      gazebo: True
+data_saver_config:
+  clear_buffer_before_episode: true
+  store_on_ram_only: true
+tensorboard: true
+trainer_config:
+  criterion: MSELoss
+  learning_rate: 0.001
+  optimizer: Adam
+  data_loader_config:
+    batch_size: 500
+    data_sampling_seed: 123
+  device: cpu
+  discount: 0.99
+  factory_key: PPO
+  gae_lambda: 0.95
+  phi_key: gae
+  save_checkpoint_every_n: 100
+  max_actor_training_iterations: 10
+  max_critic_training_iterations: 3
+  ppo_epsilon: 0.2
+  kl_target: 0.01
