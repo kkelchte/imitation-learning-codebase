@@ -25,7 +25,7 @@ experiment_config = {
             "sensor/odometry"
         ],
         "observation": "sensor/forward_camera",
-        "visible_xterm": True,
+        "visible_xterm": False,
         "step_rate_fps": 15,
         "ros_launch_config": {
           "random_seed": 123,
