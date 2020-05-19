@@ -63,13 +63,6 @@ class RosEnvironment(Environment):
         self._info = {}
         self._clear_experience_values()
 
-        # Services
-        if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
-            self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
-            self._reset_simulation = rospy.ServiceProxy('/gazebo/reset_simulation', Emptyservice)
-            self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
-
         # Subscribers
         # FSM
         self.fsm_state = None
@@ -214,6 +207,7 @@ class RosEnvironment(Environment):
         field_name, sensor_stats = args
         if field_name == 'terminal_state':
             self._terminal_state = TerminationType[msg.data]
+            self._reward = None
         elif field_name == 'fsm_state':
             self.fsm_state = FsmState[msg.data]
         elif field_name == 'observation':
@@ -242,35 +236,34 @@ class RosEnvironment(Environment):
 
     def _pause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
-        try:
-            self._pause_client.call(EmptyRequest())
-        except ResourceWarning:
-            pass
+        os.system("rosservice call gazebo/pause_physics")
 
     def _unpause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
-        try:
-            self._unpause_client.wait_for_service()
-            self._unpause_client.call(EmptyRequest())
-        except ResourceWarning:
-            pass
+        os.system("rosservice call gazebo/unpause_physics")
 
     def _reset_gazebo(self):
-        try:
-            model_state = ModelState()
-            model_state.model_name = 'turtlebot3_burger' \
-                if self._config.ros_config.ros_launch_config.robot_name.startswith('turtle') else 'quadrotor'
-            model_state.pose = Pose()
-            model_state.pose.position.x = self._config.ros_config.ros_launch_config.x_pos
-            model_state.pose.position.y = self._config.ros_config.ros_launch_config.y_pos
-            model_state.pose.position.z = self._config.ros_config.ros_launch_config.z_pos
-            model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
-                model_state.pose.orientation.w = quaternion_from_euler(
-                    (0, 0, self._config.ros_config.ros_launch_config.yaw_or))
-            self._set_model_state.wait_for_service()
-            self._set_model_state(model_state)
-        except ResourceWarning:
-            pass
+        model_state = ModelState()
+        model_state.model_name = 'turtlebot3_burger' \
+            if self._config.ros_config.ros_launch_config.robot_name.startswith('turtle') else 'quadrotor'
+        model_state.pose = Pose()
+        model_state.pose.position.x = self._config.ros_config.ros_launch_config.x_pos
+        model_state.pose.position.y = self._config.ros_config.ros_launch_config.y_pos
+        model_state.pose.position.z = self._config.ros_config.ros_launch_config.z_pos
+        model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
+            model_state.pose.orientation.w = quaternion_from_euler(
+                (0, 0, self._config.ros_config.ros_launch_config.yaw_or))
+        #self._set_model_state.wait_for_service()
+        #self._set_model_state(model_state)
+        os.system(f"rosservice call /gazebo/set_model_state '{{model_state: "
+                  f"{{ model_name: {model_state.model_name},"
+                  f"pose: {{ position: {{ x: {model_state.pose.position.x},"
+                  f"                      y: {model_state.pose.position.y},"
+                  f"                      z: {model_state.pose.position.z}, }},"
+                  f"         orientation: {{ x: { model_state.pose.orientation.x},"
+                  f"                         y: { model_state.pose.orientation.y},"
+                  f"                         z: { model_state.pose.orientation.z},"
+                  f"                         w: { model_state.pose.orientation.w},}} }} }} }}'")
 
     def _clear_experience_values(self):
         """Set all experience fields to None"""
