@@ -83,6 +83,8 @@ class Fsm:
         self._reward_pub = rospy.Publisher(rospy.get_param('/fsm/reward_topic'), Float32, queue_size=10)
         self._subscribe()
         rospy.init_node('fsm', anonymous=True)
+        self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
+        self.count = 0
         self._run_number = 0
         self._set_state(FsmState.Unknown)
         self._init_fields()
@@ -178,11 +180,7 @@ class Fsm:
                       reward: float = None):
         # Invocation for next run
         self._is_shuttingdown = True
-        self._terminal_outcome_pub.publish(outcome.name)
-        if reward is not None:
-            self._reward_pub.publish(reward)
         # pause_physics_client(EmptyRequest())
-        cprint(f'Terminated with {outcome.name}', self._logger)
         if self.mode == FsmMode.TakeOverRunDriveBack:
             self._set_state(FsmState.DriveBack)
         else:
@@ -281,13 +279,21 @@ class Fsm:
                                reward=self._reward['collision'] if 'collision' in self._reward.keys() else None)
 
     def run(self):
-        rate = rospy.Rate(30)
+        rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
-            # cprint(f'state: {self._state.name}', self._logger, msg_type=MessageType.debug)
             self._state_pub.publish(self._state.name)
+            self._reward_pub.publish(self._current_reward)
+            self._terminal_outcome_pub.publish('NotDone')
+            if reward is not None:
+                self._reward_pub.publish(reward)
+
             if not self._is_shuttingdown and 'step' in self._reward.keys() and self._state == FsmState.Running:
                 self._reward_pub.publish(self._reward['step'])
             rate.sleep()
+            self.count += 1
+            if self.count % self._rate_fps == 0:
+                msg = f"{rospy.get_time(): 0.0f}ms reward: {self._current_reward} shutting down:{self._is_shuttingdown}"
+                cprint(msg, self._logger, msg_type=MessageType.debug)
 
 
 if __name__ == "__main__":

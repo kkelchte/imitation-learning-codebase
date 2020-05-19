@@ -61,7 +61,7 @@ class ControlMapper:
                                            Twist, queue_size=10)
         }
         self._messages = {}
-        self._rate_fps = rospy.get_param('/control_mapping/rate_fps', 100)
+        self._rate_fps = rospy.get_param('/control_mapping/rate_fps', 60)
         self.count = 0
         self._subscribe()
         rospy.init_node('control_mapper')
