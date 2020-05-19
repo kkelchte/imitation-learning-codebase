@@ -13,6 +13,7 @@ from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
+from imitation_learning_ros_package.msg import RosReward
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -79,8 +80,7 @@ class Fsm:
         self.mode = rospy.get_param('/fsm/fsm_mode')
         self._state = FsmState.Unknown
         self._state_pub = rospy.Publisher(rospy.get_param('/fsm/state_topic'), String, queue_size=10)
-        self._terminal_outcome_pub = rospy.Publisher(rospy.get_param('/fsm/terminal_topic'), String, queue_size=10)
-        self._reward_pub = rospy.Publisher(rospy.get_param('/fsm/reward_topic'), Float32, queue_size=10)
+        self._rewards_pub = rospy.Publisher(rospy.get_param('/fsm/reward_topic'), RosReward, queue_size=10)
         self._subscribe()
         rospy.init_node('fsm', anonymous=True)
         self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
@@ -131,19 +131,15 @@ class Fsm:
         self._max_travelled_distance = rospy.get_param('world/max_travelled_distance', -1)
         self._max_distance_from_start = rospy.get_param('world/max_distance_from_start', -1)
         self._goal = rospy.get_param('world/goal', {})
-        self._reward = rospy.get_param('world/reward', {})
+        self._world_rewards = rospy.get_param('world/reward', {})
+        self._current_reward = 0
+        self._termination = TerminationType.Unknown
 
     def _reset(self, msg: Empty = None):
         """Add entrance of idle state all field variables are reset
         """
         self._init_fields()
         cprint(f'resetting', self._logger, msg_type=MessageType.debug)
-        # cprint('****FSM: Settings:****')
-        # for name, value in [('_max_duration', self._max_duration), ('_collision_depth', self._collision_depth),
-        #                     ('_max_travelled_distance', self._max_travelled_distance), ('mode', self.mode),
-        #                     ('_max_distance_from_start', self._max_distance_from_start), ('_goal', self._goal)]:
-        #     cprint(f'{name}: {value}')
-        # cprint('********')
         self._start()
 
     def _start(self):
@@ -158,7 +154,6 @@ class Fsm:
     def _set_state(self, state: FsmState) -> None:
         cprint(f'set state: {state.name}', self._logger)
         self._state = state
-        self._state_pub.publish(self._state.name)
 
     def _running(self, msg: Empty = None):
         if self._start_time == -1:
@@ -168,6 +163,7 @@ class Fsm:
         while self._check_time() < self._delay_evaluation:
             rospy.sleep(0.01)
         self._set_state(FsmState.Running)
+        self._termination = TerminationType.NotDone
         self._run_number += 1
 
     def _takeoff(self):
@@ -176,10 +172,12 @@ class Fsm:
     def _takeover(self, msg: Empty = None):
         self._set_state(FsmState.TakenOver)
 
-    def _shutdown_run(self, msg: Empty = None, outcome: TerminationType = TerminationType.Unknown,
-                      reward: float = None):
+    def _shutdown_run(self, msg: Empty = None,
+                      outcome: TerminationType = None, reward: float = None):
         # Invocation for next run
         self._is_shuttingdown = True
+        self._termination = outcome if outcome is not None else TerminationType.Unknown
+        self._current_reward = reward
         # pause_physics_client(EmptyRequest())
         if self.mode == FsmMode.TakeOverRunDriveBack:
             self._set_state(FsmState.DriveBack)
@@ -191,14 +189,11 @@ class Fsm:
         if self._start_time != -1 and run_duration_s > self._max_duration != -1 and not self._is_shuttingdown:
             cprint(f'duration: {run_duration_s} > {self._max_duration}', self._logger)
             self._shutdown_run(outcome=TerminationType.Success)
-        # cprint(f'check time: duration = {run_duration_s}, start_time = {self._start_time}',
-        #        self._logger,
-        #        msg_type=MessageType.debug)
         return run_duration_s
 
     def _update_state(self) -> bool:
         duration_s = self._check_time()
-        return self._state is FsmState.Running \
+        return self._state == FsmState.Running \
             and not self._is_shuttingdown \
             and duration_s > self._delay_evaluation
 
@@ -208,7 +203,8 @@ class Fsm:
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
             cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
             self._shutdown_run(outcome=TerminationType.Failure,
-                               reward=self._reward['collision'] if 'collision' in self._reward.keys() else None)
+                               reward=self._world_rewards['collision']
+                               if 'collision' in self._world_rewards.keys() else None)
 
     def _check_depth_image(self, msg: Image) -> None:
         if not self._update_state():
@@ -254,13 +250,15 @@ class Fsm:
             cprint(f'Travelled distance {self.travelled_distance} > max {self._max_travelled_distance}',
                    self._logger)
             self._shutdown_run(outcome=TerminationType.Success,
-                               reward=self._reward['distance'] if 'distance' in self._reward.keys() else None)
+                               reward=self._world_rewards['distance']
+                               if 'distance' in self._world_rewards.keys() else None)
 
         if self._check_distance(self._max_distance_from_start, self.distance_from_start):
             cprint(f'Max distance {self.distance_from_start} > max {self._max_distance_from_start}',
                    self._logger)
             self._shutdown_run(outcome=TerminationType.Success,
-                               reward=self._reward['distance'] if 'distance' in self._reward.keys() else None)
+                               reward=self._world_rewards['distance']
+                               if 'distance' in self._world_rewards.keys() else None)
 
         if self._goal and not self._is_shuttingdown and \
                 self._goal['x']['max'] > self._current_pos[0] > self._goal['x']['min'] and \
@@ -268,7 +266,7 @@ class Fsm:
                 self._goal['z']['max'] > self._current_pos[2] > self._goal['z']['min']:
             cprint(f'Reached goal on location {self._current_pos}', self._logger)
             self._shutdown_run(outcome=TerminationType.Success,
-                               reward=self._reward['goal'] if 'goal' in self._reward.keys() else None)
+                               reward=self._world_rewards['goal'] if 'goal' in self._world_rewards.keys() else None)
 
     def _check_wrench(self, msg: WrenchStamped) -> None:
         if not self._update_state():
@@ -276,19 +274,21 @@ class Fsm:
         if msg.wrench.force.z < 0:
             cprint(f"found drag force: {msg.wrench.force.z}, so robot must be upside-down.", self._logger)
             self._shutdown_run(outcome=TerminationType.Failure,
-                               reward=self._reward['collision'] if 'collision' in self._reward.keys() else None)
+                               reward=self._world_rewards['collision']
+                               if 'collision' in self._world_rewards.keys() else None)
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
             self._state_pub.publish(self._state.name)
-            self._reward_pub.publish(self._current_reward)
-            self._terminal_outcome_pub.publish('NotDone')
-            if reward is not None:
-                self._reward_pub.publish(reward)
-
-            if not self._is_shuttingdown and 'step' in self._reward.keys() and self._state == FsmState.Running:
-                self._reward_pub.publish(self._reward['step'])
+            if 'step' in self._world_rewards.keys() and \
+                    (self._state == FsmState.Running or self._state == FsmState.Terminated) and \
+                    self._current_reward == 0:  # If reward is not defined yet, check for step reward
+                self._current_reward = self._world_rewards['step']
+            self._rewards_pub.publish(RosReward(
+                termination=self._termination.name,
+                reward=self._current_reward
+            ))
             rate.sleep()
             self.count += 1
             if self.count % self._rate_fps == 0:

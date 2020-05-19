@@ -1,3 +1,0 @@
-string name
-nav_msgs/Odometry odometry
-std_msgs/Float32MultiArray waypoint

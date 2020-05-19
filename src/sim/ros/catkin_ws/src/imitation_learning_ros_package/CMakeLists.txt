@@ -20,9 +20,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
 )
 add_message_files(
     FILES
-    RosSensor.msg
-    RosAction.msg
-    RosEnvironmentState.msg
+    RosReward.msg
 )
 generate_messages(
   DEPENDENCIES

@@ -16,6 +16,7 @@ from geometry_msgs.msg import Twist, Pose
 from std_msgs.msg import String, Float32MultiArray, Empty, Float32
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
+from imitation_learning_ros_package.msg import RosReward
 from src.core.logger import cprint, MessageType
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
@@ -61,7 +62,13 @@ class RosEnvironment(Environment):
         self._current_experience = None
         self._previous_observation = None
         self._info = {}
-        self._clear_experience_values()
+
+        # Services
+        if self._config.ros_config.ros_launch_config.gazebo:
+            self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
+            self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
+            self._reset_simulation = rospy.ServiceProxy('/gazebo/reset_simulation', Emptyservice)
+            self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
         # Subscribers
         # FSM
@@ -70,19 +77,13 @@ class RosEnvironment(Environment):
                          data_class=String,
                          callback=self._set_field,
                          callback_args=('fsm_state', {}))
-        # Terminal topic
-        self._terminal_state = TerminationType.Unknown
-        rospy.Subscriber(name=rospy.get_param('/fsm/terminal_topic', ''),
-                         data_class=String,
-                         callback=self._set_field,
-                         callback_args=('terminal_state', {}))
 
         # Reward topic
         self._reward = None
+        self._terminal_state = TerminationType.Unknown
         rospy.Subscriber(name=rospy.get_param('/fsm/reward_topic', ''),
-                         data_class=Float32,
-                         callback=self._set_field,
-                         callback_args=('reward', {}))
+                         data_class=RosReward,
+                         callback=self._set_reward)
 
         # Subscribe to observation
         self._observation = None
@@ -205,18 +206,13 @@ class RosEnvironment(Environment):
 
     def _set_field(self, msg: Union[String, Twist, Image, CompressedImage], args: Tuple) -> None:
         field_name, sensor_stats = args
-        if field_name == 'terminal_state':
-            self._terminal_state = TerminationType[msg.data]
-            self._reward = None
-        elif field_name == 'fsm_state':
+        if field_name == 'fsm_state':
             self.fsm_state = FsmState[msg.data]
         elif field_name == 'observation':
             self._observation = self._process_observation(msg, sensor_stats)
         elif field_name == 'action':
             self._action = Action(actor_name='applied_action',
                                   value=adapt_twist_to_action(msg).value)
-        elif field_name == 'reward':
-            self._reward = float(msg.data)
         else:
             raise NotImplementedError
         if not field_name == "observation":  # observation is ros node which keeps on running during gazebo pause.
@@ -224,11 +220,12 @@ class RosEnvironment(Environment):
                    self._logger,
                    msg_type=MessageType.debug)
 
+    def _set_reward(self, msg: RosReward) -> None:
+        self._reward = msg.reward
+        self._terminal_state = TerminationType[msg.termination]
+
     def _internal_update_terminal_state(self):
         if self.fsm_state == FsmState.Running and \
-                self._terminal_state == TerminationType.Unknown:
-            self._terminal_state = TerminationType.NotDone
-        if self._terminal_state == TerminationType.NotDone and \
                 self._config.max_number_of_steps != -1 and \
                 self._config.max_number_of_steps <= self._step:
             self._terminal_state = TerminationType.Done
@@ -236,11 +233,14 @@ class RosEnvironment(Environment):
 
     def _pause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
-        os.system("rosservice call gazebo/pause_physics")
+        os.system("")
+        self._pause_client(EmptyRequest())
+        #os.system("rosservice call gazebo/pause_physics")
 
     def _unpause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
-        os.system("rosservice call gazebo/unpause_physics")
+        self._unpause_client(EmptyRequest())
+        #os.system("rosservice call gazebo/unpause_physics")
 
     def _reset_gazebo(self):
         model_state = ModelState()
@@ -253,23 +253,24 @@ class RosEnvironment(Environment):
         model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
             model_state.pose.orientation.w = quaternion_from_euler(
                 (0, 0, self._config.ros_config.ros_launch_config.yaw_or))
-        #self._set_model_state.wait_for_service()
-        #self._set_model_state(model_state)
-        os.system(f"rosservice call /gazebo/set_model_state '{{model_state: "
-                  f"{{ model_name: {model_state.model_name},"
-                  f"pose: {{ position: {{ x: {model_state.pose.position.x},"
-                  f"                      y: {model_state.pose.position.y},"
-                  f"                      z: {model_state.pose.position.z}, }},"
-                  f"         orientation: {{ x: { model_state.pose.orientation.x},"
-                  f"                         y: { model_state.pose.orientation.y},"
-                  f"                         z: { model_state.pose.orientation.z},"
-                  f"                         w: { model_state.pose.orientation.w},}} }} }} }}'")
+        self._set_model_state.wait_for_service()
+        self._set_model_state(model_state)
+        #os.system(f"rosservice call /gazebo/set_model_state '{{model_state: "
+        #          f"{{ model_name: {model_state.model_name},"
+        #          f"pose: {{ position: {{ x: {model_state.pose.position.x},"
+        #          f"                      y: {model_state.pose.position.y},"
+        #          f"                      z: {model_state.pose.position.z}, }},"
+        #          f"         orientation: {{ x: { model_state.pose.orientation.x},"
+        #          f"                         y: { model_state.pose.orientation.y},"
+        #          f"                         z: { model_state.pose.orientation.z},"
+        #          f"                         w: { model_state.pose.orientation.w},}} }} }} }}'")
 
     def _clear_experience_values(self):
         """Set all experience fields to None"""
         self._observation = None
         self._action = None
         self._reward = None
+        self._terminal_state = None
         self._info = {k: None for k in self._info.keys()}
 
     def _update_current_experience(self) -> bool:
@@ -279,8 +280,12 @@ class RosEnvironment(Environment):
         else False.
         :return: Bool whether all fields are updated
         """
+        self._internal_update_terminal_state()
         if self._config.ros_config.observation != '' and self._observation is None:
             cprint("waiting for observation", self._logger, msg_type=MessageType.debug)
+            return False
+        if self._terminal_state is None:
+            cprint("waiting for terminal state", self._logger, msg_type=MessageType.debug)
             return False
         if self._config.ros_config.store_reward and self._reward is None:
             cprint("waiting for reward", self._logger, msg_type=MessageType.debug)
@@ -333,14 +338,12 @@ class RosEnvironment(Environment):
         """
         cprint(f'resetting', self._logger)
         self._step = 0
-        self._terminal_state = TerminationType.Unknown
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
         self._clear_experience_values()
         while self.fsm_state != FsmState.Running or self._observation is None:
             self._run_shortly()
-        self._internal_update_terminal_state()
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._observation),
@@ -351,12 +354,10 @@ class RosEnvironment(Environment):
 
     def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:
         self._step += 1
-        self._internal_update_terminal_state()
         self._clear_experience_values()
         if action is not None:
             self._action_publisher.publish(adapt_action_to_twist(action))
         self._run_and_update_experience()
-        self._terminal_state = TerminationType.Unknown
         return self._current_experience, deepcopy(self._observation)
 
     def remove(self) -> bool:

@@ -26,7 +26,7 @@ config_dict = {
         "store_action": True,
         "store_reward": True,
         "visible_xterm": False,
-        "step_rate_fps": 30,
+        "step_rate_fps": 15,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",
@@ -71,18 +71,18 @@ class TestRosIntegrated(unittest.TestCase):
             self.assertEqual(experience.done, TerminationType.NotDone)
             count = 0
             while experience.done == TerminationType.NotDone:
+                experience, observation = self._environment.step()
+                count += 1
                 if count == 1:
                     self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
-                    self.assertLess(np.sum(experience.info['odometry'][:3]), 0.2)
-                count += 1
-                experience, observation = self._environment.step()
+                    self.assertLess(np.sum(experience.info['odometry'][:3]), 0.5)
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
                 if experience.done == TerminationType.NotDone:
                     self.assertEqual(experience.reward, rospy.get_param('/world/reward/step'))
                 else:
                     self.assertEqual(experience.reward, rospy.get_param('/world/reward/goal'))
-            self.assertGreater(np.sum(experience.info['odometry'][:3]), 0.5)
+            self.assertGreater(np.sum(experience.info['odometry'][:3]), 1)
             self.assertEqual(experience.done, TerminationType.Success)
 
     def tearDown(self) -> None:

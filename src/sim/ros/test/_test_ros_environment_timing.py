@@ -23,7 +23,7 @@ config_dict = {
         "store_action": True,
         "store_reward": True,
         "visible_xterm": True,
-        "step_rate_fps": 30,
+        "step_rate_fps": 15,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",

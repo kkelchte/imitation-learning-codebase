@@ -1,0 +1,2 @@
+string termination
+float32 reward

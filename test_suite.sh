@@ -13,7 +13,8 @@ if [ -d test_dir ] ; then
 fi
 mkdir test_dir
 
-EXCLUDE="src/scripts/test/test_model_evaluation_ros.py"
+EXCLUDE=" "
+# EXCLUDE="src/scripts/test/test_model_evaluation_ros.py"
 
 
 

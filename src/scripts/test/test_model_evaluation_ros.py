@@ -26,7 +26,7 @@ experiment_config = {
         ],
         "observation": "sensor/forward_camera",
         "visible_xterm": True,
-        "step_rate_fps": 2,
+        "step_rate_fps": 15,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",
