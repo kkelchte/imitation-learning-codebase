@@ -67,7 +67,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         batch = self.data_loader.get_dataset()
         assert len(batch) != 0
 
-        phi_weights = self._calculate_phi(batch).to(self._config.device)
+        phi_weights = self._calculate_phi(batch).to(self._device)
         original_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
                                                                         actions=batch.actions,
                                                                         train=False).detach()
