@@ -114,7 +114,7 @@ class BaseNet(nn.Module):
                            os.path.join(checkpoint_dir, f) for f in os.listdir(checkpoint_dir)}
             checkpoint_file = checkpoints[max(checkpoints.keys())]
         # Load params internally and return checkpoint
-        checkpoint = torch.load(checkpoint_file)
+        checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
         self.global_step = checkpoint['global_step']
         del checkpoint['global_step']
         self.load_state_dict(checkpoint['model_state'])
