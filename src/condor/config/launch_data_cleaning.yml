@@ -8,7 +8,7 @@ job_configs:
     cpu_mem_gb: 18
     disk_mem_gb: 52
     wall_time_s: 10 * 60
-    nice: False
+    nice: true
     use_singularity: False
     check_if_ros_already_in_use: False
     save_locally: False
