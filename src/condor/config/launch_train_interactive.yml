@@ -3,11 +3,11 @@ mode: default
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 3
+    cpus: 7
     gpus: 1
     cpu_mem_gb: 25
     disk_mem_gb: 52
-    wall_time_s: 60 * 60
+    wall_time_s: 30 * 60 * 60
     nice: false
     gpu_mem_mb: 1900
     use_singularity: false
