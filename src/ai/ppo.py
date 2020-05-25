@@ -72,7 +72,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                                                         actions=batch.actions,
                                                                         train=False).detach()
         actor_loss_distribution = self._train_actor_ppo(batch, phi_weights, original_log_probabilities)
-        critic_loss_distribution = self._train_critic(batch, get_reward_to_go(batch))
+        critic_loss_distribution = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
         self._net.global_step += 1
 
         self._save_checkpoint(epoch=epoch)

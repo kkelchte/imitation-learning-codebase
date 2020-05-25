@@ -82,7 +82,7 @@ class VanillaPolicyGradient(Trainer):
         if phi_weights is None:
             phi_weights = self._calculate_phi(batch).to(self._device)
         policy_loss = self._train_actor(batch, phi_weights)
-        critic_loss = self._train_critic(batch, get_reward_to_go(batch))
+        critic_loss = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
         self._net.global_step += 1
 
         self._save_checkpoint(epoch)
