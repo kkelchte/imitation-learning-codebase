@@ -1,8 +1,7 @@
 import os
 from typing import List
 
-from src.condor.condor_job import CondorJobConfig, CondorJob
-from src.condor.condor_launcher import create_jobs_from_job_config_files
+from src.condor.condor_job import CondorJobConfig, CondorJob, create_jobs_from_job_config_files
 from src.condor.helper_functions import create_configs, Dag
 from src.core.utils import get_date_time_tag
 

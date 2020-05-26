@@ -1,17 +1,13 @@
-import copy
-import os
 import shutil
-import time
 
 import yaml
 from dataclasses import dataclass
 
 from dataclasses_json import dataclass_json
 
-from src.condor.helper_functions import Dag
-from src.condor.preparation_functions.il_preparation_functions import *
+from src.condor.preparation_functions.il_preparation_functions import *  # Do not remove
+from src.condor.preparation_functions.rl_parameter_study import *  # Do not remove
 from src.core.config_loader import Parser, Config
-from src.core.utils import get_date_time_tag
 
 
 @dataclass_json
@@ -21,24 +17,6 @@ class CondorLauncherConfig(Config):
     number_of_jobs: List[int] = 1
     base_config_files: List[str] = None
     job_configs: List[CondorJobConfig] = None
-
-    def post_init(self):
-        assert self.mode in ['default', 'data_collection', 'train', 'evaluate_interactive',
-                             'dag_data_collection', 'dag_train_evaluate', 'data_collection_train_evaluate_dag']
-
-
-def create_jobs_from_job_config_files(job_config_files: List[str],
-                                      job_config_object: CondorJobConfig = None) -> List[CondorJob]:
-    jobs = []
-    for config in job_config_files:
-        job_config = copy.deepcopy(job_config_object)
-        job_config.config_file = config
-        condor_job = CondorJob(config=job_config)
-        condor_job.write_job_file()
-        condor_job.write_executable_file()
-        jobs.append(condor_job)
-        time.sleep(1)
-    return jobs
 
 
 class CondorLauncher:

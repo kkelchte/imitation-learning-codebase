@@ -10,6 +10,14 @@ import yaml
 from src.core.utils import get_date_time_tag
 
 
+def translate_keys_to_string(keys: List[str]) -> str:
+    """nested yaml keys given as a list are provided as a single string"""
+    result = ''
+    for key in keys:
+        result += f'[\"{key}\"]'
+    return result
+
+
 def strip_command(command: str) -> str:
     command = command.split(' ')[1]  # python path/to/file.py --config config_file --> path/to/file.py
     command = os.path.basename(command)  # path/to/file.py --> file.py
@@ -61,17 +69,19 @@ def create_configs(base_config: Union[dict, str], output_path: str, adjustments:
         for variable_name in adjustments.keys():
             value = adjustments[variable_name][value_index]
             exec(f'new_config{variable_name} = value')
-        # use first variable_name to define config_name
-        variable_name = list(adjustments.keys())[0]
-        value = adjustments[variable_name][value_index]
-        config_path = os.path.join(base_config['output_path'], 'configs',
-                                   f'{get_date_time_tag()}_{get_variable_name(variable_name)}_'
-                                   f'{strip_variable(value)}.yml')
-        while os.path.isfile(config_path):
-            time.sleep(1)
-            config_path = os.path.join(base_config['output_path'], 'configs',
-                                       f'{get_date_time_tag()}_{get_variable_name(variable_name)}_'
-                                       f'{strip_variable(value)}.yml')
+
+        config_path = os.path.join(base_config['output_path'], 'configs', get_date_time_tag())
+        for variable_name in adjustments.keys():
+            if get_variable_name(variable_name) != 'output_path':
+                config_path += f'_{get_variable_name(variable_name)}' \
+                               f'_{strip_variable(adjustments[variable_name][value_index])}'
+        config_path += '.yml'
+        count = 0
+        while os.path.isfile(config_path):  # add _0 _1 if config file already exists.
+            original_config_path = config_path[:-4] if count == 0 else config_path[:-6]
+            config_path = f'{original_config_path}_{count}.yml'
+            count += 1
+
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
         with open(config_path, 'w') as f:
             yaml.dump(new_config, f)
