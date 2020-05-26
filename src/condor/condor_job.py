@@ -236,5 +236,4 @@ def create_jobs_from_job_config_files(job_config_files: List[str],
         condor_job.write_job_file()
         condor_job.write_executable_file()
         jobs.append(condor_job)
-        time.sleep(1)
     return jobs

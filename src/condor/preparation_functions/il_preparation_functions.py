@@ -23,6 +23,20 @@ def prepare_default(base_config_file: str,
                                              job_config_object=job_config_object)
 
 
+def prepare_data_collection(base_config_file: str,
+                            job_config_object: CondorJobConfig,
+                            number_of_jobs: int,
+                            output_path: str) -> List[CondorJob]:
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments={
+                                      '[\"data_saver_config\"][\"saving_directory_tag\"]':
+                                          [f'runner_{i}' for i in range(number_of_jobs)]
+                                  })
+    return create_jobs_from_job_config_files(job_config_files=config_files,
+                                             job_config_object=job_config_object)
+
+
 def prepare_train(base_config_file: str,
                   job_config_object: CondorJobConfig,
                   number_of_jobs: int,
@@ -41,28 +55,17 @@ def prepare_train(base_config_file: str,
                                              job_config_object=job_config_object)
 
 
-def prepare_data_collection(base_config_file: str,
-                            job_config_object: CondorJobConfig,
-                            number_of_jobs: int,
-                            output_path: str) -> List[CondorJob]:
-    config_files = create_configs(base_config=base_config_file,
-                                  output_path=output_path,
-                                  adjustments={
-                                      '[\"data_saver_config\"][\"saving_directory_tag\"]':
-                                          [f'runner_{i}' for i in range(number_of_jobs)]
-                                  })
-    return create_jobs_from_job_config_files(job_config_files=config_files,
-                                             job_config_object=job_config_object)
-
-
 def prepare_evaluate_interactive(base_config_file: str,
                                  job_config_object: CondorJobConfig,
                                  number_of_jobs: int,
-                                 output_path: str) -> List[CondorJob]:
+                                 output_path: str,
+                                 model_directories: List[str] = None) -> List[CondorJob]:
     if number_of_jobs == 0:
         return []
     model_directories = [os.path.join(output_path, 'models', d)
-                         for d in os.listdir(os.path.join(output_path, 'models'))]
+                         for d in os.listdir(os.path.join(output_path, 'models'))] \
+        if model_directories is None else model_directories
+
     model_directories = model_directories[-min(number_of_jobs, len(model_directories)):]
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
@@ -108,14 +111,23 @@ def prepare_dag_train_evaluate(base_config_files: List[str],
                                number_of_jobs: List[int],
                                output_path: str) -> Dag:
     jobs = []
-    jobs.extend(prepare_train(base_config_file=base_config_files[0],
-                              job_config_object=job_configs[0],
-                              number_of_jobs=number_of_jobs[0],
-                              output_path=output_path))
+    # Add train jobs
+    seeds = [123 * n + 5100 for n in range(number_of_jobs[0])]
+    model_paths = [os.path.join(output_path, 'models', f'seed_{seed}') for seed in seeds]
+    config_files = create_configs(base_config=base_config_files[0],
+                                  output_path=output_path,
+                                  adjustments={
+                                      '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
+                                      '[\"output_path\"]': model_paths,
+                                  })
+    jobs.extend(create_jobs_from_job_config_files(job_config_files=config_files,
+                                                  job_config_object=job_configs[0]))
+    # Add evaluate jobs
     jobs.extend(prepare_evaluate_interactive(base_config_file=base_config_files[1],
                                              job_config_object=job_configs[1],
                                              number_of_jobs=number_of_jobs[1],
-                                             output_path=output_path))
+                                             output_path=output_path,
+                                             model_directories=model_paths))
 
     dag_lines = '# prepare_dag_train_evaluate: \n'
     for index, job in enumerate(jobs[:number_of_jobs[0]]):
