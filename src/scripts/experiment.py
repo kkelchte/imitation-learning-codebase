@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import shutil
+from collections import deque
 from typing import Optional
 
 import yaml
@@ -37,6 +38,7 @@ Script starts environment runner with dataset_saver object to store the episodes
 class ExperimentConfig(Config):
     number_of_epochs: int = 1
     number_of_episodes: int = -1
+    return_smoothing_k: int = 10
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
     architecture_config: Optional[ArchitectureConfig] = None
@@ -84,6 +86,7 @@ class Experiment:
             #for handler in self._logger.handlers:
             #    if not isinstance(handler, logging.FileHandler):
             #        self._logger.removeHandler(handler)
+        self._episode_return_queue = deque()
         cprint(f'Initiated.', self._logger)
 
     def _enough_episodes_check(self, episode_number: int) -> bool:
@@ -117,6 +120,9 @@ class Experiment:
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
             episode_returns.append(episode_return)
+            self._episode_return_queue.append(episode_return)
+            if len(self._episode_return_queue) >= self._config.return_smoothing_k:
+                self._episode_return_queue.popleft()
         if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
             self._data_saver.create_train_validation_hdf5_files()
         msg = f" {count_episodes} episodes"
@@ -124,8 +130,8 @@ class Experiment:
             msg += f" with {count_success} success"
             if self._writer is not None:
                 self._writer.write_scalar(count_success/float(count_episodes), "success")
-        return_distribution = Distribution(episode_returns)
-        msg += f" with avg return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
+        return_distribution = Distribution(self._episode_return_queue)
+        msg += f" with smoothed return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
             self._writer.write_distribution(return_distribution, "episode return")
         return msg
@@ -172,11 +178,11 @@ if __name__ == "__main__":
     config_file = arguments.config
     if arguments.rm:
         with open(config_file, 'r') as f:
-            config = yaml.load(f, Loader=yaml.FullLoader)
-        if not config['output_path'].startswith('/'):
-            config['output_path'] = os.path.join(os.environ['DATADIR'], config['output_path']) \
-                if 'DATADIR' in os.environ.keys() else os.path.join(os.environ['HOME'], config['output_path'])
-        shutil.rmtree(config['output_path'], ignore_errors=True)
+            configuration = yaml.load(f, Loader=yaml.FullLoader)
+        if not configuration['output_path'].startswith('/'):
+            configuration['output_path'] = os.path.join(os.environ['DATADIR'], configuration['output_path']) \
+                if 'DATADIR' in os.environ.keys() else os.path.join(os.environ['HOME'], configuration['output_path'])
+        shutil.rmtree(configuration['output_path'], ignore_errors=True)
 
     experiment_config = ExperimentConfig().create(config_file=config_file)
     experiment = Experiment(experiment_config)

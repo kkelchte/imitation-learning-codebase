@@ -74,22 +74,22 @@ class VanillaPolicyGradient(Trainer):
         self._critic_optimizer.step()
         return critic_loss.mean().detach()
 
-    def train(self, epoch: int = -1, writer=None, phi_weights=None) -> str:
+    def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         batch = self.data_loader.get_dataset()
         assert len(batch) != 0
 
-        if phi_weights is None:
-            phi_weights = self._calculate_phi(batch)
+        phi_weights = self._calculate_phi(batch).to(self._device)
         policy_loss = self._train_actor(batch, phi_weights)
-        critic_loss = self._train_critic(batch, get_reward_to_go(batch))
-        self._net.global_step += 1
-
-        self._save_checkpoint(epoch)
-        self.put_model_back_to_original_device()
+        critic_loss = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
 
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_scalar(policy_loss.data, "policy_loss")
             writer.write_scalar(critic_loss.data, "critic_loss")
+
+        self._save_checkpoint(epoch)
+        self._net.global_step += 1
+        self.put_model_back_to_original_device()
+
         return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.data: 0.3e}"

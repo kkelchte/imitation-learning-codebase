@@ -10,7 +10,8 @@ import yaml
 
 from src.core.utils import get_filename_without_extension, read_file_to_output, get_file_length
 from src.condor.condor_job import CondorJob, CondorJobConfig
-from src.condor.helper_functions import create_configs, get_variable_name, strip_variable, strip_command
+from src.condor.helper_functions import create_configs, get_variable_name, strip_variable, strip_command, \
+    translate_keys_to_string
 
 
 class TestCondorJob(unittest.TestCase):
@@ -77,6 +78,14 @@ class TestCondorJob(unittest.TestCase):
         read_file_to_output(os.path.join(self.output_dir, 'condor', condor_dir, 'singularity.output'))
         error_file_length = get_file_length(job.error_file)
         self.assertEqual(error_file_length, 0)
+
+    def test_translate_keys_to_string(self):
+        self.assertEqual('[\"architecture_config\"][\"initialisation_seed\"]',
+                         translate_keys_to_string(['architecture_config', 'initialisation_seed']))
+        self.assertEqual('[\"trainer_config\"][\"data_loader_config\"][\"batch_size\"]',
+                         translate_keys_to_string(['trainer_config', 'data_loader_config', 'batch_size']))
+        self.assertEqual('[\"output_path\"]',
+                         translate_keys_to_string(['output_path']))
 
     def test_get_variable_name(self):
         self.assertEqual(get_variable_name('[runner_config][actor_configs][0][file]'), 'file')

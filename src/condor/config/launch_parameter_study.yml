@@ -1,11 +1,13 @@
-output_path: straight_corridor
+output_path: parameter_study/batch_size
+mode: batch_size_study
+number_of_jobs:  # indicates number of seeds per parameter value
+  - 3
 base_config_files:
-  - src/scripts/config/rl_train_interactive_straight_corridor.yml
-mode: default
+  - src/scripts/config/rl_cart_pole_vpg.yml
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 11
+    cpus: 7
     gpus: 1
     cpu_mem_gb: 25
     disk_mem_gb: 52
@@ -15,5 +17,3 @@ job_configs:
     use_singularity: true
     check_if_ros_already_in_use: false
     save_locally: true
-number_of_jobs:
-  - 1

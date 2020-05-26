@@ -6,6 +6,7 @@ import glob
 import os
 import subprocess
 import shlex
+import time
 from typing import List, Optional
 
 from dataclasses import dataclass
@@ -70,7 +71,6 @@ class CondorJob:
             'RequestDisk': f'{self._config.disk_mem_gb} G',
             'Niceuser': self._config.nice,
             '+RequestWalltime': self._config.wall_time_s,
-
         }
 
         # files and directories
@@ -224,3 +224,16 @@ class CondorJob:
             return subprocess.call(shlex.split(f'condor_submit {self.job_file}'))
         except:
             return -1
+
+
+def create_jobs_from_job_config_files(job_config_files: List[str],
+                                      job_config_object: CondorJobConfig = None) -> List[CondorJob]:
+    jobs = []
+    for config in job_config_files:
+        job_config = copy.deepcopy(job_config_object)
+        job_config.config_file = config
+        condor_job = CondorJob(config=job_config)
+        condor_job.write_job_file()
+        condor_job.write_executable_file()
+        jobs.append(condor_job)
+    return jobs
