@@ -65,13 +65,12 @@ class CondorJob:
         # job & machine specs
         self.specs = {
             'RequestCpus': self._config.cpus,
+            'Request_GPUs': self._config.gpus,
             'RequestMemory': f'{self._config.cpu_mem_gb} G',
             'RequestDisk': f'{self._config.disk_mem_gb} G',
             'Niceuser': self._config.nice,
             '+RequestWalltime': self._config.wall_time_s,
         }
-        if self._config.gpus != 0:
-            self.specs['Request_GPUs'] = self._config.gpus
 
         # files and directories
         self.initial_dir = self._config.codebase_dir
