@@ -73,14 +73,15 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                                                         train=False).detach()
         actor_loss_distribution = self._train_actor_ppo(batch, phi_weights, original_log_probabilities)
         critic_loss_distribution = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
-        self._net.global_step += 1
-
-        self._save_checkpoint(epoch=epoch)
-        self.put_model_back_to_original_device()
 
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(actor_loss_distribution, "policy_loss")
             writer.write_distribution(critic_loss_distribution, "critic_loss")
+
+        self._net.global_step += 1
+        self._save_checkpoint(epoch=epoch)
+        self.put_model_back_to_original_device()
+
         return f" training policy loss {actor_loss_distribution.mean: 0.3e} [{actor_loss_distribution.std: 0.2e}], " \
                f"critic loss {critic_loss_distribution.mean: 0.3e} [{critic_loss_distribution.std: 0.3e}]"
