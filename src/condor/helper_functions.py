@@ -89,4 +89,7 @@ class Dag:
             dag_file_stream.write(lines_dag_file)
 
     def submit(self) -> int:
-        return subprocess.call(shlex.split(f'condor_submit_dag {self._dag_file}'))
+        try:
+            return subprocess.call(shlex.split(f'condor_submit_dag {self._dag_file}'))
+        except:
+            return -1
