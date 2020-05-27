@@ -165,20 +165,20 @@ def prepare_dag_data_collection_train_evaluate(base_config_files: List[str],
                                 output_path=output_path))
 
     # Add train jobs
-    seeds = [123 * n + 5100 for n in range(number_of_jobs[0])]
+    seeds = [123 * n + 5100 for n in range(number_of_jobs[2])]
     model_paths = [os.path.join(output_path, 'models', f'seed_{seed}') for seed in seeds]
-    config_files = create_configs(base_config=base_config_files[0],
+    config_files = create_configs(base_config=base_config_files[2],
                                   output_path=output_path,
                                   adjustments={
                                       '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
                                       '[\"output_path\"]': model_paths,
                                   })
     jobs.extend(create_jobs_from_job_config_files(job_config_files=config_files,
-                                                  job_config_object=job_configs[0]))
+                                                  job_config_object=job_configs[2]))
     # Add evaluate jobs
-    jobs.extend(prepare_evaluate_interactive(base_config_file=base_config_files[1],
-                                             job_config_object=job_configs[1],
-                                             number_of_jobs=number_of_jobs[1],
+    jobs.extend(prepare_evaluate_interactive(base_config_file=base_config_files[3],
+                                             job_config_object=job_configs[3],
+                                             number_of_jobs=number_of_jobs[3],
                                              output_path=output_path,
                                              model_directories=model_paths))
 

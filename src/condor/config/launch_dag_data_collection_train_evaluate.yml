@@ -1,4 +1,4 @@
-output_path: cube_world_test
+output_path: cube_world
 mode: dag_data_collection_train_evaluate
 job_configs:
   - command: python3.8 src/scripts/experiment.py
