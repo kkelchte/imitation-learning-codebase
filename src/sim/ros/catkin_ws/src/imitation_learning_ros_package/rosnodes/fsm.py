@@ -122,6 +122,7 @@ class Fsm:
         self._start_time = -1
         self._current_pos = np.zeros((3,))
         self.travelled_distance = 0
+        self.distance_from_start = 0
         self.success = None
         if rospy.has_param('world/starting_height') and self.mode == FsmMode.TakeOffRun:
             self.starting_height = rospy.get_param('world/starting_height')
@@ -188,7 +189,8 @@ class Fsm:
         run_duration_s = rospy.get_time() - self._start_time if self._start_time != -1 else 0
         if self._start_time != -1 and run_duration_s > self._max_duration != -1 and not self._is_shuttingdown:
             cprint(f'duration: {run_duration_s} > {self._max_duration}', self._logger)
-            self._shutdown_run(outcome=TerminationType.Success)
+            self._shutdown_run(outcome=TerminationType.Unknown,
+                               reward=self._get_reward('duration'))
         return run_duration_s
 
     def _update_state(self) -> bool:
@@ -203,8 +205,7 @@ class Fsm:
         if np.amin(data) < self._collision_depth and not self._is_shuttingdown:
             cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
             self._shutdown_run(outcome=TerminationType.Failure,
-                               reward=self._world_rewards['collision']
-                               if 'collision' in self._world_rewards.keys() else None)
+                               reward=self._get_reward('collision'))
 
     def _check_depth_image(self, msg: Image) -> None:
         if not self._update_state():
@@ -250,15 +251,13 @@ class Fsm:
             cprint(f'Travelled distance {self.travelled_distance} > max {self._max_travelled_distance}',
                    self._logger)
             self._shutdown_run(outcome=TerminationType.Success,
-                               reward=self._world_rewards['distance']
-                               if 'distance' in self._world_rewards.keys() else None)
+                               reward=self._get_reward('distance'))
 
         if self._check_distance(self._max_distance_from_start, self.distance_from_start):
             cprint(f'Max distance {self.distance_from_start} > max {self._max_distance_from_start}',
                    self._logger)
             self._shutdown_run(outcome=TerminationType.Success,
-                               reward=self._world_rewards['distance']
-                               if 'distance' in self._world_rewards.keys() else None)
+                               reward=self._get_reward('distance'))
 
         if self._goal and not self._is_shuttingdown and \
                 self._goal['x']['max'] > self._current_pos[0] > self._goal['x']['min'] and \
@@ -266,7 +265,7 @@ class Fsm:
                 self._goal['z']['max'] > self._current_pos[2] > self._goal['z']['min']:
             cprint(f'Reached goal on location {self._current_pos}', self._logger)
             self._shutdown_run(outcome=TerminationType.Success,
-                               reward=self._world_rewards['goal'] if 'goal' in self._world_rewards.keys() else None)
+                               reward=self._get_reward('goal'))
 
     def _check_wrench(self, msg: WrenchStamped) -> None:
         if not self._update_state():
@@ -274,8 +273,16 @@ class Fsm:
         if msg.wrench.force.z < 0:
             cprint(f"found drag force: {msg.wrench.force.z}, so robot must be upside-down.", self._logger)
             self._shutdown_run(outcome=TerminationType.Failure,
-                               reward=self._world_rewards['collision']
-                               if 'collision' in self._world_rewards.keys() else None)
+                               reward=self._get_reward('collision'))
+
+    def _get_reward(self, key: str) -> float:
+        reward = None
+        if key in self._world_rewards.keys():
+            reward = self._world_rewards[key]
+        if 'add_distance_from_start' in self._world_rewards.keys() and self._world_rewards['add_distance_from_start']:
+            cprint("adding max distance to reward!")
+            reward = self.distance_from_start if reward is None else reward + self.distance_from_start
+        return reward
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)

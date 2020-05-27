@@ -15,6 +15,6 @@ goal:
 waypoint_reached_distance: 0.25
 background_file: src/sim/ros/gazebo/background_images/straight_corridor_0_4_11.jpg
 reward:
+  add_distance_from_start: True
+  duration: -1
   collision: -1
-  step: 0.0
-  goal: 3

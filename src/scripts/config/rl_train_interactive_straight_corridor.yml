@@ -6,7 +6,7 @@ architecture_config:
   device: cpu
 environment_config:
   factory_key: ROS
-  max_number_of_steps: 100
+  max_number_of_steps: -1
   ros_config:
     info:
       -sensor/odometry
