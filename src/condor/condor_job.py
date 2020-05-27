@@ -34,16 +34,25 @@ class CondorJobConfig(Config):
     gpu_mem_mb: int = 1900
     black_list: Optional[List] = None
     green_list: Optional[List] = None
+    use_green_list: bool = False
     use_singularity: bool = True
     singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1]
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
+    extra_requirements: str = None
 
     def __post_init__(self):
         if self.black_list is None:
             del self.black_list
         if self.green_list is None:
-            del self.green_list
+            if self.use_green_list:
+                with open(os.path.join(self.codebase_dir, 'src/condor/config/green_list.yml')) as f:
+                    data = yaml.load(f, Loader=yaml.FullLoader)
+                self.green_list = data['green_list']
+            else:
+                del self.green_list
+        if self.extra_requirements is None:
+            del self.extra_requirements
 
     def post_init(self):  # add default options
         if not self.output_path.startswith('/'):
@@ -101,8 +110,10 @@ class CondorJob:
         if self._config.green_list is not None:
             requirements += ' && ('
             for good_machine in self._config.green_list:
-                requirements += f'(machine == \"{good_machine}.esat.kuleuven.be\") ||'
+                requirements += f'(machine == \"{good_machine}.esat.kuleuven.be\") || '
             requirements = f'{requirements[:-2]})'
+        if self._config.extra_requirements is not None:
+            requirements += f' && {self._config.extra_requirements}'
         return requirements
 
     def write_job_file(self):
