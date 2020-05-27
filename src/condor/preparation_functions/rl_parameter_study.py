@@ -41,3 +41,22 @@ def prepare_learning_rate_study(base_config_file: str,
                                   adjustments=adjustments)
     return create_jobs_from_job_config_files(config_files,
                                              job_config_object=job_config_object)
+
+
+def prepare_optimiser_study(base_config_file: str,
+                            job_config_object: CondorJobConfig,
+                            number_of_jobs: int,
+                            output_path: str) -> List[CondorJob]:
+    optimisers = ['SGD', 'Adam', 'Adadelta', 'RMSprop']
+    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_opt_{opt}') for opt in optimisers for seed in seeds]
+    adjustments = {translate_keys_to_string(['architecture_config',
+                                            'initialisation_seed']): seeds * len(optimisers),
+                   translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'learning_rate']):
+                       [bs for bs in optimisers for _ in range(len(seeds))]}
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
