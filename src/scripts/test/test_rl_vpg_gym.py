@@ -50,7 +50,6 @@ class TestVPGGym(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
-        shutil.rmtree(self.output_dir, ignore_errors=True)
         os.makedirs(self.output_dir, exist_ok=True)
         experiment_config['output_path'] = self.output_dir
 

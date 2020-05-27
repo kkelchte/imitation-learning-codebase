@@ -1,4 +1,4 @@
-output_path: straight_corridor_ppo
+output_path: straight_corridor
 number_of_epochs: 1000
 number_of_episodes: -1
 architecture_config:
@@ -6,7 +6,7 @@ architecture_config:
   device: cpu
 environment_config:
   factory_key: ROS
-  max_number_of_steps: 1000
+  max_number_of_steps: 100
   ros_config:
     info:
       -sensor/odometry
@@ -39,7 +39,7 @@ trainer_config:
   learning_rate: 0.0001
   optimizer: Adam
   data_loader_config:
-    batch_size: 500
+    batch_size: 50
     data_sampling_seed: 123
   device: cpu
   discount: 0.99
@@ -47,7 +47,7 @@ trainer_config:
   gae_lambda: 0.95
   phi_key: gae
   save_checkpoint_every_n: 100
-  max_actor_training_iterations: 10
-  max_critic_training_iterations: 10
+  max_actor_training_iterations: 1
+  max_critic_training_iterations: 1
   ppo_epsilon: 0.2
   kl_target: 0.01

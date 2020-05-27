@@ -40,9 +40,9 @@ class Net(BaseNet):
                                    output_activation=None)
         self.load_network_weights()
         self.discrete_action_mapper = DiscreteActionMapper([
-            torch.as_tensor([0.0, 0.0, 0.0, 0.0, 0.0, -1.0]),
+            torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, -0.2]),
             torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, 0.0]),
-            torch.as_tensor([0.0, 0.0, 0.0, 0.0, 0.0, -1.0]),
+            torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, -0.2]),
         ])
 
     def get_actor_parameters(self) -> Iterator:
