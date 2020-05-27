@@ -15,5 +15,6 @@ job_configs:
     use_singularity: true
     check_if_ros_already_in_use: false
     save_locally: true
+    extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 1
+  - 2
