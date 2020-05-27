@@ -14,7 +14,7 @@ environment_config:
     world_name: CartPole-v0
   max_number_of_steps: -1  # let number of steps depend on environment
 number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
-number_of_epochs: 1000
+number_of_epochs: 10000
 output_path: cart_pole_vpg
 return_smoothing_k: 100
 tensorboard: true
