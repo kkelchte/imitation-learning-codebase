@@ -1,5 +1,5 @@
-output_path: parameter_study/batch_size
-mode: batch_size_study
+output_path: parameter_study/learning_rate
+mode: learning_rate_study
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:
