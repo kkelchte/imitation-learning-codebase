@@ -107,7 +107,7 @@ class CondorJob:
         if self._config.green_list is not None:
             requirements += ' && ('
             for good_machine in self._config.green_list:
-                requirements += f'(machine == \"{good_machine}.esat.kuleuven.be\") ||'
+                requirements += f'(machine == \"{good_machine}.esat.kuleuven.be\") || '
             requirements = f'{requirements[:-2]})'
         return requirements
 
