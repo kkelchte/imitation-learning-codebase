@@ -7,8 +7,8 @@ goal:
     min: -0.5
     max: 0.5
   y:
-    min: 3.0
-    max: 3.5
+    min: 8
+    max: 9
   z:
     min: -1
     max: 1

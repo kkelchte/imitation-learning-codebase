@@ -12,6 +12,7 @@ job_configs:
     use_singularity: true
     check_if_ros_already_in_use: false
     save_locally: true
+    extra_requirements: ( Mips >= 26000 )
   - command: python3.8 src/scripts/data_cleaning.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 2
