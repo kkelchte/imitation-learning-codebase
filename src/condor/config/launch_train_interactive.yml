@@ -17,4 +17,4 @@ job_configs:
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 2
+  - 1
