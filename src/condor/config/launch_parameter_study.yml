@@ -1,5 +1,5 @@
-output_path: parameter_study/loss
-mode: loss_study
+output_path: parameter_study/phi
+mode: phi_study
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:

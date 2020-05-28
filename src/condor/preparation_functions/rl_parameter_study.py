@@ -68,12 +68,31 @@ def prepare_loss_study(base_config_file: str,
                        output_path: str) -> List[CondorJob]:
     losses = ['MSELoss', 'L1Loss', 'SmoothL1Loss']
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
-    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_opt_{opt}') for opt in losses for seed in seeds]
+    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_loss_{loss}') for loss in losses for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
                                             'initialisation_seed']): seeds * len(losses),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'criterion']):
                        [bs for bs in losses for _ in range(len(seeds))]}
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
+
+
+def prepare_phi_study(base_config_file: str,
+                      job_config_object: CondorJobConfig,
+                      number_of_jobs: int,
+                      output_path: str) -> List[CondorJob]:
+    phi_keys = ["gae", "reward-to-go", "return", "value-baseline"]
+    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_phi_{x}') for x in phi_keys for seed in seeds]
+    adjustments = {translate_keys_to_string(['architecture_config',
+                                            'initialisation_seed']): seeds * len(phi_keys),
+                   translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'criterion']):
+                       [x for x in phi_keys for _ in range(len(seeds))]}
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)
