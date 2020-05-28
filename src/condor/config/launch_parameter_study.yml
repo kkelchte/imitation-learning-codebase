@@ -1,5 +1,5 @@
-output_path: parameter_study/kl_target
-mode: kl_target_study
+output_path: parameter_study/max_train_steps
+mode: max_train_steps_study
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:
