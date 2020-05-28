@@ -113,7 +113,7 @@ def prepare_ppo_epsilon_study(base_config_file: str,
                    translate_keys_to_string(['trainer_config', 'ppo_epsilon']):
                        [x for x in ppo_epsilon for _ in range(len(seeds))],
                    translate_keys_to_string(['trainer_config', 'factory_key']):
-                       ['PPO' for _ in range(len(seeds))]}
+                       ['PPO' for x in ppo_epsilon for _ in range(len(seeds))]}
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)
