@@ -26,7 +26,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         if self._config.max_actor_training_iterations == "default":
             self._config.max_actor_training_iterations = 10
         if self._config.max_critic_training_iterations == "default":
-            self._config.max_critic_training_iterations = 3
+            self._config.max_critic_training_iterations = 10
 
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
