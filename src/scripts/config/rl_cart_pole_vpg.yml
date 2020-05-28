@@ -21,7 +21,7 @@ tensorboard: true
 trainer_config:
   criterion: MSELoss
   learning_rate: 0.001
-  optimizer: SGD
+  optimizer: Adam
   data_loader_config:
     batch_size: 50
     data_sampling_seed: 123
