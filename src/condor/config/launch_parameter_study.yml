@@ -1,5 +1,5 @@
-output_path: parameter_study/phi
-mode: phi_study
+output_path: parameter_study/kl_target
+mode: kl_target_study
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:
@@ -11,7 +11,7 @@ job_configs:
     gpus: 1
     cpu_mem_gb: 25
     disk_mem_gb: 52
-    wall_time_s: 30 * 60 * 60
+    wall_time_s: 6 * 60 * 60
     nice: true
     gpu_mem_mb: 1900
     use_singularity: false
