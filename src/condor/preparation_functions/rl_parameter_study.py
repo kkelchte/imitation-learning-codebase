@@ -131,7 +131,7 @@ def prepare_kl_target_study(base_config_file: str,
     adjustments = {translate_keys_to_string(['architecture_config',
                                             'initialisation_seed']): seeds * len(kl_targets),
                    translate_keys_to_string(['output_path']): model_paths,
-                   translate_keys_to_string(['trainer_config', 'ppo_epsilon']):
+                   translate_keys_to_string(['trainer_config', 'kl_target']):
                        [x for x in kl_targets for _ in range(len(seeds))],
                    translate_keys_to_string(['trainer_config', 'factory_key']):
                        ['PPO' for x in kl_targets for _ in range(len(seeds))]}
