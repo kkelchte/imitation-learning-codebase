@@ -119,3 +119,24 @@ def prepare_ppo_epsilon_study(base_config_file: str,
                                   adjustments=adjustments)
     return create_jobs_from_job_config_files(config_files,
                                              job_config_object=job_config_object)
+
+
+def prepare_kl_target_study(base_config_file: str,
+                            job_config_object: CondorJobConfig,
+                            number_of_jobs: int,
+                            output_path: str) -> List[CondorJob]:
+    kl_targets = [0.001, 0.005, 0.01, 0.05, 0.1]
+    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_kl_{x}') for x in kl_targets for seed in seeds]
+    adjustments = {translate_keys_to_string(['architecture_config',
+                                            'initialisation_seed']): seeds * len(kl_targets),
+                   translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'ppo_epsilon']):
+                       [x for x in kl_targets for _ in range(len(seeds))],
+                   translate_keys_to_string(['trainer_config', 'factory_key']):
+                       ['PPO' for x in kl_targets for _ in range(len(seeds))]}
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
