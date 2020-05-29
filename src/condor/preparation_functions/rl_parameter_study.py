@@ -160,7 +160,7 @@ def prepare_ppo_max_train_steps_study(base_config_file: str,
                        [x for _ in max_value_training_iterations
                         for x in max_actor_training_iterations
                         for _ in range(len(seeds))],
-                   translate_keys_to_string(['trainer_config', 'max_value_training_iterations']):
+                   translate_keys_to_string(['trainer_config', 'max_critic_training_iterations']):
                        [x for x in max_value_training_iterations
                         for _ in max_actor_training_iterations
                         for _ in range(len(seeds))],
