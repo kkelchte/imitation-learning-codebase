@@ -1,4 +1,4 @@
-output_path: cube_world
+output_path: cube_world/models/seed_5100
 mode: dag_train_evaluate
 job_configs:
   - command: python3.8 src/scripts/experiment.py
@@ -25,6 +25,7 @@ job_configs:
     use_singularity: true
     check_if_ros_already_in_use: false
     save_locally: true
+    extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
   - 3
   - 3
