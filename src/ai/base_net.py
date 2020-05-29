@@ -102,6 +102,11 @@ class BaseNet(nn.Module):
                     nn.init.xavier_uniform_(p)
             elif initialisation_type == 'constant':
                 nn.init.constant_(p, 0.03)
+            elif initialisation_type == 'orthogonal':
+                if len(p.shape) == 1:
+                    nn.init.uniform_(p, a=-0.03, b=0.03)
+                else:
+                    nn.init.orthogonal_(p, 1)
             else:
                 raise NotImplementedError
 

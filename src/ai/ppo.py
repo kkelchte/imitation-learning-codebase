@@ -1,5 +1,6 @@
 #!/usr/bin/python3.8
 import torch
+from torch import nn
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import TrainerConfig
@@ -41,17 +42,24 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             new_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
                                                                        actions=batch.actions,
                                                                        train=True)
+            entropy_loss = - self._config.entropy_coefficient * \
+                self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32),
+                                             train=True).mean()
 
             ratio = torch.exp(new_log_probabilities - original_log_probabilities)
             batch_loss = -torch.min(ratio * phi_weights,
                                     ratio.clamp(1 - self._config.ppo_epsilon,
-                                                1 + self._config.ppo_epsilon) * phi_weights).mean()
+                                                1 + self._config.ppo_epsilon) * phi_weights).mean() + entropy_loss
+
             kl_approximation = (original_log_probabilities - new_log_probabilities).mean().item()
 
             if kl_approximation > 1.5 * self._config.kl_target:
                 print(f'EARLY BREAK {_}')
                 break
             batch_loss.backward()
+            if self._config.gradient_clip_norm != -1:
+                nn.utils.clip_grad_norm_(self._net.get_actor_parameters(),
+                                         self._config.gradient_clip_norm)
             self._actor_optimizer.step()
             actor_loss.append(batch_loss.detach())
         return Distribution(torch.stack(actor_loss))
@@ -60,6 +68,25 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         critic_loss = []
         for value_train_it in range(self._config.max_critic_training_iterations):
             critic_loss.append(super()._train_critic(batch, targets))
+        return Distribution(torch.stack(critic_loss))
+
+    def _train_critic_clipped(self, batch: Dataset, targets: torch.Tensor) -> Distribution:
+        critic_loss = []
+        previous_values = self._net.critic(inputs=batch.observations, train=True).squeeze().detach()
+        for value_train_it in range(self._config.max_critic_training_iterations):
+            batch_values = self._net.critic(inputs=batch.observations, train=True).squeeze()
+            batch_loss = self._criterion(batch_values, targets)
+            # absolute clipping
+            clipped_values = previous_values + (batch_values - previous_values).clamp(-self._config.ppo_epsilon,
+                                                                                      self._config.ppo_epsilon)
+            clipped_loss = self._criterion(clipped_values, targets)
+            batch_loss = torch.max(batch_loss, clipped_loss)
+            batch_loss.mean().backward()
+            if self._config.gradient_clip_norm != -1:
+                nn.utils.clip_grad_norm_(self._net.get_critic_parameters(),
+                                         self._config.gradient_clip_norm)
+            self._critic_optimizer.step()
+            critic_loss.append(batch_loss.detach())
         return Distribution(torch.stack(critic_loss))
 
     def train(self, epoch: int = -1, writer=None) -> str:
@@ -72,16 +99,23 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                                                         actions=batch.actions,
                                                                         train=False).detach()
         actor_loss_distribution = self._train_actor_ppo(batch, phi_weights, original_log_probabilities)
-        critic_loss_distribution = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
+        #        critic_loss_distribution = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
+        # In case of advantages, use current value estimate with advantage to get target estimate
+        critic_targets = get_reward_to_go(batch).to(self._device) if self._config.phi_key != 'gae' else \
+            self._net.critic(inputs=batch.observations, train=True).squeeze().detach() + phi_weights
+        critic_loss_distribution = self._train_critic_clipped(batch, critic_targets)
 
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(actor_loss_distribution, "policy_loss")
             writer.write_distribution(critic_loss_distribution, "critic_loss")
 
+        if self._actor_scheduler is not None:
+            self._actor_scheduler.step()
+        if self._critic_scheduler is not None:
+            self._critic_scheduler.step()
         self._net.global_step += 1
         self._save_checkpoint(epoch=epoch)
         self.put_model_back_to_original_device()
-
         return f" training policy loss {actor_loss_distribution.mean: 0.3e} [{actor_loss_distribution.std: 0.2e}], " \
                f"critic loss {critic_loss_distribution.mean: 0.3e} [{critic_loss_distribution.std: 0.3e}]"
