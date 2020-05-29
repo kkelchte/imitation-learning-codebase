@@ -34,6 +34,7 @@ class GetItem(Protocol):
 class ArchitectureConfig(Config):
     architecture: str = None  # name of architecture to be loaded
     load_checkpoint_dir: Optional[str] = None  # path to checkpoints
+    load_checkpoint_found: bool = True
     initialisation_type: str = 'xavier'
     initialisation_seed: int = 0
     device: str = 'cpu'
@@ -81,6 +82,11 @@ class BaseNet(nn.Module):
                 self._config.load_checkpoint_dir = f'{os.environ["DATADIR"]}/{self._config.load_checkpoint_dir}'\
                     if "DATADIR" in os.environ.keys() else f'{os.environ["HOME"]}/{self._config.load_checkpoint_dir}'
             self.load_from_checkpoint(checkpoint_dir=self._config.load_checkpoint_dir)
+        elif self._config.load_checkpoint_found:
+            if len([ckpt for ckpt in os.listdir(self._checkpoint_output_directory) if ckpt.endswith('ckpt')]) > 0:
+                self.load_from_checkpoint(checkpoint_dir=self._checkpoint_output_directory)
+            else:
+                self.initialize_architecture_weights(self._config.initialisation_type)
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)
         cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
