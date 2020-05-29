@@ -121,10 +121,10 @@ def prepare_ppo_epsilon_study(base_config_file: str,
                                              job_config_object=job_config_object)
 
 
-def prepare_kl_target_study(base_config_file: str,
-                            job_config_object: CondorJobConfig,
-                            number_of_jobs: int,
-                            output_path: str) -> List[CondorJob]:
+def prepare_ppo_kl_target_study(base_config_file: str,
+                                job_config_object: CondorJobConfig,
+                                number_of_jobs: int,
+                                output_path: str) -> List[CondorJob]:
     kl_targets = [0.001, 0.005, 0.01, 0.05, 0.1]
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_kl_{x}') for x in kl_targets for seed in seeds]
@@ -142,10 +142,10 @@ def prepare_kl_target_study(base_config_file: str,
                                              job_config_object=job_config_object)
 
 
-def prepare_max_train_steps_study(base_config_file: str,
-                                  job_config_object: CondorJobConfig,
-                                  number_of_jobs: int,
-                                  output_path: str) -> List[CondorJob]:
+def prepare_ppo_max_train_steps_study(base_config_file: str,
+                                      job_config_object: CondorJobConfig,
+                                      number_of_jobs: int,
+                                      output_path: str) -> List[CondorJob]:
     max_value_training_iterations = [1, 5, 10, 50]
     max_actor_training_iterations = [1, 5, 10, 50]
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
