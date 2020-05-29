@@ -1,5 +1,5 @@
 output_path: cube_world
-number_of_epochs: 200
+number_of_epochs: 500
 number_of_episodes: -1
 architecture_config:
   architecture: tiny_128_rgb_6c
