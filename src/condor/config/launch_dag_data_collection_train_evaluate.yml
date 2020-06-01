@@ -49,7 +49,7 @@ job_configs:
     check_if_ros_already_in_use: false
     save_locally: true
 number_of_jobs:
-  - 10
+  - 3
   - 1
   - 3
   - 3
