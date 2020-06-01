@@ -233,12 +233,13 @@ class RosEnvironment(Environment):
 
     def _pause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
-        os.system("")
+        self._pause_client.wait_for_service()
         self._pause_client(EmptyRequest())
         #os.system("rosservice call gazebo/pause_physics")
 
     def _unpause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
+        self._unpause_client.wait_for_service()
         self._unpause_client(EmptyRequest())
         #os.system("rosservice call gazebo/unpause_physics")
 
