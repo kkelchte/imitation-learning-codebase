@@ -1,0 +1,20 @@
+output_path: straight_corridor_hacky_PPO_param_study
+base_config_files:
+  - src/scripts/config/rl_train_interactive_straight_corridor.yml
+mode: learning_rate_study
+job_configs:
+  - command: python3.8 src/scripts/experiment.py
+    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
+    cpus: 11
+    gpus: 1
+    cpu_mem_gb: 25
+    disk_mem_gb: 52
+    wall_time_s: 12 * 60 * 60
+    nice: true
+    gpu_mem_mb: 1900
+    use_singularity: true
+    check_if_ros_already_in_use: false
+    save_locally: true
+    extra_requirements: ( Mips >= 26000 )
+number_of_jobs:
+  - 1
