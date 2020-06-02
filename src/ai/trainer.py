@@ -1,15 +1,17 @@
 #!/usr/bin/python3
 
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, Optional
 
 from dataclasses_json import dataclass_json
+from torch import nn
 from tqdm import tqdm
 import torch  # Don't remove
 
 from src.ai.base_net import BaseNet
 from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.utils import data_to_tensor
+from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -23,9 +25,22 @@ Allows combination of outputs as weighted sum in one big backward pass.
 
 @dataclass_json
 @dataclass
+class SchedulerConfig(Config):
+    step_size: int = 10
+    gamma: int = 0.9
+
+
+@dataclass_json
+@dataclass
 class TrainerConfig(EvaluatorConfig):
     optimizer: str = 'SGD'
     learning_rate: float = 0.01
+    actor_learning_rate: float = -1
+    critic_learning_rate: float = -1
+    scheduler_config: Optional[SchedulerConfig] = None
+    entropy_coefficient: float = 0
+    weight_decay: float = 0
+    gradient_clip_norm: float = -1
     save_checkpoint_every_n: int = 10
     factory_key: str = "BASE"
     phi_key: str = "default"
@@ -38,6 +53,8 @@ class TrainerConfig(EvaluatorConfig):
 
     def __post_init__(self):
         # add options in post_init so they are easy to find
+        if self.scheduler_config is None:
+            del self.scheduler_config
         assert self.phi_key in ["default", "gae", "reward-to-go", "return", "value-baseline"]
 
 
@@ -53,7 +70,12 @@ class Trainer(Evaluator):
                                       quiet=True)
             cprint(f'Started.', self._logger)
             self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
-                                                                            lr=self._config.learning_rate)
+                                                                            lr=self._config.learning_rate,
+                                                                            weight_decay=self._config.weight_decay)
+            self._scheduler = torch.optim.lr_scheduler.StepLR(self._optimizer,
+                                                              step_size=self._config.scheduler_config.step_size,
+                                                              gamma=self._config.scheduler_config.gamma) \
+                if self._config.scheduler_config is not None else None
 
     def _save_checkpoint(self, epoch: int = -1):
         if epoch != -1:
@@ -72,11 +94,17 @@ class Trainer(Evaluator):
             targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
             loss = self._criterion(predictions, targets).mean()
             loss.backward()  # calculate gradients
+            if self._config.gradient_clip_norm != -1:
+                nn.utils.clip_grad_norm_(self._net.parameters(),
+                                         self._config.gradient_clip_norm)
             self._optimizer.step()  # apply gradients according to optimizer
             self._net.global_step += 1
             total_error.append(loss.cpu().detach())
         self.put_model_back_to_original_device()
         self._save_checkpoint(epoch)
+
+        if self._scheduler is not None:
+            self._scheduler.step()
 
         error_distribution = Distribution(total_error)
         if writer is not None:

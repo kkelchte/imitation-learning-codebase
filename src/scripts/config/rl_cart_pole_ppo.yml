@@ -2,7 +2,7 @@ architecture_config:
   architecture: cart_pole_4_2d_stochastic
   device: cuda
   initialisation_seed: 123
-  initialisation_type: xavier
+  initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
   store_on_ram_only: true
@@ -14,21 +14,25 @@ environment_config:
     world_name: CartPole-v0
   max_number_of_steps: -1  # let number of steps depend on environment
 number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
-number_of_epochs: 10000
-output_path: cart_pole_ppo
+number_of_epochs: 500
+output_path: cart_pole_ppo_clipped_value_clip_norm_ortho_tanh_scaled
 tensorboard: true
 trainer_config:
   criterion: MSELoss
   learning_rate: 0.001
+  gradient_clip_norm: 0.5
   optimizer: Adam
   data_loader_config:
     batch_size: 50
     data_sampling_seed: 123
+    observation_clipping: 5
+    reward_clipping: 5
   device: cuda
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
+  entropy_coefficient: 0.
   save_checkpoint_every_n: 100
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10

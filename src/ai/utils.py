@@ -34,7 +34,7 @@ def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
     return data
 
 
-def mlp_creator(sizes: List[int], activation: nn.Module, output_activation=nn.Module):
+def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.Module = None):
     """Create Multi-Layer Perceptron"""
     layers = []
     for j in range(len(sizes)-1):
