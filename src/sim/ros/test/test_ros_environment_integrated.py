@@ -22,7 +22,7 @@ config_dict = {
             "sensor/odometry"
         ],
         "observation": "forward_camera",
-        "max_update_wait_period_s": 120,
+        "max_update_wait_period_s": 10,
         "store_action": True,
         "store_reward": True,
         "visible_xterm": False,
