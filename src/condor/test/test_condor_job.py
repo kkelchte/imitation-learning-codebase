@@ -183,47 +183,47 @@ class TestCondorJob(unittest.TestCase):
         self.assertTrue(os.path.isfile(pre_existing_file))
         self.assertEqual(get_file_length(pre_existing_file), 3)
         self.assertTrue(os.path.isfile(os.path.join(nested_path, 'new_file')))
-    #
-    # @unittest.skip
-    # def test_ros_is_already_running(self):  # NOT WORKING CURRENTLY
-    #     # launch first 'ros' job
-    #     config_dict = {
-    #         'output_path': self.output_dir,
-    #         'command': 'python src/condor/test/dummy_ros_script.py',
-    #         'use_singularity': True,
-    #         'gpus': 0,
-    #         'check_if_ros_already_in_use': True,
-    #         'green_list': ['ricotta']
-    #     }
-    #     config = CondorJobConfig().create(config_dict=config_dict)
-    #     job = CondorJob(config=config)
-    #     job.write_job_file()
-    #     job.write_executable_file()
-    #     self.assertEqual(job.submit(), 0)
-    #     time.sleep(10)
-    #     # launch first 'second' job
-    #     config_dict = {
-    #         'output_path': self.output_dir,
-    #         'command': 'python src/condor/test/dummy_python_script.py --config src/condor/test/dummy_config.yml',
-    #         'use_singularity': True,
-    #         'gpus': 0,
-    #         'green_list': ['ricotta'],
-    #         'check_if_ros_already_in_use': True,
-    #     }
-    #     config = CondorJobConfig().create(config_dict=config_dict)
-    #     job = CondorJob(config=config)
-    #     job.write_job_file()
-    #     job.write_executable_file()
-    #     self.assertEqual(job.submit(), 0)
-    #
-    #     while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
-    #         time.sleep(1)  # Assuming this is only condor job
-    #
-    #     # assert second job was put on hold
-    #     read_file_to_output(job.log_file)
-    #     with open(job.log_file, 'r') as f:
-    #         lines = f.readlines()
-    #     self.assertTrue(sum(['hold' in l for l in lines]))
+
+    @unittest.skip
+    def test_ros_is_already_running(self):  # NOT WORKING CURRENTLY
+        # launch first 'ros' job
+        config_dict = {
+            'output_path': self.output_dir,
+            'command': 'python src/condor/test/dummy_ros_script.py',
+            'use_singularity': False,
+            'gpus': 0,
+            'check_if_ros_already_in_use': True,
+            'green_list': ['ricotta']
+        }
+        config = CondorJobConfig().create(config_dict=config_dict)
+        job = CondorJob(config=config)
+        job.write_job_file()
+        job.write_executable_file()
+        self.assertEqual(job.submit(), 0)
+        time.sleep(10)
+        # launch first 'second' job
+        config_dict = {
+            'output_path': self.output_dir,
+            'command': 'python src/condor/test/dummy_python_script.py --config src/condor/test/dummy_config.yml',
+            'use_singularity': True,
+            'gpus': 0,
+            'green_list': ['ricotta'],
+            'check_if_ros_already_in_use': True,
+        }
+        config = CondorJobConfig().create(config_dict=config_dict)
+        job = CondorJob(config=config)
+        job.write_job_file()
+        job.write_executable_file()
+        self.assertEqual(job.submit(), 0)
+
+        while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
+            time.sleep(1)  # Assuming this is only condor job
+
+        # assert second job was put on hold
+        read_file_to_output(job.log_file)
+        with open(job.log_file, 'r') as f:
+            lines = f.readlines()
+        self.assertTrue(sum(['hold' in l for l in lines]))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

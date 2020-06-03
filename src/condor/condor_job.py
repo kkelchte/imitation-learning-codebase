@@ -140,7 +140,8 @@ class CondorJob:
         subprocess.call(shlex.split("chmod 711 {0}".format(self.job_file)))
 
     def _add_check_for_ros_lines(self) -> str:  # NOT WORKING CURRENTLY
-        lines = 'ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d \'=\' -f 2 | tail -1 | tr -d [:space:]) \n'
+        lines = 'ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | head -1 | ' \
+                'cut -d \'=\' -f 2 | tail -1 | tr -d [:space:]) \n'
         lines += 'ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
         lines += 'JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
         lines += 'RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d \'=\' -f 2 ' \
