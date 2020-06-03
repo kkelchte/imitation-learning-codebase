@@ -39,7 +39,7 @@ class CondorJobConfig(Config):
     singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1]
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
-    extra_requirements: str = None
+    extra_requirements: Optional[str] = None
 
     def __post_init__(self):
         if self.black_list is None:
@@ -111,7 +111,7 @@ class CondorJob:
             requirements += ' && ('
             for good_machine in self._config.green_list:
                 requirements += f'(machine == \"{good_machine}.esat.kuleuven.be\") || '
-            requirements = f'{requirements[:-2]})'
+            requirements = f'{requirements[:-3]})'
         if self._config.extra_requirements is not None:
             requirements += f' && {self._config.extra_requirements}'
         return requirements
