@@ -192,6 +192,7 @@ class TestCondorJob(unittest.TestCase):
             'command': 'python src/condor/test/dummy_ros_script.py',
             'use_singularity': False,
             'gpus': 0,
+            'wall_time_s': 120,
             'check_if_ros_already_in_use': True,
             'green_list': ['ricotta']
         }
@@ -207,6 +208,7 @@ class TestCondorJob(unittest.TestCase):
             'command': 'python src/condor/test/dummy_python_script.py --config src/condor/test/dummy_config.yml',
             'use_singularity': True,
             'gpus': 0,
+            'wall_time_s': 120,
             'green_list': ['ricotta'],
             'check_if_ros_already_in_use': True,
         }
