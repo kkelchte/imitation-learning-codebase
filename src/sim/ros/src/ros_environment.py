@@ -92,10 +92,12 @@ class RosEnvironment(Environment):
 
         # Subscribe to action
         self._action = None
-        rospy.Subscriber(name=rospy.get_param('/robot/command_topic', ''),
-                         data_class=Twist,
-                         callback=self._set_field,
-                         callback_args=('action', {}))
+        if self._config.ros_config.action == '' or not self._subscribe_action(self._config.ros_config.action):
+            if rospy.has_param('/robot/command_topic'):
+                rospy.Subscriber(name=rospy.get_param('/robot/command_topic'),
+                                 data_class=Twist,
+                                 callback=self._set_field,
+                                 callback_args=('action', {}))
 
         # Add info sensors
         if self._config.ros_config.info is not None:
@@ -124,6 +126,16 @@ class RosEnvironment(Environment):
                 self._run_shortly()
 
         cprint('ready', self._logger)
+
+    def _subscribe_action(self, actor: str) -> bool:
+        actor_config = [c for c in self._config.ros_config.actor_configs if c.name == actor]
+        if len(actor_config) == 0:
+            return False
+        rospy.Subscriber(name=f'{actor_config[0].specs["command_topic"]}',
+                         data_class=Twist,
+                         callback=self._set_field,
+                         callback_args=('action', {}))
+        return True
 
     def _subscribe_observation(self, sensor: str) -> None:
         available_sensor_list = rospy.get_param('/robot/sensors', [])
@@ -175,6 +187,15 @@ class RosEnvironment(Environment):
                     name='supervised_action',
                     specs={
                         'command_topic': rospy.get_param('/control_mapping/supervision_topic')
+                    }
+                )
+            )
+        if 'command' in info_objects:
+            actor_configs.append(
+                ActorConfig(
+                    name='applied_action',
+                    specs={
+                        'command_topic': rospy.get_param('/robot/command_topic', '')
                     }
                 )
             )
