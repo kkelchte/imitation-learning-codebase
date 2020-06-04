@@ -170,6 +170,20 @@ class TestDataLoader(unittest.TestCase):
         self.assertTrue(weights[0] - 2. < 0.1)
         self.assertTrue(weights[30] - 0.57157 < 0.1)
 
+    def test_data_subsample(self):
+        subsample = 4
+        config_dict = {
+            'data_directories': self.info['episode_directories'],
+            'output_path': self.output_dir,
+            'data_sampling_seed': 1,
+            'batch_size': 3,
+            'subsample': subsample
+        }
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
+        data_loader.load_dataset()
+        self.assertTrue(sum([np.ceil((el - 1) / subsample) + 1 for el in self.info['episode_lengths']]),
+                        len(data_loader.get_dataset()))
+
     # def test_data_balancing(self): TODO
     #     # average action variance in batch with action balancing
     #     config = DataLoaderConfig().create(config_dict={

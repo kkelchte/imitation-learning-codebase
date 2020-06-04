@@ -3,6 +3,7 @@ import unittest
 import os
 
 import torch
+import numpy as np
 
 from src.data.data_loader import DataLoader, DataLoaderConfig
 from src.data.data_saver import DataSaver, DataSaverConfig
@@ -85,6 +86,29 @@ class TestDataSaver(unittest.TestCase):
 
         self.assertEqual(len(training_data), sum(info['episode_lengths'][:int(split * num_runs)]))
         self.assertEqual(len(validation_data), sum(info['episode_lengths'][int(split * num_runs):]))
+
+    def test_create_hdf5_files_subsampled_in_time(self):
+        num_runs = 10
+        split = 1.0
+        subsample = 3
+        config_dict = {
+            'output_path': self.output_dir,
+            'training_validation_split': split,
+            'store_hdf5': True,
+            'subsample_hdf5': subsample
+        }
+        config = DataSaverConfig().create(config_dict=config_dict)
+        self.data_saver = DataSaver(config=config)
+        info = generate_dummy_dataset(self.data_saver, num_runs=num_runs)
+        self.data_saver.create_train_validation_hdf5_files()
+
+        config = DataLoaderConfig().create(config_dict={'output_path': self.output_dir,
+                                                        'hdf5_file': 'train.hdf5'})
+        training_data_loader = DataLoader(config=config)
+        training_data_loader.load_dataset()
+        training_data = training_data_loader.get_dataset()
+
+        self.assertEqual(len(training_data), sum([np.ceil((el - 1) / subsample) + 1 for el in info['episode_lengths']]))
 
     def test_empty_saving_directory(self):
         config_dict = {

@@ -124,3 +124,22 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
             for exp in experiences:
                 self.append(exp)
             self._check_length()
+
+    def subsample(self, subsample: int):
+        to_be_deleted_indices = []
+        index = 0
+        run_step = 0
+        while index < len(self):
+            if run_step % subsample != 0 and self.done[index].item() == 0:
+                to_be_deleted_indices.append(index)
+            if self.done[index].item() != 0:
+                run_step = 0
+            else:
+                run_step += 1
+            index += 1
+
+        for index in reversed(to_be_deleted_indices):
+            del self.observations[index]
+            del self.actions[index]
+            del self.rewards[index]
+            del self.done[index]

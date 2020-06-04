@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from src.core.data_types import Distribution
+from src.core.data_types import Distribution, Dataset, Experience
 
 
 class TestDatatypes(unittest.TestCase):
@@ -22,6 +22,23 @@ class TestDatatypes(unittest.TestCase):
         self.assertEqual(distribution.min, 10)
         self.assertEqual(distribution.mean, 10)
         self.assertEqual(distribution.std, 0)
+
+    def test_dataset_subsample(self):
+        run_length = 10
+        subsample = 3
+        dataset = Dataset()
+        for run_index in range(3):
+            for step_index in range(run_length + run_index):
+                dataset.append(Experience(
+                    observation=torch.as_tensor((step_index,)),
+                    action=torch.as_tensor((0,)),
+                    reward=torch.as_tensor((0,)),
+                    done=torch.as_tensor((0,)) if step_index != run_length + run_index - 1 else torch.as_tensor((1,))
+                ))
+        dataset.subsample(subsample)
+        for exp_index in range(len(dataset)):
+            self.assertTrue(dataset.observations[exp_index].item() % subsample == 0
+                            or dataset.done[exp_index].item() == 1)
 
 
 if __name__ == '__main__':

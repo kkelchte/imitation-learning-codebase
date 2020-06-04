@@ -27,10 +27,12 @@ class DataLoaderConfig(Config):
     batch_size: int = 64
     observation_clipping: int = -1
     reward_clipping: int = -1
+    subsample: int = 1
 
     def post_init(self):  # add default options
         if self.data_directories is None:
             self.data_directories = []
+        assert self.subsample >= 1
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
@@ -82,6 +84,9 @@ class DataLoader:
                     self._dataset.extend(experiences=run)
             cprint(f'Loaded {len(self._dataset)} data points from {len(self._config.data_directories)} directories',
                    self._logger, msg_type=MessageType.warning if len(self._dataset) == 0 else MessageType.info)
+
+        if self._config.subsample != 1:
+            self._dataset.subsample(self._config.subsample)
 
         if self._config.balance_over_actions:
             self._probabilities = balance_weights_over_actions(self._dataset)
