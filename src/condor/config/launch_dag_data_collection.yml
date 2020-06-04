@@ -25,7 +25,7 @@ job_configs:
     check_if_ros_already_in_use: False
     save_locally: False
 number_of_jobs:
-  - 10
+  - 3
   - 1
 base_config_files:
   - src/scripts/config/il_data_collection_cube_world.yml

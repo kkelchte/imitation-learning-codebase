@@ -39,7 +39,7 @@ class CondorJobConfig(Config):
     singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1]
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
-    extra_requirements: str = None
+    extra_requirements: Optional[str] = None
 
     def __post_init__(self):
         if self.black_list is None:
@@ -111,7 +111,7 @@ class CondorJob:
             requirements += ' && ('
             for good_machine in self._config.green_list:
                 requirements += f'(machine == \"{good_machine}.esat.kuleuven.be\") || '
-            requirements = f'{requirements[:-2]})'
+            requirements = f'{requirements[:-3]})'
         if self._config.extra_requirements is not None:
             requirements += f' && {self._config.extra_requirements}'
         return requirements
@@ -140,7 +140,8 @@ class CondorJob:
         subprocess.call(shlex.split("chmod 711 {0}".format(self.job_file)))
 
     def _add_check_for_ros_lines(self) -> str:  # NOT WORKING CURRENTLY
-        lines = 'ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | cut -d \'=\' -f 2 | tail -1 | tr -d [:space:]) \n'
+        lines = 'ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | head -1 | ' \
+                'cut -d \'=\' -f 2 | tail -1 | tr -d [:space:]) \n'
         lines += 'ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
         lines += 'JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
         lines += 'RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d \'=\' -f 2 ' \

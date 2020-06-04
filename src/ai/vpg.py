@@ -74,9 +74,8 @@ class VanillaPolicyGradient(Trainer):
         log_probability = self._net.policy_log_probabilities(torch.stack(batch.observations).type(torch.float32),
                                                              torch.stack(batch.actions).type(torch.float32),
                                                              train=True)
-        entropy_loss = - self._config.entropy_coefficient * \
-            self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32),
-                                         train=True).mean()
+        entropy = self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32), train=True)
+        entropy_loss = - self._config.entropy_coefficient * entropy.mean()
         policy_loss = -(log_probability * phi_weights) + entropy_loss
         policy_loss.mean().backward()
         if self._config.gradient_clip_norm != -1:
@@ -94,7 +93,7 @@ class VanillaPolicyGradient(Trainer):
             nn.utils.clip_grad_norm_(self._net.get_critic_parameters(),
                                      self._config.gradient_clip_norm)
         self._critic_optimizer.step()
-        return critic_loss.mean().detach()
+        return critic_loss.detach()
 
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()

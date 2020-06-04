@@ -1,5 +1,5 @@
 output_path: cube_world
-number_of_epochs: 500
+number_of_epochs: 100
 number_of_episodes: -1
 architecture_config:
   architecture: tiny_128_rgb_6c
@@ -12,7 +12,7 @@ architecture_config:
   log_std: default
 trainer_config:
   optimizer: SGD
-  learning_rate: 0.001
+  learning_rate: 0.01
   save_checkpoint_every_n: 10
   factory_key: BASE
   data_loader_config:

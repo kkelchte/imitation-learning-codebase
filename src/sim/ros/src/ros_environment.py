@@ -233,12 +233,13 @@ class RosEnvironment(Environment):
 
     def _pause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
-        os.system("")
+        self._pause_client.wait_for_service()
         self._pause_client(EmptyRequest())
         #os.system("rosservice call gazebo/pause_physics")
 
     def _unpause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
+        self._unpause_client.wait_for_service()
         self._unpause_client(EmptyRequest())
         #os.system("rosservice call gazebo/unpause_physics")
 
@@ -320,7 +321,9 @@ class RosEnvironment(Environment):
 
     def _run_and_update_experience(self):
         self._clear_experience_values()
+        start_rospy_time = rospy.get_time()
         start_time = time.time()
+        self._run_shortly()
         while not self._update_current_experience():
             self._run_shortly()
             if time.time() - start_time > self._config.ros_config.max_update_wait_period_s:
@@ -330,6 +333,7 @@ class RosEnvironment(Environment):
                        msg_type=MessageType.warning)
                 self.remove()
                 sys.exit(1)
+        self._current_experience.info['run_time_duration_s'] = rospy.get_time() - start_rospy_time
 
     def reset(self) -> Tuple[Experience, np.ndarray]:
         """
@@ -342,7 +346,7 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
         self._clear_experience_values()
-        while self.fsm_state != FsmState.Running or self._observation is None:
+        while self.fsm_state != FsmState.Running or self._observation is None or self._terminal_state is None:
             self._run_shortly()
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
@@ -354,7 +358,6 @@ class RosEnvironment(Environment):
 
     def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:
         self._step += 1
-        self._clear_experience_values()
         if action is not None:
             self._action_publisher.publish(adapt_action_to_twist(action))
         self._run_and_update_experience()

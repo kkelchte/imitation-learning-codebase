@@ -1,5 +1,5 @@
 output_path: straight_corridor
-number_of_epochs: 3000
+number_of_epochs: 1000
 number_of_episodes: -1
 architecture_config:
   architecture: straight_corridor_depth_30_3d_stochastic
@@ -15,8 +15,7 @@ environment_config:
     store_action: true
     store_reward: true
     visible_xterm: false
-    step_rate_fps: 30
-    max_update_wait_period_s: 30
+    step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
       robot_name: turtlebot_sim
@@ -37,11 +36,12 @@ data_saver_config:
 tensorboard: true
 trainer_config:
   criterion: MSELoss
-  learning_rate: 0.001
+  actor_learning_rate: 0.0001
+  critic_learning_rate: 0.0005
   gradient_clip_norm: 0.5
   optimizer: Adam
   data_loader_config:
-    batch_size: 50
+    batch_size: 200
     data_sampling_seed: 123
     observation_clipping: 5
     reward_clipping: 5
@@ -50,9 +50,9 @@ trainer_config:
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
-  entropy_coefficient: 0.05
+  entropy_coefficient: 0.1
   save_checkpoint_every_n: 100
   max_actor_training_iterations: 10
-  max_critic_training_iterations: 10
+  max_critic_training_iterations: 20
   ppo_epsilon: 0.2
   kl_target: 0.01

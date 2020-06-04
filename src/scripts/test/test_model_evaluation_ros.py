@@ -18,7 +18,7 @@ experiment_config = {
     "tensorboard": False,
     "environment_config": {
       "factory_key": "ROS",
-      "max_number_of_steps": 5,
+      "max_number_of_steps": 3,
       "ros_config": {
         "info": [
             "current_waypoint",
@@ -26,7 +26,7 @@ experiment_config = {
         ],
         "observation": "sensor/forward_camera",
         "visible_xterm": False,
-        "step_rate_fps": 15,
+        "step_rate_fps": 30,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",

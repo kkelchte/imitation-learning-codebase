@@ -11,7 +11,7 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-WORLDNAME = 'straight_corridor'
+WORLDNAME = 'cube_world'
 config_dict = {
     "output_path": "/tmp",
     "factory_key": "ROS",
@@ -24,7 +24,7 @@ config_dict = {
         "max_update_wait_period_s": 120,
         "store_action": True,
         "store_reward": False,
-        "visible_xterm": True,
+        "visible_xterm": False,
         "step_rate_fps": 30,
         "ros_launch_config": {
           "random_seed": 123,
@@ -43,7 +43,7 @@ config_dict = {
         },
         "actor_configs": [{
               "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert_ca.yml"
+              "file": "src/sim/ros/config/actor/ros_expert_noisy.yml"
             }],
     }
 }
@@ -63,7 +63,7 @@ class ValidateExpert(unittest.TestCase):
         )
 
     def test_multiple_runs(self):
-        for _ in range(3):
+        for _ in range(1):
             experience, observation = self._environment.reset()
             self.assertTrue(experience.action is None)
             self.assertEqual(experience.done, TerminationType.NotDone)
