@@ -47,7 +47,7 @@ trainer_config:
     reward_clipping: 5
   device: cpu
   discount: 0.99
-  factory_key: PPO
+  factory_key: VPG
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.1
