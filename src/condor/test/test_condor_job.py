@@ -184,7 +184,7 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual(get_file_length(pre_existing_file), 3)
         self.assertTrue(os.path.isfile(os.path.join(nested_path, 'new_file')))
 
-    @unittest.skip
+    #@unittest.skip
     def test_ros_is_already_running(self):  # NOT WORKING CURRENTLY
         # launch first 'ros' job
         config_dict = {
