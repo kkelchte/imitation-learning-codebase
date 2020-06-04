@@ -1,7 +1,7 @@
-output_path: straight_corridor_hacky_PPO_param_study
+output_path: straight_corridor_hacky_PPO_param_study_bs
 base_config_files:
   - src/scripts/config/rl_train_interactive_straight_corridor.yml
-mode: learning_rate_study
+mode: batch_size_study
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
