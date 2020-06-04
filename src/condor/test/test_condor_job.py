@@ -192,8 +192,11 @@ class TestCondorJob(unittest.TestCase):
             'command': 'python src/condor/test/dummy_ros_script.py',
             'use_singularity': False,
             'gpus': 0,
+            'cpus': 1,
+            'cpu_mem_gb': 3,
+            'disk_mem_gb': 5,
             'check_if_ros_already_in_use': True,
-            'green_list': ['ricotta']
+            'green_list': ['jade']
         }
         config = CondorJobConfig().create(config_dict=config_dict)
         job = CondorJob(config=config)

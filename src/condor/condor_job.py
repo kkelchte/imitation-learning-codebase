@@ -143,24 +143,24 @@ class CondorJob:
         lines = 'ClusterId=$(cat $_CONDOR_JOB_AD | grep ClusterId | head -1 | ' \
                 'cut -d \'=\' -f 2 | tail -1 | tr -d [:space:]) \n'
         lines += 'ProcId=$(cat $_CONDOR_JOB_AD | grep ProcId | tail -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
-        lines += 'JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
+        lines += 'JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | tail -1 | cut -d \'=\' -f 2 | tr -d [:space:]) \n'
         lines += 'RemoteHost=$(cat $_CONDOR_JOB_AD | grep RemoteHost | head -1 | cut -d \'=\' -f 2 ' \
                  '| cut -d \'@\' -f 2 | cut -d \'.\' -f 1) \n'
         lines += 'Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d \'/\' -f 8) \n'
 
-        # lines += 'while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n'
-        lines += f'if [ -e {self.local_home}/* ] ; then'
-        lines += '\t echo found other ros job, so leaving machine $RemoteHost'
+        #lines += f'if [ -e {self.local_home}/* ] ; then'
+        lines += 'while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n'
+        lines += '\t echo found other ros job, so leaving machine $RemoteHost \n'
         lines += '\t ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n'
         lines += '\t while [ $JobStatus = 2 ] ; do \n'
         lines += '\t \t ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n'
-        lines += '\t \t JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | head -1 |' \
+        lines += '\t \t JobStatus=$(cat $_CONDOR_JOB_AD | grep JobStatus | tail -1 |' \
                  ' cut -d \'=\' -f 2 | tr -d [:space:]) \n'
         lines += '\t \t echo \"[$(date +%F_%H:%M:%S) $Command ] sleeping, status: $JobStatus\" \n'
         lines += '\t \t sleep $(( RANDOM % 30 )) \n'
         lines += '\t done \n'
         lines += '\t echo \"[$(date +%F_%H:%M:%S) $Command ] Put $Command on hold, status: $JobStatus\" \n'
-        lines += 'fi \n'
+        lines += 'done \n'
 
         lines += 'echo \"[$(date +%F_%H:%M:%S) $Command ] only $(condor_who | grep kkelchte | wc -l) job is running ' \
                  'on $RemoteHost so continue...\" \n'
