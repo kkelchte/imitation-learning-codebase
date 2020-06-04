@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import torch
+from torch import nn
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import Trainer, TrainerConfig
@@ -32,9 +33,21 @@ class VanillaPolicyGradient(Trainer):
             cprint(f'Started.', self._logger)
 
         self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_actor_parameters(),
-                                                                              lr=self._config.learning_rate)
+                                                                              lr=self._config.learning_rate
+                                                                              if self._config.actor_learning_rate == -1
+                                                                              else self._config.actor_learning_rate)
+        self._actor_scheduler = torch.optim.lr_scheduler.StepLR(self._actor_optimizer,
+                                                                step_size=self._config.scheduler_config.step_size,
+                                                                gamma=self._config.scheduler_config.gamma) \
+            if self._config.scheduler_config is not None else None
         self._critic_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_critic_parameters(),
-                                                                               lr=self._config.learning_rate)
+                                                                               lr=self._config.learning_rate
+                                                                               if self._config.critic_learning_rate == -1
+                                                                               else self._config.critic_learning_rate)
+        self._critic_scheduler = torch.optim.lr_scheduler.StepLR(self._actor_optimizer,
+                                                                 step_size=self._config.scheduler_config.step_size,
+                                                                 gamma=self._config.scheduler_config.gamma) \
+            if self._config.scheduler_config is not None else None
 
     def _calculate_phi(self, batch: Dataset) -> torch.Tensor:
         if self._config.phi_key == "return":
@@ -61,8 +74,14 @@ class VanillaPolicyGradient(Trainer):
         log_probability = self._net.policy_log_probabilities(torch.stack(batch.observations).type(torch.float32),
                                                              torch.stack(batch.actions).type(torch.float32),
                                                              train=True)
-        policy_loss = -(log_probability * phi_weights)
+        entropy_loss = - self._config.entropy_coefficient * \
+            self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32),
+                                         train=True).mean()
+        policy_loss = -(log_probability * phi_weights) + entropy_loss
         policy_loss.mean().backward()
+        if self._config.gradient_clip_norm != -1:
+            nn.utils.clip_grad_norm_(self._net.get_actor_parameters(),
+                                     self._config.gradient_clip_norm)
         self._actor_optimizer.step()
         return policy_loss.mean().detach()
 
@@ -71,6 +90,9 @@ class VanillaPolicyGradient(Trainer):
         critic_loss = self._criterion(self._net.critic(inputs=batch.observations, train=True).squeeze(), phi_weights)
         # critic_loss = ((self._net.critic(inputs=batch.observations, train=True).squeeze() - phi_weights) ** 2).mean()
         critic_loss.mean().backward()
+        if self._config.gradient_clip_norm != -1:
+            nn.utils.clip_grad_norm_(self._net.get_critic_parameters(),
+                                     self._config.gradient_clip_norm)
         self._critic_optimizer.step()
         return critic_loss.mean().detach()
 
@@ -91,5 +113,8 @@ class VanillaPolicyGradient(Trainer):
         self._save_checkpoint(epoch)
         self._net.global_step += 1
         self.put_model_back_to_original_device()
-
+        if self._actor_scheduler is not None:
+            self._actor_scheduler.step()
+        if self._critic_scheduler is not None:
+            self._critic_scheduler.step()
         return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.data: 0.3e}"

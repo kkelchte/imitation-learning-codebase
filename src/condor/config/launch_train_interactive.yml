@@ -1,4 +1,4 @@
-output_path: straight_corridor
+output_path: straight_corridor_hacky_PPO
 base_config_files:
   - src/scripts/config/rl_train_interactive_straight_corridor.yml
 mode: default
@@ -17,4 +17,4 @@ job_configs:
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 1
+  - 3

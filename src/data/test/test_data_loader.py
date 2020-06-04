@@ -84,6 +84,19 @@ class TestDataLoader(unittest.TestCase):
         for d in config.data_directories:
             self.assertTrue(os.path.isdir(d))
 
+    def test_data_clipping(self):
+        config_dict = {
+            'data_directories': self.info['episode_directories'],
+            'output_path': self.output_dir,
+            'reward_clipping': 1
+        }
+        config = DataLoaderConfig().create(config_dict=config_dict)
+        data_loader = DataLoader(config=config)
+        data_loader.set_dataset()
+
+        self.assertLessEqual(max(data_loader.get_dataset().rewards), 1)
+        self.assertGreaterEqual(min(data_loader.get_dataset().rewards), -1)
+
     def test_data_batch(self):
         config_dict = {
             'data_directories': self.info['episode_directories'],
@@ -97,7 +110,6 @@ class TestDataLoader(unittest.TestCase):
         for batch in data_loader.get_data_batch():
             self.assertEqual(len(batch), config_dict['batch_size'])
             break
-
 
     def test_sample_batch(self):
         max_num_batches = 2
@@ -157,6 +169,20 @@ class TestDataLoader(unittest.TestCase):
         self.assertNotEqual(weights[29], weights[30])
         self.assertTrue(weights[0] - 2. < 0.1)
         self.assertTrue(weights[30] - 0.57157 < 0.1)
+
+    def test_data_subsample(self):
+        subsample = 4
+        config_dict = {
+            'data_directories': self.info['episode_directories'],
+            'output_path': self.output_dir,
+            'data_sampling_seed': 1,
+            'batch_size': 3,
+            'subsample': subsample
+        }
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
+        data_loader.load_dataset()
+        self.assertTrue(sum([np.ceil((el - 1) / subsample) + 1 for el in self.info['episode_lengths']]),
+                        len(data_loader.get_dataset()))
 
     # def test_data_balancing(self): TODO
     #     # average action variance in batch with action balancing

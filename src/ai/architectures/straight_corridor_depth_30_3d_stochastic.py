@@ -32,12 +32,12 @@ class Net(BaseNet):
         self.output_size = (3,)
         self.discrete = True
         self._actor = mlp_creator(sizes=[self.input_size[0], 20, 20, 20, self.output_size[0]],
-                                  activation=nn.ReLU,
-                                  output_activation=None)
+                                  activation=nn.Tanh,
+                                  output_activation=nn.ReLU)
 
         self._critic = mlp_creator(sizes=[self.input_size[0], 20, 20, 20, 1],
-                                   activation=nn.ReLU,
-                                   output_activation=None)
+                                   activation=nn.Tanh,
+                                   output_activation=nn.ReLU)
         self.load_network_weights()
         self.discrete_action_mapper = DiscreteActionMapper([
             torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, -0.2]),
