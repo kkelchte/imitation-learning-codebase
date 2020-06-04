@@ -1,7 +1,7 @@
-output_path: straight_corridor_hacky_PPO_param_study
+output_path: straight_corridor/batch_size
 base_config_files:
   - src/scripts/config/rl_train_interactive_straight_corridor.yml
-mode: learning_rate_study
+mode: batch_size_study
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
@@ -13,8 +13,8 @@ job_configs:
     nice: true
     gpu_mem_mb: 1900
     use_singularity: true
-    check_if_ros_already_in_use: false
+    check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 1
+  - 3

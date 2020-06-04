@@ -15,12 +15,12 @@ environment_config:
   max_number_of_steps: -1  # let number of steps depend on environment
 number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 500
-output_path: cart_pole_ppo_clipped_value_clip_norm_ortho_tanh_scaled
+output_path: cart_pole
 tensorboard: true
 trainer_config:
   criterion: MSELoss
   learning_rate: 0.001
-  gradient_clip_norm: 0.5
+  gradient_clip_norm: 5
   optimizer: Adam
   data_loader_config:
     batch_size: 50
@@ -34,7 +34,7 @@ trainer_config:
   phi_key: gae
   entropy_coefficient: 0.
   save_checkpoint_every_n: 100
-  max_actor_training_iterations: 10
+  max_actor_training_iterations: 50
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2
   kl_target: 0.01

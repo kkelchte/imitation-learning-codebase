@@ -36,9 +36,9 @@ data_saver_config:
 tensorboard: true
 trainer_config:
   criterion: MSELoss
-  actor_learning_rate: 0.0001
+  actor_learning_rate: 0.001
   critic_learning_rate: 0.0005
-  gradient_clip_norm: 0.5
+  gradient_clip_norm: 1
   optimizer: Adam
   data_loader_config:
     batch_size: 200
@@ -47,12 +47,12 @@ trainer_config:
     reward_clipping: 5
   device: cpu
   discount: 0.99
-  factory_key: PPO
+  factory_key: VPG
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.1
   save_checkpoint_every_n: 100
   max_actor_training_iterations: 10
-  max_critic_training_iterations: 20
+  max_critic_training_iterations: 10
   ppo_epsilon: 0.2
   kl_target: 0.01

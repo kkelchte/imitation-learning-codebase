@@ -184,7 +184,7 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual(get_file_length(pre_existing_file), 3)
         self.assertTrue(os.path.isfile(os.path.join(nested_path, 'new_file')))
 
-    @unittest.skip
+    #@unittest.skip
     def test_ros_is_already_running(self):  # NOT WORKING CURRENTLY
         # launch first 'ros' job
         config_dict = {
@@ -193,8 +193,11 @@ class TestCondorJob(unittest.TestCase):
             'use_singularity': False,
             'gpus': 0,
             'wall_time_s': 120,
+            'cpus': 1,
+            'cpu_mem_gb': 3,
+            'disk_mem_gb': 5,
             'check_if_ros_already_in_use': True,
-            'green_list': ['ricotta']
+            'green_list': ['jade']
         }
         config = CondorJobConfig().create(config_dict=config_dict)
         job = CondorJob(config=config)

@@ -31,6 +31,7 @@ class DataSaverConfig(Config):
     training_validation_split: float = 0.9
     max_size: int = -1
     store_hdf5: bool = False
+    subsample_hdf5: int = 1
     store_on_ram_only: bool = False
     clear_buffer_before_episode: bool = False
     separate_raw_data_runs: bool = False
@@ -168,6 +169,7 @@ class DataSaver:
             config = DataLoaderConfig().create(config_dict={
                 'data_directories': runs,
                 'output_path': self._config.output_path,
+                'subsample': self._config.subsample_hdf5
             })
             data_loader = DataLoader(config=config)
             data_loader.load_dataset(arrange_according_to_timestamp=False)
