@@ -71,7 +71,6 @@ class TestControlMapper(unittest.TestCase):
                           FsmState.TakenOver,
                           FsmState.TakeOff]:
             print(f'FSM STATE: {fsm_state}')
-            # fsm_state = FsmState.Running
             #   publish fsm state
             self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
             #   wait

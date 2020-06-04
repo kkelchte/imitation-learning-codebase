@@ -34,7 +34,7 @@ from std_msgs.msg import String
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import get_output_path
+from src.sim.ros.src.utils import get_output_path, apply_noise_to_twist
 
 
 class ControlMapper:
@@ -54,6 +54,9 @@ class ControlMapper:
             if key not in self._mapping.keys():
                 self._mapping[key] = {}
         self._fsm_state = FsmState.Unknown
+
+        noise_config = rospy.get_param('/control_mapping/noise', None)
+        self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config is not None else None
 
         self._publishers = {
             'command': rospy.Publisher(rospy.get_param('/robot/command_topic'), Twist, queue_size=10),
@@ -94,6 +97,8 @@ class ControlMapper:
         if 'command' in self._mapping[self._fsm_state.name].keys() \
                 and topic_name == self._mapping[self._fsm_state.name]['command']:
             self._messages['command'] = msg
+            if self._noise is not None:
+                self._messages['command'] = apply_noise_to_twist(twist=msg, noise=self._noise.sample())
         if 'supervision' in self._mapping[self._fsm_state.name].keys() \
                 and topic_name == self._mapping[self._fsm_state.name]['supervision']:
             self._messages['supervision'] = msg
