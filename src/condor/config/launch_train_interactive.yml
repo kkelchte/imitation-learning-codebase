@@ -13,7 +13,7 @@ job_configs:
     nice: true
     gpu_mem_mb: 1900
     use_singularity: true
-    check_if_ros_already_in_use: false
+    check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
