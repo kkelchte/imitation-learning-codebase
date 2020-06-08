@@ -1,7 +1,7 @@
-output_path: straight_corridor/batch_size
+output_path: straight_corridor/entropy
 base_config_files:
   - src/scripts/config/rl_train_interactive_straight_corridor.yml
-mode: batch_size_study
+mode: entropy_study
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
