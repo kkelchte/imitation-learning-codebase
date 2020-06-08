@@ -6,7 +6,7 @@ from torch import nn
 from src.ai.base_net import BaseNet
 from src.ai.trainer import Trainer, TrainerConfig
 from src.ai.utils import get_returns, get_reward_to_go, get_generalized_advantage_estimate
-from src.core.data_types import Dataset
+from src.core.data_types import Dataset, Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
@@ -102,12 +102,12 @@ class VanillaPolicyGradient(Trainer):
 
         phi_weights = self._calculate_phi(batch).to(self._device)
         policy_loss = self._train_actor(batch, phi_weights)
-        critic_loss = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
+        critic_loss = Distribution(self._train_critic(batch, get_reward_to_go(batch).to(self._device)))
 
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_scalar(policy_loss.data, "policy_loss")
-            writer.write_scalar(critic_loss.data, "critic_loss")
+            writer.write_distribution(critic_loss, "critic_loss")
 
         self._save_checkpoint(epoch)
         self._net.global_step += 1
@@ -116,4 +116,4 @@ class VanillaPolicyGradient(Trainer):
             self._actor_scheduler.step()
         if self._critic_scheduler is not None:
             self._critic_scheduler.step()
-        return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.data: 0.3e}"
+        return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.mean: 0.3e}"

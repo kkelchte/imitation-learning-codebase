@@ -18,21 +18,21 @@ For each FSM state, test correct mapping of control.
 
 class TestControlMapper(unittest.TestCase):
 
-    def setUp(self) -> None:
+    def start(self, control_mapper_config: str) -> None:
         self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'drone_sim',
             'fsm': False,
             'control_mapping': True,
-            'control_mapping_config': 'test',
+            'control_mapping_config': control_mapper_config,
             'output_path': self.output_dir
         }
 
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=False)
+                                       visible=True)
         # subscribe to supervision and command control
         self.command_topic = rospy.get_param('/robot/command_topic')
         self.supervision_topic = rospy.get_param('/control_mapping/supervision_topic')
@@ -64,14 +64,15 @@ class TestControlMapper(unittest.TestCase):
             publish_topics=publish_topics
         )
 
+    @unittest.skip
     def test_control_mapper(self):
+        self.start(control_mapper_config='test')
         # for each fsm state
         for fsm_state in [FsmState.Running,
                           FsmState.DriveBack,
                           FsmState.TakenOver,
                           FsmState.TakeOff]:
             print(f'FSM STATE: {fsm_state}')
-            # fsm_state = FsmState.Running
             #   publish fsm state
             self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
             #   wait
@@ -90,6 +91,37 @@ class TestControlMapper(unittest.TestCase):
                 original_topic = self._mapping[fsm_state.name]['command']
                 received_control = self.ros_topic.topic_values[self.command_topic]
                 self.assertEqual(received_control.linear.x, solution[original_topic])
+            if 'supervision' in self._mapping[fsm_state.name].keys():
+                original_topic = self._mapping[fsm_state.name]['supervision']
+                received_control = self.ros_topic.topic_values[self.supervision_topic]
+                self.assertEqual(received_control.linear.x, solution[original_topic])
+
+    def test_control_mapper_noisy(self):
+        self.start(control_mapper_config='test_noisy')
+        # for each fsm state
+        for fsm_state in [FsmState.Running,
+                          FsmState.DriveBack,
+                          FsmState.TakenOver,
+                          FsmState.TakeOff]:
+            print(f'FSM STATE: {fsm_state}')
+            #   publish fsm state
+            self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
+            #   wait
+            time.sleep(1)
+            #   publish on all controls
+            solution = {}
+            for index, control_topic in enumerate(list(set(self._control_topics))):
+                control_command = Twist()
+                control_command.linear.x = index * 100
+                solution[control_topic] = control_command.linear.x
+                self.ros_topic.publishers[control_topic].publish(control_command)
+            #   wait
+            time.sleep(1)
+            #   assert control is equal to intended control
+            if 'command' in self._mapping[fsm_state.name].keys():
+                original_topic = self._mapping[fsm_state.name]['command']
+                received_control = self.ros_topic.topic_values[self.command_topic]
+                self.assertNotEqual(received_control.linear.x, solution[original_topic])
             if 'supervision' in self._mapping[fsm_state.name].keys():
                 original_topic = self._mapping[fsm_state.name]['supervision']
                 received_control = self.ros_topic.topic_values[self.supervision_topic]

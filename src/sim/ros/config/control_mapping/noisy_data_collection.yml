@@ -1,5 +1,15 @@
 supervision_topic: '/control_mapper/supervision'
 rate_fps: 60
+noise:
+  name: OUNoise
+  args:
+    dimension:
+      - 6
+      - 1
+    seed: 1234
+    mean: 0
+    std: 0.25
+    pullback: 0.2
 mapping:
   Unknown:
     command: '/actor/keyboard/cmd_vel'
@@ -7,10 +17,14 @@ mapping:
     command: '/actor/keyboard/cmd_vel'
   Running:
     command: '/actor/ros_expert/cmd_vel'
-    supervision: '/actor/keyboard/cmd_vel'
-  TakeOff:
-    command: '/actor/ros_expert/cmd_vel'
-    supervision: '/actor/keyboard/cmd_vel'
+    supervision: '/actor/ros_expert/cmd_vel'
+  TakeOff: {}
   TakenOver:
     command: '/actor/keyboard/cmd_vel'
   DriveBack: {}
+
+
+#max_time
+#current_time
+#control_time
+#aggressiveness
