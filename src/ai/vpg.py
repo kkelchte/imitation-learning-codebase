@@ -75,8 +75,8 @@ class VanillaPolicyGradient(Trainer):
                                                              torch.stack(batch.actions).type(torch.float32),
                                                              train=True)
         entropy = self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32), train=True)
-        entropy_loss = - self._config.entropy_coefficient * entropy.mean()
-        policy_loss = -(log_probability * phi_weights) + entropy_loss
+        # '-' required for performing gradient ascent instead of descent.
+        policy_loss = -(log_probability * phi_weights + self._config.entropy_coefficient * entropy.mean())
         policy_loss.mean().backward()
         if self._config.gradient_clip_norm != -1:
             nn.utils.clip_grad_norm_(self._net.get_actor_parameters(),

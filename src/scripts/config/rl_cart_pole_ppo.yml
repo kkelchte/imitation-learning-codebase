@@ -32,7 +32,7 @@ trainer_config:
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
-  entropy_coefficient: 0.
+  entropy_coefficient: 0.01
   save_checkpoint_every_n: 100
   max_actor_training_iterations: 50
   max_critic_training_iterations: 10

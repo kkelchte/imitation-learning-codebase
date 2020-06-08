@@ -53,7 +53,7 @@ class Net(BaseNet):
 
     def get_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:
         distribution = self._policy_distribution(inputs=inputs, train=train)
-        return (distribution.probs * torch.log(distribution.probs)).sum(dim=1)
+        return -(distribution.probs * torch.log(distribution.probs)).sum(dim=1)
 
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._policy_distribution(inputs, train).sample()
