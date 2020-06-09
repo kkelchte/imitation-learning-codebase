@@ -51,6 +51,8 @@ class RosEnvironment(Environment):
                     else os.path.join(os.environ['HOME'], actor_config.file)
                 roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
 
+        assert os.path.isfile(os.path.join(os.environ["PWD"], 'src/sim/ros/config/world/',
+                                           roslaunch_arguments['world_name']) + '.yml')
         self._ros = RosWrapper(
             config=roslaunch_arguments,
             launch_file='load_ros.launch',
@@ -318,7 +320,6 @@ class RosEnvironment(Environment):
         if None in [v for v in self._info.values() if not isinstance(v, Iterable)]:
             cprint("waiting for info", self._logger, msg_type=MessageType.debug)
             return False
-        cprint("update current experience", self._logger, msg_type=MessageType.debug)
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._previous_observation
@@ -330,6 +331,11 @@ class RosEnvironment(Environment):
                 field_name: deepcopy(self._info[field_name]) for field_name in self._info.keys()
             }
         )
+        cprint(f"update current experience: "
+               f"done {self._current_experience.done}, "
+               f"reward {self._current_experience.reward}, "
+               f"time_stamp {self._current_experience.time_stamp}, "
+               f"info: {[k for k in self._current_experience.info.keys()]}", self._logger, msg_type=MessageType.debug)
         self._previous_observation = deepcopy(self._observation)
         return True
 
@@ -367,7 +373,9 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
         self._clear_experience_values()
-        while self.fsm_state != FsmState.Running or self._observation is None or self._terminal_state is None:
+        while self.fsm_state != FsmState.Running \
+                or self._observation is None \
+                or self._terminal_state is None:
             self._run_shortly()
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),

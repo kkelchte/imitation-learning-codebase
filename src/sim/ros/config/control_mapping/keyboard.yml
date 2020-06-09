@@ -5,7 +5,5 @@ mapping:
   Terminated: {}
   Running:
     command: '/actor/keyboard/cmd_vel'
-  TakeOff:
-    command: '/actor/keyboard/cmd_vel'
   TakenOver: {}
   DriveBack: {}

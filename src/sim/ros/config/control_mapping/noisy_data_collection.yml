@@ -18,7 +18,6 @@ mapping:
   Running:
     command: '/actor/ros_expert/cmd_vel'
     supervision: '/actor/ros_expert/cmd_vel'
-  TakeOff: {}
   TakenOver:
     command: '/actor/keyboard/cmd_vel'
   DriveBack: {}

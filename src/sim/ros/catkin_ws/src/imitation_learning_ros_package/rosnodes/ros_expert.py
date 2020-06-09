@@ -6,16 +6,17 @@ from collections import OrderedDict
 
 import rospy
 import yaml
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, String
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
 from hector_uav_msgs.srv import EnableMotors
 
-from src.core.logger import get_logger, cprint
+from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
 from src.sim.common.noise import *
 from src.core.data_types import Action
+from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
     get_output_path, apply_noise_to_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
@@ -45,7 +46,7 @@ class RosExpert(Actor):
         self._adjust_height = 0
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
-        self._reference_height = rospy.get_param('/world/starting_height', -1)
+        self._reference_height = -1
         self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 10
         self._next_waypoint = []
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
@@ -126,16 +127,19 @@ class RosExpert(Actor):
 
     def _set_height(self, z: float):
         if self._reference_height == -1:
+            self._reference_height = z
             return
         if z < (self._reference_height - 0.1):
-            self._adjust_height = +1
+            self._adjust_height = self._specs['height_speed'] if 'height_speed' in self._specs.keys() else +0.5
         elif z > (self._reference_height + 0.1):
-            self._adjust_height = -1
+            self._adjust_height = -self._specs['height_speed'] if 'height_speed' in self._specs.keys() else -0.5
         else:
             self._adjust_height = 0
 
     def _update_waypoint(self, msg: Float32MultiArray):
         self._next_waypoint = msg.data
+        if len(self._next_waypoint) > 2:
+            self._reference_height = self._next_waypoint[2]
 
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         sensor_topic, sensor_stats = args
@@ -178,20 +182,25 @@ class RosExpert(Actor):
         # cprint(f'set adjust_yaw to {self._adjust_yaw_waypoint_following}')
 
     def _update_twist(self):
-        twist = Twist()
-        twist.linear.x = self._specs['speed']
-        twist.linear.z = self._adjust_height
-        twist.angular.z = self._specs['collision_avoidance_weight'] * self._adjust_yaw_collision_avoidance \
+        yaw_velocity = self._specs['collision_avoidance_weight'] * self._adjust_yaw_collision_avoidance \
             + self._specs['waypoint_following_weight'] * self._adjust_yaw_waypoint_following
+        twist = Twist()
+        twist.linear.x = self._specs['speed'] if np.abs(yaw_velocity) < 0.1 or 'turn_speed' not in self._specs.keys() \
+            else self._specs['turn_speed']
+        twist.angular.z = yaw_velocity
+        twist.linear.z = self._adjust_height
 
         if self._noise is not None:
             twist = apply_noise_to_twist(twist=twist, noise=self._noise.sample())
+        cprint(f'twist: {twist.linear.x}, {twist.linear.y}, {twist.linear.z}, '
+               f'{twist.angular.x}, {twist.angular.y}, {twist.angular.z}', self._logger, msg_type=MessageType.debug)
         return twist
 
     def get_action(self, sensor_data: dict = None) -> Action:
         assert sensor_data is None
         action = adapt_twist_to_action(self._update_twist())
         action.actor_name = self._name
+        cprint(f'action: {action}', self._logger, msg_type=MessageType.debug)
         return action
 
     def run(self):

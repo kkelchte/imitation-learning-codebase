@@ -26,7 +26,7 @@ bridge = CvBridge()
 
 The structure of the FSM is defined by the rosparam fsm_mode
 SingleRun = 0 # start -(a)> Running -(b)> terminate
-TakeOffRun = 1 # start -(a)> TakeOff -(c)> Running -(b)> terminate
+[DEPRECATED] TakeOffRun = 1 # start -(a)> TakeOff -(c)> Running -(b)> terminate
 TakeOverRun = 2 # start -(a)> TakeOver (-(f)> terminate) <(e)-(d)> Running  
 TakeOverRunDriveBack = 3 # start -(a)> TakeOver (-(f)> terminate) <(e)-(d)> Running (-(b)> terminate) \
     <(g)-(b)> DriveBack (-(e)> TakeOver)
@@ -50,7 +50,6 @@ class FsmState(IntEnum):
     Running = 0
     TakenOver = 1
     Terminated = 2
-    TakeOff = 10
     DriveBack = 20
 
     @classmethod
@@ -60,7 +59,6 @@ class FsmState(IntEnum):
 
 class FsmMode(IntEnum):
     SingleRun = 0
-    TakeOffRun = 1
     TakeOverRun = 2
     TakeOverRunDriveBack = 3
 
@@ -86,7 +84,6 @@ class Fsm:
         self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
         self.count = 0
         self._run_number = 0
-        self._set_state(FsmState.Unknown)
         self._init_fields()
         self.run()
 
@@ -124,8 +121,6 @@ class Fsm:
         self.travelled_distance = 0
         self.distance_from_start = 0
         self.success = None
-        if rospy.has_param('world/starting_height') and self.mode == FsmMode.TakeOffRun:
-            self.starting_height = rospy.get_param('world/starting_height')
         # Params to define success and failure
         self._max_duration = rospy.get_param('world/max_duration', -1)
         self._collision_depth = rospy.get_param('robot/collision_depth', 0)
@@ -147,8 +142,6 @@ class Fsm:
         """Define correct initial state depending on mode"""
         if self.mode == FsmMode.SingleRun:
             self._running()
-        if self.mode == FsmMode.TakeOffRun:
-            self._takeoff()
         if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
             self._takeover()
 
@@ -166,9 +159,6 @@ class Fsm:
         self._set_state(FsmState.Running)
         self._termination = TerminationType.NotDone
         self._run_number += 1
-
-    def _takeoff(self):
-        self._set_state(FsmState.TakeOff)
 
     def _takeover(self, msg: Empty = None):
         self._set_state(FsmState.TakenOver)
@@ -238,10 +228,6 @@ class Fsm:
         self._current_pos = np.asarray([msg.pose.pose.position.x,
                                         msg.pose.pose.position.y,
                                         msg.pose.pose.position.z])
-        if self.mode == FsmMode.TakeOffRun and self._state == FsmState.TakeOff \
-                and self._current_pos[2] >= self.starting_height - 0.1:
-            self._running()
-
         if not self._update_state():
             return
         self.travelled_distance += np.sqrt(np.sum((previous_pos - self._current_pos) ** 2))
@@ -250,13 +236,13 @@ class Fsm:
         if self._check_distance(self._max_travelled_distance, self.travelled_distance):
             cprint(f'Travelled distance {self.travelled_distance} > max {self._max_travelled_distance}',
                    self._logger)
-            self._shutdown_run(outcome=TerminationType.Success,
+            self._shutdown_run(outcome=TerminationType.Failure,
                                reward=self._get_reward('distance'))
 
         if self._check_distance(self._max_distance_from_start, self.distance_from_start):
             cprint(f'Max distance {self.distance_from_start} > max {self._max_distance_from_start}',
                    self._logger)
-            self._shutdown_run(outcome=TerminationType.Success,
+            self._shutdown_run(outcome=TerminationType.Failure,
                                reward=self._get_reward('distance'))
 
         if self._goal and not self._is_shuttingdown and \

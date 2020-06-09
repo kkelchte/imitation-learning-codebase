@@ -61,7 +61,7 @@ class RosConfig(Config):
     observation: str = ''
     action: str = ''
     # sensor/sensor_name_0, sensor/sensor_name_1, actor/actor_name_0, ..., current_waypoint, supervised_action
-    info: List[str] = None
+    info: Optional[List[str]] = None
     step_rate_fps: float = 10.
     visible_xterm: bool = False
     ros_launch_config: RosLaunchConfig = None

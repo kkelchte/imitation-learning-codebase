@@ -1,6 +1,5 @@
 # FSM_mode options:
 #  SingleRun = 0
-#  TakeOffRun = 1
 #  TakeOverRun = 2
 #  TakeOverRunDriveBack = 3
 fsm_mode: 0

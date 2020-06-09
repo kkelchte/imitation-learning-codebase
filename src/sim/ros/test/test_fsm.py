@@ -30,12 +30,13 @@ class TestFsm(unittest.TestCase):
         self.config = {
             'robot_name': 'drone_sim',
             'fsm': True,
-            'fsm_config': 'takeoff_run',
-            'world_name': 'debug',
+            'fsm_config': 'single_run',
+            'world_name': 'debug_drone',
             'control_mapping': False,
             'waypoint_indicator': False,
         }
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
+                          f'/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         self.config['output_path'] = self.output_dir
 
@@ -53,13 +54,10 @@ class TestFsm(unittest.TestCase):
             TopicConfig(topic_name=self.reward_topic, msg_type="RosReward"),
         ]
         # create publishers for all relevant sensors < FSM
-        self._depth_topic = rospy.get_param('/robot/depth_scan_topic')
-        self._depth_type = rospy.get_param('/robot/depth_scan_type')
         self._pose_topic = rospy.get_param('/robot/odometry_topic')
         self._pose_type = rospy.get_param('/robot/odometry_type')
         self._reset_topic = rospy.get_param('/fsm/reset_topic', '/reset')
         publish_topics = [
-            TopicConfig(topic_name=self._depth_topic, msg_type=self._depth_type),
             TopicConfig(topic_name=self._pose_topic, msg_type=self._pose_type),
             TopicConfig(topic_name=self._reset_topic, msg_type='Empty'),
 
@@ -70,37 +68,40 @@ class TestFsm(unittest.TestCase):
             publish_topics=publish_topics
         )
 
-    def test_take_off_run_and_reach_goal(self):
+    def test_run_and_reach_goal(self):
         # FSM should start in unknown state, waiting for reset
-        rospy.sleep(0.5)
+        # @ startup (before reset)
+        while self.state_topic not in self.ros_topic.topic_values.keys():
+            rospy.sleep(0.1)
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.state_topic])
+        while self.reward_topic not in self.ros_topic.topic_values.keys():
+            rospy.sleep(0.1)
         self.assertEqual(0, self.ros_topic.topic_values[self.reward_topic].reward)
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.reward_topic].termination)
-        for _ in range(3):
-            # FSM should @ reset wait delay evaluation and then take off
-            odom = Odometry()
-            self.ros_topic.publishers[self._pose_topic].publish(odom)
+
+        for _ in range(2):
+            print(f'{rospy.get_time()}: iteration {_}')
+            # @ reset -> delay evaluation -> running
+            self.ros_topic.publishers[self._pose_topic].publish(Odometry())
             self.ros_topic.publishers[self._reset_topic].publish(Empty())
-            rospy.sleep(self.delay_evaluation + 0.5)
-            self.assertEqual('TakeOff', self.ros_topic.topic_values[self.state_topic])
-            self.assertEqual(0, self.ros_topic.topic_values[self.reward_topic].reward)
-            self.assertEqual('Unknown', self.ros_topic.topic_values[self.reward_topic].termination)
-            # FSM should @ correct height switch to running state with step reward and NotDone termination
-            odom = Odometry()
-            odom.pose.pose.position.z = 0.2
-            self.ros_topic.publishers[self._pose_topic].publish(odom)
-            max_duration = 5
+            # @ second iteration: wait for reset to be received at fsm
+            while self.ros_topic.topic_values[self.state_topic] == 'Terminated':
+                rospy.sleep(0.01)
             start_time = rospy.get_time()
-            while self.ros_topic.topic_values[self.state_topic] == "TakeOff" and \
-                rospy.get_time() - start_time < max_duration:
-                rospy.sleep(0.5)
-            self.assertLess(rospy.get_time() - start_time, max_duration)
+            while self.ros_topic.topic_values[self.state_topic] == 'Unknown':
+                rospy.sleep(0.01)
+            delay_duration = rospy.get_time() - start_time
+            self.assertLess(abs(self.delay_evaluation - delay_duration), 0.1)
+
             self.assertEqual('Running', self.ros_topic.topic_values[self.state_topic])
             self.assertEqual('NotDone', self.ros_topic.topic_values[self.reward_topic].termination)
             self.assertEqual(-1, self.ros_topic.topic_values[self.reward_topic].reward)
+
             # FSM should @ max distance crossed switch to terminated state and return finish success and big reward
             odom = Odometry()
-            odom.pose.pose.position.x = 1.5
+            odom.pose.pose.position.x = 2
+            odom.pose.pose.position.y = 2
+            odom.pose.pose.position.z = 1
             self.ros_topic.publishers[self._pose_topic].publish(odom)
             max_duration = 5
             start_time = rospy.get_time()

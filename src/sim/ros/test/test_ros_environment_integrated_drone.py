@@ -25,20 +25,20 @@ config_dict = {
         "max_update_wait_period_s": 10,
         "store_action": True,
         "store_reward": True,
-        "visible_xterm": True,
-        "step_rate_fps": 30,
+        "visible_xterm": False,
+        "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "drone_sim",
-          "fsm_config": "takeoff_run",  # file with fsm params loaded from config/fsm
+          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
           "control_mapping_config": "debug",
-          "world_name": "object_world",
+          "world_name": "debug_drone",
           "x_pos": 0.0,
           "y_pos": 0.0,
-          "z_pos": 0.5,
+          "z_pos": 1.5,
           "yaw_or": 1.57,
           "gazebo": True,
         },
@@ -53,18 +53,18 @@ config_dict = {
 class TestRosIntegrated(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
-        os.makedirs(self.output_dir, exist_ok=True)
-        config_dict['output_path'] = self.output_dir
+        config_dict['output_path'] = f'test_dir/{get_filename_without_extension(__file__)}'
         config = EnvironmentConfig().create(
             config_dict=config_dict
         )
+        self.output_dir = config.output_path
         self._environment = RosEnvironment(
             config=config
         )
+        time.sleep(1)
 
     def test_multiple_resets(self):
-        waypoints = rospy.get_param('/world/waypoints')
+        time.sleep(rospy.get_param('/world/delay_evaluation') + 2)
         for _ in range(2):
             experience, observation = self._environment.reset()
             self.assertTrue(experience.action is None)
@@ -73,9 +73,6 @@ class TestRosIntegrated(unittest.TestCase):
             while experience.done == TerminationType.NotDone:
                 experience, observation = self._environment.step()
                 count += 1
-                if count == 1:
-                    self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
-                    self.assertLess(np.sum(experience.info['odometry'][:3]), 0.5)
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
                 if experience.done == TerminationType.NotDone:

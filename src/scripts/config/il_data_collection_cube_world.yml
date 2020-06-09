@@ -26,7 +26,7 @@ environment_config:
       gazebo: true
     actor_configs:
       - name: ros_expert
-        file: src/sim/ros/config/actor/ros_expert.yml
+        file: src/sim/ros/config/actor/ros_expert_wp.yml
 data_saver_config:
   store_hdf5: false
   separate_raw_data_runs: true

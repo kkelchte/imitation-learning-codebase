@@ -4,8 +4,7 @@ specs:
   front_width: 40
   speed: 0.2
   aggressiveness: 0
-  collision_avoidance_weight: 0.5
-  waypoint_following_weight: 0.5
-  waypoint_reached_distance: 0.2
+  collision_avoidance_weight: 1
+  waypoint_following_weight: 1
   max_yaw_deviation_waypoint: 5
   rate_fps: 10

@@ -1,7 +1,6 @@
-world_name: object_world
+world_name: debug_turtle
 max_duration: -1
-starting_height: 1.5
-delay_evaluation: 0.1
+delay_evaluation: 1.0
 goal:
   x:
     min: 1.7

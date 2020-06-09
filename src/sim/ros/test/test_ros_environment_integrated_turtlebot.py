@@ -35,7 +35,7 @@ config_dict = {
           "control_mapping": True,
           "waypoint_indicator": True,
           "control_mapping_config": "debug",
-          "world_name": "object_world",
+          "world_name": "debug_turtle",
           "x_pos": 0.0,
           "y_pos": 0.0,
           "z_pos": 0.0,
@@ -44,7 +44,7 @@ config_dict = {
         },
         "actor_configs": [{
               "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert.yml"
+              "file": "src/sim/ros/config/actor/ros_expert_wp.yml"
             }],
     }
 }
@@ -53,12 +53,11 @@ config_dict = {
 class TestRosIntegrated(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
-        os.makedirs(self.output_dir, exist_ok=True)
-        config_dict['output_path'] = self.output_dir
+        config_dict['output_path'] = f'test_dir/{get_filename_without_extension(__file__)}'
         config = EnvironmentConfig().create(
             config_dict=config_dict
         )
+        self.output_dir = config.output_path
         self._environment = RosEnvironment(
             config=config
         )

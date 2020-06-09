@@ -9,11 +9,13 @@ from scipy import interpolate
 from scipy.interpolate import CubicSpline
 
 # settings
+from tqdm import tqdm
+
 number_of_points = 20
 dev = 0.3
-number_of_worlds = 10
+number_of_worlds = 1000
 
-for world_index in range(number_of_worlds):
+for world_index in tqdm(range(number_of_worlds)):
     # start from loop
     t = np.arange(0, 1., 1/number_of_points)
     xo = -np.cos(2*np.pi*t) + 1
@@ -81,10 +83,12 @@ for world_index in range(number_of_worlds):
 
     # Create world config with waypoints
     world_config_dir = 'src/sim/ros/config/world'
+    background_file = f'src/sim/ros/gazebo/background_images/line_worlds/{model_name}_1_0_5.jpg'
     config = {
         'world_name': model_name,
         'max_duration': 300,
-        'starting_height': 0.5,
+        'minimum_distance_px': 40,
+        'max_distance_from_start': 10,
         'delay_evaluation': 1,
         'waypoints': [[float(w[0]), float(w[1])] for w in waypoints],
         'waypoint_reached_distance': 0.2,
@@ -94,8 +98,9 @@ for world_index in range(number_of_worlds):
             'y': {'min': float(waypoints[-1][1]) - 0.3,
                   'max': float(waypoints[-1][1]) + 0.3},
             'z': {'min': 0.3,
-                  'max': 0.8},
-        }
+                  'max': 1.8},
+        },
+        'background_file': background_file
     }
 
     os.makedirs(os.path.join(os.environ['PWD'], world_config_dir, 'line_worlds'), exist_ok=True)
@@ -103,9 +108,15 @@ for world_index in range(number_of_worlds):
         yaml.dump(config, f)
 
     # plot
-    plt.figure()
+    plt.figure(figsize=(11, 11))
     plt.plot(out[0], out[1])
+    plt.ylim(-1.5, 1.5)
+    plt.xlim(-0.5, 2.5)
+    plt.axis('off')
+
     os.makedirs(os.path.join(os.environ['PWD'], 'src/sim/ros/gazebo/background_images', 'line_worlds'), exist_ok=True)
-    plt.savefig(os.path.join(os.environ['PWD'], 'src/sim/ros/gazebo/background_images',
-                             'line_worlds', model_name + '.jpg'))
+    plt.savefig(os.path.join(os.environ['PWD'], background_file), bbox_inches='tight')
+    plt.close()
+    plt.cla()
+    plt.clf()
 print(f'finished: wrote {number_of_worlds}')

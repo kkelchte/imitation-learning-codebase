@@ -1,16 +1,20 @@
-output_path: test_line_world
+output_path: cube_world
 number_of_epochs: 1
-number_of_episodes: 1
+number_of_episodes: 3
+architecture_config:
+  architecture: tiny_128_rgb_6c
+  load_checkpoint_dir: line_world
+  device: cuda
 environment_config:
   factory_key: ROS
   max_number_of_steps: -1
   ros_config:
+    info:
+      -current_waypoint
+      -sensor/odometry
     observation: forward_camera
-    action: ros_expert
-    store_action: true
     visible_xterm: false
-    step_rate_fps: 30
-    max_update_wait_period_s: 10
+    step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
       robot_name: drone_sim
@@ -18,17 +22,17 @@ environment_config:
       fsm: true
       control_mapping: true
       waypoint_indicator: true
-      control_mapping_config: default
-      world_name: line_worlds/model_000
+      control_mapping_config: evaluation
+      world_name: LINEWORLD
       x_pos: 0.0
       y_pos: 0.0
       z_pos: 1.0
       yaw_or: 1.57
-      gazebo: true
+      gazebo: True
     actor_configs:
       - name: ros_expert
-        file: src/sim/ros/config/actor/ros_expert_drone.yml
+        file: src/sim/ros/config/actor/ros_expert.yml
 data_saver_config:
   store_hdf5: false
   separate_raw_data_runs: true
-  saving_directory_tag: expert
+  saving_directory_tag: evaluate

@@ -1,6 +1,5 @@
 world_name: omni_camera
 max_duration: 1000
-starting_height: 1.8
 delay_evaluation: 2
 max_distance_from_start: 100
 max_travelled_distance: 100

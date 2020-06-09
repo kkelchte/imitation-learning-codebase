@@ -1,0 +1,21 @@
+world_name: debug
+max_duration: 60
+delay_evaluation: 1.0
+goal:
+  x:
+    min: 1.7
+    max: 2.2
+  y:
+    min: 1.7
+    max: 2.2
+  z:
+    min: 0.2
+    max: 1.5
+waypoints:
+  - [0, 2]
+  - [2, 2]
+waypoint_reached_distance: 0.2
+reward:
+  collision: -100
+  step: -1
+  goal: 100
