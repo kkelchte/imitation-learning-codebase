@@ -178,3 +178,22 @@ def prepare_ppo_max_train_steps_study(base_config_file: str,
                                   adjustments=adjustments)
     return create_jobs_from_job_config_files(config_files,
                                              job_config_object=job_config_object)
+
+
+def prepare_entropy_study(base_config_file: str,
+                          job_config_object: CondorJobConfig,
+                          number_of_jobs: int,
+                          output_path: str) -> List[CondorJob]:
+    entropy_vals = [0.0, 0.001, 0.01, 0.1]
+    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_entr_{x}') for x in entropy_vals for seed in seeds]
+    adjustments = {translate_keys_to_string(['architecture_config',
+                                            'initialisation_seed']): seeds * len(entropy_vals),
+                   translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'entropy_coefficient']):
+                       [x for x in entropy_vals for _ in range(len(seeds))]}
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)

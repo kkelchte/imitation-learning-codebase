@@ -38,20 +38,19 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
     def _train_actor_ppo(self, batch: Dataset, phi_weights: torch.Tensor,
                          original_log_probabilities: torch.Tensor, writer: TensorboardWrapper = None) -> Distribution:
         list_batch_loss = []
-        list_entropy = []
         list_entropy_loss = []
         for _ in range(self._config.max_actor_training_iterations):
             self._actor_optimizer.zero_grad()
             new_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
                                                                        actions=batch.actions,
                                                                        train=True)
-            entropy = self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32),
-                                                   train=True).mean()
-            entropy_loss = - self._config.entropy_coefficient * entropy
+            entropy_loss = self._config.entropy_coefficient * \
+                self._net.get_policy_entropy(torch.stack(batch.observations).
+                                             type(torch.float32), train=True).mean()
             ratio = torch.exp(new_log_probabilities - original_log_probabilities)
-            batch_loss = -torch.min(ratio * phi_weights,
-                                    ratio.clamp(1 - self._config.ppo_epsilon,
-                                                1 + self._config.ppo_epsilon) * phi_weights).mean() + entropy_loss
+            batch_loss = -(torch.min(ratio * phi_weights,
+                                     ratio.clamp(1 - self._config.ppo_epsilon,
+                                                 1 + self._config.ppo_epsilon) * phi_weights).mean() + entropy_loss)
 
             kl_approximation = (original_log_probabilities - new_log_probabilities).mean().item()
 
@@ -63,14 +62,12 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                          self._config.gradient_clip_norm)
             self._actor_optimizer.step()
             list_batch_loss.append(batch_loss.detach())
-            list_entropy.append(entropy.detach())
             list_entropy_loss.append(entropy_loss.detach())
         actor_loss_distribution = Distribution(torch.stack(list_batch_loss))
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(actor_loss_distribution, "policy_loss")
             writer.write_distribution(Distribution(torch.stack(list_entropy_loss)), "policy_entropy_loss")
-            writer.write_distribution(Distribution(torch.stack(list_entropy)), "policy_entropy")
             writer.write_scalar(kl_approximation, 'kl_difference')
         return actor_loss_distribution
 
