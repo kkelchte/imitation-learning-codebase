@@ -1,7 +1,10 @@
 import os
 import unittest
 
-from src.core.utils import camelcase_to_snake_format, get_to_root_dir
+import torch
+import numpy as np
+
+from src.core.utils import camelcase_to_snake_format, get_to_root_dir, select
 
 
 class TestUtils(unittest.TestCase):
@@ -26,6 +29,22 @@ class TestUtils(unittest.TestCase):
             FileNotFoundError,
             get_to_root_dir
         )
+
+    def test_select(self):
+        data = list(range(10))
+        indices = [3, 5]
+        result = select(data, indices)
+        self.assertEqual(result, [3, 5])
+
+        data = torch.as_tensor([[v, 1, 10 - v] for v in range(10)])
+        indices = [3, 5]
+        result = select(data, indices)
+        self.assertEqual((result - torch.as_tensor([[3, 1, 7], [5, 1, 5]])).sum().item(), 0)
+
+        data = np.asarray([[v, 1, 10 - v] for v in range(10)])
+        indices = [3, 5]
+        result = select(data, indices)
+        self.assertEqual((result - np.asarray([[3, 1, 7], [5, 1, 5]])).sum(), 0)
 
 
 if __name__ == '__main__':

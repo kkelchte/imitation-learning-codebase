@@ -28,7 +28,9 @@ class GymEnvironment(Environment):
                f'observation space: {self.observation_dimension}', self._logger)
 
     def reset(self) -> Tuple[Experience, np.ndarray]:
+        self._reset_filters()
         observation = self._gym.reset()
+        observation = self._filter_observation(observation)
         self._step_count = 0
         self.previous_observation = observation.copy()
         return Experience(
@@ -37,7 +39,10 @@ class GymEnvironment(Environment):
 
     def step(self, action: Action) -> Tuple[Experience, np.ndarray]:
         self._step_count += 1
-        observation, reward, done, info = self._gym.step(action.value)
+        observation, unfiltered_reward, done, info = self._gym.step(action.value)
+        observation = self._filter_observation(observation)
+        reward = self._filter_reward(unfiltered_reward)
+        info['unfiltered_reward'] = unfiltered_reward
         terminal = TerminationType.Done if done or self._step_count >= self._config.max_number_of_steps != -1 \
             else TerminationType.NotDone
         experience = Experience(

@@ -98,17 +98,22 @@ class ArchitectureTest(unittest.TestCase):
             count += np.prod(p.shape)
         self.assertEqual(count, 170)
 
-    def test_cart_pole_4_2d_stochastic(self):
+    def test_initialisation(self):
         base_config['architecture'] = 'cart_pole_4_2d_stochastic'
+        base_config['initialisation_type'] = 'constant'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
-        info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
-                                                   num_runs=5,
-                                                   input_size=network.input_size,
-                                                   output_size=network.output_size,
-                                                   continuous=not network.discrete,
-                                                   fixed_output_value=0)
+        for p in network.parameters():
+            self.assertEqual(torch.min(p), torch.max(p))
+            self.assertEqual(torch.min(p), 0.03)
+
+        base_config['initialisation_type'] = 'orthogonal'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        weights = list(network.parameters())[0].detach()
+        self.assertNotEqual(np.average(weights), 0.03)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

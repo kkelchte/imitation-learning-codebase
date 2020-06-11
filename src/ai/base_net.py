@@ -97,16 +97,16 @@ class BaseNet(nn.Module):
         for p in self.parameters():
             if initialisation_type == 'xavier':
                 if len(p.shape) == 1:
-                    nn.init.uniform_(p, a=-0.03, b=0.03)
+                    nn.init.constant_(p, 0)
                 else:
                     nn.init.xavier_uniform_(p)
             elif initialisation_type == 'constant':
                 nn.init.constant_(p, 0.03)
             elif initialisation_type == 'orthogonal':
                 if len(p.shape) == 1:
-                    nn.init.uniform_(p, a=-0.03, b=0.03)
+                    nn.init.constant_(p, 0)
                 else:
-                    nn.init.orthogonal_(p, 1)
+                    nn.init.orthogonal_(p, gain=2**0.5)
             else:
                 raise NotImplementedError
 
@@ -167,9 +167,9 @@ class BaseNet(nn.Module):
         # preprocess inputs
         if not isinstance(inputs, torch.Tensor):
             try:
-                inputs = torch.as_tensor(inputs, dtype=self.dtype)
+                inputs = torch.as_tensor(inputs, dtype=self.dtype).squeeze()
             except ValueError:
-                inputs = torch.stack(inputs).type(self.dtype)
+                inputs = torch.stack(inputs).type(self.dtype).squeeze()
         inputs = inputs.type(self.dtype)
         # swap H, W, C --> C, H, W
         if torch.argmin(torch.as_tensor(inputs.size())) != 0 \

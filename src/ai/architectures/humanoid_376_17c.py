@@ -1,9 +1,10 @@
 #!/bin/python3.8
-from typing import Iterator
+from typing import Iterator, Tuple
 
 import torch
 import torch.nn as nn
-from torch.distributions.categorical import Categorical
+import numpy as np
+from torch.distributions import Normal
 
 from src.ai.base_net import BaseNet, ArchitectureConfig
 from src.ai.utils import mlp_creator
@@ -28,9 +29,16 @@ class Net(BaseNet):
 
             cprint(f'Started.', self._logger)
 
-        self.input_size = (4,)
-        self.output_size = (2,)
-        self.discrete = True
+        self.input_size = (376,)
+        self.output_size = (17,)
+        self.action_min = -0.4
+        self.action_max = 0.4
+
+        self.discrete = False
+
+        log_std = self._config.log_std if self._config.log_std != 'default' else 0.5
+        self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * self.output_size[0]), requires_grad=False)
+
         self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
                                   activation=nn.Tanh,
                                   output_activation=None)
@@ -46,24 +54,36 @@ class Net(BaseNet):
     def get_critic_parameters(self) -> Iterator:
         return self._critic.parameters()
 
-    def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Categorical:
+    def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
         inputs = super().forward(inputs=inputs, train=train)
         logits = self._actor(inputs)
-        return Categorical(logits=logits)
+        return logits, torch.exp(self.log_std)
 
-    def get_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:
-        distribution = self._policy_distribution(inputs=inputs, train=train)
-        return -(distribution.probs * torch.log(distribution.probs)).sum(dim=1)
+    def _sample(self, inputs: torch.Tensor, train: bool = True):
+        mean, std = self._policy_distribution(inputs, train)
+        return (mean + torch.randn_like(mean) * std).detach()
 
     def get_action(self, inputs, train: bool = False) -> Action:
-        output = self._policy_distribution(inputs, train).sample()
+        output = self._sample(inputs, train)
+        output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),
-                      value=output.item())
+                      value=output)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        actions = super().forward(inputs=actions, train=train)
-        return self._policy_distribution(inputs, train=train).log_prob(actions)
+        actions = super().forward(inputs=actions, train=train)  # preprocess list of Actions
+        try:
+            mean, std = self._policy_distribution(inputs, train)
+            log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
+                                  0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
+                                  + self.log_std.sum(-1))
+            return log_probabilities
+        except Exception as e:
+            raise ValueError(f"Numerical error: {e}")
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
         inputs = super().forward(inputs=inputs, train=train)
         return self._critic(inputs)
+
+    def get_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:
+        mean, std = self._policy_distribution(inputs=inputs, train=train)
+        return Normal(mean, std).entropy().sum(dim=1)

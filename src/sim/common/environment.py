@@ -8,6 +8,7 @@ import numpy as np
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
+from src.core.filters import NormalizationFilter, ReturnFilter
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import Action, Experience, ProcessState
@@ -89,6 +90,8 @@ class EnvironmentConfig(Config):
     ros_config: Optional[RosConfig] = None
     # Gym specific environment settings
     gym_config: Optional[GymConfig] = None
+    normalize_observations: bool = False
+    normalize_rewards: bool = False
 
     def __post_init__(self):
         if self.gym_config is None:
@@ -104,6 +107,13 @@ class Environment:
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=self._config.output_path,
                                   quiet=False)
+
+        if self._config.normalize_observations:
+            self._observation_filter = NormalizationFilter()
+
+        if self._config.normalize_rewards:
+            self._reward_filter = ReturnFilter()
+
         cprint('initiated', self._logger)
 
     def step(self, action: Action) -> Tuple[Experience, np.ndarray]:
@@ -115,3 +125,15 @@ class Environment:
     def remove(self) -> ProcessState:
         [h.close() for h in self._logger.handlers]
         return ProcessState.Terminated
+
+    def _filter_observation(self, observation: np.ndarray) -> np.ndarray:
+        return self._observation_filter(observation) if self._config.normalize_observations else observation
+
+    def _filter_reward(self, reward: float) -> float:
+        return self._reward_filter(reward) if self._config.normalize_rewards else reward
+
+    def _reset_filters(self):
+        if self._config.normalize_observations:
+            self._observation_filter.reset()
+        if self._config.normalize_rewards:
+            self._reward_filter.reset()

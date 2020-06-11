@@ -1,43 +1,44 @@
 architecture_config:
-  architecture: cart_pole_4_2d_stochastic
+  architecture: humanoid_376_17c
   device: cuda
-  initialisation_seed: 123
+  initialisation_seed: 500
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
   store_on_ram_only: true
 environment_config:
-  normalize_observations: false
-  normalize_rewards: false
+  normalize_observations: true
+  normalize_rewards: true
   factory_key: GYM
   gym_config:
     random_seed: 123
     render: false
-    world_name: CartPole-v0
+    world_name: Humanoid-v2
   max_number_of_steps: -1  # let number of steps depend on environment
 number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
-number_of_epochs: 500
-train_every_n_steps: 200
-output_path: cart_pole2/stochastic_critic
+number_of_epochs: 10000
+train_every_n_steps: 2048
+output_path: humanoid-v2/entropy
 tensorboard: true
 trainer_config:
   criterion: MSELoss
-  learning_rate: 0.001
-  gradient_clip_norm: 5
+  critic_learning_rate: 0.0001
+  actor_learning_rate: 0.00015
+  gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
     batch_size: 200
     data_sampling_seed: 123
-    observation_clipping: 5
-    reward_clipping: 5
+    observation_clipping: 10
+    reward_clipping: 10
   device: cuda
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
-  entropy_coefficient: 0.
-  save_checkpoint_every_n: 100
-  max_actor_training_iterations: 50
+  entropy_coefficient: 0.01
+  save_checkpoint_every_n: 50
+  max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2
   kl_target: 0.01

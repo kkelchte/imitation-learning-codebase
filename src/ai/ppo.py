@@ -1,11 +1,13 @@
 #!/usr/bin/python3.8
 import torch
 from torch import nn
+import numpy as np
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import TrainerConfig
 from src.ai.utils import get_reward_to_go
 from src.ai.vpg import VanillaPolicyGradient
+from src.data.utils import select
 from src.core.data_types import Distribution, Dataset
 from src.core.logger import get_logger, cprint
 from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -40,19 +42,29 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         list_batch_loss = []
         list_entropy_loss = []
         for _ in range(self._config.max_actor_training_iterations):
+            selected_indices = np.random.choice(list(range(len(batch))),
+                                                size=self._config.data_loader_config.batch_size) \
+                    if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
+
+            mini_batch_observations = select(batch.observations, selected_indices)
+            mini_batch_actions = select(batch.actions, selected_indices)
+            mini_batch_original_log_probabilities = select(original_log_probabilities, selected_indices)
+            mini_batch_phi_weights = select(phi_weights, selected_indices)
+
             self._actor_optimizer.zero_grad()
-            new_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
-                                                                       actions=batch.actions,
+            new_log_probabilities = self._net.policy_log_probabilities(inputs=mini_batch_observations,
+                                                                       actions=mini_batch_actions,
                                                                        train=True)
             entropy_loss = self._config.entropy_coefficient * \
-                self._net.get_policy_entropy(torch.stack(batch.observations).
+                self._net.get_policy_entropy(torch.stack(mini_batch_observations).
                                              type(torch.float32), train=True).mean()
-            ratio = torch.exp(new_log_probabilities - original_log_probabilities)
-            batch_loss = -(torch.min(ratio * phi_weights,
+            ratio = torch.exp(new_log_probabilities - mini_batch_original_log_probabilities)
+            batch_loss = -(torch.min(ratio * mini_batch_phi_weights,
                                      ratio.clamp(1 - self._config.ppo_epsilon,
-                                                 1 + self._config.ppo_epsilon) * phi_weights).mean() + entropy_loss)
+                                                 1 + self._config.ppo_epsilon) * mini_batch_phi_weights).mean()
+                           + entropy_loss)
 
-            kl_approximation = (original_log_probabilities - new_log_probabilities).mean().item()
+            kl_approximation = (mini_batch_original_log_probabilities - new_log_probabilities).mean().item()
 
             if kl_approximation > 1.5 * self._config.kl_target:
                 break
@@ -74,19 +86,30 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
     def _train_critic(self, batch: Dataset, targets: torch.Tensor) -> Distribution:
         critic_loss = []
         for value_train_it in range(self._config.max_critic_training_iterations):
-            critic_loss.append(super()._train_critic(batch, targets))
+            selected_indices = np.random.choice(list(range(len(batch))),
+                                                size=self._config.data_loader_config.batch_size) \
+                if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
+            critic_loss.append(super()._train_critic(select(batch, selected_indices),
+                                                     select(targets, selected_indices)))
         return Distribution(torch.stack(critic_loss))
 
     def _train_critic_clipped(self, batch: Dataset, targets: torch.Tensor) -> Distribution:
         critic_loss = []
         previous_values = self._net.critic(inputs=batch.observations, train=True).squeeze().detach()
         for value_train_it in range(self._config.max_critic_training_iterations):
-            batch_values = self._net.critic(inputs=batch.observations, train=True).squeeze()
-            batch_loss = self._criterion(batch_values, targets)
+            selected_indices = np.random.choice(list(range(len(batch))),
+                                                size=self._config.data_loader_config.batch_size) \
+                if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
+            mini_batch_observations = select(batch.observations, selected_indices)
+            mini_batch_previous_values = select(previous_values, selected_indices)
+            mini_batch_targets = select(targets, selected_indices)
+            batch_values = self._net.critic(inputs=mini_batch_observations, train=True).squeeze()
+            batch_loss = self._criterion(batch_values, mini_batch_targets)
             # absolute clipping
-            clipped_values = previous_values + (batch_values - previous_values).clamp(-self._config.ppo_epsilon,
-                                                                                      self._config.ppo_epsilon)
-            clipped_loss = self._criterion(clipped_values, targets)
+            clipped_values = mini_batch_previous_values + \
+                             (batch_values - mini_batch_previous_values).clamp(-self._config.ppo_epsilon,
+                                                                               self._config.ppo_epsilon)
+            clipped_loss = self._criterion(clipped_values, mini_batch_targets)
             batch_loss = torch.max(batch_loss, clipped_loss)
             batch_loss.mean().backward()
             if self._config.gradient_clip_norm != -1:

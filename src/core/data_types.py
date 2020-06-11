@@ -31,6 +31,7 @@ class Distribution:
             self.std = np.std(data).item()
             self.min = np.min(data)
             self.max = np.max(data)
+        assert not np.isnan(self.mean)
 
 
 class ProcessState(IntEnum):

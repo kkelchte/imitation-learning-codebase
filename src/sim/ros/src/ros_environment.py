@@ -319,6 +319,9 @@ class RosEnvironment(Environment):
             cprint("waiting for info", self._logger, msg_type=MessageType.debug)
             return False
         cprint("update current experience", self._logger, msg_type=MessageType.debug)
+        self._observation = self._filter_observation(self._observation)
+        self._info['unfiltered_reward'] = deepcopy(self._reward)
+        self._reward = self._filter_reward(self._reward)
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._previous_observation
@@ -362,6 +365,7 @@ class RosEnvironment(Environment):
         return experience without reward or action
         """
         cprint(f'resetting', self._logger)
+        self._reset_filters()
         self._step = 0
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
@@ -369,6 +373,7 @@ class RosEnvironment(Environment):
         self._clear_experience_values()
         while self.fsm_state != FsmState.Running or self._observation is None or self._terminal_state is None:
             self._run_shortly()
+        self._observation = self._filter_observation(self._observation)
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._observation),

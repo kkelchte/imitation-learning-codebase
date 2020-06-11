@@ -1,7 +1,7 @@
 import os
 import warnings
 from copy import deepcopy
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import h5py
 import torch
@@ -318,3 +318,18 @@ def create_hdf5_file_from_run_directories(filename: str, runs: List[str]) -> Non
     h5py_file = h5py.File(filename, 'w')
     for run in tqdm(runs, ascii=True, desc=f'creating {os.path.basename(filename)}'):
         h5py_file = add_run_to_h5py(h5py_file=h5py_file, run=run)
+
+
+def select(data: Union[list, torch.Tensor, np.ndarray, Dataset], indices: List[int]) -> Union[list, torch.Tensor,
+                                                                                              np.ndarray, Dataset]:
+    if isinstance(data, list):
+        return [data[i] for i in indices]
+    elif isinstance(data, Dataset):
+        return Dataset(
+            observations=[data.observations[i] for i in indices],
+            actions=[data.actions[i] for i in indices],
+            rewards=[data.rewards[i] for i in indices],
+            done=[data.done[i] for i in indices],
+        )
+    else:
+        return data.squeeze()[indices]

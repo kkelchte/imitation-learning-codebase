@@ -38,6 +38,7 @@ Script starts environment runner with dataset_saver object to store the episodes
 class ExperimentConfig(Config):
     number_of_epochs: int = 1
     number_of_episodes: int = -1
+    train_every_n_steps: int = -1
     return_smoothing_k: int = 10
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
@@ -82,20 +83,17 @@ class Experiment:
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
-            #  Avoid bug of Tensorboard that print on same logger...
-            #for handler in self._logger.handlers:
-            #    if not isinstance(handler, logging.FileHandler):
-            #        self._logger.removeHandler(handler)
         self._episode_return_queue = deque()
         cprint(f'Initiated.', self._logger)
 
     def _enough_episodes_check(self, episode_number: int) -> bool:
-        if self._config.number_of_episodes != -1:
+        if self._config.train_every_n_steps != -1:
+            return len(self._data_saver) >= self._config.train_every_n_steps
+        elif self._config.number_of_episodes != -1:
             return episode_number >= self._config.number_of_episodes
         elif self._trainer is not None and self._data_saver is not None:
             return len(self._data_saver) >= self._config.trainer_config.data_loader_config.batch_size
         else:
-            #  TODO add prefill option in first epoch
             raise NotImplementedError
 
     def _run_episodes(self) -> str:
@@ -114,7 +112,8 @@ class Experiment:
             while experience.done == TerminationType.NotDone:
                 action = self._net.get_action(next_observation, train=False) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
-                episode_return += experience.reward if experience.reward is not None else 0
+                episode_return += experience.info['unfiltered_reward'] \
+                    if 'unfiltered_reward' in experience.info.keys() else experience.reward
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0

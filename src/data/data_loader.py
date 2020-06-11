@@ -13,7 +13,7 @@ from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import Dataset
-from src.data.utils import load_run, load_dataset_from_hdf5, balance_weights_over_actions
+from src.data.utils import load_run, load_dataset_from_hdf5, balance_weights_over_actions, select
 from src.core.data_types import Experience
 
 
@@ -145,12 +145,7 @@ class DataLoader:
                                               size=self._config.batch_size,
                                               p=self._probabilities
                                               if len(self._probabilities) != 0 else None)
-            batch = Dataset(
-                observations=[self._dataset.observations[sample_index] for sample_index in sample_indices],
-                actions=[self._dataset.actions[sample_index] for sample_index in sample_indices],
-                rewards=[self._dataset.rewards[sample_index] for sample_index in sample_indices],
-                done=[self._dataset.done[sample_index] for sample_index in sample_indices],
-            )
+            batch = select(self._dataset, sample_indices)
             batch_count += len(batch)
             yield batch
         return
