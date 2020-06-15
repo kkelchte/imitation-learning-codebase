@@ -1,6 +1,7 @@
 output_path: straight_corridor
 number_of_epochs: 1000
 number_of_episodes: -1
+train_every_n_steps: 2048
 architecture_config:
   architecture: straight_corridor_depth_30_3d_stochastic
   device: cpu
