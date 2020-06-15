@@ -5,7 +5,7 @@
     <param name="random_seed" value="$(arg random_seed)"/>
     <arg name="output_path" default="/tmp"/>
     <param name="output_path" value="$(arg output_path)"/>
-    <arg name="world_name" default="debug"/>
+    <arg name="world_name" default="debug_drone"/>
     <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
 
     <!--######################## GAZEBO ########################-->
@@ -48,6 +48,8 @@
         <arg name="y" value="$(arg y_pos)"/>
         <arg name="z" value="$(arg z_pos)"/>
         <arg name="Y" default="$(arg yaw_or)"/>
+        <arg name="model" default="$(env HOME)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
+
       </include>
     </group>
 

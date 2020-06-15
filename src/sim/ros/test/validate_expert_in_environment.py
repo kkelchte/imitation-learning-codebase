@@ -11,7 +11,7 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-WORLDNAME = 'cube_world'
+WORLDNAME = 'line_worlds/model_000.yml'
 config_dict = {
     "output_path": "/tmp",
     "factory_key": "ROS",
@@ -20,16 +20,16 @@ config_dict = {
         "info": [
             "sensor/odometry"
         ],
-        "observation": "depth_scan",
+        "observation": "forward_camera",
         "max_update_wait_period_s": 120,
         "store_action": True,
         "store_reward": False,
-        "visible_xterm": False,
+        "visible_xterm": True,
         "step_rate_fps": 30,
         "ros_launch_config": {
           "random_seed": 123,
-          "robot_name": "turtlebot_sim",
-          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
+          "robot_name": "drone_sim",
+          "fsm_config": "takeoff_run",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
@@ -37,13 +37,13 @@ config_dict = {
           "world_name": WORLDNAME,
           "x_pos": 0.0,
           "y_pos": 0.0,
-          "z_pos": 0.0,
+          "z_pos": 0.5,
           "yaw_or": 1.57,
           "gazebo": True,
         },
         "actor_configs": [{
               "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert_noisy.yml"
+              "file": "src/sim/ros/config/actor/ros_expert.yml"
             }],
     }
 }

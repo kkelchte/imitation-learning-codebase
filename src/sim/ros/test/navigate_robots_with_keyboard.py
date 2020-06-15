@@ -25,7 +25,7 @@ class TestRobots(unittest.TestCase):
                     'gazebo': True,
                     'random_seed': 123,
                     'robot_name': robot_name,
-                    'world_name': 'object_world',
+                    'world_name': 'debug_turtle',
                     'x_pos': 0.0,
                     'y_pos': 0.0,
                     'yaw_or': 1.57,

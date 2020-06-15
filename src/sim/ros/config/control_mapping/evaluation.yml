@@ -6,6 +6,5 @@ mapping:
   Running:
     command: '/ros_python_interface/cmd_vel'
     supervision: '/actor/ros_expert/cmd_vel'
-  TakeOff: {}
   TakenOver: {}
   DriveBack: {}

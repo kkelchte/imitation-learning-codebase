@@ -37,8 +37,8 @@ import rospy
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
-from src.core.logger import get_logger, cprint
-from src.core.utils import camelcase_to_snake_format, get_date_time_tag
+from src.core.logger import get_logger, cprint, MessageType
+from src.core.utils import camelcase_to_snake_format, get_date_time_tag, get_filename_without_extension
 from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.utils import get_output_path, euler_from_quaternion, get_distance, rotation_from_quaternion, \
     transform, project, get_current_actor
@@ -52,7 +52,7 @@ class RobotMapper:
         while not rospy.has_param('/output_path') and time.time() < start_time + max_duration:
             time.sleep(0.1)
         self._output_path = get_output_path()
-        self._logger = get_logger(os.path.basename(__file__), self._output_path)
+        self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
 
         # subscribe to fsm state
         if not rospy.has_param('/fsm/state_topic'):
@@ -85,9 +85,9 @@ class RobotMapper:
         self._background_image = Image.open(self._background_file)
 
         # Camera intrinsics from assumption of horizontal and vertical field of view
-        horizontal_field_of_view = 60 * 3.14 / 180
-        vertical_field_of_view = 40 * 3.14 / 180
         width, height = self._background_image.size
+        horizontal_field_of_view = (40 * width/height) * 3.14 / 180
+        vertical_field_of_view = 40 * 3.14 / 180
         self._fx = -width/2*np.tan(horizontal_field_of_view/2)**(-1)
         self._fy = -height/2*np.tan(vertical_field_of_view/2)**(-1)
         self._cx = width/2
@@ -106,7 +106,7 @@ class RobotMapper:
         else:
             self._camera_global_translation = np.asarray([0, 0, 10])
 
-        self._minimum_distance_px = 30
+        self._minimum_distance_px = rospy.get_param('/world/minimum_distance_px', 30)
         self._local_frame = [np.asarray([0, 0, 0]),
                              np.asarray([0.17, 0, 0]),
                              np.asarray([0, 0.17, 0]),
@@ -133,6 +133,8 @@ class RobotMapper:
     def _odometry_callback(self, msg: Odometry):
         if self._fsm_state != FsmState.Running:
             return
+        if float(f"{rospy.get_time()}".split('.')[-1][0]) % 5 == 0:  # print every 500ms
+            cprint(f'received pose {msg.pose.pose}', self._logger, msg_type=MessageType.debug)
         robot_global_translation = np.asarray([msg.pose.pose.position.x,
                                                msg.pose.pose.position.y,
                                                msg.pose.pose.position.z])

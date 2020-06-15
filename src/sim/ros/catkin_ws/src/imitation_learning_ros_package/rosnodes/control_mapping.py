@@ -4,7 +4,6 @@
 Configuration defines which FSM state corresponds to which control connection
 Each FSM state has a number of potential actors or controls steering the robot:
 Running -> EXPERT / DNN / USER < CONFIG/ACTOR & CONFIG/SUPERVISOR
-TakeOff -> EXPERT
 TakeOver -> USER
 DriveBack -> DB
 

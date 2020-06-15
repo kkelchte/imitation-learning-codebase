@@ -7,6 +7,7 @@ from dataclasses_json import dataclass_json
 
 from src.condor.preparation_functions.il_preparation_functions import *  # Do not remove
 from src.condor.preparation_functions.rl_parameter_study import *  # Do not remove
+from src.condor.preparation_functions.line_world_functions import *  # Do not remove
 from src.core.config_loader import Parser, Config
 
 

@@ -16,7 +16,8 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 class TestRosExpert(unittest.TestCase):
 
     def start_test(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
+                          f'/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'turtlebot_sim',
@@ -26,7 +27,7 @@ class TestRosExpert(unittest.TestCase):
             'control_mapping': False,
             'ros_expert': True,
             'output_path': self.output_dir,
-            'ros_expert_config_file_path_with_extension': f'src/sim/ros/config/actor/test.yml'
+            'ros_expert_config_file_path_with_extension': f'src/sim/ros/config/actor/ros_expert.yml'
         }
 
         # spinoff roslaunch
@@ -66,19 +67,19 @@ class TestRosExpert(unittest.TestCase):
         scan = LaserScan()
         scan.ranges = [2] * 20 + [5] * 30 + [2] * (360-50)
         twist = self.send_scan_and_read_twist(scan)
-        self.assertTrue(twist.angular.z == 1)
+        self.assertEqual(twist.angular.z, 1)
 
         # publish depth scan making robot go right
         scan = LaserScan()
         scan.ranges = [1] * 80 + [2] * (360 - 80)
         twist = self.send_scan_and_read_twist(scan)
-        self.assertTrue(twist.angular.z == -1)
+        self.assertEqual(twist.angular.z, -1)
 
         # publish depth scan making robot go straight
         scan = LaserScan()
         scan.ranges = [2] * 360
         twist = self.send_scan_and_read_twist(scan)
-        self.assertTrue(twist.angular.z == 0)
+        self.assertEqual(twist.angular.z, 0)
 
     def _test_waypoint_following(self):
         waypoints = rospy.get_param('/world/waypoints')

@@ -4,16 +4,10 @@
       <uri>model://straight_corridor</uri>
     </include>
     <light name='sun' type='directional'>
-      <cast_shadows>1</cast_shadows>
+      <cast_shadows>0</cast_shadows>
       <pose frame=''>0 0 10 0 -0 0</pose>
-      <diffuse>0.8 0.8 0.8 1</diffuse>
-      <specular>0.2 0.2 0.2 1</specular>
-      <attenuation>
-        <range>1000</range>
-        <constant>0.9</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
+      <diffuse>1 1 1 1</diffuse>
+      <specular>0.0 0.0 0.0 1</specular>
       <direction>-0.5 0.1 -0.9</direction>
     </light>
     <model name='ground_plane'>
@@ -100,7 +94,7 @@
         </link>
       </model>
       <light name='sun'>
-        <pose frame=''>0 0 10 0 -0 0</pose>
+        <pose frame=''>0 0 30 0 -0 0</pose>
       </light>
       <model name='straight_corridor'>
         <pose frame=''>0 4 0 0 0 -1.57</pose>
@@ -115,11 +109,9 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>0 0 10 0 1.57 1.57</pose>
-        <view_controller>ortho</view_controller>
-        <projection_type>orthographic</projection_type>
-<!--        <view_controller>orbit</view_controller>-->
-<!--        <projection_type>perspective</projection_type>-->
+        <pose frame=''>0 4 20 0 1.57 1.57</pose>
+        <view_controller>orbit</view_controller>
+        <projection_type>perspective</projection_type>
       </camera>
     </gui>
   </world>

@@ -15,7 +15,8 @@ from src.sim.ros.src.process_wrappers import RosWrapper
 class TestRos(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
+                          f'/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
     @unittest.skip
@@ -69,7 +70,7 @@ class TestRos(unittest.TestCase):
           "control_mapping": True,
           "waypoint_indicator": True,
           "control_mapping_config": "debug",
-          "world_name": "object_world",
+          "world_name": "debug_turtle",
           "x_pos": 0.0,
           "y_pos": 0.0,
           "z_pos": 0.0,

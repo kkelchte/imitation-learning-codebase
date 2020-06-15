@@ -1,0 +1,23 @@
+world_name: debug_turtle
+max_duration: -1
+delay_evaluation: 1.0
+goal:
+  x:
+    min: 1.7
+    max: 2.2
+  y:
+    min: 1.7
+    max: 2.2
+  z:
+    min: -1
+    max: 1.5
+waypoints:
+  - [0, 1]
+  - [1, 1]
+  - [1, 2]
+  - [2, 2]
+waypoint_reached_distance: 0.1
+reward:
+  collision: -100
+  step: -1
+  goal: 100

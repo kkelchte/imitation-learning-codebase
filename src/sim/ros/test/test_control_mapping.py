@@ -19,7 +19,8 @@ For each FSM state, test correct mapping of control.
 class TestControlMapper(unittest.TestCase):
 
     def start(self, control_mapper_config: str) -> None:
-        self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
+                          f'/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'drone_sim',
@@ -101,8 +102,7 @@ class TestControlMapper(unittest.TestCase):
         # for each fsm state
         for fsm_state in [FsmState.Running,
                           FsmState.DriveBack,
-                          FsmState.TakenOver,
-                          FsmState.TakeOff]:
+                          FsmState.TakenOver]:
             print(f'FSM STATE: {fsm_state}')
             #   publish fsm state
             self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)

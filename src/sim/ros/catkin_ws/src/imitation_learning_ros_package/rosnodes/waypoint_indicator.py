@@ -33,7 +33,7 @@ class WaypointIndicator:
         # fields
         self._current_waypoint_index = 0
         self._waypoints = rospy.get_param('/world/waypoints', [])
-        self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.5)
+        self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.3)
 
         # publishers
         self._publisher = rospy.Publisher('/waypoint_indicator/current_waypoint', Float32MultiArray, queue_size=10)
