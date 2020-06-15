@@ -36,9 +36,6 @@ class Net(BaseNet):
 
         self.discrete = False
 
-        log_std = self._config.log_std if self._config.log_std != 'default' else 0.5
-        self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * self.output_size[0]), requires_grad=False)
-
         self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
                                   activation=nn.Tanh,
                                   output_activation=None)
@@ -46,10 +43,15 @@ class Net(BaseNet):
         self._critic = mlp_creator(sizes=[self.input_size[0], 64, 64, 1],
                                    activation=nn.Tanh,
                                    output_activation=None)
+
+        log_std = self._config.log_std if self._config.log_std != 'default' else 0.5
+        self.log_std = torch.nn.Parameter(torch.ones(self.output_size, dtype=torch.float32) * log_std,
+                                          requires_grad=True)
+
         self.load_network_weights()
 
     def get_actor_parameters(self) -> Iterator:
-        return self._actor.parameters()
+        return list(self._actor.parameters()) + [self.log_std]
 
     def get_critic_parameters(self) -> Iterator:
         return self._critic.parameters()
