@@ -35,19 +35,20 @@ class VanillaPolicyGradient(Trainer):
         self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_actor_parameters(),
                                                                               lr=self._config.learning_rate
                                                                               if self._config.actor_learning_rate == -1
-                                                                              else self._config.actor_learning_rate)
-        self._actor_scheduler = torch.optim.lr_scheduler.StepLR(self._actor_optimizer,
-                                                                step_size=self._config.scheduler_config.step_size,
-                                                                gamma=self._config.scheduler_config.gamma) \
-            if self._config.scheduler_config is not None else None
+                                                                              else self._config.actor_learning_rate,
+                                                                              eps=1e-05)
+
         self._critic_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_critic_parameters(),
                                                                                lr=self._config.learning_rate
                                                                                if self._config.critic_learning_rate == -1
-                                                                               else self._config.critic_learning_rate)
-        self._critic_scheduler = torch.optim.lr_scheduler.StepLR(self._actor_optimizer,
-                                                                 step_size=self._config.scheduler_config.step_size,
-                                                                 gamma=self._config.scheduler_config.gamma) \
-            if self._config.scheduler_config is not None else None
+                                                                               else self._config.critic_learning_rate,
+                                                                               eps=1e-05)
+        if self._config.scheduler_config is not None:
+            lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+            self._actor_scheduler = torch.optim.lr_scheduler.LambdaLR(self._actor_optimizer,
+                                                                      lr_lambda=lambda_function)
+            self._critic_scheduler = torch.optim.lr_scheduler.LambdaLR(self._actor_optimizer,
+                                                                       lr_lambda=lambda_function)
 
     def _calculate_phi(self, batch: Dataset) -> torch.Tensor:
         if self._config.phi_key == "return":
@@ -112,8 +113,7 @@ class VanillaPolicyGradient(Trainer):
         self._save_checkpoint(epoch)
         self._net.global_step += 1
         self.put_model_back_to_original_device()
-        if self._actor_scheduler is not None:
+        if self._config.scheduler_config is not None:
             self._actor_scheduler.step()
-        if self._critic_scheduler is not None:
             self._critic_scheduler.step()
         return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.mean: 0.3e}"

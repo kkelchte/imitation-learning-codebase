@@ -26,8 +26,7 @@ Allows combination of outputs as weighted sum in one big backward pass.
 @dataclass_json
 @dataclass
 class SchedulerConfig(Config):
-    step_size: int = 10
-    gamma: int = 0.9
+    number_of_epochs: int = None
 
 
 @dataclass_json
@@ -72,10 +71,10 @@ class Trainer(Evaluator):
             self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
                                                                             lr=self._config.learning_rate,
                                                                             weight_decay=self._config.weight_decay)
-            self._scheduler = torch.optim.lr_scheduler.StepLR(self._optimizer,
-                                                              step_size=self._config.scheduler_config.step_size,
-                                                              gamma=self._config.scheduler_config.gamma) \
-                if self._config.scheduler_config is not None else None
+            if self._config.scheduler_config is not None:
+                lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+                self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer,
+                                                                    lr_lambda=lambda_function)
 
     def _save_checkpoint(self, epoch: int = -1):
         if epoch != -1:
