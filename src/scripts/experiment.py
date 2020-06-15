@@ -108,7 +108,7 @@ class Experiment:
                 self._data_saver.update_saving_directory()
             episode_return = 0
             experience, next_observation = self._environment.reset()
-            cprint("running episode", self._logger)
+            #cprint("running episode", self._logger)
             while experience.done == TerminationType.NotDone:
                 action = self._net.get_action(next_observation, train=False) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
