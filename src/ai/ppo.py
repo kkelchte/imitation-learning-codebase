@@ -42,45 +42,47 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         list_batch_loss = []
         list_entropy_loss = []
         for _ in range(self._config.max_actor_training_iterations):
-            selected_indices = np.random.choice(list(range(len(batch))),
-                                                size=self._config.data_loader_config.batch_size) \
-                    if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
+            state_indices = np.arange(len(batch))
+            np.random.shuffle(state_indices)
+            splits = np.array_split(state_indices, int(len(batch)/self._config.data_loader_config.batch_size))
+            #selected_indices = np.random.choice(list(range(len(batch))),
+            #                                    size=self._config.data_loader_config.batch_size) \
+            #        if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
+            for selected_indices in splits:
+                mini_batch_observations = select(batch.observations, selected_indices)
+                mini_batch_actions = select(batch.actions, selected_indices)
+                mini_batch_original_log_probabilities = select(original_log_probabilities, selected_indices)
+                mini_batch_phi_weights = select(phi_weights, selected_indices)
 
-            mini_batch_observations = select(batch.observations, selected_indices)
-            mini_batch_actions = select(batch.actions, selected_indices)
-            mini_batch_original_log_probabilities = select(original_log_probabilities, selected_indices)
-            mini_batch_phi_weights = select(phi_weights, selected_indices)
+                self._actor_optimizer.zero_grad()
+                new_log_probabilities = self._net.policy_log_probabilities(inputs=mini_batch_observations,
+                                                                           actions=mini_batch_actions,
+                                                                           train=True)
+                entropy_loss = self._config.entropy_coefficient * \
+                    self._net.get_policy_entropy(torch.stack(mini_batch_observations).
+                                                 type(torch.float32), train=True).mean()
+                ratio = torch.exp(new_log_probabilities - mini_batch_original_log_probabilities)
+                batch_loss = -(torch.min(ratio * mini_batch_phi_weights,
+                                         ratio.clamp(1 - self._config.ppo_epsilon,
+                                                     1 + self._config.ppo_epsilon) * mini_batch_phi_weights).mean()
+                               + entropy_loss)
 
-            self._actor_optimizer.zero_grad()
-            new_log_probabilities = self._net.policy_log_probabilities(inputs=mini_batch_observations,
-                                                                       actions=mini_batch_actions,
-                                                                       train=True)
-            entropy_loss = self._config.entropy_coefficient * \
-                self._net.get_policy_entropy(torch.stack(mini_batch_observations).
-                                             type(torch.float32), train=True).mean()
-            ratio = torch.exp(new_log_probabilities - mini_batch_original_log_probabilities)
-            batch_loss = -(torch.min(ratio * mini_batch_phi_weights,
-                                     ratio.clamp(1 - self._config.ppo_epsilon,
-                                                 1 + self._config.ppo_epsilon) * mini_batch_phi_weights).mean()
-                           + entropy_loss)
-
-            kl_approximation = (mini_batch_original_log_probabilities - new_log_probabilities).mean().item()
-
-            if kl_approximation > 1.5 * self._config.kl_target:
-                break
-            batch_loss.backward()
-            if self._config.gradient_clip_norm != -1:
-                nn.utils.clip_grad_norm_(self._net.get_actor_parameters(),
-                                         self._config.gradient_clip_norm)
-            self._actor_optimizer.step()
-            list_batch_loss.append(batch_loss.detach())
-            list_entropy_loss.append(entropy_loss.detach())
+                #kl_approximation = (mini_batch_original_log_probabilities - new_log_probabilities).mean().item()
+                #if kl_approximation > 1.5 * self._config.kl_target:
+                #    break
+                batch_loss.backward()
+                if self._config.gradient_clip_norm != -1:
+                    nn.utils.clip_grad_norm_(self._net.get_actor_parameters(),
+                                             self._config.gradient_clip_norm)
+                self._actor_optimizer.step()
+                list_batch_loss.append(batch_loss.detach())
+                list_entropy_loss.append(entropy_loss.detach())
         actor_loss_distribution = Distribution(torch.stack(list_batch_loss))
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(actor_loss_distribution, "policy_loss")
             writer.write_distribution(Distribution(torch.stack(list_entropy_loss)), "policy_entropy_loss")
-            writer.write_scalar(kl_approximation, 'kl_difference')
+            #writer.write_scalar(kl_approximation, 'kl_difference')
         return actor_loss_distribution
 
     def _train_critic(self, batch: Dataset, targets: torch.Tensor) -> Distribution:
@@ -140,9 +142,8 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             writer.write_distribution(Distribution(phi_weights.detach()), "phi_weights")
             writer.write_distribution(Distribution(critic_targets.detach()), "critic_targets")
 
-        if self._actor_scheduler is not None:
+        if self._config.scheduler_config is not None:
             self._actor_scheduler.step()
-        if self._critic_scheduler is not None:
             self._critic_scheduler.step()
         self._net.global_step += 1
         self._save_checkpoint(epoch=epoch)
