@@ -78,7 +78,7 @@ class TestRos(unittest.TestCase):
         }
         ros_process = RosWrapper(launch_file='load_ros.launch',
                                  config=config,
-                                 visible=True)
+                                 visible=False)
         ros_process.terminate()
 
     def tearDown(self) -> None:

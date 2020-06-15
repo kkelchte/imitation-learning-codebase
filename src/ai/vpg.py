@@ -58,12 +58,12 @@ class VanillaPolicyGradient(Trainer):
             return get_generalized_advantage_estimate(
                 batch_rewards=batch.rewards,
                 batch_done=batch.done,
-                batch_values=self._net.critic(batch.observations, train=False).detach(),
+                batch_values=[v for v in self._net.critic(batch.observations, train=False).detach()],
                 discount=0.95 if self._config.discount != "default" else self._config.discount,
                 gae_lambda=0.95 if self._config.gae_lambda != "default" else self._config.gae_lambda,
             )
         elif self._config.phi_key == "value-baseline":
-            values = self._net.critic(batch.observations, train=False).detach()
+            values = self._net.critic(batch.observations, train=False).detach().squeeze()
             returns = get_reward_to_go(batch)
             return returns - values
         else:

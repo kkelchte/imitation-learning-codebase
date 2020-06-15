@@ -293,7 +293,7 @@ class RosEnvironment(Environment):
         self._action = None
         self._reward = None
         self._terminal_state = None
-        self._info = {k: None for k in self._info.keys()}
+        self._info = {k: None for k in self._info.keys() if k != 'unfiltered_reward'}
 
     def _update_current_experience(self) -> bool:
         """

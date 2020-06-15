@@ -4,12 +4,13 @@ import os
 from copy import deepcopy
 
 import numpy as np
+import torch
 
 from src.data.data_loader import DataLoader, DataLoaderConfig
 from src.core.utils import get_filename_without_extension
 from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
-from src.data.utils import arrange_run_according_timestamps, calculate_weights
+from src.data.utils import arrange_run_according_timestamps, calculate_weights, select
 
 
 class TestDataLoader(unittest.TestCase):
@@ -183,6 +184,22 @@ class TestDataLoader(unittest.TestCase):
         data_loader.load_dataset()
         self.assertTrue(sum([np.ceil((el - 1) / subsample) + 1 for el in self.info['episode_lengths']]),
                         len(data_loader.get_dataset()))
+
+    def test_select(self):
+        data = list(range(10))
+        indices = [3, 5]
+        result = select(data, indices)
+        self.assertEqual(result, [3, 5])
+
+        data = torch.as_tensor([[v, 1, 10 - v] for v in range(10)])
+        indices = [3, 5]
+        result = select(data, indices)
+        self.assertEqual((result - torch.as_tensor([[3, 1, 7], [5, 1, 5]])).sum().item(), 0)
+
+        data = np.asarray([[v, 1, 10 - v] for v in range(10)])
+        indices = [3, 5]
+        result = select(data, indices)
+        self.assertEqual((result - np.asarray([[3, 1, 7], [5, 1, 5]])).sum(), 0)
 
     # def test_data_balancing(self): TODO
     #     # average action variance in batch with action balancing
