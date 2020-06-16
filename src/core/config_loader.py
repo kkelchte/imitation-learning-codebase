@@ -24,6 +24,7 @@ def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
 class Config:
     output_path: Optional[str] = None
     store: Optional[bool] = True
+    commit: Optional[str] = ""
     """Define config class to translate yaml/dicts to corresponding config objects.
 
     Based on dataclass_json object.
@@ -47,6 +48,7 @@ class Config:
             instant.output_path = f'{os.environ["DATADIR"]}/{instant.output_path}' if "DATADIR" in os.environ.keys() \
                 else f'{os.environ["HOME"]}/{instant.output_path}'
         instant.iterative_add_output_path(output_path=instant.output_path)
+        instant.commit = os.popen('git rev-parse HEAD').read().strip()
         instant.post_init()
         instant.iterative_check_for_none()
         if store:
