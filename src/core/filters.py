@@ -62,7 +62,8 @@ class NormalizationFilter:
         return x
 
     def reset(self):
-        self._statistic.reset()
+        pass
+#        self._statistic.reset()
 
 
 class ReturnFilter:
@@ -83,5 +84,5 @@ class ReturnFilter:
         return r
 
     def reset(self):
-        self._statistic.reset()
         self._retrn = 0
+        # self._statistic.reset()
