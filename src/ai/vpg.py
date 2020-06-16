@@ -47,7 +47,7 @@ class VanillaPolicyGradient(Trainer):
             lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
             self._actor_scheduler = torch.optim.lr_scheduler.LambdaLR(self._actor_optimizer,
                                                                       lr_lambda=lambda_function)
-            self._critic_scheduler = torch.optim.lr_scheduler.LambdaLR(self._actor_optimizer,
+            self._critic_scheduler = torch.optim.lr_scheduler.LambdaLR(self._critic_optimizer,
                                                                        lr_lambda=lambda_function)
 
     def _calculate_phi(self, batch: Dataset) -> torch.Tensor:
