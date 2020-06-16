@@ -67,7 +67,7 @@ class Net(BaseNet):
 
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._sample(inputs, train)
-        output = output.clamp(min=self.action_min, max=self.action_max)
+        # output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),
                       value=output)
 
