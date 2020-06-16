@@ -78,7 +78,7 @@ class Trainer(Evaluator):
 
     def _save_checkpoint(self, epoch: int = -1):
         if epoch != -1:
-            if epoch % self._config.save_checkpoint_every_n == 0:
+            if epoch % self._config.save_checkpoint_every_n == 0 and self._config.save_checkpoint_every_n != -1:
                 self._net.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
         else:
             self._net.save_to_checkpoint()
