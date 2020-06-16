@@ -53,6 +53,8 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                 mini_batch_actions = select(batch.actions, selected_indices)
                 mini_batch_original_log_probabilities = select(original_log_probabilities, selected_indices)
                 mini_batch_phi_weights = select(phi_weights, selected_indices)
+                mini_batch_phi_weights = (mini_batch_phi_weights - mini_batch_phi_weights.mean()) \
+                    / (mini_batch_phi_weights.std() + 1e-8)
 
                 self._actor_optimizer.zero_grad()
                 new_log_probabilities = self._net.policy_log_probabilities(inputs=mini_batch_observations,
@@ -99,27 +101,33 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         critic_loss = []
         previous_values = self._net.critic(inputs=batch.observations, train=True).squeeze().detach()
         for value_train_it in range(self._config.max_critic_training_iterations):
-            selected_indices = np.random.choice(list(range(len(batch))),
-                                                size=self._config.data_loader_config.batch_size) \
-                if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
-            mini_batch_observations = select(batch.observations, selected_indices)
-            mini_batch_previous_values = select(previous_values, selected_indices)
-            mini_batch_targets = select(targets, selected_indices)
-            batch_values = self._net.critic(inputs=mini_batch_observations, train=True).squeeze()
-            batch_loss = self._criterion(batch_values, mini_batch_targets)
-            # absolute clipping
-            clipped_values = mini_batch_previous_values + \
-                             (batch_values - mini_batch_previous_values).clamp(-self._config.ppo_epsilon,
-                                                                               self._config.ppo_epsilon)
-            clipped_loss = self._criterion(clipped_values, mini_batch_targets)
-            batch_loss = torch.max(batch_loss, clipped_loss)
-            batch_loss.mean().backward()
-            if self._config.gradient_clip_norm != -1:
-                nn.utils.clip_grad_norm_(self._net.get_critic_parameters(),
-                                         self._config.gradient_clip_norm)
-            self._critic_optimizer.step()
-            critic_loss.append(batch_loss.detach())
-        return Distribution(torch.stack(critic_loss))
+            state_indices = np.asarray([index for index in range(len(batch)) if not batch.done[index]])
+            np.random.shuffle(state_indices)
+            splits = np.array_split(state_indices, int(len(batch) / self._config.data_loader_config.batch_size))
+
+#            selected_indices = np.random.choice(list(range(len(batch))),
+#                                                size=self._config.data_loader_config.batch_size) \
+#                if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
+            for selected_indices in splits:
+                mini_batch_observations = select(batch.observations, selected_indices)
+                mini_batch_previous_values = select(previous_values, selected_indices)
+                mini_batch_targets = select(targets, selected_indices)
+
+                batch_values = self._net.critic(inputs=mini_batch_observations, train=True).squeeze()
+                batch_loss = self._criterion(batch_values, mini_batch_targets)
+                # absolute clipping
+                clipped_values = mini_batch_previous_values + \
+                                 (batch_values - mini_batch_previous_values).clamp(-self._config.ppo_epsilon,
+                                                                                   self._config.ppo_epsilon)
+                clipped_loss = self._criterion(clipped_values, mini_batch_targets)
+                batch_loss = torch.max(batch_loss, clipped_loss)
+                batch_loss.mean().backward()
+                if self._config.gradient_clip_norm != -1:
+                    nn.utils.clip_grad_norm_(self._net.get_critic_parameters(),
+                                             self._config.gradient_clip_norm)
+                self._critic_optimizer.step()
+                critic_loss.append(batch_loss.detach())
+        return Distribution(torch.cat(critic_loss))
 
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
