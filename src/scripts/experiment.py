@@ -97,9 +97,8 @@ class Experiment:
             raise NotImplementedError
 
     def _run_episodes(self) -> str:
-        if self._data_saver is not None:
-            if self._config.data_saver_config.clear_buffer_before_episode:
-                self._data_saver.clear_buffer()
+        if self._data_saver is not None and self._config.data_saver_config.clear_buffer_before_episode:
+            self._data_saver.clear_buffer()
         count_episodes = 0
         count_success = 0
         episode_returns = []
@@ -108,8 +107,7 @@ class Experiment:
                 self._data_saver.update_saving_directory()
             episode_return = 0
             experience, next_observation = self._environment.reset()
-            #cprint("running episode", self._logger)
-            while experience.done == TerminationType.NotDone:
+            while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
                 action = self._net.get_action(next_observation, train=False) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
                 episode_return += experience.info['unfiltered_reward'] \

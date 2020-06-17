@@ -55,8 +55,8 @@ class GymEnvironment(Environment):
         )
         if self._config.gym_config.render:
             self._gym.render()
-        self.previous_observation = observation
-        return experience, observation
+        self.previous_observation = observation.copy()
+        return experience, observation.copy()
 
     def get_random_action(self) -> Action:
         return Action(
