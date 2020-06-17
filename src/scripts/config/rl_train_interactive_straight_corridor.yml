@@ -1,7 +1,7 @@
 output_path: straight_corridor
 number_of_epochs: 1000
 number_of_episodes: -1
-train_every_n_steps: 2048
+train_every_n_steps: 250
 architecture_config:
   architecture: straight_corridor_depth_30_3d_stochastic
   device: cpu
@@ -39,13 +39,15 @@ trainer_config:
   criterion: MSELoss
   actor_learning_rate: 0.001
   critic_learning_rate: 0.0005
-  gradient_clip_norm: 1
+  scheduler_config:
+    number_of_epochs: 1000
+  gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
-    batch_size: 200
+    batch_size: 64
     data_sampling_seed: 123
-    observation_clipping: 5
-    reward_clipping: 5
+    observation_clipping: 10
+    reward_clipping: 10
   device: cpu
   discount: 0.99
   factory_key: PPO
