@@ -86,10 +86,12 @@ def get_generalized_advantage_estimate(batch_rewards: List[torch.Tensor],
                                        batch_values: List[torch.Tensor],
                                        discount: float,
                                        gae_lambda: float) -> torch.Tensor:
-    try:
-        batch_not_done = [torch.as_tensor(1) if d.data == 0 else torch.as_tensor(0) for d in batch_done]
-    except:
-        batch_not_done = [torch.as_tensor(1) if not d else torch.as_tensor(0) for d in batch_done]
+    batch_done = torch.stack(batch_done) if isinstance(batch_done, list) else batch_done
+    batch_not_done = -1 * batch_done.bool() + 1
+#    try:
+#        batch_not_done = [torch.as_tensor(1) if d.data == 0 else torch.as_tensor(0) for d in batch_done]
+#    except:
+#        batch_not_done = [torch.as_tensor(1) if not d else torch.as_tensor(0) for d in batch_done]
     advantages = [torch.as_tensor(0)] * len(batch_rewards)
     #  not_done array: if value is done future advantage should not influence.
     # the last advantage = last reward + gamma * V_bs * not_done_boolean - last value
