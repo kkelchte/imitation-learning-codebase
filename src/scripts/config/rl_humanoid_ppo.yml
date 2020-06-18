@@ -2,7 +2,7 @@ architecture_config:
   architecture: humanoid_376_17c
   log_std: 0.
   device: cuda
-  initialisation_seed: 500
+  initialisation_seed: 123
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
