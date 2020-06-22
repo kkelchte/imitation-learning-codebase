@@ -6,6 +6,8 @@ data_saver_config:
   clear_buffer_before_episode: false
   store_on_ram_only: false
 environment_config:
+  normalize_observations: true
+  normalize_rewards: true
   factory_key: GYM
   gym_config:
     random_seed: 123
@@ -16,3 +18,4 @@ number_of_episodes: 10
 number_of_epochs: 1
 output_path: humanoid-v2/evaluated
 tensorboard: false
+train_every_n_steps: 1000
