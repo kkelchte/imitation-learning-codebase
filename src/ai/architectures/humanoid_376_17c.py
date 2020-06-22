@@ -7,7 +7,7 @@ import numpy as np
 from torch.distributions import Normal
 
 from src.ai.base_net import BaseNet, ArchitectureConfig
-from src.ai.utils import mlp_creator
+from src.ai.utils import mlp_creator, initialize_weights
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -49,6 +49,15 @@ class Net(BaseNet):
                                    output_activation=None)
 
         self.load_network_weights()
+
+    def initialize_architecture(self):
+        torch.manual_seed(self._config.initialisation_seed)
+        for layer in self._actor[:-1]:
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
+        initialize_weights(self._actor[-1], initialisation_type=self._config.initialisation_type, scale=0.01)
+        for layer in self._critic[:-1]:
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
+        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=1.0)
 
     def get_actor_parameters(self) -> Iterator:
         return list(self._actor.parameters()) + [self.log_std]

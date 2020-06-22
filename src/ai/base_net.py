@@ -11,7 +11,7 @@ from dataclasses_json import dataclass_json
 import torch.nn as nn
 from typing_extensions import runtime_checkable, Protocol
 
-from src.ai.utils import get_checksum_network_parameters
+from src.ai.utils import get_checksum_network_parameters, initialize_weights
 from src.core.config_loader import Config
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
@@ -86,29 +86,16 @@ class BaseNet(nn.Module):
             if len([ckpt for ckpt in os.listdir(self._checkpoint_output_directory) if ckpt.endswith('ckpt')]) > 0:
                 self.load_from_checkpoint(checkpoint_dir=self._checkpoint_output_directory)
             else:
-                self.initialize_architecture_weights(self._config.initialisation_type)
+                self.initialize_architecture_weights()
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)
         cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
         self.set_device(self._device)
 
-    def initialize_architecture_weights(self, initialisation_type: str = 'xavier'):
+    def initialize_architecture(self):
         torch.manual_seed(self._config.initialisation_seed)
-        for p in self.parameters():
-            if initialisation_type == 'xavier':
-                if len(p.shape) == 1:
-                    p.data.zero_()
-                else:
-                    nn.init.xavier_uniform_(p.data)
-            elif initialisation_type == 'constant':
-                nn.init.constant_(p.data, 0.03)
-            elif initialisation_type == 'orthogonal':
-                if len(p.shape) == 1:
-                    p.data.zero_()
-                else:
-                    nn.init.orthogonal_(p.data, gain=2**0.5)
-            else:
-                raise NotImplementedError
+        for layer in self.modules():
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type)
 
     def load_from_checkpoint(self, checkpoint_dir: str):
         if len([f for f in os.listdir(checkpoint_dir) if f.endswith('.ckpt')]) == 0:

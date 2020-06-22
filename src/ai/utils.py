@@ -10,6 +10,21 @@ from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 
 
+def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
+    for p in weights.parameters():
+        if len(p.shape) == 1:
+            p.data.zero_()
+        else:
+            if initialisation_type == 'xavier':
+                nn.init.xavier_uniform_(p.data)
+            elif initialisation_type == 'constant':
+                nn.init.constant_(p.data, scale)
+            elif initialisation_type == 'orthogonal':
+                nn.init.orthogonal_(p.data, gain=2**0.5)
+            else:
+                raise NotImplementedError
+
+
 class DiscreteActionMapper:
 
     def __init__(self, action_values: List[torch.Tensor]):
