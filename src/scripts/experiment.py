@@ -39,7 +39,7 @@ class ExperimentConfig(Config):
     number_of_epochs: int = 1
     number_of_episodes: int = -1
     train_every_n_steps: int = -1
-    return_smoothing_k: int = 10
+    return_smoothing_k: int = -1
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
     architecture_config: Optional[ArchitectureConfig] = None
@@ -102,23 +102,27 @@ class Experiment:
         count_episodes = 0
         count_success = 0
         episode_returns = []
-        while not self._enough_episodes_check(count_episodes):
+        self._episode_return_queue = deque()
+        step = 0
+        while step < self._config.train_every_n_steps:
             if self._data_saver is not None and self._config.data_saver_config.separate_raw_data_runs:
                 self._data_saver.update_saving_directory()
             episode_return = 0
             experience, next_observation = self._environment.reset()
-            while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
+            while experience.done == TerminationType.NotDone and step < self._config.train_every_n_steps:
                 action = self._net.get_action(next_observation, train=False) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
                 episode_return += experience.info['unfiltered_reward'] \
                     if 'unfiltered_reward' in experience.info.keys() else experience.reward
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
+                step += 1
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
-            episode_returns.append(episode_return)
-            self._episode_return_queue.append(episode_return)
-            if len(self._episode_return_queue) >= self._config.return_smoothing_k:
+            if experience.done == TerminationType.NotDone:
+                episode_returns.append(episode_return)
+                self._episode_return_queue.append(episode_return)
+            if len(self._episode_return_queue) >= self._config.return_smoothing_k != -1:
                 self._episode_return_queue.popleft()
         if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
             self._data_saver.create_train_validation_hdf5_files()

@@ -97,16 +97,16 @@ class BaseNet(nn.Module):
         for p in self.parameters():
             if initialisation_type == 'xavier':
                 if len(p.shape) == 1:
-                    nn.init.constant_(p, 0)
+                    p.data.zero_()
                 else:
-                    nn.init.xavier_uniform_(p)
+                    nn.init.xavier_uniform_(p.data)
             elif initialisation_type == 'constant':
-                nn.init.constant_(p, 0.03)
+                nn.init.constant_(p.data, 0.03)
             elif initialisation_type == 'orthogonal':
                 if len(p.shape) == 1:
-                    nn.init.constant_(p, 0)
+                    p.data.zero_()
                 else:
-                    nn.init.orthogonal_(p, gain=2**0.5)
+                    nn.init.orthogonal_(p.data, gain=2**0.5)
             else:
                 raise NotImplementedError
 

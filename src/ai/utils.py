@@ -81,6 +81,77 @@ def get_checksum_network_parameters(parameters: Union[List[torch.Tensor],
 ##################################################################
 
 
+def discount_path(path, h):
+    '''
+    Given a "path" of items x_1, x_2, ... x_n, return the discounted
+    path, i.e.
+    X_1 = x_1 + h*x_2 + h^2 x_3 + h^3 x_4
+    X_2 = x_2 + h*x_3 + h^2 x_4 + h^3 x_5
+    etc.
+    Can do (more efficiently?) w SciPy. Python here for readability
+    Inputs:
+    - path, list/tensor of floats
+    - h, discount rate
+    Outputs:
+    - Discounted path, as above
+    '''
+    curr = 0
+    rets = []
+    for i in range(len(path)):
+        curr = curr*h + path[-1-i]
+        rets.append(curr)
+    rets =  torch.stack(list(reversed(rets)), 0)
+    return rets
+
+
+def get_path_indices(not_dones):
+    """
+    Returns list of tuples of the form:
+        (agent index, time index start, time index end + 1)
+    For each path seen in the not_dones array of shape (# agents, # time steps)
+    E.g. if we have an not_dones of composition:
+    tensor([[1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 0, 1, 1, 0, 1, 1, 0, 1]], dtype=torch.uint8)
+    Then we would return:
+    [(0, 0, 3), (0, 3, 10), (1, 0, 3), (1, 3, 5), (1, 5, 9), (1, 9, 10)]
+    """
+    indices = []
+    num_timesteps = not_dones.shape[1]
+    for actor in range(not_dones.shape[0]):
+        last_index = 0
+        for i in range(num_timesteps):
+            if not_dones[actor, i] == 0.:
+                indices.append((actor, last_index, i + 1))
+                last_index = i + 1
+        if last_index != num_timesteps:
+            indices.append((actor, last_index, num_timesteps))
+    return indices
+
+
+def get_generalized_advantage_estimate_with_tensors(batch_rewards: torch.Tensor,
+                                                    batch_done: torch.Tensor,
+                                                    batch_values: torch.Tensor,
+                                                    discount: float = 0.99,
+                                                    gae_lambda: float = 0.95) -> torch.Tensor:
+    batch_not_done = -1 * batch_done.bool() + 1
+    V_s_tp1 = torch.cat([batch_values[1:], batch_values[-1:]], 0) * batch_not_done.squeeze()
+    deltas = batch_rewards.squeeze_() + gae_lambda * V_s_tp1 - batch_values
+
+    # now we need to discount each path by gamma * lam
+    advantages = torch.zeros_like(batch_rewards)
+    indices = get_path_indices(batch_not_done.unsqueeze(0))
+    for _, start, end in indices:
+        advantages[start:end] = discount_path(deltas[start:end], gae_lambda * discount)
+    # advantages = torch.zeros(batch_rewards.shape)
+    # #  not_done array: if value is done future advantage should not influence.
+    # # the last advantage = last reward + gamma * V_bs * not_done_boolean - last value
+    # advantages[-1] = batch_rewards[-1] - batch_values[-1]
+    # for t in reversed(range(len(batch_rewards) - 1)):
+    #     delta = batch_rewards[t] + discount * batch_values[t + 1] * batch_not_done[t] - batch_values[t]
+    #     advantages[t] = delta + discount * gae_lambda * batch_not_done[t] * advantages[t + 1]
+    return advantages
+
+
 def get_generalized_advantage_estimate(batch_rewards: List[torch.Tensor],
                                        batch_done: List[torch.Tensor],
                                        batch_values: List[torch.Tensor],

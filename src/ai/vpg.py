@@ -5,7 +5,8 @@ from torch import nn
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import Trainer, TrainerConfig
-from src.ai.utils import get_returns, get_reward_to_go, get_generalized_advantage_estimate
+from src.ai.utils import get_returns, get_reward_to_go, get_generalized_advantage_estimate, \
+    get_generalized_advantage_estimate_with_tensors
 from src.core.data_types import Dataset, Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -56,10 +57,10 @@ class VanillaPolicyGradient(Trainer):
         elif self._config.phi_key == "reward-to-go":
             return get_reward_to_go(batch)
         elif self._config.phi_key == "gae":
-            return get_generalized_advantage_estimate(
+            return get_generalized_advantage_estimate_with_tensors(
                 batch_rewards=batch.rewards,
                 batch_done=batch.done,
-                batch_values=self._net.critic(batch.observations, train=False).detach(),
+                batch_values=self._net.critic(batch.observations, train=False).squeeze().detach(),
                 discount=0.99 if self._config.discount == "default" else self._config.discount,
                 gae_lambda=0.95 if self._config.gae_lambda == "default" else self._config.gae_lambda,
             )
@@ -72,10 +73,10 @@ class VanillaPolicyGradient(Trainer):
 
     def _train_actor(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._actor_optimizer.zero_grad()
-        log_probability = self._net.policy_log_probabilities(torch.stack(batch.observations).type(torch.float32),
-                                                             torch.stack(batch.actions).type(torch.float32),
+        log_probability = self._net.policy_log_probabilities(batch.observations,
+                                                             batch.actions,
                                                              train=True)
-        entropy = self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32), train=True)
+        entropy = self._net.get_policy_entropy(batch.observations, train=True)
         # '-' required for performing gradient ascent instead of descent.
         policy_loss = -(log_probability * phi_weights + self._config.entropy_coefficient * entropy.mean())
         policy_loss.mean().backward()

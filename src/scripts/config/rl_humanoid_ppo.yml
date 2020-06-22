@@ -1,7 +1,7 @@
 architecture_config:
   architecture: humanoid_376_17c
   log_std: 0.
-  device: cuda
+  device: cpu
   initialisation_seed: 123
   initialisation_type: orthogonal
 data_saver_config:
@@ -19,14 +19,15 @@ environment_config:
 number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 488
 train_every_n_steps: 2048
-output_path: humanoid-v2/implmatters
+return_smoothing_k: -1
+output_path: humanoid-v2/implmatters_reproduce
 tensorboard: true
 trainer_config:
   criterion: MSELoss
   critic_learning_rate: 0.0001
   actor_learning_rate: 0.00015
   scheduler_config:
-    number_of_epochs: 488
+    number_of_epochs: 1488
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
@@ -34,7 +35,7 @@ trainer_config:
     data_sampling_seed: 123
     observation_clipping: 10
     reward_clipping: 10
-  device: cuda
+  device: cpu
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
