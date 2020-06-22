@@ -20,14 +20,14 @@ number_of_episodes: -1  # stop when there are enough samples in buffer to fill b
 number_of_epochs: 488
 train_every_n_steps: 2048
 return_smoothing_k: -1
-output_path: humanoid-v2/implmatters_reproduce
+output_path: humanoid-v2/implmatters
 tensorboard: true
 trainer_config:
   criterion: MSELoss
   critic_learning_rate: 0.0001
   actor_learning_rate: 0.00015
   scheduler_config:
-    number_of_epochs: 1488
+    number_of_epochs: 488
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
