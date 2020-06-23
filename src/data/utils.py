@@ -331,5 +331,5 @@ def select(data: Union[list, torch.Tensor, np.ndarray, Dataset], indices: List[i
             rewards=[data.rewards[i] for i in indices],
             done=[data.done[i] for i in indices],
         )
-    else:
+    else:  # assuming Tensor or numpy array
         return data.squeeze()[indices]

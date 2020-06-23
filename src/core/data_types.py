@@ -75,82 +75,72 @@ def to_torch(value: Union[np.ndarray, int, float],
 
 @dataclass
 class Dataset:  # Preparation for training DNN's in torch => only accept torch tensors
-    observations: torch.Tensor = None
-    actions: torch.Tensor = None
-    rewards: torch.Tensor = None
-    done: torch.Tensor = None  # 0, except on last episode step 1
+    observations: List[torch.Tensor] = None
+    actions: List[torch.Tensor] = None
+    rewards: List[torch.Tensor] = None
+    done: List[torch.Tensor] = None  # 0, except on last episode step 1
     max_size: int = -1
-    counter: int = 0
 
     def __post_init__(self):
-        self.observations = torch.empty((2048, 376))
-        self.actions = torch.empty((2048, 17))
-        self.rewards = torch.empty((2048, 1))
-        self.done = torch.empty((2048, 1))
-        # if self.observations is None:
-        #     self.observations = []
-        # if self.actions is None:
-        #     self.actions = []
-        # if self.rewards is None:
-        #     self.rewards = []
-        # if self.done is None:
-        #     self.done = []
+        if self.observations is None:
+            self.observations = []
+        if self.actions is None:
+            self.actions = []
+        if self.rewards is None:
+            self.rewards = []
+        if self.done is None:
+            self.done = []
 
     def __len__(self):
         return len(self.observations)
 
     def append(self, experience: Experience):
-        self.observations[self.counter, :] = to_torch(experience.observation)
-        self.actions[self.counter, :] = to_torch(experience.action.value)
-        self.rewards[self.counter, :] = to_torch(experience.reward)
-        self.done[self.counter, :] = to_torch(experience.done)
-        self.counter += 1
-        # self.observations.append(to_torch(experience.observation))
-        # self.actions.append(to_torch(experience.action.value
-        #                              if isinstance(experience.action, Action) else experience.action))
-        # self.rewards.append(to_torch(experience.reward))
-        # self.done.append(to_torch(experience.done))
-        # self._check_length()
+        self.observations.append(to_torch(experience.observation))
+        self.actions.append(to_torch(experience.action.value
+                                     if isinstance(experience.action, Action) else experience.action))
+        self.rewards.append(to_torch(experience.reward))
+        self.done.append(to_torch(experience.done))
+        self._check_length()
 
-    # def pop(self):
-    #     self.observations.pop(0)
-    #     self.actions.pop(0)
-    #     self.rewards.pop(0)
-    #     self.done.pop(0)
+    def pop(self):
+        self.observations.pop(0)
+        self.actions.pop(0)
+        self.rewards.pop(0)
+        self.done.pop(0)
 
-    # def _check_length(self):
-    #     while len(self) > self.max_size != -1:
-    #         self.pop()
-    #
-    # def extend(self, experiences: Union[List[Experience], h5py.Group]):
-    #     if isinstance(experiences, h5py.Group):
-    #         for tag, field in zip(['observations', 'actions', 'rewards', 'done'],
-    #                               [self.observations, self.actions, self.rewards, self.done]):
-    #             if tag in experiences.keys():
-    #                 field.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences[tag]])
-    #             else:
-    #                 field.extend([torch.zeros(0) for _ in experiences['observations']])
-    #         self._check_length()
-    #     else:
-    #         for exp in experiences:
-    #             self.append(exp)
-    #         self._check_length()
-    #
-    # def subsample(self, subsample: int):
-    #     to_be_deleted_indices = []
-    #     index = 0
-    #     run_step = 0
-    #     while index < len(self):
-    #         if run_step % subsample != 0 and self.done[index].item() == 0:
-    #             to_be_deleted_indices.append(index)
-    #         if self.done[index].item() != 0:
-    #             run_step = 0
-    #         else:
-    #             run_step += 1
-    #         index += 1
-    #
-    #     for index in reversed(to_be_deleted_indices):
-    #         del self.observations[index]
-    #         del self.actions[index]
-    #         del self.rewards[index]
-    #         del self.done[index]
+    def _check_length(self):
+        while len(self) > self.max_size != -1:
+            self.pop()
+
+    def extend(self, experiences: Union[List[Experience], h5py.Group]):
+        if isinstance(experiences, h5py.Group):
+            for tag, field in zip(['observations', 'actions', 'rewards', 'done'],
+                                  [self.observations, self.actions, self.rewards, self.done]):
+                if tag in experiences.keys():
+                    field.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences[tag]])
+                else:
+                    field.extend([torch.zeros(0) for _ in experiences['observations']])
+            self._check_length()
+        else:
+            for exp in experiences:
+                self.append(exp)
+            self._check_length()
+
+    def subsample(self, subsample: int):
+        to_be_deleted_indices = []
+        index = 0
+        run_step = 0
+        while index < len(self):
+            if run_step % subsample != 0 and self.done[index].item() == 0:
+                to_be_deleted_indices.append(index)
+            if self.done[index].item() != 0:
+                run_step = 0
+            else:
+                run_step += 1
+            index += 1
+
+        for index in reversed(to_be_deleted_indices):
+            del self.observations[index]
+            del self.actions[index]
+            del self.rewards[index]
+            del self.done[index]

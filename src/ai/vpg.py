@@ -51,16 +51,16 @@ class VanillaPolicyGradient(Trainer):
             self._critic_scheduler = torch.optim.lr_scheduler.LambdaLR(self._critic_optimizer,
                                                                        lr_lambda=lambda_function)
 
-    def _calculate_phi(self, batch: Dataset) -> torch.Tensor:
+    def _calculate_phi(self, batch: Dataset, values: torch.Tensor = None) -> torch.Tensor:
         if self._config.phi_key == "return":
             return get_returns(batch)
         elif self._config.phi_key == "reward-to-go":
             return get_reward_to_go(batch)
         elif self._config.phi_key == "gae":
             return get_generalized_advantage_estimate_with_tensors(
-                batch_rewards=batch.rewards,
-                batch_done=batch.done,
-                batch_values=self._net.critic(batch.observations, train=False).squeeze().detach(),
+                batch_rewards=torch.stack(batch.rewards),
+                batch_done=torch.stack(batch.done),
+                batch_values=values,
                 discount=0.99 if self._config.discount == "default" else self._config.discount,
                 gae_lambda=0.95 if self._config.gae_lambda == "default" else self._config.gae_lambda,
             )
@@ -102,7 +102,8 @@ class VanillaPolicyGradient(Trainer):
         batch = self.data_loader.get_dataset()
         assert len(batch) != 0
 
-        phi_weights = self._calculate_phi(batch).to(self._device)
+        values = self._net.critic(inputs=batch.observations, train=False).squeeze().detach()
+        phi_weights = self._calculate_phi(batch, values).to(self._device)
         policy_loss = self._train_actor(batch, phi_weights)
         critic_loss = Distribution(self._train_critic(batch, get_reward_to_go(batch).to(self._device)))
 

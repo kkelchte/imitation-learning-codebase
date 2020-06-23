@@ -2,7 +2,7 @@ architecture_config:
   architecture: humanoid_376_17c
   log_std: 0.
   device: cpu
-  initialisation_seed: 123
+  initialisation_seed: 2048
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
@@ -12,7 +12,7 @@ environment_config:
   normalize_rewards: true
   factory_key: GYM
   gym_config:
-    random_seed: 123
+    random_seed: 2048
     render: false
     world_name: Humanoid-v2
   max_number_of_steps: -1  # let number of steps depend on environment
@@ -32,7 +32,7 @@ trainer_config:
   optimizer: Adam
   data_loader_config:
     batch_size: 64
-    data_sampling_seed: 123
+    data_sampling_seed: 2048
     observation_clipping: 10
     reward_clipping: 10
   device: cpu

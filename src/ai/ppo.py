@@ -39,8 +39,11 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         cprint(f'actor checksum {get_checksum_network_parameters(self._net.get_actor_parameters())}')
         cprint(f'critic checksum {get_checksum_network_parameters(self._net.get_critic_parameters())}')
 
-    def _train_actor_ppo(self, batch: Dataset, phi_weights: torch.Tensor,
-                         original_log_probabilities: torch.Tensor, writer: TensorboardWrapper = None) -> Distribution:
+    def _train_actor_ppo(self, batch: Dataset, phi_weights: torch.Tensor, writer: TensorboardWrapper = None) \
+            -> Distribution:
+        original_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
+                                                                        actions=batch.actions,
+                                                                        train=False).detach()
         list_batch_loss = []
         list_entropy_loss = []
         for _ in range(self._config.max_actor_training_iterations):
@@ -97,21 +100,17 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                                      select(targets, selected_indices)))
         return Distribution(torch.stack(critic_loss))
 
-    def _train_critic_clipped(self, batch: Dataset, targets: torch.Tensor) -> Distribution:
+    def _train_critic_clipped(self, batch: Dataset, targets: torch.Tensor, previous_values: torch.Tensor) \
+            -> Distribution:
         critic_loss = []
-        previous_values = self._net.critic(inputs=batch.observations, train=False).squeeze().detach()
         for value_train_it in range(self._config.max_critic_training_iterations):
             state_indices = np.asarray([index for index in range(len(batch)) if not batch.done[index]])
             np.random.shuffle(state_indices)
             splits = np.array_split(state_indices, int(len(batch) / self._config.data_loader_config.batch_size))
             for selected_indices in splits:
-                # mini_batch_observations = select(batch.observations, selected_indices)
-                # mini_batch_previous_values = select(previous_values, selected_indices)
-                # mini_batch_targets = select(targets, selected_indices)
-
-                mini_batch_observations = batch.observations[selected_indices, :]
-                mini_batch_previous_values = previous_values[selected_indices]
-                mini_batch_targets = targets[selected_indices]
+                mini_batch_observations = select(batch.observations, selected_indices)
+                mini_batch_previous_values = select(previous_values, selected_indices)
+                mini_batch_targets = select(targets, selected_indices)
 
                 batch_values = self._net.critic(inputs=mini_batch_observations, train=True).squeeze()
                 batch_loss = self._criterion(batch_values, mini_batch_targets)
@@ -134,19 +133,12 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         batch = self.data_loader.get_dataset()
         assert len(batch) != 0
 
-        phi_weights = self._calculate_phi(batch).to(self._device).squeeze(-1)
-
+        values = self._net.critic(inputs=batch.observations, train=False).squeeze().detach()
+        phi_weights = self._calculate_phi(batch, values).to(self._device).squeeze(-1)
         critic_targets = get_reward_to_go(batch).to(self._device) if self._config.phi_key != 'gae' else \
-            (self._net.critic(inputs=batch.observations, train=False).squeeze() + phi_weights).detach()
-
-        critic_loss_distribution = self._train_critic_clipped(batch, critic_targets)
-
-        original_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
-                                                                        actions=batch.actions,
-                                                                        train=False).detach()
-        actor_loss_distribution = self._train_actor_ppo(batch, phi_weights, original_log_probabilities, writer)
-        #        critic_loss_distribution = self._train_critic(batch, get_reward_to_go(batch).to(self._device))
-        # In case of advantages, use current value estimate with advantage to get target estimate
+            (values + phi_weights).detach()
+        critic_loss_distribution = self._train_critic_clipped(batch, critic_targets, values)
+        actor_loss_distribution = self._train_actor_ppo(batch, phi_weights, writer)
 
         if writer is not None:
             writer.write_distribution(critic_loss_distribution, "critic_loss")

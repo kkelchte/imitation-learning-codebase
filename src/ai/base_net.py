@@ -86,7 +86,7 @@ class BaseNet(nn.Module):
             if len([ckpt for ckpt in os.listdir(self._checkpoint_output_directory) if ckpt.endswith('ckpt')]) > 0:
                 self.load_from_checkpoint(checkpoint_dir=self._checkpoint_output_directory)
             else:
-                self.initialize_architecture_weights()
+                self.initialize_architecture()
         else:
             self.initialize_architecture_weights(self._config.initialisation_type)
         cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
