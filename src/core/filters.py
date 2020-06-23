@@ -20,11 +20,11 @@ class RunningStatistic(object):
             self._mean = x.copy()
         else:
             old_mean = self._mean.copy()
-            self._mean = old_mean + (x - old_mean) / self._counter
+            self._mean[...] = old_mean + (x - old_mean) / self._counter
             if self._unnormalized_var is None:
-                self._unnormalized_var = (x - old_mean) * (x - self._mean)
+                self._unnormalized_var = np.asarray((x - old_mean) * (x - self._mean))
             else:
-                self._unnormalized_var = self._unnormalized_var + (x - old_mean) * (x - self._mean)
+                self._unnormalized_var[...] = self._unnormalized_var + (x - old_mean) * (x - self._mean)
 
     def reset(self):
         self._counter = 0
