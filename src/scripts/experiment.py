@@ -6,6 +6,7 @@ import shutil
 from collections import deque
 from typing import Optional
 
+import torch
 import yaml
 import numpy as np
 from dataclasses import dataclass
@@ -39,7 +40,6 @@ class ExperimentConfig(Config):
     number_of_epochs: int = 1
     number_of_episodes: int = -1
     train_every_n_steps: int = -1
-    return_smoothing_k: int = -1
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
     architecture_config: Optional[ArchitectureConfig] = None
@@ -83,7 +83,6 @@ class Experiment:
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
-        self._episode_return_queue = deque()
         cprint(f'Initiated.', self._logger)
 
     def _enough_episodes_check(self, episode_number: int) -> bool:
@@ -102,28 +101,24 @@ class Experiment:
         count_episodes = 0
         count_success = 0
         episode_returns = []
-        self._episode_return_queue = deque()
-        step = 0
-        while step < self._config.train_every_n_steps:
+        while not self._enough_episodes_check(count_episodes):
             if self._data_saver is not None and self._config.data_saver_config.separate_raw_data_runs:
                 self._data_saver.update_saving_directory()
-            episode_return = 0
             experience, next_observation = self._environment.reset()
-            while experience.done == TerminationType.NotDone and step < self._config.train_every_n_steps:
-                action = self._net.get_action(next_observation, train=False) if self._net is not None else None
+            while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
+                action = self._net.get_action(next_observation) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
-                episode_return += experience.info['unfiltered_reward'] \
-                    if 'unfiltered_reward' in experience.info.keys() else experience.reward
+                if len(self._data_saver) % 50 == 11:
+                    print('---', len(self._data_saver.get_dataset()))
+                    print('observation: ', torch.stack(self._data_saver.get_dataset().observations).sum().item())
+                    print('actions: ', torch.stack(self._data_saver.get_dataset().actions).sum().item())
+                    print('rewards: ', torch.stack(self._data_saver.get_dataset().rewards).sum().item())
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
-                step += 1
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
-            if experience.done == TerminationType.NotDone:
-                episode_returns.append(episode_return)
-                self._episode_return_queue.append(episode_return)
-            if len(self._episode_return_queue) >= self._config.return_smoothing_k != -1:
-                self._episode_return_queue.popleft()
+            if 'return' in experience.info.keys():
+                episode_returns.append(experience.info['return'])
         if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
             self._data_saver.create_train_validation_hdf5_files()
         msg = f" {count_episodes} episodes"
@@ -131,10 +126,10 @@ class Experiment:
             msg += f" with {count_success} success"
             if self._writer is not None:
                 self._writer.write_scalar(count_success/float(count_episodes), "success")
-        return_distribution = Distribution(self._episode_return_queue)
-        msg += f" with smoothed return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
+        return_distribution = Distribution(episode_returns)
+        msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
-            self._writer.write_distribution(return_distribution, "episode return")
+           self._writer.write_distribution(return_distribution, "episode return")
         return msg
 
     def run(self):

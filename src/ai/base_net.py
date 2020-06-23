@@ -179,7 +179,7 @@ class BaseNet(nn.Module):
 
         return inputs
 
-    def get_action(self, inputs, train: bool = False) -> Action:
+    def get_action(self, inputs) -> Action:
         raise NotImplementedError
 
     def get_device(self) -> torch.device:

@@ -12,7 +12,7 @@ from src.data.test.common_utils import generate_dummy_dataset
 
 def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
     for p in weights.parameters():
-        if len(p.shape) == 1:
+        if len(p.shape) <= 1:
             p.data.zero_()
         else:
             if initialisation_type == 'xavier':
@@ -20,7 +20,7 @@ def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xav
             elif initialisation_type == 'constant':
                 nn.init.constant_(p.data, scale)
             elif initialisation_type == 'orthogonal':
-                nn.init.orthogonal_(p.data, gain=2**0.5)
+                nn.init.orthogonal_(p.data, scale)
             else:
                 raise NotImplementedError
 
@@ -54,8 +54,7 @@ def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.M
     layers = []
     for j in range(len(sizes)-1):
         is_not_last_layer = j < len(sizes)-2
-#        layers += [nn.Linear(sizes[j], sizes[j+1], bias=is_not_last_layer)]
-        layers += [nn.Linear(sizes[j], sizes[j+1], bias=True)]
+        layers += [nn.Linear(sizes[j], sizes[j+1], bias=is_not_last_layer)]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act()]

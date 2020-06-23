@@ -22,6 +22,7 @@ class GymEnvironment(Environment):
         self.action_low = None if self.discrete else self._gym.action_space.low[0]
         self.action_high = None if self.discrete else self._gym.action_space.high[0]
         self._step_count = 0
+        self._return = 0
         cprint(f'environment {self._config.gym_config.world_name}\t'
                f'action space: {"discrete" if self.discrete else "continuous"} {self.action_dimension}'
                f'{"" if self.discrete else "["+str(self.action_low)+" : "+str(self.action_high)+"]"}\t'
@@ -32,6 +33,7 @@ class GymEnvironment(Environment):
         observation = self._gym.reset()
         observation = self._filter_observation(observation)
         self._step_count = 0
+        self._return = 0
         self.previous_observation = observation.copy()
         return Experience(
             done=TerminationType.NotDone,
@@ -43,8 +45,11 @@ class GymEnvironment(Environment):
         observation = self._filter_observation(observation)
         reward = self._filter_reward(unfiltered_reward)
         info['unfiltered_reward'] = unfiltered_reward
+        self._return += unfiltered_reward
         terminal = TerminationType.Done if done or self._step_count >= self._config.max_number_of_steps != -1 \
             else TerminationType.NotDone
+        if terminal == TerminationType.Done:
+            info['return'] = self._return
         experience = Experience(
             done=terminal,
             observation=self.previous_observation.copy(),

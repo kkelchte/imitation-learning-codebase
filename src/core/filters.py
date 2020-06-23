@@ -13,15 +13,18 @@ class RunningStatistic(object):
         self._mean = None
         self._unnormalized_var = 0
 
-    def add(self, x: Union[float, np.ndarray, torch.Tensor]):
-        x = np.asarray(x, dtype=np.float64)
+    def add(self, x):
+        x = np.asarray(x)
         self._counter += 1
         if self._counter == 1:
-            self._mean = np.asarray(x, dtype=np.float64)
+            self._mean = x.copy()
         else:
             old_mean = self._mean.copy()
             self._mean = old_mean + (x - old_mean) / self._counter
-            self._unnormalized_var += (x - old_mean) * (x - self._mean)
+            if self._unnormalized_var is None:
+                self._unnormalized_var = (x - old_mean) * (x - self._mean)
+            else:
+                self._unnormalized_var = self._unnormalized_var + (x - old_mean) * (x - self._mean)
 
     def reset(self):
         self._counter = 0
