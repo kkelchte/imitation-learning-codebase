@@ -8,28 +8,20 @@ class RunningStatistic(object):
     """Taken from https://github.com/MadryLab/implementation-matters
         Adjusted variance property from self._counter - 1 --> self._counter
     """
-    def __init__(self):
+    def __init__(self, shape: tuple):
         self._counter = 0
-        self._mean = None
-        self._unnormalized_var = 0
+        self._mean = np.zeros(shape)
+        self._unnormalized_var = np.zeros(shape)
 
     def add(self, x):
         x = np.asarray(x)
         self._counter += 1
         if self._counter == 1:
-            self._mean = x.copy()
+            self._mean[...] = x
         else:
             old_mean = self._mean.copy()
             self._mean[...] = old_mean + (x - old_mean) / self._counter
-            if self._unnormalized_var is None:
-                self._unnormalized_var = np.asarray((x - old_mean) * (x - self._mean))
-            else:
-                self._unnormalized_var[...] = self._unnormalized_var + (x - old_mean) * (x - self._mean)
-
-    def reset(self):
-        self._counter = 0
-        self._mean = None
-        self._unnormalized_var = 0
+            self._unnormalized_var = self._unnormalized_var + (x - old_mean) * (x - self._mean)
 
     @property
     def variance(self):
@@ -51,8 +43,8 @@ class RunningStatistic(object):
 class NormalizationFilter:
     """y = (x-mean)/std"""
 
-    def __init__(self, clip: float = -1):
-        self._statistic = RunningStatistic()
+    def __init__(self, clip: float = -1, shape: tuple = (1,)):
+        self._statistic = RunningStatistic(shape)
         self._clip = clip
 
     def __call__(self, x: Union[float, np.ndarray, torch.Tensor]) -> Union[float, np.ndarray, torch.Tensor]:
@@ -72,10 +64,10 @@ class NormalizationFilter:
 class ReturnFilter:
     """y = reward / std(returns)"""
 
-    def __init__(self, clip: float = -1, discount: float = 0.99):
+    def __init__(self, clip: float = -1, discount: float = 0.99, shape: tuple = (1,)):
         self._retrn = 0
         self._discount = discount
-        self._statistic = RunningStatistic()
+        self._statistic = RunningStatistic(shape)
         self._clip = clip
 
     def __call__(self, r: float) -> float:

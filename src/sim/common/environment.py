@@ -92,6 +92,8 @@ class EnvironmentConfig(Config):
     gym_config: Optional[GymConfig] = None
     normalize_observations: bool = False
     normalize_rewards: bool = False
+    observation_clipping: int = -1
+    reward_clipping: int = -1
 
     def __post_init__(self):
         if self.gym_config is None:
@@ -109,10 +111,13 @@ class Environment:
                                   quiet=False)
 
         if self._config.normalize_observations:
-            self._observation_filter = NormalizationFilter()
+            self._observation_filter = NormalizationFilter(shape=self.observation_dimension,
+                                                           clip=self._config.observation_clipping)
 
         if self._config.normalize_rewards:
-            self._reward_filter = ReturnFilter()
+            self._reward_filter = ReturnFilter(shape=(1,),
+                                               clip=self._config.reward_clipping,
+                                               discount=0.99)
 
         cprint('initiated', self._logger)
 

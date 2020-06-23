@@ -10,6 +10,8 @@ data_saver_config:
 environment_config:
   normalize_observations: true
   normalize_rewards: true
+  observation_clipping: 10
+  reward_clipping: 10
   factory_key: GYM
   gym_config:
     random_seed: 2048
@@ -32,8 +34,6 @@ trainer_config:
   data_loader_config:
     batch_size: 64
     data_sampling_seed: 2048
-    observation_clipping: 10
-    reward_clipping: 10
   device: cpu
   discount: 0.99
   factory_key: PPO

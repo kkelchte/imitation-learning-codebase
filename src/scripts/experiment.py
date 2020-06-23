@@ -108,11 +108,6 @@ class Experiment:
             while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
                 action = self._net.get_action(next_observation) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
-                if len(self._data_saver) % 50 == 11:
-                    print('---', len(self._data_saver.get_dataset()))
-                    print('observation: ', torch.stack(self._data_saver.get_dataset().observations).sum().item())
-                    print('actions: ', torch.stack(self._data_saver.get_dataset().actions).sum().item())
-                    print('rewards: ', torch.stack(self._data_saver.get_dataset().rewards).sum().item())
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
