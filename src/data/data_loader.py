@@ -25,8 +25,6 @@ class DataLoaderConfig(Config):
     data_sampling_seed: int = 123
     balance_over_actions: bool = False
     batch_size: int = 64
-    observation_clipping: int = -1
-    reward_clipping: int = -1
     subsample: int = 1
 
     def post_init(self):  # add default options
@@ -98,15 +96,6 @@ class DataLoader:
             self._dataset = Dataset()
             self.update_data_directories_with_raw_data()
             self.load_dataset()
-        self._clip_dataset()
-
-    def _clip_dataset(self):
-        if self._config.observation_clipping != -1:
-            for o in self._dataset.observations:
-                o.clamp_(-self._config.observation_clipping, self._config.observation_clipping)
-        if self._config.reward_clipping != -1:
-            for r in self._dataset.rewards:
-                r.clamp_(-self._config.reward_clipping, self._config.reward_clipping)
 
     def get_dataset(self) -> Dataset:
         return self._dataset
