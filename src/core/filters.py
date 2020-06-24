@@ -25,7 +25,7 @@ class RunningStatistic(object):
 
     @property
     def variance(self):
-        return self._unnormalized_var / self._counter if self._counter > 1 else np.square(self._mean)
+        return self._unnormalized_var / (self._counter - 1) if self._counter > 1 else np.square(self._mean)
 
     @property
     def mean(self):
@@ -65,19 +65,19 @@ class ReturnFilter:
     """y = reward / std(returns)"""
 
     def __init__(self, clip: float = -1, discount: float = 0.99, shape: tuple = (1,)):
-        self._retrn = 0
+        self._retrn = np.zeros(shape)
         self._discount = discount
         self._statistic = RunningStatistic(shape)
         self._clip = clip
 
-    def __call__(self, r: float) -> float:
+    def __call__(self, r: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
         self._retrn = self._discount * self._retrn + r
         self._statistic.add(self._retrn)
         r /= (self._statistic.std + 1e-8)
         if self._clip != -1:
-            r = np.clip(r, -self._clip, self._clip).item()
+            r = np.clip(r, -self._clip, self._clip)
         return r
 
     def reset(self):
-        self._retrn = 0
+        self._retrn = np.zeros_like(self._retrn)
         # self._statistic.reset()
