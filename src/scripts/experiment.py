@@ -124,7 +124,8 @@ class Experiment:
         return_distribution = Distribution(episode_returns)
         msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
-           self._writer.write_distribution(return_distribution, "episode return")
+            self._writer.write_distribution(return_distribution, "episode return")
+            self._writer.write_scalar(return_distribution.mean, 'mean reward')
         return msg
 
     def run(self):
