@@ -54,10 +54,10 @@ class Net(BaseNet):
         torch.manual_seed(self._config.initialisation_seed)
         torch.set_num_threads(1)
         for layer in self._actor[:-1]:
-            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=0.01)
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
         initialize_weights(self._actor[-1], initialisation_type=self._config.initialisation_type, scale=0.01)
         for layer in self._critic[:-1]:
-            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=1.0)
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
         initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=1.0)
 
     def get_actor_parameters(self) -> Iterator:
