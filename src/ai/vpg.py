@@ -5,8 +5,7 @@ from torch import nn
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import Trainer, TrainerConfig
-from src.ai.utils import get_returns, get_reward_to_go, get_generalized_advantage_estimate, \
-    get_generalized_advantage_estimate_with_tensors
+from src.ai.utils import get_returns, get_reward_to_go, get_generalized_advantage_estimate
 from src.core.data_types import Dataset, Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -57,9 +56,9 @@ class VanillaPolicyGradient(Trainer):
         elif self._config.phi_key == "reward-to-go":
             return get_reward_to_go(batch)
         elif self._config.phi_key == "gae":
-            return get_generalized_advantage_estimate_with_tensors(
-                batch_rewards=torch.stack(batch.rewards),
-                batch_done=torch.stack(batch.done),
+            return get_generalized_advantage_estimate(
+                batch_rewards=batch.rewards,
+                batch_done=batch.done,
                 batch_values=values,
                 discount=0.99 if self._config.discount == "default" else self._config.discount,
                 gae_lambda=0.95 if self._config.gae_lambda == "default" else self._config.gae_lambda,
