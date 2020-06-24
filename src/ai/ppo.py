@@ -108,6 +108,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             np.random.shuffle(state_indices)
             splits = np.array_split(state_indices, int(len(batch) / self._config.data_loader_config.batch_size))
             for selected_indices in splits:
+                self._critic_optimizer.zero_grad()
                 mini_batch_observations = select(batch.observations, selected_indices)
                 mini_batch_previous_values = select(previous_values, selected_indices)
                 mini_batch_targets = select(targets, selected_indices)
@@ -134,7 +135,8 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         assert len(batch) != 0
 
         values = self._net.critic(inputs=batch.observations, train=False).squeeze().detach()
-        phi_weights = self._calculate_phi(batch, values).to(self._device).squeeze(-1)
+        phi_weights = self._calculate_phi(batch, values).to(self._device).squeeze(-1).detach()
+
         critic_targets = get_reward_to_go(batch).to(self._device) if self._config.phi_key != 'gae' else \
             (values + phi_weights).detach()
         critic_loss_distribution = self._train_critic_clipped(batch, critic_targets, values)
