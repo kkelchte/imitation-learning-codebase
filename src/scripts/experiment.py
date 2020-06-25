@@ -150,24 +150,22 @@ class Experiment:
                 msg += self._trainer.train(epoch=self._epoch,
                                            writer=self._writer)
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
-                msg += self._evaluator.evaluate(save_checkpoints=self._trainer is not None,
-                                                writer=self._writer)
+                msg += self._evaluator.evaluate(writer=self._writer)
             #  TODO add interactive evaluation
             cprint(msg, self._logger)
         cprint(f'Finished.', self._logger)
 
     def save_checkpoint(self, tag):
+        #  TODO add option to store 'best' checkpoint
         filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'
         filename += '.ckpt'
         checkpoint = {
             'epoch': self._epoch,
         }
-        if self._net is not None:
-            checkpoint['model_state'] = self._net.get_model_state()
-        if self._trainer is not None:
-            checkpoint['optimizer_state'] = self._trainer.get_optimizer_state()
-        if self._environment is not None:
-            checkpoint['filter_state'] = self._environment.get_filter_state()
+        for element, key in zip([self._net, self._trainer, self._environment],
+                                ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
+            if element is not None:
+                checkpoint[key] = element.get_checkpoint()
         torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/{filename}')
         torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/checkpoint_latest.ckpt')
         cprint(f'stored {filename}', self._logger)
@@ -186,13 +184,13 @@ class Experiment:
             checkpoints = {int(f.split('.')[0].split('_')[-1]): os.path.join(checkpoint_dir, f)
                            for f in os.listdir(checkpoint_dir)}
             checkpoint_file = checkpoints[max(checkpoints.keys())]
-            # Load params internally and return checkpoint
+        # Load params for each experiment element
         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
-        self.global_step = checkpoint['global_step']
-        del checkpoint['global_step']
-        self.load_state_dict(checkpoint['model_state'])
-        del checkpoint['model_state']
-        self.extra_checkpoint_info = checkpoint  # store extra parameters e.g. optimizer / loss params
+        self._epoch = checkpoint['epoch']
+        for element, key in zip([self._net, self._trainer, self._environment],
+                              ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
+            if element is not None:
+                element.load_checkpoint(checkpoint[key])
         cprint(f'loaded network from {checkpoint_file}', self._logger)
 
     def shutdown(self):

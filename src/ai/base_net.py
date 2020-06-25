@@ -134,3 +134,21 @@ class BaseNet(nn.Module):
 
     def remove(self):
         [h.close() for h in self._logger.handlers]
+
+    def get_checkpoint(self) -> dict:
+        """
+        :return: a dictionary with global_step and model_state of neural network.
+        """
+        return {
+            'global_step': self.global_step,
+            'model_state': self.state_dict()
+        }
+
+    def load_checkpoint(self, checkpoint) -> None:
+        """
+        Try to load checkpoint in global step and model state. Raise error.
+        :param checkpoint: dictionary containing 'global step' and 'model state'
+        :return: None
+        """
+        self.global_step = checkpoint['global_step']
+        self.load_state_dict(checkpoint['model_state'])

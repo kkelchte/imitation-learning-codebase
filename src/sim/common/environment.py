@@ -135,8 +135,22 @@ class Environment:
     def _filter_reward(self, reward: float) -> float:
         return self._reward_filter(reward) if self._config.normalize_rewards else reward
 
-    def _reset_filters(self):
+    def _reset_filters(self) -> None:
         if self._config.normalize_observations:
             self._observation_filter.reset()
         if self._config.normalize_rewards:
             self._reward_filter.reset()
+
+    def get_checkpoint(self) -> dict:
+        checkpoint = {}
+        if self._config.normalize_observations:
+            checkpoint['observation_ckpt'] = self._observation_filter.get_checkpoint()
+        if self._config.normalize_rewards:
+            checkpoint['reward_ckpt'] = self._reward_filter.get_checkpoint()
+        return checkpoint
+
+    def load_checkpoint(self, checkpoint: dict) -> None:
+        if self._config.normalize_observations:
+            self._observation_filter.load_checkpoint(checkpoint['observation_ckpt'])
+        if self._config.normalize_rewards:
+            self._reward_filter.load_checkpoint(checkpoint['reward_ckpt'])

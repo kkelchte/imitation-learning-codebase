@@ -44,13 +44,33 @@ class RunningStatistic(object):
     def shape(self):
         return self._mean.shape
 
+    def get_checkpoint(self) -> dict:
+        """
+        :return: a dictionary with the necessary fields to store current filters state.
+        """
+        return {
+            'counter': self._counter,
+            'mean': self._mean,
+            'unnormalized_var': self._unnormalized_var
+        }
+
+    def load_checkpoint(self, checkpoint) -> None:
+        """
+        Load checkpoint for running statistic.
+        :param checkpoint: dictionary
+        :return: None
+        """
+        self._counter = checkpoint['counter']
+        self._mean = checkpoint['mean']
+        self._unnormalized_var = checkpoint['unnormalized_var']
+
 
 class NormalizationFilter:
     """
     Normalize data stream with (x-average)/std with average and std provided or estimated from a running statistic.
     """
 
-    def __init__(self, clip: float = -1, mean: np.ndarray = None, std: np.ndarray = None):
+    def __init__(self, clip: float = -1):
         """
         :param clip: clip output of filter
         :param mean: average. If provided, use this value instead of the running statistic estimate.
@@ -58,24 +78,37 @@ class NormalizationFilter:
         """
         self._statistic = RunningStatistic()
         self._clip = clip
-        self._mean = mean
-        self._std = std
 
     def __call__(self, x: Union[float, np.ndarray, torch.Tensor]) -> Union[float, np.ndarray, torch.Tensor]:
         x = np.asarray(x, dtype=np.float64)
         self._statistic.add(x.copy())
-        x -= self._statistic.mean if self._mean is None else self._mean
-        x /= (self._statistic.std + 1e-8) if self._std is None else self._std
+        x -= self._statistic.mean
+        x /= (self._statistic.std + 1e-8)
         if self._clip != -1:
             x = np.clip(x, -self._clip, self._clip)
         return x
 
     def reset(self):
         pass
-#        self._statistic.reset()
+
+    def get_checkpoint(self) -> dict:
+        """
+        :return: a dictionary with the necessary fields to store current filters state.
+        """
+        return {
+            'running_statistic': self._statistic.get_checkpoint(),
+        }
+
+    def load_checkpoint(self, checkpoint) -> None:
+        """
+        Load checkpoint for running statistic.
+        :param checkpoint: dictionary
+        :return: None
+        """
+        self._statistic.load_checkpoint(checkpoint['running_statistic'])
 
 
-class ReturnFilter:
+class ReturnFilter(NormalizationFilter):
     """y = reward / std(returns)"""
 
     def __init__(self, clip: float = -1, discount: float = 0.99, std=None):
@@ -84,11 +117,9 @@ class ReturnFilter:
         :param discount: discount accumulated rewards.
         :param std: standard deviation. If provided, use this value instead of the running statistic estimate.
         """
-
+        super().__init__(clip)
         self._return = None
         self._discount = discount
-        self._statistic = RunningStatistic()
-        self._clip = clip
         self._std = std
 
     def __call__(self, r: Union[float, np.ndarray]) -> Union[float, np.ndarray]:
@@ -101,4 +132,20 @@ class ReturnFilter:
 
     def reset(self):
         self._return = None
-        # self._statistic.reset()
+
+    def get_checkpoint(self) -> dict:
+        """
+        :return: a dictionary with the necessary fields to store current filters state.
+        """
+        checkpoint = super().get_checkpoint()
+        checkpoint['return'] = self._return
+        return checkpoint
+
+    def load_checkpoint(self, checkpoint) -> None:
+        """
+        Load checkpoint for running statistic.
+        :param checkpoint: dictionary
+        :return: None
+        """
+        super().load_checkpoint(checkpoint)
+        self._return = checkpoint['return']

@@ -117,3 +117,30 @@ class VanillaPolicyGradient(Trainer):
             self._actor_scheduler.step()
             self._critic_scheduler.step()
         return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.mean: 0.3e}"
+
+    def get_checkpoint(self) -> dict:
+        """
+        makes a checkpoint for the trainers optimizers.
+        :return: dictionary with optimizers state_dict and schedulers state dict
+        """
+        checkpoint = {
+            'actor_optimizer_state_dict': self._actor_optimizer.state_dict(),
+            'critic_optimizer_state_dict': self._critic_optimizer.state_dict()
+        }
+        if self._actor_scheduler is not None:
+            checkpoint['actor_scheduler_state_dict'] = self._actor_scheduler.state_dict()
+        if self._critic_scheduler is not None:
+            checkpoint['critic_scheduler_state_dict'] = self._critic_scheduler.state_dict()
+        return checkpoint
+
+    def load_checkpoint(self, checkpoint: dict) -> None:
+        """
+        Load optimizers and schedulers state_dict
+        :return: None
+        """
+        self._actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
+        self._critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
+        if self._actor_scheduler is not None:
+            self._actor_scheduler.load_state_dict(checkpoint['actor_scheduler_state_dict'])
+        if self._critic_scheduler is not None:
+            self._critic_scheduler.load_state_dict(checkpoint['critic_scheduler_state_dict'])

@@ -102,3 +102,22 @@ class Trainer(Evaluator):
             writer.set_step(self._net.global_step)
             writer.write_distribution(error_distribution, 'training')
         return f' training {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
+
+    def get_checkpoint(self) -> dict:
+        """
+        makes a checkpoint for the trainers field.
+        :return: dictionary with optimizers state_dict and schedulers state dict
+        """
+        checkpoint = {'optimizer_state_dict': self._optimizer.state_dict()}
+        if self._scheduler is not None:
+            checkpoint['scheduler_state_dict'] = self._scheduler.state_dict()
+        return checkpoint
+
+    def load_checkpoint(self, checkpoint: dict) -> None:
+        """
+        Load optimizers and schedulers state_dict
+        :return: None
+        """
+        self._optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if self._scheduler is not None:
+            self._scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
