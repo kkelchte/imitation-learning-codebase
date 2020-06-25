@@ -92,11 +92,11 @@ class Trainer(Evaluator):
             predictions = self._net.forward(batch.observations, train=True)
             targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
             loss = self._criterion(predictions, targets).mean()
-            loss.backward()  # calculate gradients
+            loss.backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
                                          self._config.gradient_clip_norm)
-            self._optimizer.step()  # apply gradients according to optimizer
+            self._optimizer.step()
             self._net.global_step += 1
             total_error.append(loss.cpu().detach())
         self.put_model_back_to_original_device()
