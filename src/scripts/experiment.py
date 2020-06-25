@@ -1,14 +1,12 @@
 #!/usr/bin/python
-import logging
 import os
-import sys
+import time
+from glob import glob
 import shutil
-from collections import deque
 from typing import Optional
 
 import torch
 import yaml
-import numpy as np
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -17,9 +15,8 @@ from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
-from src.ai.utils import get_checksum_network_parameters
 from src.core.utils import get_filename_without_extension
-from src.core.data_types import TerminationType, Distribution, Action
+from src.core.data_types import TerminationType, Distribution
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
@@ -40,14 +37,18 @@ class ExperimentConfig(Config):
     number_of_epochs: int = 1
     number_of_episodes: int = -1
     train_every_n_steps: int = -1
+    load_checkpoint_dir: Optional[str] = None  # path to checkpoints
+    load_checkpoint_found: bool = True
+    tensorboard: bool = False
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
     architecture_config: Optional[ArchitectureConfig] = None
     trainer_config: Optional[TrainerConfig] = None
     evaluator_config: Optional[EvaluatorConfig] = None
-    tensorboard: bool = False
 
     def __post_init__(self):
+        assert not (self.number_of_episodes != -1 and self.train_every_n_steps != -1), \
+            'Should specify either number of episodes per epoch or number of steps before training.'
         # Avoid None value error by deleting irrelevant fields
         if self.environment_config is None:
             del self.environment_config
@@ -59,12 +60,14 @@ class ExperimentConfig(Config):
             del self.trainer_config
         if self.evaluator_config is None:
             del self.evaluator_config
+        if self.load_checkpoint_dir is None:
+            del self.load_checkpoint_dir
 
 
 class Experiment:
 
     def __init__(self, config: ExperimentConfig):
-        np.random.seed(123)
+        self._epoch = 0
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
@@ -83,6 +86,12 @@ class Experiment:
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
+        if self._config.load_checkpoint_dir is not None:
+            self.load_checkpoint(self._config.load_checkpoint_dir)
+        elif self._config.load_checkpoint_found \
+                and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
+            self.load_checkpoint(f'{self._config.output_path}/torch_checkpoints')
+
         cprint(f'Initiated.', self._logger)
 
     def _enough_episodes_check(self, episode_number: int) -> bool:
@@ -146,6 +155,45 @@ class Experiment:
             #  TODO add interactive evaluation
             cprint(msg, self._logger)
         cprint(f'Finished.', self._logger)
+
+    def save_checkpoint(self, tag):
+        filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'
+        filename += '.ckpt'
+        checkpoint = {
+            'epoch': self._epoch,
+        }
+        if self._net is not None:
+            checkpoint['model_state'] = self._net.get_model_state()
+        if self._trainer is not None:
+            checkpoint['optimizer_state'] = self._trainer.get_optimizer_state()
+        if self._environment is not None:
+            checkpoint['filter_state'] = self._environment.get_filter_state()
+        torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/{filename}')
+        torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/checkpoint_latest.ckpt')
+        cprint(f'stored {filename}', self._logger)
+
+    def load_checkpoint(self, checkpoint_dir: str):
+        if len(glob(f'{checkpoint_dir}/*.ckpt')) == 0:
+            cprint(f'Could not find suitable checkpoint in {checkpoint_dir}', self._logger, MessageType.error)
+            time.sleep(0.1)
+            raise FileNotFoundError
+        # Get checkpoint in following order
+        if os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')):
+            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')
+        elif os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')):
+            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')
+        else:
+            checkpoints = {int(f.split('.')[0].split('_')[-1]): os.path.join(checkpoint_dir, f)
+                           for f in os.listdir(checkpoint_dir)}
+            checkpoint_file = checkpoints[max(checkpoints.keys())]
+            # Load params internally and return checkpoint
+        checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
+        self.global_step = checkpoint['global_step']
+        del checkpoint['global_step']
+        self.load_state_dict(checkpoint['model_state'])
+        del checkpoint['model_state']
+        self.extra_checkpoint_info = checkpoint  # store extra parameters e.g. optimizer / loss params
+        cprint(f'loaded network from {checkpoint_file}', self._logger)
 
     def shutdown(self):
         if self._writer is not None:

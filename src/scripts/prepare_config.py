@@ -8,7 +8,6 @@ from src.scripts.experiment import ExperimentConfig
 CONFIG_DICT = {}
 CONFIG_FILENAME = "il_evaluate_interactive_cube_world.yml"
 CONFIG_FILE = f"src/scripts/config/{CONFIG_FILENAME}"
-get_to_root_dir()
 
 
 def write_config(file_name: str, config_dict: dict) -> None:
@@ -30,9 +29,9 @@ def validate_config(config_dict: dict) -> None:
 
 
 if __name__ == "__main__":
-    pass
-    config = read_config(f'{os.environ["HOME"]}/experimental_data/cube_world/condor/'
-                         f'20-05-13_08-46-59_initialisation_seed_5100/adjusted_config.yml')
+    get_to_root_dir()
+    config = read_config(f'./src/scripts/config/rl_humanoid_ppo.yml')
+    print(config)
     # adjust config if needed here
     validate_config(config)
     # write_config(destination, base_config)

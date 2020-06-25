@@ -111,7 +111,6 @@ class VanillaPolicyGradient(Trainer):
             writer.write_scalar(policy_loss.data, "policy_loss")
             writer.write_distribution(critic_loss, "critic_loss")
 
-        self._save_checkpoint(epoch)
         self._net.global_step += 1
         self.put_model_back_to_original_device()
         if self._config.scheduler_config is not None:

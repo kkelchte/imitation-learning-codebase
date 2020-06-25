@@ -142,7 +142,6 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             self._actor_scheduler.step()
             self._critic_scheduler.step()
         self._net.global_step += 1
-        self._save_checkpoint(epoch=epoch)
         self.put_model_back_to_original_device()
         return f" training policy loss {actor_loss_distribution.mean: 0.3e} [{actor_loss_distribution.std: 0.2e}], " \
                f"critic loss {critic_loss_distribution.mean: 0.3e} [{critic_loss_distribution.std: 0.3e}]"

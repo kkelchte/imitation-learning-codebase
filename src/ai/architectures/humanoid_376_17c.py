@@ -48,7 +48,7 @@ class Net(BaseNet):
                                    activation=nn.Tanh,
                                    output_activation=None)
 
-        self.load_network_weights()
+        self.initialize_architecture()
 
     def initialize_architecture(self):
         torch.manual_seed(self._config.initialisation_seed)

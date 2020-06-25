@@ -76,13 +76,6 @@ class Trainer(Evaluator):
                 self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer,
                                                                     lr_lambda=lambda_function)
 
-    def _save_checkpoint(self, epoch: int = -1):
-        if epoch != -1:
-            if epoch % self._config.save_checkpoint_every_n == 0 and self._config.save_checkpoint_every_n != -1:
-                self._net.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
-        else:
-            self._net.save_to_checkpoint()
-
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         total_error = []
@@ -100,7 +93,6 @@ class Trainer(Evaluator):
             self._net.global_step += 1
             total_error.append(loss.cpu().detach())
         self.put_model_back_to_original_device()
-        self._save_checkpoint(epoch)
 
         if self._scheduler is not None:
             self._scheduler.step()

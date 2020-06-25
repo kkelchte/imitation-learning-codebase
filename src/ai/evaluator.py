@@ -58,7 +58,7 @@ class Evaluator:
     def put_model_back_to_original_device(self):
         self._net.set_device(self._original_model_device)
 
-    def evaluate(self, save_checkpoints: bool = False, writer=None) -> str:
+    def evaluate(self, writer=None) -> str:
         self.put_model_on_device()
         total_error = []
 #        for batch in tqdm(self.data_loader.get_data_batch(), ascii=True, desc='evaluate'):
@@ -68,9 +68,6 @@ class Evaluator:
                                     data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)).mean()
             total_error.append(error)
         error_distribution = Distribution(total_error)
-        if save_checkpoints and error_distribution.mean < self._minimum_error:
-            self._net.save_to_checkpoint(tag='best')
-            self._minimum_error = error_distribution.mean
         self.put_model_back_to_original_device()
         if writer is not None:
             writer.write_distribution(error_distribution, 'validation')
