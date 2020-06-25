@@ -152,7 +152,7 @@ class DataLoader:
         if len(indices) == 0:
             indices = np.arange(len(self._dataset))
         np.random.shuffle(indices)
-        splits = np.array_split(indices, max(1, int(len(indices) / self._config.batch_size)))
+        splits = np.array_split(indices, max(1, int(len(self._dataset) / self._config.batch_size)))
         for selected_indices in splits:
             return_tuple = (select(data, selected_indices) for data in args)
             yield return_tuple
