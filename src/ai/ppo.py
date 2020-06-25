@@ -7,7 +7,6 @@ from src.ai.base_net import BaseNet
 from src.ai.trainer import TrainerConfig
 from src.ai.utils import get_reward_to_go, get_checksum_network_parameters
 from src.ai.vpg import VanillaPolicyGradient
-from src.data.utils import select
 from src.core.data_types import Distribution, Dataset
 from src.core.logger import get_logger, cprint
 from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -44,17 +43,19 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         original_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
                                                                         actions=batch.actions,
                                                                         train=False).detach()
+        self.data_loader.seed(123)
         list_batch_loss = []
         list_entropy_loss = []
         for _ in range(self._config.max_actor_training_iterations):
-            state_indices = np.arange(len(batch))
-            np.random.shuffle(state_indices)
-            splits = np.array_split(state_indices, int(len(batch)/self._config.data_loader_config.batch_size))
-            for selected_indices in splits:
-                mini_batch_observations = select(batch.observations, selected_indices)
-                mini_batch_actions = select(batch.actions, selected_indices)
-                mini_batch_original_log_probabilities = select(original_log_probabilities, selected_indices)
-                mini_batch_phi_weights = select(phi_weights, selected_indices)
+            for data in self.data_loader.split_data(np.zeros((0,)),  # provide empty array if all data can be selected
+                                                    batch.observations,
+                                                    batch.actions,
+                                                    original_log_probabilities,
+                                                    phi_weights):
+                mini_batch_observations, mini_batch_actions, \
+                    mini_batch_original_log_probabilities, mini_batch_phi_weights = data
+
+                # normalize advantages (phi_weights)
                 mini_batch_phi_weights = (mini_batch_phi_weights - mini_batch_phi_weights.mean()) \
                     / (mini_batch_phi_weights.std() + 1e-8)
 
@@ -90,37 +91,27 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             #writer.write_scalar(kl_approximation, 'kl_difference')
         return actor_loss_distribution
 
-    def _train_critic(self, batch: Dataset, targets: torch.Tensor) -> Distribution:
-        critic_loss = []
-        for value_train_it in range(self._config.max_critic_training_iterations):
-            selected_indices = np.random.choice(list(range(len(batch))),
-                                                size=self._config.data_loader_config.batch_size) \
-                if self._config.data_loader_config.batch_size != -1 else list(range(len(batch)))
-            critic_loss.append(super()._train_critic(select(batch, selected_indices),
-                                                     select(targets, selected_indices)))
-        return Distribution(torch.stack(critic_loss))
-
     def _train_critic_clipped(self, batch: Dataset, targets: torch.Tensor, previous_values: torch.Tensor) \
             -> Distribution:
         critic_loss = []
+        self.data_loader.seed(123)
         for value_train_it in range(self._config.max_critic_training_iterations):
             state_indices = np.asarray([index for index in range(len(batch)) if not batch.done[index]])
-            np.random.shuffle(state_indices)
-            splits = np.array_split(state_indices, int(len(batch) / self._config.data_loader_config.batch_size))
-            for selected_indices in splits:
+            for data in self.data_loader.split_data(state_indices,
+                                                    batch.observations,
+                                                    targets,
+                                                    previous_values):
                 self._critic_optimizer.zero_grad()
-                mini_batch_observations = select(batch.observations, selected_indices)
-                mini_batch_previous_values = select(previous_values, selected_indices)
-                mini_batch_targets = select(targets, selected_indices)
+                mini_batch_observations, mini_batch_targets, mini_batch_previous_values = data
 
                 batch_values = self._net.critic(inputs=mini_batch_observations, train=True).squeeze()
-                batch_loss = self._criterion(batch_values, mini_batch_targets)
+                unclipped_loss = self._criterion(batch_values, mini_batch_targets)
                 # absolute clipping
                 clipped_values = mini_batch_previous_values + \
                     (batch_values - mini_batch_previous_values).clamp(-self._config.ppo_epsilon,
                                                                       self._config.ppo_epsilon)
                 clipped_loss = self._criterion(clipped_values, mini_batch_targets)
-                batch_loss = torch.max(batch_loss, clipped_loss)
+                batch_loss = torch.max(unclipped_loss, clipped_loss)
                 batch_loss.mean().backward()
                 if self._config.gradient_clip_norm != -1:
                     nn.utils.clip_grad_norm_(self._net.get_critic_parameters(),
