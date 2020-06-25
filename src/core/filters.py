@@ -100,5 +100,5 @@ class ReturnFilter:
         return r
 
     def reset(self):
-        self._retrn = None
+        self._return = None
         # self._statistic.reset()
