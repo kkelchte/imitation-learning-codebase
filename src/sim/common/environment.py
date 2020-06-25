@@ -111,12 +111,10 @@ class Environment:
                                   quiet=False)
 
         if self._config.normalize_observations:
-            self._observation_filter = NormalizationFilter(shape=self.observation_dimension,
-                                                           clip=self._config.observation_clipping)
+            self._observation_filter = NormalizationFilter(clip=self._config.observation_clipping)
 
         if self._config.normalize_rewards:
-            self._reward_filter = ReturnFilter(shape=(1,),
-                                               clip=self._config.reward_clipping,
+            self._reward_filter = ReturnFilter(clip=self._config.reward_clipping,
                                                discount=0.99)
 
         cprint('initiated', self._logger)

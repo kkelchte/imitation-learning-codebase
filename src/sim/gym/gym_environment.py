@@ -2,7 +2,6 @@ from typing import Tuple
 
 import gym
 import numpy as np
-from copy import deepcopy
 
 from src.core.logger import cprint
 from src.core.data_types import Experience, TerminationType, Action, ProcessState
@@ -12,6 +11,7 @@ from src.sim.common.environment import EnvironmentConfig, Environment
 class GymEnvironment(Environment):
 
     def __init__(self, config: EnvironmentConfig):
+        super(GymEnvironment, self).__init__(config=config)
         self._gym = gym.make(config.gym_config.world_name)
         self._gym.seed(config.gym_config.random_seed)
         self.discrete = isinstance(self._gym.action_space, gym.spaces.Discrete)
@@ -22,7 +22,6 @@ class GymEnvironment(Environment):
         self.action_high = None if self.discrete else self._gym.action_space.high[0]
         self._step_count = 0
         self._return = 0
-        super(GymEnvironment, self).__init__(config=config)
         cprint(f'environment {self._config.gym_config.world_name}\t'
                f'action space: {"discrete" if self.discrete else "continuous"} {self.action_dimension}'
                f'{"" if self.discrete else "["+str(self.action_low)+" : "+str(self.action_high)+"]"}\t'
