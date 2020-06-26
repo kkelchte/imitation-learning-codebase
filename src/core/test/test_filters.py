@@ -28,12 +28,12 @@ class TestFilters(unittest.TestCase):
         self.assertLess(abs(filter_to_test._statistic.std[2] - np.std([0 if _ < 5 else 1 for _ in range(100)])), 1e-10)
         self.assertLess(abs(filter_to_test._statistic.mean[3]), 1e-10)
 
-        filter_to_test.reset()
-        self.assertEqual(filter_to_test._statistic._counter, 0)
-        for _ in range(10):
-            filter_to_test(_)
-        self.assertEqual(np.mean(list(range(10))), filter_to_test._statistic.mean)
-        self.assertEqual(np.std(list(range(10))), filter_to_test._statistic.std)
+        #filter_to_test.reset()  # filters are not reset.
+        # self.assertEqual(filter_to_test._statistic._counter, 0)
+        # for _ in range(10):
+        #     filter_to_test(_)
+        # self.assertEqual(np.mean(list(range(10))), filter_to_test._statistic.mean)
+        #self.assertEqual(np.std(list(range(10))), filter_to_test._statistic.std)
 
     def test_return_filter(self):
         filter_to_test = ReturnFilter(clip=5)

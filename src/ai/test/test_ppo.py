@@ -18,7 +18,6 @@ trainer_base_config = {
 
 architecture_base_config = {
     "architecture": "cart_pole_4_2d_stochastic",
-    "load_checkpoint_dir": None,
     "initialisation_type": 'xavier',
     "initialisation_seed": 0,
     "device": 'cpu',

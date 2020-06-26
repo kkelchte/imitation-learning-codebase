@@ -14,12 +14,17 @@ class Distribution:
     max: float = 0
 
     def __init__(self, data: Iterator):
-        if len(list(data)) == 0:
-            self.mean, self.std, self.min, self.max = 0, 0, 0, 0
-        elif isinstance(data, list):
-            if isinstance(data[0], torch.Tensor):
-                data = torch.stack(data)
-        elif isinstance(data, torch.Tensor):
+        if isinstance(data, list):
+            try:
+                if isinstance(data[0], torch.Tensor):
+                    data = torch.stack(data)
+            except IndexError:
+                self.mean = 0
+                self.std = 0
+                self.min = 0
+                self.max = 0
+                return
+        if isinstance(data, torch.Tensor):
             if not isinstance(data, torch.FloatTensor):
                 data = data.type(torch.float32)
             self.mean = data.mean().item()

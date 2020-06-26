@@ -1,4 +1,5 @@
 import os
+from glob import glob
 
 import yaml
 
@@ -30,8 +31,9 @@ def validate_config(config_dict: dict) -> None:
 
 if __name__ == "__main__":
     get_to_root_dir()
-    config = read_config(f'./src/scripts/config/rl_humanoid_ppo.yml')
-    print(config)
-    # adjust config if needed here
-    validate_config(config)
-    # write_config(destination, base_config)
+    for f in glob(f'./src/scripts/config/*.yml'):
+        print(f)
+        config = read_config(f)
+        # adjust config if needed here
+        validate_config(config)
+        # write_config(destination, base_config)

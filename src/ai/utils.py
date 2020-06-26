@@ -18,7 +18,7 @@ def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xav
             if initialisation_type == 'xavier':
                 nn.init.xavier_uniform_(p.data)
             elif initialisation_type == 'constant':
-                nn.init.constant_(p.data, scale)
+                nn.init.constant_(p.data, 0.03)
             elif initialisation_type == 'orthogonal':
                 nn.init.orthogonal_(p.data, scale)
             else:
@@ -49,12 +49,13 @@ def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
     return data
 
 
-def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.Module = None):
+def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.Module = None,
+                bias_in_last_layer: bool = True):
     """Create Multi-Layer Perceptron"""
     layers = []
     for j in range(len(sizes)-1):
         is_not_last_layer = j < len(sizes)-2
-        layers += [nn.Linear(sizes[j], sizes[j+1], bias=is_not_last_layer)]
+        layers += [nn.Linear(sizes[j], sizes[j+1], bias=True if bias_in_last_layer else is_not_last_layer)]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act()]

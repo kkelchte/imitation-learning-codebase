@@ -85,19 +85,6 @@ class TestDataLoader(unittest.TestCase):
         for d in config.data_directories:
             self.assertTrue(os.path.isdir(d))
 
-    def test_data_clipping(self):
-        config_dict = {
-            'data_directories': self.info['episode_directories'],
-            'output_path': self.output_dir,
-            'reward_clipping': 1
-        }
-        config = DataLoaderConfig().create(config_dict=config_dict)
-        data_loader = DataLoader(config=config)
-        data_loader.set_dataset()
-
-        self.assertLessEqual(max(data_loader.get_dataset().rewards), 1)
-        self.assertGreaterEqual(min(data_loader.get_dataset().rewards), -1)
-
     def test_data_batch(self):
         config_dict = {
             'data_directories': self.info['episode_directories'],

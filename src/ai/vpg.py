@@ -31,24 +31,25 @@ class VanillaPolicyGradient(Trainer):
                                       output_path=config.output_path,
                                       quiet=True)
             cprint(f'Started.', self._logger)
+        kwargs = {'params': self._net.get_actor_parameters(),
+                  'lr': self._config.learning_rate if self._config.actor_learning_rate == -1
+                  else self._config.actor_learning_rate}
+        if self._config.optimizer == 'Adam':
+            kwargs['eps'] = 1e-05
+        self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(**kwargs)
 
-        self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_actor_parameters(),
-                                                                              lr=self._config.learning_rate
-                                                                              if self._config.actor_learning_rate == -1
-                                                                              else self._config.actor_learning_rate,
-                                                                              eps=1e-05)
+        kwargs = {'params': self._net.get_critic_parameters(),
+                  'lr': self._config.learning_rate if self._config.critic_learning_rate == -1 else
+                  self._config.critic_learning_rate}
+        if self._config.optimizer == 'Adam':
+            kwargs['eps'] = 1e-05
+        self._critic_optimizer = eval(f'torch.optim.{self._config.optimizer}')(**kwargs)
 
-        self._critic_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_critic_parameters(),
-                                                                               lr=self._config.learning_rate
-                                                                               if self._config.critic_learning_rate == -1
-                                                                               else self._config.critic_learning_rate,
-                                                                               eps=1e-05)
-        if self._config.scheduler_config is not None:
-            lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
-            self._actor_scheduler = torch.optim.lr_scheduler.LambdaLR(self._actor_optimizer,
-                                                                      lr_lambda=lambda_function)
-            self._critic_scheduler = torch.optim.lr_scheduler.LambdaLR(self._critic_optimizer,
-                                                                       lr_lambda=lambda_function)
+        lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+        self._actor_scheduler = torch.optim.lr_scheduler.LambdaLR(self._actor_optimizer, lr_lambda=lambda_function) \
+            if self._config.scheduler_config is not None else None
+        self._critic_scheduler = torch.optim.lr_scheduler.LambdaLR(self._critic_optimizer, lr_lambda=lambda_function) \
+            if self._config.scheduler_config is not None else None
 
     def _calculate_phi(self, batch: Dataset, values: torch.Tensor = None) -> torch.Tensor:
         if self._config.phi_key == "return":

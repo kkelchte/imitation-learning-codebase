@@ -9,6 +9,8 @@ data_saver_config:
 environment_config:
   normalize_observations: true
   normalize_rewards: true
+  observation_clipping: 5
+  reward_clipping: 5
   factory_key: GYM
   gym_config:
     random_seed: 123
@@ -19,6 +21,7 @@ number_of_episodes: -1  # stop when there are enough samples in buffer to fill b
 number_of_epochs: 1000
 output_path: pendulum/normalized_reward_observations_entropy
 tensorboard: true
+save_checkpoint_every_n: 100
 trainer_config:
   criterion: MSELoss
   learning_rate: 0.0001
@@ -27,15 +30,12 @@ trainer_config:
   data_loader_config:
     batch_size: 2048
     data_sampling_seed: 123
-    observation_clipping: 5
-    reward_clipping: 5
   device: cuda
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.
-  save_checkpoint_every_n: 100
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2

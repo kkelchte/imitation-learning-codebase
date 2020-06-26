@@ -24,7 +24,6 @@ experiment_config = {
     },
     "architecture_config": {
         "architecture": "cart_pole_4_2d_stochastic",
-        "load_checkpoint_dir": None,
         "initialisation_type": 'xavier',
         "initialisation_seed": 123,
         "device": 'cpu',
@@ -40,7 +39,6 @@ experiment_config = {
         "phi_key": "gae",
         "gae_lambda": 0.95,
         "discount": 0.95,
-        "save_checkpoint_every_n": 1000
     },
     "tensorboard": False,
 }

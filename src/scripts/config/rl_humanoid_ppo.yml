@@ -23,6 +23,7 @@ number_of_epochs: 488
 train_every_n_steps: 2048
 output_path: humanoid-v2/implmatters
 tensorboard: true
+save_checkpoint_every_n: 50
 trainer_config:
   criterion: MSELoss
   critic_learning_rate: 0.0001
@@ -40,7 +41,6 @@ trainer_config:
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.0
-  save_checkpoint_every_n: 50
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2

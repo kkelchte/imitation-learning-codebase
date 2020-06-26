@@ -7,6 +7,10 @@ architecture_config:
   device: cpu
   initialisation_type: orthogonal
 environment_config:
+  normalize_observations: true
+  normalize_rewards: true
+  observation_clipping: 10
+  reward_clipping: 10
   factory_key: ROS
   max_number_of_steps: -1
   ros_config:
@@ -35,6 +39,7 @@ data_saver_config:
   clear_buffer_before_episode: true
   store_on_ram_only: true
 tensorboard: true
+save_checkpoint_every_n: 100
 trainer_config:
   criterion: MSELoss
   actor_learning_rate: 0.001
@@ -46,15 +51,12 @@ trainer_config:
   data_loader_config:
     batch_size: 64
     data_sampling_seed: 123
-    observation_clipping: 10
-    reward_clipping: 10
   device: cpu
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.1
-  save_checkpoint_every_n: 100
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2

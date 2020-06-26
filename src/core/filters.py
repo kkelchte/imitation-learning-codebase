@@ -19,14 +19,14 @@ class RunningStatistic(object):
             self._mean = x
         else:
             old_mean = self._mean.copy()
-            self._mean[...] = old_mean + (x - old_mean) / self._counter
+            self._mean = old_mean + (x - old_mean) / self._counter
             self._unnormalized_var = self._unnormalized_var + (x - old_mean) * (x - self._mean) \
                 if self._unnormalized_var is not None else (x - old_mean) * (x - self._mean)
 
     @property
     def variance(self):
         if self._counter > 1:
-            return self._unnormalized_var / (self._counter - 1)
+            return self._unnormalized_var / (self._counter)
         elif self._counter == 1:
             return np.square(self._mean)
         else:
