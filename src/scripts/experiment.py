@@ -239,7 +239,8 @@ if __name__ == "__main__":
                 if 'DATADIR' in os.environ.keys() else os.path.join(os.environ['HOME'], configuration['output_path'])
         shutil.rmtree(configuration['output_path'], ignore_errors=True)
 
-    experiment_config = ExperimentConfig().create(config_file=config_file)
+    experiment_config = ExperimentConfig().create(config_file=config_file,
+                                                  seed=arguments.seed)
     experiment = Experiment(experiment_config)
     experiment.run()
     experiment.shutdown()

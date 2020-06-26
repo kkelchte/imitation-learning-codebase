@@ -48,7 +48,7 @@ def prepare_train(base_config_file: str,
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments={
-                                      '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
+                                      '[\"architecture_config\"][\"random_seed\"]': seeds,
                                       '[\"output_path\"]': model_paths,
                                   })
     return create_jobs_from_job_config_files(job_config_files=config_files,
@@ -117,7 +117,7 @@ def prepare_dag_train_evaluate(base_config_files: List[str],
     config_files = create_configs(base_config=base_config_files[0],
                                   output_path=output_path,
                                   adjustments={
-                                      '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
+                                      '[\"architecture_config\"][\"random_seed\"]': seeds,
                                       '[\"output_path\"]': model_paths,
                                   })
     jobs.extend(create_jobs_from_job_config_files(job_config_files=config_files,
@@ -170,7 +170,7 @@ def prepare_dag_data_collection_train_evaluate(base_config_files: List[str],
     config_files = create_configs(base_config=base_config_files[2],
                                   output_path=output_path,
                                   adjustments={
-                                      '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
+                                      '[\"architecture_config\"][\"random_seed\"]': seeds,
                                       '[\"output_path\"]': model_paths,
                                   })
     jobs.extend(create_jobs_from_job_config_files(job_config_files=config_files,

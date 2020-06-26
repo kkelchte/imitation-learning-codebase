@@ -1,7 +1,7 @@
 architecture_config:
   architecture: cart_pole_4_2d_stochastic
   device: cuda
-  initialisation_seed: 123
+  random_seed: 123
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
@@ -30,7 +30,7 @@ trainer_config:
   optimizer: Adam
   data_loader_config:
     batch_size: 200
-    data_sampling_seed: 123
+    random_seed: 123
   device: cuda
   discount: 0.99
   factory_key: PPO

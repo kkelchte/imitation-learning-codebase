@@ -15,7 +15,7 @@ from src.ai.architectures import *  # Do not remove
 base_config = {
     "architecture": "",
     "initialisation_type": 'xavier',
-    "initialisation_seed": 0,
+    "random_seed": 0,
     "device": 'cpu',
 }
 
@@ -37,7 +37,7 @@ class ArchitectureTest(unittest.TestCase):
         for p in network.parameters():
             check_network = p.data
             break
-        base_config['initialisation_seed'] = 2
+        base_config['random_seed'] = 2
         second_network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
@@ -45,7 +45,7 @@ class ArchitectureTest(unittest.TestCase):
             check_second_network = p.data
             break
         self.assertNotEqual(torch.sum(check_second_network), torch.sum(check_network))
-        base_config['initialisation_seed'] = 0
+        base_config['random_seed'] = 0
         third_network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )

@@ -34,7 +34,7 @@ class GetItem(Protocol):
 class ArchitectureConfig(Config):
     architecture: str = None  # name of architecture to be loaded
     initialisation_type: str = 'xavier'
-    initialisation_seed: int = 0
+    random_seed: int = 0
     device: str = 'cpu'
     weight_decay: Union[float, str] = 'default'
     dropout: Union[float, str] = 'default'
@@ -68,7 +68,7 @@ class BaseNet(nn.Module):
         self.global_step = torch.as_tensor(0, dtype=torch.int32)
 
     def initialize_architecture(self):
-        torch.manual_seed(self._config.initialisation_seed)
+        torch.manual_seed(self._config.random_seed)
         for layer in self.modules():
             initialize_weights(layer, initialisation_type=self._config.initialisation_type)
 

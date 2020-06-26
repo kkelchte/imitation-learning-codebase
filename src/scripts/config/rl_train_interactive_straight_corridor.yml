@@ -50,7 +50,7 @@ trainer_config:
   optimizer: Adam
   data_loader_config:
     batch_size: 64
-    data_sampling_seed: 123
+    random_seed: 123
   device: cpu
   discount: 0.99
   factory_key: PPO

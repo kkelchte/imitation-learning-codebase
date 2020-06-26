@@ -22,7 +22,7 @@ from src.core.data_types import Experience
 class DataLoaderConfig(Config):
     data_directories: Optional[List[str]] = None
     hdf5_file: str = ''
-    data_sampling_seed: int = 123
+    random_seed: int = 123
     balance_over_actions: bool = False
     batch_size: int = 64
     subsample: int = 1
@@ -62,7 +62,7 @@ class DataLoader:
         self.seed()
 
     def seed(self, seed: int = None):
-        np.random.seed(self._config.data_sampling_seed) if seed is None else np.random.seed(seed)
+        np.random.seed(self._config.random_seed) if seed is None else np.random.seed(seed)
 
     def update_data_directories_with_raw_data(self):
         if self._config.data_directories is None:

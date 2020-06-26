@@ -25,7 +25,7 @@ experiment_config = {
     "architecture_config": {
         "architecture": "cart_pole_4_2d_stochastic",
         "initialisation_type": 'xavier',
-        "initialisation_seed": 123,
+        "random_seed": 123,
         "device": 'cpu',
     },
     "trainer_config": {

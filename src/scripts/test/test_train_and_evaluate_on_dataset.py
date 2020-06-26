@@ -20,7 +20,7 @@ class DatasetExperimentsTest(unittest.TestCase):
             "architecture_config": {
                 "architecture": "tiny_128_rgb_6c",
                 "initialisation_type": 'xavier',
-                "initialisation_seed": 0,
+                "random_seed": 0,
                 "device": 'cpu'},
             "save_checkpoint_every_n": 2,
             "trainer_config": {

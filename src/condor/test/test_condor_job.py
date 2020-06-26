@@ -80,8 +80,8 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual(error_file_length, 0)
 
     def test_translate_keys_to_string(self):
-        self.assertEqual('[\"architecture_config\"][\"initialisation_seed\"]',
-                         translate_keys_to_string(['architecture_config', 'initialisation_seed']))
+        self.assertEqual('[\"architecture_config\"][\"random_seed\"]',
+                         translate_keys_to_string(['architecture_config', 'random_seed']))
         self.assertEqual('[\"trainer_config\"][\"data_loader_config\"][\"batch_size\"]',
                          translate_keys_to_string(['trainer_config', 'data_loader_config', 'batch_size']))
         self.assertEqual('[\"output_path\"]',

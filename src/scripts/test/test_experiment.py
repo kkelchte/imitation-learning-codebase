@@ -51,7 +51,7 @@ class TestExperiment(unittest.TestCase):
                 'store_on_ram_only': True
             },
             'architecture_config': {'architecture': 'cart_pole_4_2d_stochastic', 'log_std': 0.0, 'device': 'cpu',
-                                    'initialisation_seed': 2048, 'initialisation_type': 'orthogonal'},
+                                    'random_seed': 2048, 'initialisation_type': 'orthogonal'},
             'trainer_config': {
                 'criterion': 'MSELoss',
                 'critic_learning_rate': 0.0001,
@@ -59,7 +59,7 @@ class TestExperiment(unittest.TestCase):
                 'scheduler_config': {'number_of_epochs': 488},
                 'gradient_clip_norm': -1,
                 'optimizer': 'Adam',
-                'data_loader_config': {'batch_size': 5, 'data_sampling_seed': 2048},
+                'data_loader_config': {'batch_size': 5, 'random_seed': 2048},
                 'device': 'cpu',
                 'discount': 0.99,
                 'factory_key': 'PPO',
@@ -80,7 +80,7 @@ class TestExperiment(unittest.TestCase):
         self.assertEqual(len(glob(f'{self.output_dir}/torch_checkpoints/*.ckpt')), 5)
         # best checkpoint might not be latest, so remove this one.
         os.remove(f'{self.output_dir}/torch_checkpoints/checkpoint_best.ckpt')
-        config_dict['architecture_config']['initialisation_seed'] = 543
+        config_dict['architecture_config']['random_seed'] = 543
         new_experiment = Experiment(ExperimentConfig().create(
             config_dict=config_dict
         ))

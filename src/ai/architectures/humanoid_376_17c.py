@@ -51,7 +51,7 @@ class Net(BaseNet):
         self.initialize_architecture()
 
     def initialize_architecture(self):
-        torch.manual_seed(self._config.initialisation_seed)
+        torch.manual_seed(self._config.random_seed)
         torch.set_num_threads(1)
         for layer in self._actor[:-1]:
             initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)

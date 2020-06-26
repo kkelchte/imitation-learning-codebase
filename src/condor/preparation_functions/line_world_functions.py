@@ -79,7 +79,7 @@ def prepare_dag_data_collection_train_evaluate_line_world(base_config_files: Lis
     config_files = create_configs(base_config=base_config_files[2],
                                   output_path=output_path,
                                   adjustments={
-                                      '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
+                                      '[\"architecture_config\"][\"random_seed\"]': seeds,
                                       '[\"output_path\"]': model_paths,
                                   })
     jobs.extend(create_jobs_from_job_config_files(job_config_files=config_files,
