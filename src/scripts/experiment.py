@@ -3,7 +3,7 @@ import os
 import time
 from glob import glob
 import shutil
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch
 import yaml
@@ -39,6 +39,7 @@ class ExperimentConfig(Config):
     train_every_n_steps: int = -1
     load_checkpoint_dir: Optional[str] = None  # path to checkpoints
     load_checkpoint_found: bool = True
+    save_checkpoint_every_n: int = 10
     tensorboard: bool = False
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
@@ -68,6 +69,7 @@ class Experiment:
 
     def __init__(self, config: ExperimentConfig):
         self._epoch = 0
+        self._max_mean_return = None
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
@@ -104,7 +106,11 @@ class Experiment:
         else:
             raise NotImplementedError
 
-    def _run_episodes(self) -> str:
+    def _run_episodes(self) -> Tuple[str, bool]:
+        """
+        Run episodes interactively with environment up until enough data is gathered.
+        :return: output message for epoch string, whether current model is the best so far.
+        """
         if self._data_saver is not None and self._config.data_saver_config.clear_buffer_before_episode:
             self._data_saver.clear_buffer()
         count_episodes = 0
@@ -134,29 +140,39 @@ class Experiment:
         msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
             self._writer.write_distribution(return_distribution, "episode return")
-            self._writer.write_scalar(return_distribution.mean, 'mean reward')
-        return msg
+        best_checkpoint = False
+        if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:
+            self._max_mean_return = return_distribution.mean
+            best_checkpoint = True
+        return msg, best_checkpoint
 
     def run(self):
         for self._epoch in range(self._config.number_of_epochs):
+            best_ckpt = False
             msg = f'epoch: {self._epoch + 1} / {self._config.number_of_epochs}'
             if self._environment is not None:
-                msg += self._run_episodes()
+                output_msg, best_ckpt = self._run_episodes()
+                msg += output_msg
             if self._trainer is not None:
                 if self._data_saver is not None:  # update fresh data to train
                     self._trainer.data_loader.set_dataset(
                         self._data_saver.get_dataset() if self._config.data_saver_config.store_on_ram_only else None
                     )
-                msg += self._trainer.train(epoch=self._epoch,
-                                           writer=self._writer)
+                msg += self._trainer.train(epoch=self._epoch, writer=self._writer)
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
-                msg += self._evaluator.evaluate(writer=self._writer)
+                output_msg, best_ckpt = self._evaluator.evaluate(writer=self._writer)
+                msg += output_msg
             #  TODO add interactive evaluation
+            if self._config.save_checkpoint_every_n != -1 and \
+                    (self._epoch % self._config.save_checkpoint_every_n == 0 or
+                     self._epoch == self._config.number_of_epochs - 1) and not best_ckpt:
+                self.save_checkpoint(tag=f'{self._epoch:05d}')
+            if best_ckpt and self._config.save_checkpoint_every_n != -1:
+                self.save_checkpoint(tag='best')
             cprint(msg, self._logger)
         cprint(f'Finished.', self._logger)
 
-    def save_checkpoint(self, tag):
-        #  TODO add option to store 'best' checkpoint
+    def save_checkpoint(self, tag: str = ''):
         filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'
         filename += '.ckpt'
         checkpoint = {
@@ -166,6 +182,7 @@ class Experiment:
                                 ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
             if element is not None:
                 checkpoint[key] = element.get_checkpoint()
+        os.makedirs(f'{self._config.output_path}/torch_checkpoints', exist_ok=True)
         torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/{filename}')
         torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/checkpoint_latest.ckpt')
         cprint(f'stored {filename}', self._logger)

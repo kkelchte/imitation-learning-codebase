@@ -1,6 +1,7 @@
 import os
 import shutil
 import unittest
+from glob import glob
 
 from src.core.utils import get_filename_without_extension
 from src.scripts.experiment import ExperimentConfig, Experiment
@@ -30,6 +31,7 @@ class TestExperiment(unittest.TestCase):
             'train_every_n_steps': 10,
             'load_checkpoint_dir': None,
             'load_checkpoint_found': True,
+            'save_checkpoint_every_n': 3,
             'tensorboard': False,
             'environment_config': {
                 "factory_key": "GYM",
@@ -57,14 +59,13 @@ class TestExperiment(unittest.TestCase):
                 'scheduler_config': {'number_of_epochs': 488},
                 'gradient_clip_norm': -1,
                 'optimizer': 'Adam',
-                'data_loader_config': {'batch_size': 64, 'data_sampling_seed': 2048},
+                'data_loader_config': {'batch_size': 5, 'data_sampling_seed': 2048},
                 'device': 'cpu',
                 'discount': 0.99,
                 'factory_key': 'PPO',
                 'gae_lambda': 0.95,
                 'phi_key': 'gae',
                 'entropy_coefficient': 0.0,
-                'save_checkpoint_every_n': 50,
                 'max_actor_training_iterations': 10,
                 'max_critic_training_iterations': 10,
                 'ppo_epsilon': 0.2,
@@ -75,19 +76,23 @@ class TestExperiment(unittest.TestCase):
             config_dict=config_dict
         )
         experiment = Experiment(self.config)
-        self.assertTrue(experiment._environment._observation_filter._mean is None)
         experiment.run()
-
+        self.assertEqual(len(glob(f'{self.output_dir}/torch_checkpoints/*.ckpt')), 5)
+        # best checkpoint might not be latest, so remove this one.
+        os.remove(f'{self.output_dir}/torch_checkpoints/checkpoint_best.ckpt')
         config_dict['architecture_config']['initialisation_seed'] = 543
         new_experiment = Experiment(ExperimentConfig().create(
             config_dict=config_dict
         ))
+
         # assert models are equal
         self.assertEqual(experiment._net.get_checksum(), new_experiment._net.get_checksum())
         # assert learning rate is loaded correctly
-        self.assertEqual(experiment._trainer.actor_optimizer.lr, new_experiment._trainer.actor_optimizer.lr)
+        self.assertEqual(experiment._trainer._actor_scheduler.get_lr(),
+                         new_experiment._trainer._actor_scheduler.get_lr())
         # assert filter values are loaded correctly
-        self.assertFalse(new_experiment._environment._observation_filter._mean is None)
+        self.assertEqual(experiment._environment._observation_filter._statistic.mean.sum().item(),
+                         new_experiment._environment._observation_filter._statistic.mean.sum().item())
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

@@ -40,7 +40,6 @@ class TrainerConfig(EvaluatorConfig):
     entropy_coefficient: float = 0
     weight_decay: float = 0
     gradient_clip_norm: float = -1
-    save_checkpoint_every_n: int = 10
     factory_key: str = "BASE"
     phi_key: str = "default"
     discount: Union[str, float] = "default"

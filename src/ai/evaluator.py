@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from typing import Tuple
 
 from dataclasses import dataclass
 import torch
@@ -45,7 +46,7 @@ class Evaluator:
             "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
         )
         self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._device)')
-
+        self._lowest_validation_loss = None
         self.data_loader.load_dataset()
 
         self._minimum_error = float(10**6)
@@ -58,7 +59,7 @@ class Evaluator:
     def put_model_back_to_original_device(self):
         self._net.set_device(self._original_model_device)
 
-    def evaluate(self, writer=None) -> str:
+    def evaluate(self, writer=None) -> Tuple[str, bool]:
         self.put_model_on_device()
         total_error = []
 #        for batch in tqdm(self.data_loader.get_data_batch(), ascii=True, desc='evaluate'):
@@ -71,7 +72,14 @@ class Evaluator:
         self.put_model_back_to_original_device()
         if writer is not None:
             writer.write_distribution(error_distribution, 'validation')
-        return f' validation {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
+        msg = f' validation {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
+
+        best_checkpoint = False
+        if self._lowest_validation_loss is None or error_distribution.mean < self._lowest_validation_loss:
+            self._lowest_validation_loss = error_distribution.mean
+            best_checkpoint = True
+
+        return msg, best_checkpoint
 
     def remove(self):
         self.data_loader.remove()
