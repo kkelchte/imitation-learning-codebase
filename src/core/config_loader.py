@@ -129,5 +129,5 @@ class Parser(argparse.ArgumentParser):
     def __init__(self):
         super().__init__()
         self.add_argument("--config", type=str, default=None)
-        self.add_argument("--seed", type=float, default=-1)
+        self.add_argument("--seed", type=int, default=-1)
         self.add_argument("--rm", action='store_true', help="remove current output dir before start")

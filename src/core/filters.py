@@ -26,7 +26,7 @@ class RunningStatistic(object):
     @property
     def variance(self):
         if self._counter > 1:
-            return self._unnormalized_var / (self._counter)
+            return self._unnormalized_var / self._counter
         elif self._counter == 1:
             return np.square(self._mean)
         else:
