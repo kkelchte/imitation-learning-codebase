@@ -71,9 +71,9 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                     self._net.get_policy_entropy(mini_batch_observations, train=True).mean()
 
                 batch_loss = surrogate_loss + entropy_loss
-                #kl_approximation = (mini_batch_original_log_probabilities - new_log_probabilities).mean().item()
-                #if kl_approximation > 1.5 * self._config.kl_target:
-                #    break
+                kl_approximation = (mini_batch_original_log_probabilities - new_log_probabilities).mean().item()
+                if kl_approximation > 1.5 * self._config.kl_target:
+                   break
                 self._actor_optimizer.zero_grad()
                 batch_loss.backward()
                 if self._config.gradient_clip_norm != -1:
