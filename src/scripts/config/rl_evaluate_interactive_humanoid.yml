@@ -1,9 +1,6 @@
 architecture_config:
   architecture: humanoid_376_17c
   device: cpu
-data_saver_config:
-  clear_buffer_before_episode: false
-  store_on_ram_only: false
 environment_config:
   normalize_observations: true
   normalize_rewards: true
@@ -19,4 +16,4 @@ number_of_episodes: 10
 number_of_epochs: 1
 output_path: humanoid-v2/evaluated
 tensorboard: false
-load_checkpoint_dir: humanoid-v2/implmatters
+load_checkpoint_dir: /Users/kelchtermans/experimental_data/humanoid-v2/implmatters_505

@@ -43,11 +43,10 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
         original_log_probabilities = self._net.policy_log_probabilities(inputs=batch.observations,
                                                                         actions=batch.actions,
                                                                         train=False).detach()
-        self.data_loader.seed(123)
         list_batch_loss = []
         list_entropy_loss = []
-        for _ in range(self._config.max_actor_training_iterations
-                       if self._config.max_actor_training_iterations != -1 else 1000):
+        for _ in range(self._config.max_actor_training_iterations):
+            # if self._config.max_actor_training_iterations != -1 else 1000):
             for data in self.data_loader.split_data(np.zeros((0,)),  # provide empty array if all data can be selected
                                                     batch.observations,
                                                     batch.actions,
@@ -73,8 +72,8 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
 
                 batch_loss = surrogate_loss + entropy_loss
                 kl_approximation = (mini_batch_original_log_probabilities - new_log_probabilities).mean().item()
-                if kl_approximation > 1.5 * self._config.kl_target:
-                   break
+                # if kl_approximation > 1.5 * self._config.kl_target:
+                #    break
                 self._actor_optimizer.zero_grad()
                 batch_loss.backward()
                 if self._config.gradient_clip_norm != -1:
@@ -89,13 +88,12 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
             writer.write_distribution(actor_loss_distribution, "policy_loss")
             writer.write_distribution(Distribution(torch.stack(list_entropy_loss)), "policy_entropy_loss")
             writer.write_scalar(list_batch_loss[-1].item(), 'final_policy_loss')
-            #writer.write_scalar(kl_approximation, 'kl_difference')
+            writer.write_scalar(kl_approximation, 'kl_difference')
         return actor_loss_distribution
 
     def _train_critic_clipped(self, batch: Dataset, targets: torch.Tensor, previous_values: torch.Tensor) \
             -> Distribution:
         critic_loss = []
-        self.data_loader.seed(123)
         for value_train_it in range(self._config.max_critic_training_iterations):
             state_indices = np.asarray([index for index in range(len(batch)) if not batch.done[index]])
             for data in self.data_loader.split_data(state_indices,
