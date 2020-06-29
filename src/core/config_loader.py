@@ -45,6 +45,9 @@ class Config:
             with open(config_file, 'r') as f:
                 config_dict = yaml.load(f, Loader=yaml.FullLoader)
         instant = self.from_dict(config_dict)
+        if seed != -1:
+            instant.adjust_seed_in_nested_configs(seed)
+            instant.output_path = f'{instant.output_path}_{seed}'
         if not instant.output_path.startswith('/'):
             instant.output_path = f'{os.environ["DATADIR"]}/{instant.output_path}' if "DATADIR" in os.environ.keys() \
                 else f'{os.environ["HOME"]}/{instant.output_path}'
@@ -52,8 +55,6 @@ class Config:
         instant.commit = os.popen('git rev-parse HEAD').read().strip()
         instant.post_init()
         instant.iterative_check_for_none()
-        if seed != -1:
-            instant.adjust_seed_in_nested_configs(seed)
         if store:
             instant.save_config_file()
         return instant
@@ -92,6 +93,8 @@ class Config:
 
     def yaml_approved_dict(self) -> dict:
         output_dict = {}
+        if self.commit == '':
+            del self.commit
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 output_dict[key] = value.yaml_approved_dict()
