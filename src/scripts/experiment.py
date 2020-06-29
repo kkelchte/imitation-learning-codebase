@@ -188,7 +188,9 @@ class Experiment:
         cprint(f'stored {filename}', self._logger)
 
     def load_checkpoint(self, checkpoint_dir: str):
-        if len(glob(f'{checkpoint_dir}/*.ckpt')) == 0:
+        if not checkpoint_dir.endswith('torch_checkpoints'):
+            checkpoint_dir += '/torch_checkpoints'
+        if len(glob(f'{checkpoint_dir}/*.ckpt')) == 0 and len(glob(f'{checkpoint_dir}/torch_checkpoints/*.ckpt')) == 0:
             cprint(f'Could not find suitable checkpoint in {checkpoint_dir}', self._logger, MessageType.error)
             time.sleep(0.1)
             raise FileNotFoundError
