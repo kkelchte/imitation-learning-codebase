@@ -48,7 +48,7 @@ def prepare_evaluate_interactive_line_world(base_config_file: str,
                                       '[\"data_saver_config\"][\"saving_directory_tag\"]':
                                           [f'{os.path.basename(d)}_{i}' for i in range(900, 900 + number_of_jobs)
                                            for d in model_directories],
-                                      '[\"architecture_config\"][\"load_checkpoint_dir\"]':
+                                      '[\"load_checkpoint_dir\"]':
                                           model_directories * number_of_jobs,
                                       translate_keys_to_string(['environment_config',
                                                                 'ros_config',

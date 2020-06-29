@@ -72,7 +72,7 @@ def prepare_evaluate_interactive(base_config_file: str,
                                   adjustments={
                                       '[\"data_saver_config\"][\"saving_directory_tag\"]':
                                           [os.path.basename(d) for d in model_directories],
-                                      '[\"architecture_config\"][\"load_checkpoint_dir\"]':
+                                      '[\"load_checkpoint_dir\"]':
                                           model_directories,
                                   })
     return create_jobs_from_job_config_files(job_config_files=config_files,
