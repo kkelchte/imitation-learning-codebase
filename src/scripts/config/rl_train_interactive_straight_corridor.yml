@@ -44,7 +44,7 @@ save_checkpoint_every_n: 100
 trainer_config:
   criterion: MSELoss
   actor_learning_rate: 0.005
-  critic_learning_rate: 0.01
+  critic_learning_rate: 0.1
   scheduler_config:
     number_of_epochs: 100
   gradient_clip_norm: -1

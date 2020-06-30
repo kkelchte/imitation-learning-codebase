@@ -50,7 +50,7 @@ class Net(BaseNet):
         initialize_weights(self._actor[-1], initialisation_type=self._config.initialisation_type, scale=0.01)
         for layer in self._critic[:-1]:
             initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
-        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=1.0)
+        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=0.1)
 
     def get_actor_parameters(self) -> Iterator:
         return list(self._actor.parameters()) + [self.log_std]
