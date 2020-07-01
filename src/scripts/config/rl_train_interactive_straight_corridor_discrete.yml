@@ -1,0 +1,65 @@
+output_path: straight_corridor_discrete
+number_of_epochs: 100
+number_of_episodes: 5
+train_every_n_steps: -1
+architecture_config:
+  architecture: straight_corridor_depth_30_3d_stochastic
+  device: cpu
+  initialisation_type: orthogonal
+environment_config:
+  normalize_observations: true
+  normalize_rewards: true
+  observation_clipping: 10
+  reward_clipping: 10
+  factory_key: ROS
+  max_number_of_steps: -1
+  ros_config:
+    info:
+      -sensor/odometry
+    observation: depth_scan
+    store_action: true
+    store_reward: true
+    visible_xterm: false
+    step_rate_fps: 100
+    actor_configs: {}
+    ros_launch_config:
+      random_seed: 123
+      robot_name: turtlebot_sim
+      fsm_config: single_run
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: true
+      control_mapping_config: evaluation
+      world_name: straight_corridor
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 0.0
+      yaw_or: 1.57
+      gazebo: True
+data_saver_config:
+  clear_buffer_before_episode: true
+  store_on_ram_only: true
+tensorboard: true
+save_checkpoint_every_n: 25
+trainer_config:
+  criterion: MSELoss
+  actor_learning_rate: 0.05
+  critic_learning_rate: 0.1
+  scheduler_config:
+    number_of_epochs: 100
+  gradient_clip_norm: -1
+  optimizer: Adam
+  data_loader_config:
+    batch_size: 32
+    random_seed: 123
+  device: cpu
+  discount: 0.99
+  factory_key: PPO
+  gae_lambda: 0.95
+  phi_key: gae
+  entropy_coefficient: 0.
+  max_actor_training_iterations: -1
+  max_critic_training_iterations: 10
+  ppo_epsilon: 0.2
+  use_kl_stop: true
+  kl_target: 0.01
