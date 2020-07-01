@@ -35,4 +35,4 @@ environment_config:
       yaw_or: 1.57
       gazebo: True
 tensorboard: false
-load_checkpoint_dir: /home/klaas/mount/opal/straight_corridor/learning_rate/models/sd_5223_lr_0.0001
+load_checkpoint_dir: /home/klaas/code/imitation-learning-codebase/experimental_data/straight_corridor/default
