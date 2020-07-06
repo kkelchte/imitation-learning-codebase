@@ -31,18 +31,18 @@ class Net(BaseNet):
         self.input_size = (30,)
         self.output_size = (3,)
         self.discrete = True
-        self._actor = mlp_creator(sizes=[self.input_size[0], 15, 15, self.output_size[0]],
+        self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
                                   activation=nn.Tanh,
-                                  output_activation=nn.ReLU)
+                                  output_activation=None)
 
-        self._critic = mlp_creator(sizes=[self.input_size[0], 15, 15, 1],
+        self._critic = mlp_creator(sizes=[self.input_size[0], 64, 64, 1],
                                    activation=nn.Tanh,
-                                   output_activation=nn.ReLU)
+                                   output_activation=None)
         self.initialize_architecture()
         self.discrete_action_mapper = DiscreteActionMapper([
             torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, -0.2]),
             torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, 0.0]),
-            torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, -0.2]),
+            torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, 0.2]),
         ])
 
     def initialize_architecture(self):
@@ -50,10 +50,10 @@ class Net(BaseNet):
         torch.set_num_threads(1)
         for layer in self._actor[:-1]:
             initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
-        initialize_weights(self._actor[-1], initialisation_type=self._config.initialisation_type, scale=0.01)
+        initialize_weights(self._actor[-1], initialisation_type=self._config.initialisation_type, scale=1.)
         for layer in self._critic[:-1]:
             initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
-        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=1.0)
+        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=1.)
 
     def get_actor_parameters(self) -> Iterator:
         return self._actor.parameters()

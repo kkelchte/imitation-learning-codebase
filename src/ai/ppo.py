@@ -45,8 +45,8 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                                                         train=False).detach()
         list_batch_loss = []
         list_entropy_loss = []
-        for _ in range(self._config.max_actor_training_iterations):
-            # if self._config.max_actor_training_iterations != -1 else 1000):
+        for _ in range(self._config.max_actor_training_iterations
+                       if self._config.max_actor_training_iterations != -1 else 1000):
             for data in self.data_loader.split_data(np.zeros((0,)),  # provide empty array if all data can be selected
                                                     batch.observations,
                                                     batch.actions,

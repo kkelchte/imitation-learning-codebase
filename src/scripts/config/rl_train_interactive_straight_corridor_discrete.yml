@@ -1,5 +1,5 @@
-output_path: straight_corridor_discrete
-number_of_epochs: 100
+output_path: straight_corridor_discrete/default_6
+number_of_epochs: 150
 number_of_episodes: 5
 train_every_n_steps: -1
 architecture_config:
@@ -43,14 +43,14 @@ tensorboard: true
 save_checkpoint_every_n: 25
 trainer_config:
   criterion: MSELoss
-  actor_learning_rate: 0.05
-  critic_learning_rate: 0.1
+  actor_learning_rate: 0.001
+  critic_learning_rate: 0.01
   scheduler_config:
     number_of_epochs: 100
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
-    batch_size: 32
+    batch_size: 64
     random_seed: 123
   device: cpu
   discount: 0.99
@@ -58,8 +58,8 @@ trainer_config:
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.
-  max_actor_training_iterations: -1
+  max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2
-  use_kl_stop: true
+  use_kl_stop: false
   kl_target: 0.01
