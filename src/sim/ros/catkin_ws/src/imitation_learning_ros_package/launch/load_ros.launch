@@ -49,7 +49,6 @@
         <arg name="z" value="$(arg z_pos)"/>
         <arg name="Y" default="$(arg yaw_or)"/>
         <arg name="model" default="$(env HOME)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
-
       </include>
     </group>
 
@@ -103,6 +102,13 @@
               output="screen"/>
     </group>
 
+    <arg name="robot_display" default="false"/>
+    <group if="$(arg robot_display)">
+        <node pkg="imitation_learning_ros_package"
+              name="robot_display"
+              type="robot_display.py"
+              output="screen"/>
+    </group>
     <!--######################## ACTOR NODES ########################-->
     <arg name="keyboard" default="false"/>
     <group if="$(arg keyboard)">
