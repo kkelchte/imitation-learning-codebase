@@ -32,6 +32,7 @@ class GymConfig(Config):
 class RosLaunchConfig(Config):
     random_seed: int = 123
     gazebo: bool = False
+    robot_display: bool = False
     fsm: bool = True
     fsm_config: str = 'single_run'
     control_mapping: bool = True
