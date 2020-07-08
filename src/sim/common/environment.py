@@ -12,7 +12,7 @@ from src.core.filters import NormalizationFilter, ReturnFilter
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import Action, Experience, ProcessState
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 
 
 @dataclass_json
