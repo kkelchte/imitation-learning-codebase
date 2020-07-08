@@ -4,7 +4,6 @@ from typing import Union, List, Tuple
 
 import numpy as np
 import rospy
-from imitation_learning_ros_package.msg import RosSensor, RosAction
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
@@ -64,24 +63,6 @@ def adapt_vector_to_odometry(data: Union[np.ndarray, list, tuple]) -> Odometry:
     odometry.pose.pose.orientation.z = qz
     odometry.pose.pose.orientation.w = qw
     return odometry
-
-
-def adapt_sensor_to_ros_message(data: np.ndarray, sensor_name: str) -> RosSensor:
-
-    message = RosSensor()
-    if 'waypoint' in sensor_name:
-        message.waypoint = Float32MultiArray()
-        message.waypoint.data = data.tolist()
-    elif 'odom' in sensor_name:
-        message.odometry = adapt_vector_to_odometry(data)
-    return message
-
-
-def adapt_action_to_ros_message(action: Action) -> RosAction:
-    msg = RosAction()
-    msg.value = adapt_action_to_twist(action)
-    msg.name = action.actor_name
-    return msg
 
 
 def adapt_twist_to_action(msg: Twist) -> Action:

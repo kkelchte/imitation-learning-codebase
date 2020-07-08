@@ -7,7 +7,7 @@ import rospy
 from geometry_msgs.msg import Twist
 
 from src.core.utils import get_filename_without_extension
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig
 

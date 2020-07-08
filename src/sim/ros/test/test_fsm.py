@@ -15,7 +15,7 @@ from sensor_msgs.msg import LaserScan  # Do not remove!
 from imitation_learning_ros_package.msg import RosReward
 
 from src.core.utils import get_filename_without_extension
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.core.data_types import TerminationType
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber

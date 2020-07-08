@@ -12,7 +12,7 @@ from nav_msgs.msg import Odometry
 
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import ProcessState
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.src.utils import adapt_vector_to_odometry
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
