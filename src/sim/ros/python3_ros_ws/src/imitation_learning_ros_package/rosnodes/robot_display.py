@@ -54,9 +54,10 @@ class RobotDisplay:
                          'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._waypoint)
                          if self._waypoint is not None else None,
                          'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
-                         'battery': f'battery: {self._battery}%'}.items():
-            image = cv2.putText(image, msg, (3, height + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
-            height += 15
+                         'battery': f'battery: {self._battery}%' if self._battery is not None else None}.items():
+            if msg is not None:
+                image = cv2.putText(image, msg, (3, height + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+                height += 15
         return image, height
 
     def _draw(self, image: np.ndarray):
