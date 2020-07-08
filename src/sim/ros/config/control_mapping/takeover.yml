@@ -6,8 +6,8 @@ mapping:
   Terminated:
     command: '/actor/keyboard/cmd_vel'
   Running:
-    command: '/actor/keyboard/cmd_vel'
+    command: '/ros_python_interface/cmd_vel'
+    supervision: '/actor/keyboard/cmd_vel'
   TakenOver:
     command: '/actor/keyboard/cmd_vel'
-  DriveBack:
-    command: '/actor/keyboard/cmd_vel'
+  DriveBack: {}

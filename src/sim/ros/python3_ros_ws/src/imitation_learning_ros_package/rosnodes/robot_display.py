@@ -5,6 +5,7 @@ from typing import Union, Tuple
 import rospy
 import cv2
 import numpy as np
+from bebop_msgs.msg import CommonCommonStateBatteryStateChanged
 from imitation_learning_ros_package.msg import RosReward
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
@@ -33,47 +34,38 @@ class RobotDisplay:
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         self._subscribe()
 
-    def _draw_action(self, image: np.ndarray) -> np.ndarray:
+    def _draw_action(self, image: np.ndarray, height: int = -1) -> np.ndarray:
         if self._action is not None:
             forward_speed = 200 * self._action.value[0]
             direction = np.arccos(self._action.value[-1])
 #            origin = (int(image.shape[1] / 2), int(image.shape[0] / 2))
-            origin = (50, int(image.shape[0] / 2))
+            origin = (50, int(image.shape[0] / 2) if height == -1 else height + 50)
             steering_point = (int(origin[0] - forward_speed * np.cos(direction)),
                               int(origin[1] - forward_speed * np.sin(direction)))
             image = cv2.circle(image, origin, radius=20, color=(0, 0, 0, 0.3), thickness=3)
             image = cv2.arrowedLine(image, origin, steering_point, (255, 0, 0), thickness=1)
+            msg = '[' + ', '.join(f'{e:.1f}' for e in self._action.value) + ']'
+            image = cv2.putText(image, msg, (3, origin[1] + 55 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0),
+                                thickness=2)
         return image
 
-    def _draw_fsm_state(self, image: np.ndarray) -> np.ndarray:
-        if self._fsm_state is not None:
-            image = cv2.putText(image, f'fsm: {self._fsm_state.name}', (3, 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
-                                (255, 0, 0), thickness=1)
-        return image
-
-    def _draw_waypoint(self, image: np.ndarray) -> np.ndarray:
-        if self._waypoint is not None:
-            msg = 'wp:'
-            for e in self._waypoint:
-                msg += f' {e:0.3f}'
-            image = cv2.putText(image, msg, (3, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 0, 0),
-                                thickness=1)
-        return image
-
-    def _draw_reward(self, image: np.ndarray) -> np.ndarray:
-        if self._reward is not None:
-            image = cv2.putText(image, f'reward: {self._reward:.2f}', (3, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.45,
-                                (255, 0, 0), thickness=2)
-        return image
+    def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
+        for key, msg in {'fsm': self._fsm_state.name if self._fsm_state is not None else None,
+                         'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._waypoint)
+                         if self._waypoint is not None else None,
+                         'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
+                         'battery': f'battery: {self._battery}%'}.items():
+            image = cv2.putText(image, msg, (3, height + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+            height += 15
+        return image, height
 
     def _draw(self, image: np.ndarray):
         self._counter += 1
         if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
             return
-        image = cv2.rectangle(image, (0, 0), (200, 300), (0.5, 0.5, 0.5, 0.3), thickness=-1)
-        image = self._draw_action(image)
-        image = self._draw_fsm_state(image)
-        image = self._draw_waypoint(image)
+        image = cv2.rectangle(image, (0, 0), (200, 300), (0.5, 0.5, 0.5, 0.1), thickness=-1)
+        image, height = self._write_info(image)
+        image = self._draw_action(image, height)
         cv2.imshow("Image window", image)
         cv2.waitKey(3)
 
@@ -93,6 +85,7 @@ class RobotDisplay:
                              callback_args=(sensor_topic, sensor_stats))
         rospy.Subscriber(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, self._reset)
 
+        # Applied action
         self._action = None
         if rospy.has_param('/robot/command_topic'):
             rospy.Subscriber(name=rospy.get_param('/robot/command_topic'),
@@ -121,6 +114,13 @@ class RobotDisplay:
                          callback=self._set_field,
                          callback_args=('waypoint', {}))
 
+        # battery state
+        self._battery = None
+        rospy.Subscriber(name='/bebop/states/common/CommonState/BatteryStateChanged',
+                         data_class=CommonCommonStateBatteryStateChanged,
+                         callback=self._set_field,
+                         callback_args=('battery', {}))
+
     def _reset(self, msg: Empty = None):
         self._reward = None
         self._fsm_state = None
@@ -131,10 +131,12 @@ class RobotDisplay:
         sensor_topic, sensor_stats = args
         image = process_image(msg, sensor_stats)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        resized_image = cv2.resize(image, (600, 400), interpolation=cv2.INTER_AREA)
-        self._draw(resized_image)
+        if sum(image.shape) < 3000:
+            image = cv2.resize(image, (600, 400), interpolation=cv2.INTER_AREA)
+        self._draw(image)
 
-    def _set_field(self, msg: Union[String, Twist, RosReward], args: Tuple) -> None:
+    def _set_field(self, msg: Union[String, Twist, RosReward, CommonCommonStateBatteryStateChanged],
+                   args: Tuple) -> None:
         field_name, sensor_stats = args
         if field_name == 'fsm_state':
             self._fsm_state = FsmState[msg.data]
@@ -146,6 +148,8 @@ class RobotDisplay:
             self._terminal_state = TerminationType[msg.termination]
         elif field_name == 'waypoint':
             self._waypoint = np.asarray(msg.data)
+        elif field_name == 'battery':
+            self._battery = msg.percent
         else:
             raise NotImplementedError
         cprint(f'set field {field_name}', self._logger, msg_type=MessageType.debug)

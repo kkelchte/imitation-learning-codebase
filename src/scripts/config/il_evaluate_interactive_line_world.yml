@@ -1,6 +1,6 @@
 output_path: line_world
 number_of_epochs: 1
-number_of_episodes: 3
+number_of_episodes: 1
 architecture_config:
   architecture: tiny_128_rgb_6c
   load_checkpoint_dir: line_world
@@ -24,6 +24,7 @@ environment_config:
       waypoint_indicator: true
       control_mapping_config: evaluation
       world_name: LINEWORLD
+      robot_display: true
       x_pos: 0.0
       y_pos: 0.0
       z_pos: 1.0

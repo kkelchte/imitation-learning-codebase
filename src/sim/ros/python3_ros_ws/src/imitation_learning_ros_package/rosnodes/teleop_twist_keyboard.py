@@ -11,6 +11,7 @@ import roslib
 import rospy
 from std_msgs.msg import Empty
 from geometry_msgs.msg import Twist
+from hector_uav_msgs.srv import EnableMotors  # DO NOT REMOVE
 
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -24,6 +25,7 @@ class KeyboardActor(Actor):
 
     def __init__(self):
         rospy.init_node('teleop_twist_keyboard')
+        self.camera_direction = 'straight'
         start_time = time.time()
         max_duration = 60
         while not rospy.has_param('/output_path') and time.time() < start_time + max_duration:
@@ -65,6 +67,12 @@ class KeyboardActor(Actor):
                     'message': service_specs['message']
                 }
             cprint(f'serviceBindings: \n {self.serviceBindings}', self._logger)
+        self.methodBindings = self.specs['methodBindings'] if 'methodBindings' in self.specs.keys() else None
+        if self.methodBindings is not None:
+            self.camera_control_publisher = rospy.Publisher('/bebop/camera_control', Twist)
+            for method in self.methodBindings.values():
+                assert method in self.__dir__()  # make sure that method exists
+
         self.x = 0
         self.y = 0
         self.z = 0
@@ -90,13 +98,16 @@ class KeyboardActor(Actor):
 
     def update_fields(self):
         key = self.get_key()
+        if self.methodBindings is not None and key in self.methodBindings.keys():
+            eval(f'self.{self.methodBindings[key]}()')
         if self.topicBindings is not None and key in self.topicBindings.keys():
             self.publishers[key].publish(Empty())
+            cprint(f'publish {self.publishers[key]}', self._logger)
         if self.serviceBindings is not None and key in self.serviceBindings.keys():
             # rospy.wait_for_service(self.serviceBindings[key]['name'])
             self.serviceBindings[key]['proxy'](self.serviceBindings[key]['message'])
             # self.serviceBindings[key]['proxy'](True)
-            # cprint(f'{self.serviceBindings[key]["proxy"]}({self.serviceBindings[key]["message"]})', self._logger)
+            cprint(f'{self.serviceBindings[key]["proxy"]}({self.serviceBindings[key]["message"]})', self._logger)
         if self.moveBindings is not None and key in self.moveBindings.keys():
             self.x = self.moveBindings[key][0]
             self.y = self.moveBindings[key][1]
@@ -130,6 +141,18 @@ class KeyboardActor(Actor):
         finally:
             self.command_pub.publish(Twist())
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.settings)
+
+    def toggle_camera_forward_down(self):
+        if self.camera_direction == 'straight':
+            twist = Twist()
+            twist.angular.y = -80
+            self.camera_control_publisher.publish(twist)
+            self.camera_direction = 'down'
+        elif self.camera_direction == 'down':
+            twist = Twist()
+            twist.angular.y = 0
+            self.camera_control_publisher.publish(twist)
+            self.camera_direction = 'straight'
 
 
 if __name__ == "__main__":

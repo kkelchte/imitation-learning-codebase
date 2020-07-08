@@ -19,11 +19,11 @@ environment_config:
       random_seed: 123
       robot_name: bebop_real
       robot_display: true
-      fsm_config: single_run
+      fsm_config: takeover_run
       fsm: true
       control_mapping: true
-      waypoint_indicator: true
-      control_mapping_config: evaluation
+      waypoint_indicator: false
+      control_mapping_config: takeover
       world_name: empty
       x_pos: 0.0
       y_pos: 0.0
@@ -31,8 +31,8 @@ environment_config:
       yaw_or: 1.57
       gazebo: false
     actor_configs:
-      - name: ros_expert
-        file: src/sim/ros/config/actor/ros_expert.yml
+        - name: keyboard
+          file: src/sim/ros/config/actor/keyboard_bebop_real.yml
 data_saver_config:
   store_hdf5: false
   separate_raw_data_runs: true

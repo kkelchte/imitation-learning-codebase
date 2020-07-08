@@ -117,7 +117,7 @@
     <arg name="keyboard" default="false"/>
     <group if="$(arg keyboard)">
         <arg name="keyboard_config_file_path_with_extension"
-             default="$(env HOME)/src/sim/ros/config/keyboard/turtlebot_sim.yml"/>
+             default="$(env HOME)/src/sim/ros/config/actor/keyboard_turtlebot_sim.yml"/>
         <rosparam command="load"
                   file="$(arg keyboard_config_file_path_with_extension)"
                   ns="/actor/keyboard"/>
