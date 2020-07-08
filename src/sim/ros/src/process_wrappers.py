@@ -173,7 +173,7 @@ class RosWrapper(ProcessWrapper):
         executable = 'roslaunch '
         if not visible:
             executable = f'xvfb-run -a {executable}'
-        launch_file = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'catkin_ws', 'src',
+        launch_file = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'python3_ros_ws', 'src',
                                    'imitation_learning_ros_package', 'launch', launch_file)
         assert os.path.isfile(launch_file)
         executable += ' ' + launch_file

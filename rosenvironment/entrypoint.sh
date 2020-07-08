@@ -14,17 +14,13 @@ if [ ! -d python2_ros_ws ] ; then
   make install_python2_ros_ws
 fi
 
-make python3_ros_ws/devel/setup.bash
-# shellcheck disable=SC1090
-source "${HOME}/src/sim/ros/python3_ros_ws/devel/setup.bash" --extend || exit 2
-
 make python2_ros_ws/devel/setup.bash
 # shellcheck disable=SC1090
 source "${HOME}/src/sim/ros/python2_ros_ws/devel/setup.bash" --extend || exit 2
 
-make catkin_ws/devel/setup.bash
+make python3_ros_ws/devel/setup.bash
 # shellcheck disable=SC1090
-source "${HOME}/src/sim/ros/catkin_ws/devel/setup.bash" --extend || exit 2
+source "${HOME}/src/sim/ros/python3_ros_ws/devel/setup.bash" --extend || exit 2
 
 
 export GAZEBO_MODEL_PATH="${HOME}/src/sim/ros/gazebo/models"

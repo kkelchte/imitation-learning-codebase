@@ -1,21 +1,4 @@
-install: install_catkin_ws install_python3_ros_ws install_python2_ros_ws
-
-############
-# Catkin_ws
-############
-catkin_ws/src:
-	mkdir -p catkin_ws/src
-
-install_catkin_ws: catkin_ws/src
-	cd catkin_ws && \
-	catkin_make -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
-	-DPYTHON_LIBRARY=/usr/lib/python3.8
-
-catkin_ws/devel/setup.bash: $(wildcard catkin_ws/src/**/*)
-	cd catkin_ws && \
-	for f in src/imitation_learning_ros_package/rosnodes/*.py ; do chmod u+x $$f; done && \
-	catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3.8 \
-	-DPYTHON_INCLUDE_DIR=/usr/include/python3.8 -DPYTHON_LIBRARY=/usr/lib/python3.8
+install: install_python3_ros_ws install_python2_ros_ws
 
 #################
 # python3_ros_ws
@@ -40,8 +23,10 @@ install_python3_ros_ws: python3_ros_ws/src
 
 python3_ros_ws/devel/setup.bash: $(wildcard python3_ros_ws/src/**/*)
 	cd python3_ros_ws && \
+	for f in src/imitation_learning_ros_package/rosnodes/*.py ; do chmod u+x $$f; done && \
 	catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3.8 \
 	-DPYTHON_INCLUDE_DIR=/usr/include/python3.8 -DPYTHON_LIBRARY=/usr/lib/python3.8
+
 
 #################
 # Python2_ros_ws
