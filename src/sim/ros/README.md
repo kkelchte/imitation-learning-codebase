@@ -22,12 +22,12 @@ Run test_ros_environment_integrated
 
 # Structure:
 
-_catkin_ws_
-All ROS nodes and launch files are stored in the catkin_ws/src/imitation_learning_ros_package,
- as well as other ROS dependencies which are not installed system wide.
-The nodes are written in python2.7 and serve as backend.
-Corresponding tests are found in catkin_ws/src/imitation_learning_ros_package/test and should be run with python2.7 
-in a singularity - ros environment.
+_python2_ros_ws_
+catkin ws with ros packages which require python2.7.
+
+_python3_ros_ws_
+catkin ws with ros packages compiled with python3.8.
+Among one package named imitation-learning-ros-packages containing nodes to interact with ros robots.
 
 _config_
 The config directory contains all ros-node-specific configurations which are loaded as ros params at roslaunch.
