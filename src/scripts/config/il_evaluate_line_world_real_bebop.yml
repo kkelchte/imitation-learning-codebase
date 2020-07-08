@@ -1,10 +1,10 @@
 output_path: line_world
 number_of_epochs: 1
-number_of_episodes: 3
+number_of_episodes: 1
 architecture_config:
   architecture: tiny_128_rgb_6c
-  load_checkpoint_dir: line_world
-  device: cuda
+  load_checkpoint_dir: /home/klaas/seed_5100
+  device: cpu
 environment_config:
   factory_key: ROS
   max_number_of_steps: -1
@@ -13,22 +13,23 @@ environment_config:
       -current_waypoint
       -sensor/odometry
     observation: forward_camera
-    visible_xterm: false
+    visible_xterm: true
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
-      robot_name: drone_sim
+      robot_name: bebop_real
+      robot_display: true
       fsm_config: single_run
       fsm: true
       control_mapping: true
       waypoint_indicator: true
       control_mapping_config: evaluation
-      world_name: LINEWORLD
+      world_name: empty
       x_pos: 0.0
       y_pos: 0.0
       z_pos: 1.0
       yaw_or: 1.57
-      gazebo: True
+      gazebo: false
     actor_configs:
       - name: ros_expert
         file: src/sim/ros/config/actor/ros_expert.yml

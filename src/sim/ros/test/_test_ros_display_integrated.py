@@ -11,42 +11,67 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-
+#
+# config_dict = {
+#     "output_path": "/tmp",
+#     "factory_key": "ROS",
+#     "max_number_of_steps": -1,
+#     "ros_config": {
+#         "info": [
+#             "current_waypoint",
+#             "sensor/odometry"
+#         ],
+#         "observation": "forward_camera",
+#         "max_update_wait_period_s": 10,
+#         "store_action": True,
+#         "store_reward": True,
+#         "visible_xterm": True,
+#         "step_rate_fps": 100,
+#         "ros_launch_config": {
+#           "random_seed": 123,
+#           "robot_name": "drone_sim",
+#           "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
+#           "fsm": True,
+#           "robot_display": True,
+#           "control_mapping": True,
+#           "waypoint_indicator": True,
+#           "control_mapping_config": "debug",
+#           "world_name": "line_worlds/model_000",
+#           "x_pos": 0.0,
+#           "y_pos": 0.0,
+#           "z_pos": 1.5,
+#           "yaw_or": 1.57,
+#           "gazebo": True,
+#         },
+#         "actor_configs": [{
+#               "name": "ros_expert",
+#               "file": "src/sim/ros/config/actor/ros_expert.yml"
+#         }],
+#     }
+# }
+#
 config_dict = {
     "output_path": "/tmp",
     "factory_key": "ROS",
     "max_number_of_steps": -1,
     "ros_config": {
-        "info": [
-            "current_waypoint",
-            "sensor/odometry"
-        ],
         "observation": "forward_camera",
         "max_update_wait_period_s": 10,
-        "store_action": True,
-        "store_reward": True,
         "visible_xterm": True,
         "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,
-          "robot_name": "drone_sim",
+          "robot_name": "bebop_real",
           "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "robot_display": True,
-          "control_mapping": True,
-          "waypoint_indicator": True,
-          "control_mapping_config": "debug",
-          "world_name": "line_worlds/model_000",
-          "x_pos": 0.0,
-          "y_pos": 0.0,
-          "z_pos": 1.5,
-          "yaw_or": 1.57,
-          "gazebo": True,
+          "world_name": 'empty',
+          "waypoint_indicator": False,
         },
         "actor_configs": [{
               "name": "ros_expert",
               "file": "src/sim/ros/config/actor/ros_expert.yml"
-            }],
+        }],
     }
 }
 
@@ -68,13 +93,10 @@ class TestRosIntegrated(unittest.TestCase):
         time.sleep(rospy.get_param('/world/delay_evaluation') + 2)
         for _ in range(1):
             experience, observation = self._environment.reset()
-            self.assertTrue(experience.action is None)
-            self.assertEqual(experience.done, TerminationType.NotDone)
             count = 0
             while experience.done == TerminationType.NotDone:
                 experience, observation = self._environment.step()
                 count += 1
-            self.assertEqual(experience.done, TerminationType.Success)
 
     def tearDown(self) -> None:
         self._environment.remove()

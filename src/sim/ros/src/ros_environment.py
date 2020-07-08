@@ -18,10 +18,10 @@ from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 from imitation_learning_ros_package.msg import RosReward
 from src.core.logger import cprint, MessageType
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 from src.core.data_types import Action, Experience, TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
@@ -43,6 +43,13 @@ class RosEnvironment(Environment):
                 if config.ros_config.ros_launch_config.robot_name == 'turtlebot_sim' else False
             roslaunch_arguments['drone_sim'] = True \
                 if config.ros_config.ros_launch_config.robot_name == 'drone_sim' else False
+        else:
+            roslaunch_arguments['bebop_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'bebop_real' else False
+            roslaunch_arguments['ardrone_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'ardrone_real' else False
+            roslaunch_arguments['turtlebot_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'turtlebot_real' else False
 
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:
