@@ -26,8 +26,7 @@ Allows combination of outputs as weighted sum in one big backward pass.
 @dataclass_json
 @dataclass
 class SchedulerConfig(Config):
-    step_size: int = 10
-    gamma: int = 0.9
+    number_of_epochs: int = None
 
 
 @dataclass_json
@@ -41,12 +40,12 @@ class TrainerConfig(EvaluatorConfig):
     entropy_coefficient: float = 0
     weight_decay: float = 0
     gradient_clip_norm: float = -1
-    save_checkpoint_every_n: int = 10
     factory_key: str = "BASE"
     phi_key: str = "default"
     discount: Union[str, float] = "default"
     gae_lambda: Union[str, float] = "default"
     ppo_epsilon: Union[str, float] = "default"
+    use_kl_stop: bool = False
     kl_target: Union[str, float] = "default"
     max_actor_training_iterations: Union[str, int] = "default"
     max_critic_training_iterations: Union[str, int] = "default"
@@ -72,17 +71,10 @@ class Trainer(Evaluator):
             self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
                                                                             lr=self._config.learning_rate,
                                                                             weight_decay=self._config.weight_decay)
-            self._scheduler = torch.optim.lr_scheduler.StepLR(self._optimizer,
-                                                              step_size=self._config.scheduler_config.step_size,
-                                                              gamma=self._config.scheduler_config.gamma) \
-                if self._config.scheduler_config is not None else None
 
-    def _save_checkpoint(self, epoch: int = -1):
-        if epoch != -1:
-            if epoch % self._config.save_checkpoint_every_n == 0:
-                self._net.save_to_checkpoint(tag=f'{epoch:08}' if epoch != -1 else '')
-        else:
-            self._net.save_to_checkpoint()
+            lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+            self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
+                if self._config.scheduler_config is not None else None
 
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
@@ -93,15 +85,14 @@ class Trainer(Evaluator):
             predictions = self._net.forward(batch.observations, train=True)
             targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
             loss = self._criterion(predictions, targets).mean()
-            loss.backward()  # calculate gradients
+            loss.backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
                                          self._config.gradient_clip_norm)
-            self._optimizer.step()  # apply gradients according to optimizer
+            self._optimizer.step()
             self._net.global_step += 1
             total_error.append(loss.cpu().detach())
         self.put_model_back_to_original_device()
-        self._save_checkpoint(epoch)
 
         if self._scheduler is not None:
             self._scheduler.step()
@@ -111,3 +102,22 @@ class Trainer(Evaluator):
             writer.set_step(self._net.global_step)
             writer.write_distribution(error_distribution, 'training')
         return f' training {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
+
+    def get_checkpoint(self) -> dict:
+        """
+        makes a checkpoint for the trainers field.
+        :return: dictionary with optimizers state_dict and schedulers state dict
+        """
+        checkpoint = {'optimizer_state_dict': self._optimizer.state_dict()}
+        if self._scheduler is not None:
+            checkpoint['scheduler_state_dict'] = self._scheduler.state_dict()
+        return checkpoint
+
+    def load_checkpoint(self, checkpoint: dict) -> None:
+        """
+        Load optimizers and schedulers state_dict
+        :return: None
+        """
+        self._optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if self._scheduler is not None:
+            self._scheduler.load_state_dict(checkpoint['scheduler_state_dict'])

@@ -14,7 +14,7 @@ fi
 mkdir test_dir
 
 EXCLUDE=" "
-# EXCLUDE="src/scripts/test/test_model_evaluation_ros.py"
+EXCLUDE="src/scripts/test/test_model_evaluation_ros.py"
 
 
 

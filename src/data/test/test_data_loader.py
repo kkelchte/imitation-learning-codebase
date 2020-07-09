@@ -85,24 +85,11 @@ class TestDataLoader(unittest.TestCase):
         for d in config.data_directories:
             self.assertTrue(os.path.isdir(d))
 
-    def test_data_clipping(self):
-        config_dict = {
-            'data_directories': self.info['episode_directories'],
-            'output_path': self.output_dir,
-            'reward_clipping': 1
-        }
-        config = DataLoaderConfig().create(config_dict=config_dict)
-        data_loader = DataLoader(config=config)
-        data_loader.set_dataset()
-
-        self.assertLessEqual(max(data_loader.get_dataset().rewards), 1)
-        self.assertGreaterEqual(min(data_loader.get_dataset().rewards), -1)
-
     def test_data_batch(self):
         config_dict = {
             'data_directories': self.info['episode_directories'],
             'output_path': self.output_dir,
-            'data_sampling_seed': 1,
+            'random_seed': 1,
             'batch_size': 3
         }
         data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
@@ -117,7 +104,7 @@ class TestDataLoader(unittest.TestCase):
         config_dict = {
             'data_directories': self.info['episode_directories'],
             'output_path': self.output_dir,
-            'data_sampling_seed': 1,
+            'random_seed': 1,
             'batch_size': 3
         }
         data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
@@ -131,7 +118,7 @@ class TestDataLoader(unittest.TestCase):
         self.assertEqual(index, max_num_batches - 1)
 
         # test sampling seed for reproduction
-        config_dict['data_sampling_seed'] = 2
+        config_dict['random_seed'] = 2
         data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
         data_loader.load_dataset()
         second_batch = []
@@ -140,7 +127,7 @@ class TestDataLoader(unittest.TestCase):
             break
         self.assertNotEqual(np.sum(np.asarray(first_batch.observations[0])),
                             np.sum(np.asarray(second_batch.observations[0])))
-        config_dict['data_sampling_seed'] = 1
+        config_dict['random_seed'] = 1
         data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=config_dict))
         data_loader.load_dataset()
         third_batch = []
@@ -176,7 +163,7 @@ class TestDataLoader(unittest.TestCase):
         config_dict = {
             'data_directories': self.info['episode_directories'],
             'output_path': self.output_dir,
-            'data_sampling_seed': 1,
+            'random_seed': 1,
             'batch_size': 3,
             'subsample': subsample
         }

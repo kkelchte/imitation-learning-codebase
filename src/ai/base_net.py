@@ -11,7 +11,7 @@ from dataclasses_json import dataclass_json
 import torch.nn as nn
 from typing_extensions import runtime_checkable, Protocol
 
-from src.ai.utils import get_checksum_network_parameters
+from src.ai.utils import get_checksum_network_parameters, initialize_weights
 from src.core.config_loader import Config
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
@@ -33,19 +33,13 @@ class GetItem(Protocol):
 @dataclass
 class ArchitectureConfig(Config):
     architecture: str = None  # name of architecture to be loaded
-    load_checkpoint_dir: Optional[str] = None  # path to checkpoints
-    load_checkpoint_found: bool = True
     initialisation_type: str = 'xavier'
-    initialisation_seed: int = 0
+    random_seed: int = 0
     device: str = 'cpu'
     weight_decay: Union[float, str] = 'default'
     dropout: Union[float, str] = 'default'
     dtype: str = 'default'
     log_std: Union[float, str] = 'default'
-
-    def __post_init__(self):
-        if self.load_checkpoint_dir is None:
-            del self.load_checkpoint_dir
 
 
 class BaseNet(nn.Module):
@@ -73,79 +67,13 @@ class BaseNet(nn.Module):
 
         self.global_step = torch.as_tensor(0, dtype=torch.int32)
 
-    def load_network_weights(self):
-        if self._config.load_checkpoint_dir:
-            self._config.load_checkpoint_dir = self._config.load_checkpoint_dir \
-                if self._config.load_checkpoint_dir.endswith('torch_checkpoints') \
-                else os.path.join(self._config.load_checkpoint_dir, 'torch_checkpoints')
-            if not self._config.load_checkpoint_dir.startswith('/'):
-                self._config.load_checkpoint_dir = f'{os.environ["DATADIR"]}/{self._config.load_checkpoint_dir}'\
-                    if "DATADIR" in os.environ.keys() else f'{os.environ["HOME"]}/{self._config.load_checkpoint_dir}'
-            self.load_from_checkpoint(checkpoint_dir=self._config.load_checkpoint_dir)
-        elif self._config.load_checkpoint_found:
-            if len([ckpt for ckpt in os.listdir(self._checkpoint_output_directory) if ckpt.endswith('ckpt')]) > 0:
-                self.load_from_checkpoint(checkpoint_dir=self._checkpoint_output_directory)
-            else:
-                self.initialize_architecture_weights(self._config.initialisation_type)
-        else:
-            self.initialize_architecture_weights(self._config.initialisation_type)
-        cprint(f"network checksum: {get_checksum_network_parameters(self.parameters())}", self._logger)
-        self.set_device(self._device)
+    def initialize_architecture(self):
+        torch.manual_seed(self._config.random_seed)
+        for layer in self.modules():
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type)
 
-    def initialize_architecture_weights(self, initialisation_type: str = 'xavier'):
-        torch.manual_seed(self._config.initialisation_seed)
-        for p in self.parameters():
-            if initialisation_type == 'xavier':
-                if len(p.shape) == 1:
-                    nn.init.constant_(p, 0)
-                else:
-                    nn.init.xavier_uniform_(p)
-            elif initialisation_type == 'constant':
-                nn.init.constant_(p, 0.03)
-            elif initialisation_type == 'orthogonal':
-                if len(p.shape) == 1:
-                    nn.init.constant_(p, 0)
-                else:
-                    nn.init.orthogonal_(p, gain=2**0.5)
-            else:
-                raise NotImplementedError
-
-    def load_from_checkpoint(self, checkpoint_dir: str):
-        if len([f for f in os.listdir(checkpoint_dir) if f.endswith('.ckpt')]) == 0:
-            cprint(f'Could not find suitable checkpoint in {checkpoint_dir}', self._logger, MessageType.error)
-            time.sleep(0.5)
-            raise FileNotFoundError
-        # Get latest checkpoint file
-        if os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')):
-            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')
-        elif os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')):
-            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')
-        else:
-            checkpoints = {int(f.split('.')[0].split('_')[-1]):
-                           os.path.join(checkpoint_dir, f) for f in os.listdir(checkpoint_dir)}
-            checkpoint_file = checkpoints[max(checkpoints.keys())]
-        # Load params internally and return checkpoint
-        checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
-        self.global_step = checkpoint['global_step']
-        del checkpoint['global_step']
-        self.load_state_dict(checkpoint['model_state'])
-        del checkpoint['model_state']
-        self.extra_checkpoint_info = checkpoint  # store extra parameters e.g. optimizer / loss params
-        cprint(f'loaded network from {checkpoint_file}', self._logger)
-
-    def save_to_checkpoint(self, tag: str = '', extra_info: dict = None):
-        filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'
-        filename += '.ckpt'
-        checkpoint = {
-            'global_step': self.global_step,
-            'model_state': self.state_dict()
-        }
-        if extra_info is not None:
-            for k in extra_info.keys():
-                checkpoint[k] = extra_info[k]
-        torch.save(checkpoint, f'{self._checkpoint_output_directory}/{filename}')
-        torch.save(checkpoint, f'{self._checkpoint_output_directory}/checkpoint_latest.ckpt')
-        cprint(f'stored {filename}', self._logger)
+    def get_checksum(self):
+        return get_checksum_network_parameters(self.parameters())
 
     def set_device(self, device: Union[str, torch.device]):
         self._device = torch.device(
@@ -192,7 +120,7 @@ class BaseNet(nn.Module):
 
         return inputs
 
-    def get_action(self, inputs, train: bool = False) -> Action:
+    def get_action(self, inputs) -> Action:
         raise NotImplementedError
 
     def get_device(self) -> torch.device:
@@ -206,3 +134,22 @@ class BaseNet(nn.Module):
 
     def remove(self):
         [h.close() for h in self._logger.handlers]
+
+    def get_checkpoint(self) -> dict:
+        """
+        :return: a dictionary with global_step and model_state of neural network.
+        """
+        return {
+            'global_step': self.global_step,
+            'model_state': self.state_dict()
+        }
+
+    def load_checkpoint(self, checkpoint) -> None:
+        """
+        Try to load checkpoint in global step and model state. Raise error.
+        :param checkpoint: dictionary containing 'global step' and 'model state'
+        :return: None
+        """
+        self.global_step = checkpoint['global_step']
+        self.load_state_dict(checkpoint['model_state'])
+        self.set_device(self._device)

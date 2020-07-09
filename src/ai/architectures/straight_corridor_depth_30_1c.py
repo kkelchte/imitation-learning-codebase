@@ -12,11 +12,6 @@ from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
-"""
-CartPole-v0	action space: discrete 2	observation space: Box(4,)
-Pendulum-v0	action space: continuous 1[-2.0 : 2.0]	observation space: Box(3,)
-"""
-
 
 class Net(BaseNet):
 
@@ -29,16 +24,13 @@ class Net(BaseNet):
 
             cprint(f'Started.', self._logger)
 
-        self.input_size = (376,)
-        self.output_size = (17,)
-        self.action_min = -0.4
-        self.action_max = 0.4
+        self.input_size = (30,)
+        self.output_size = (1,)
 
         self.discrete = False
-
         self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
                                   activation=nn.Tanh,
-                                  output_activation=None)
+                                  output_activation=nn.Tanh)
 
         log_std = self._config.log_std if self._config.log_std != 'default' else 0.5
         self.log_std = torch.nn.Parameter(torch.ones(self.output_size, dtype=torch.float32) * log_std,
@@ -58,7 +50,7 @@ class Net(BaseNet):
         initialize_weights(self._actor[-1], initialisation_type=self._config.initialisation_type, scale=0.01)
         for layer in self._critic[:-1]:
             initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
-        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=1.0)
+        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=0.1)
 
     def get_actor_parameters(self) -> Iterator:
         return list(self._actor.parameters()) + [self.log_std]
@@ -79,7 +71,7 @@ class Net(BaseNet):
         output = self.sample(inputs)
         # output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),
-                      value=output)
+                      value=np.asarray([0.2, 0, 0, 0, 0, 0.2 * output]))
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
         actions = super().forward(inputs=actions, train=train)  # preprocess list of Actions

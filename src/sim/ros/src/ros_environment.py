@@ -68,6 +68,7 @@ class RosEnvironment(Environment):
 
         # Fields
         self._step = 0
+        self._return = 0
         self._current_experience = None
         self._previous_observation = None
         self._info = {}
@@ -302,7 +303,9 @@ class RosEnvironment(Environment):
         self._action = None
         self._reward = None
         self._terminal_state = None
-        self._info = {k: None for k in self._info.keys() if k != 'unfiltered_reward'}
+        self._info = {k: None for k in self._info.keys() if k != 'unfiltered_reward' and k != 'return'}
+        if 'return' in self._info.keys():
+            del self._info['return']
 
     def _update_current_experience(self) -> bool:
         """
@@ -329,7 +332,10 @@ class RosEnvironment(Environment):
             return False
         self._observation = self._filter_observation(self._observation)
         self._info['unfiltered_reward'] = deepcopy(self._reward)
+        self._return += self._reward
         self._reward = self._filter_reward(self._reward)
+        if self._terminal_state in [TerminationType.Done, TerminationType.Success, TerminationType.Failure]:
+            self._info['return'] = self._return
 
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
@@ -381,6 +387,7 @@ class RosEnvironment(Environment):
         cprint(f'resetting', self._logger)
         self._reset_filters()
         self._step = 0
+        self._return = 0
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
@@ -394,6 +401,7 @@ class RosEnvironment(Environment):
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._observation),
             time_stamp=int(rospy.get_time() * 10 ** 3),
+            info={}
         )
         self._previous_observation = deepcopy(self._observation)
         return self._current_experience, deepcopy(self._observation)

@@ -19,13 +19,12 @@ class DatasetExperimentsTest(unittest.TestCase):
             "number_of_epochs": 4,
             "architecture_config": {
                 "architecture": "tiny_128_rgb_6c",
-                "load_checkpoint_dir": None,
                 "initialisation_type": 'xavier',
-                "initialisation_seed": 0,
+                "random_seed": 0,
                 "device": 'cpu'},
+            "save_checkpoint_every_n": 2,
             "trainer_config": {
                 "factory_key": "BASE",
-                "save_checkpoint_every_n": 2,
                 "data_loader_config": {"batch_size": 5,
                                        "hdf5_file": "train.hdf5"},
                 "criterion": "MSELoss",
@@ -54,9 +53,9 @@ class DatasetExperimentsTest(unittest.TestCase):
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
         experiment.run()
 
-        # check if 5 + 2 checkpoints were stored in torch_checkpoints
+        # check if checkpoints were stored in torch_checkpoints
         self.assertEqual(len([f for f in os.listdir(os.path.join(self.output_dir, 'torch_checkpoints'))
-                              if f.endswith('ckpt')]), 4)
+                              if f.endswith('ckpt')]), 3)
 
     def test_train_model_on_generated_dataset_with_tensorboard(self):
         network = eval(self.experiment_config['architecture_config']['architecture']).Net(

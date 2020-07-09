@@ -31,25 +31,27 @@ class VanillaPolicyGradient(Trainer):
                                       output_path=config.output_path,
                                       quiet=True)
             cprint(f'Started.', self._logger)
+        kwargs = {'params': self._net.get_actor_parameters(),
+                  'lr': self._config.learning_rate if self._config.actor_learning_rate == -1
+                  else self._config.actor_learning_rate}
+        if self._config.optimizer == 'Adam':
+            kwargs['eps'] = 1e-05
+        self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(**kwargs)
 
-        self._actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_actor_parameters(),
-                                                                              lr=self._config.learning_rate
-                                                                              if self._config.actor_learning_rate == -1
-                                                                              else self._config.actor_learning_rate)
-        self._actor_scheduler = torch.optim.lr_scheduler.StepLR(self._actor_optimizer,
-                                                                step_size=self._config.scheduler_config.step_size,
-                                                                gamma=self._config.scheduler_config.gamma) \
+        kwargs = {'params': self._net.get_critic_parameters(),
+                  'lr': self._config.learning_rate if self._config.critic_learning_rate == -1 else
+                  self._config.critic_learning_rate}
+        if self._config.optimizer == 'Adam':
+            kwargs['eps'] = 1e-05
+        self._critic_optimizer = eval(f'torch.optim.{self._config.optimizer}')(**kwargs)
+
+        lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+        self._actor_scheduler = torch.optim.lr_scheduler.LambdaLR(self._actor_optimizer, lr_lambda=lambda_function) \
             if self._config.scheduler_config is not None else None
-        self._critic_optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.get_critic_parameters(),
-                                                                               lr=self._config.learning_rate
-                                                                               if self._config.critic_learning_rate == -1
-                                                                               else self._config.critic_learning_rate)
-        self._critic_scheduler = torch.optim.lr_scheduler.StepLR(self._actor_optimizer,
-                                                                 step_size=self._config.scheduler_config.step_size,
-                                                                 gamma=self._config.scheduler_config.gamma) \
+        self._critic_scheduler = torch.optim.lr_scheduler.LambdaLR(self._critic_optimizer, lr_lambda=lambda_function) \
             if self._config.scheduler_config is not None else None
 
-    def _calculate_phi(self, batch: Dataset) -> torch.Tensor:
+    def _calculate_phi(self, batch: Dataset, values: torch.Tensor = None) -> torch.Tensor:
         if self._config.phi_key == "return":
             return get_returns(batch)
         elif self._config.phi_key == "reward-to-go":
@@ -58,9 +60,9 @@ class VanillaPolicyGradient(Trainer):
             return get_generalized_advantage_estimate(
                 batch_rewards=batch.rewards,
                 batch_done=batch.done,
-                batch_values=[v for v in self._net.critic(batch.observations, train=False).detach()],
-                discount=0.95 if self._config.discount != "default" else self._config.discount,
-                gae_lambda=0.95 if self._config.gae_lambda != "default" else self._config.gae_lambda,
+                batch_values=values,
+                discount=0.99 if self._config.discount == "default" else self._config.discount,
+                gae_lambda=0.95 if self._config.gae_lambda == "default" else self._config.gae_lambda,
             )
         elif self._config.phi_key == "value-baseline":
             values = self._net.critic(batch.observations, train=False).detach().squeeze()
@@ -71,10 +73,10 @@ class VanillaPolicyGradient(Trainer):
 
     def _train_actor(self, batch: Dataset, phi_weights: torch.Tensor) -> torch.Tensor:
         self._actor_optimizer.zero_grad()
-        log_probability = self._net.policy_log_probabilities(torch.stack(batch.observations).type(torch.float32),
-                                                             torch.stack(batch.actions).type(torch.float32),
+        log_probability = self._net.policy_log_probabilities(batch.observations,
+                                                             batch.actions,
                                                              train=True)
-        entropy = self._net.get_policy_entropy(torch.stack(batch.observations).type(torch.float32), train=True)
+        entropy = self._net.get_policy_entropy(batch.observations, train=True)
         # '-' required for performing gradient ascent instead of descent.
         policy_loss = -(log_probability * phi_weights + self._config.entropy_coefficient * entropy.mean())
         policy_loss.mean().backward()
@@ -100,7 +102,8 @@ class VanillaPolicyGradient(Trainer):
         batch = self.data_loader.get_dataset()
         assert len(batch) != 0
 
-        phi_weights = self._calculate_phi(batch).to(self._device)
+        values = self._net.critic(inputs=batch.observations, train=False).squeeze().detach()
+        phi_weights = self._calculate_phi(batch, values).to(self._device)
         policy_loss = self._train_actor(batch, phi_weights)
         critic_loss = Distribution(self._train_critic(batch, get_reward_to_go(batch).to(self._device)))
 
@@ -109,11 +112,36 @@ class VanillaPolicyGradient(Trainer):
             writer.write_scalar(policy_loss.data, "policy_loss")
             writer.write_distribution(critic_loss, "critic_loss")
 
-        self._save_checkpoint(epoch)
         self._net.global_step += 1
         self.put_model_back_to_original_device()
-        if self._actor_scheduler is not None:
+        if self._config.scheduler_config is not None:
             self._actor_scheduler.step()
-        if self._critic_scheduler is not None:
             self._critic_scheduler.step()
         return f" training policy loss {policy_loss.data: 0.3e}, critic loss {critic_loss.mean: 0.3e}"
+
+    def get_checkpoint(self) -> dict:
+        """
+        makes a checkpoint for the trainers optimizers.
+        :return: dictionary with optimizers state_dict and schedulers state dict
+        """
+        checkpoint = {
+            'actor_optimizer_state_dict': self._actor_optimizer.state_dict(),
+            'critic_optimizer_state_dict': self._critic_optimizer.state_dict()
+        }
+        if self._actor_scheduler is not None:
+            checkpoint['actor_scheduler_state_dict'] = self._actor_scheduler.state_dict()
+        if self._critic_scheduler is not None:
+            checkpoint['critic_scheduler_state_dict'] = self._critic_scheduler.state_dict()
+        return checkpoint
+
+    def load_checkpoint(self, checkpoint: dict) -> None:
+        """
+        Load optimizers and schedulers state_dict
+        :return: None
+        """
+        self._actor_optimizer.load_state_dict(checkpoint['actor_optimizer_state_dict'])
+        self._critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
+        if self._actor_scheduler is not None:
+            self._actor_scheduler.load_state_dict(checkpoint['actor_scheduler_state_dict'])
+        if self._critic_scheduler is not None:
+            self._critic_scheduler.load_state_dict(checkpoint['critic_scheduler_state_dict'])

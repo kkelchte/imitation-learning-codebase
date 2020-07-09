@@ -1,7 +1,8 @@
 architecture_config:
   architecture: humanoid_376_17c
-  device: cuda
-  initialisation_seed: 500
+  log_std: 0.
+  device: cpu
+  random_seed: 2048
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
@@ -9,35 +10,37 @@ data_saver_config:
 environment_config:
   normalize_observations: true
   normalize_rewards: true
+  observation_clipping: 10
+  reward_clipping: 10
   factory_key: GYM
   gym_config:
-    random_seed: 123
+    random_seed: 2048
     render: false
     world_name: Humanoid-v2
   max_number_of_steps: -1  # let number of steps depend on environment
 number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
-number_of_epochs: 10000
+number_of_epochs: 488
 train_every_n_steps: 2048
-output_path: humanoid-v2/entropy
+output_path: humanoid-v2/implmatters_without_dataseed
 tensorboard: true
+save_checkpoint_every_n: 50
 trainer_config:
   criterion: MSELoss
   critic_learning_rate: 0.0001
   actor_learning_rate: 0.00015
+  scheduler_config:
+    number_of_epochs: 488
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
-    batch_size: 200
-    data_sampling_seed: 123
-    observation_clipping: 10
-    reward_clipping: 10
-  device: cuda
+    batch_size: 64
+    random_seed: 2048
+  device: cpu
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
-  entropy_coefficient: 0.01
-  save_checkpoint_every_n: 50
+  entropy_coefficient: 0.0
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2

@@ -22,11 +22,9 @@ from src.core.data_types import Experience
 class DataLoaderConfig(Config):
     data_directories: Optional[List[str]] = None
     hdf5_file: str = ''
-    data_sampling_seed: int = 123
+    random_seed: int = 123
     balance_over_actions: bool = False
     batch_size: int = 64
-    observation_clipping: int = -1
-    reward_clipping: int = -1
     subsample: int = 1
 
     def post_init(self):  # add default options
@@ -58,10 +56,13 @@ class DataLoader:
                                   output_path=config.output_path,
                                   quiet=False)
         cprint(f'Started.', self._logger)
-        np.random.seed(self._config.data_sampling_seed)
         self._dataset = Dataset()
         self._num_runs = 0
         self._probabilities: List = []
+        self.seed()
+
+    def seed(self, seed: int = None):
+        np.random.seed(self._config.random_seed) if seed is None else np.random.seed(seed)
 
     def update_data_directories_with_raw_data(self):
         if self._config.data_directories is None:
@@ -98,15 +99,6 @@ class DataLoader:
             self._dataset = Dataset()
             self.update_data_directories_with_raw_data()
             self.load_dataset()
-        self._clip_dataset()
-
-    def _clip_dataset(self):
-        if self._config.observation_clipping != -1:
-            for o in self._dataset.observations:
-                o.clamp_(-self._config.observation_clipping, self._config.observation_clipping)
-        if self._config.reward_clipping != -1:
-            for r in self._dataset.rewards:
-                r.clamp_(-self._config.reward_clipping, self._config.reward_clipping)
 
     def get_dataset(self) -> Dataset:
         return self._dataset
@@ -149,6 +141,21 @@ class DataLoader:
             batch_count += len(batch)
             yield batch
         return
+
+    def split_data(self, indices: np.ndarray, *args) -> Generator[tuple, None, None]:
+        """
+        Split the indices in batches of configs batch_size and select the data in args.
+        :param indices: possible indices to be selected. If all indices can be selected, provide empty array.
+        :param args: lists or tensors from which the corresponding data according to the indices is selected.
+        :return: provides a tuple in the same order as the args with the selected data.
+        """
+        if len(indices) == 0:
+            indices = np.arange(len(self._dataset))
+        np.random.shuffle(indices)
+        splits = np.array_split(indices, max(1, int(len(self._dataset) / self._config.batch_size)))
+        for selected_indices in splits:
+            return_tuple = (select(data, selected_indices) for data in args)
+            yield return_tuple
 
     def remove(self):
         [h.close() for h in self._logger.handlers]

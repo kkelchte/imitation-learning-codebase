@@ -1,13 +1,12 @@
 #!/usr/bin/python
-import logging
 import os
-import sys
+import time
+from glob import glob
 import shutil
-from collections import deque
-from typing import Optional
+from typing import Optional, Tuple
 
+import torch
 import yaml
-import numpy as np
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -16,9 +15,8 @@ from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
-from src.ai.utils import get_checksum_network_parameters
 from src.core.utils import get_filename_without_extension
-from src.core.data_types import TerminationType, Distribution, Action
+from src.core.data_types import TerminationType, Distribution
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
@@ -39,15 +37,19 @@ class ExperimentConfig(Config):
     number_of_epochs: int = 1
     number_of_episodes: int = -1
     train_every_n_steps: int = -1
-    return_smoothing_k: int = 10
+    load_checkpoint_dir: Optional[str] = None  # path to checkpoints
+    load_checkpoint_found: bool = True
+    save_checkpoint_every_n: int = 10
+    tensorboard: bool = False
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
     architecture_config: Optional[ArchitectureConfig] = None
     trainer_config: Optional[TrainerConfig] = None
     evaluator_config: Optional[EvaluatorConfig] = None
-    tensorboard: bool = False
 
     def __post_init__(self):
+        assert not (self.number_of_episodes != -1 and self.train_every_n_steps != -1), \
+            'Should specify either number of episodes per epoch or number of steps before training.'
         # Avoid None value error by deleting irrelevant fields
         if self.environment_config is None:
             del self.environment_config
@@ -59,12 +61,15 @@ class ExperimentConfig(Config):
             del self.trainer_config
         if self.evaluator_config is None:
             del self.evaluator_config
+        if self.load_checkpoint_dir is None:
+            del self.load_checkpoint_dir
 
 
 class Experiment:
 
     def __init__(self, config: ExperimentConfig):
-        np.random.seed(123)
+        self._epoch = 0
+        self._max_mean_return = None
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
@@ -83,7 +88,12 @@ class Experiment:
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
-        self._episode_return_queue = deque()
+        if self._config.load_checkpoint_dir is not None:
+            self.load_checkpoint(self._config.load_checkpoint_dir)
+        elif self._config.load_checkpoint_found \
+                and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
+            self.load_checkpoint(f'{self._config.output_path}/torch_checkpoints')
+
         cprint(f'Initiated.', self._logger)
 
     def _enough_episodes_check(self, episode_number: int) -> bool:
@@ -96,32 +106,29 @@ class Experiment:
         else:
             raise NotImplementedError
 
-    def _run_episodes(self) -> str:
-        if self._data_saver is not None:
-            if self._config.data_saver_config.clear_buffer_before_episode:
-                self._data_saver.clear_buffer()
+    def _run_episodes(self) -> Tuple[str, bool]:
+        """
+        Run episodes interactively with environment up until enough data is gathered.
+        :return: output message for epoch string, whether current model is the best so far.
+        """
+        if self._data_saver is not None and self._config.data_saver_config.clear_buffer_before_episode:
+            self._data_saver.clear_buffer()
         count_episodes = 0
         count_success = 0
         episode_returns = []
         while not self._enough_episodes_check(count_episodes):
             if self._data_saver is not None and self._config.data_saver_config.separate_raw_data_runs:
                 self._data_saver.update_saving_directory()
-            episode_return = 0
             experience, next_observation = self._environment.reset()
-            cprint("running episode", self._logger)
-            while experience.done == TerminationType.NotDone:
-                action = self._net.get_action(next_observation, train=False) if self._net is not None else None
+            while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
+                action = self._net.get_action(next_observation) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
-                episode_return += experience.info['unfiltered_reward'] \
-                    if 'unfiltered_reward' in experience.info.keys() else experience.reward
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
-            episode_returns.append(episode_return)
-            self._episode_return_queue.append(episode_return)
-            if len(self._episode_return_queue) >= self._config.return_smoothing_k:
-                self._episode_return_queue.popleft()
+            if 'return' in experience.info.keys():
+                episode_returns.append(experience.info['return'])
         if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
             self._data_saver.create_train_validation_hdf5_files()
         msg = f" {count_episodes} episodes"
@@ -129,30 +136,81 @@ class Experiment:
             msg += f" with {count_success} success"
             if self._writer is not None:
                 self._writer.write_scalar(count_success/float(count_episodes), "success")
-        return_distribution = Distribution(self._episode_return_queue)
-        msg += f" with smoothed return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
+        return_distribution = Distribution(episode_returns)
+        msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
             self._writer.write_distribution(return_distribution, "episode return")
-        return msg
+        best_checkpoint = False
+        if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:
+            self._max_mean_return = return_distribution.mean
+            best_checkpoint = True
+        return msg, best_checkpoint
 
     def run(self):
         for self._epoch in range(self._config.number_of_epochs):
+            best_ckpt = False
             msg = f'epoch: {self._epoch + 1} / {self._config.number_of_epochs}'
             if self._environment is not None:
-                msg += self._run_episodes()
+                output_msg, best_ckpt = self._run_episodes()
+                msg += output_msg
             if self._trainer is not None:
                 if self._data_saver is not None:  # update fresh data to train
                     self._trainer.data_loader.set_dataset(
                         self._data_saver.get_dataset() if self._config.data_saver_config.store_on_ram_only else None
                     )
-                msg += self._trainer.train(epoch=self._epoch,
-                                           writer=self._writer)
+                msg += self._trainer.train(epoch=self._epoch, writer=self._writer)
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
-                msg += self._evaluator.evaluate(save_checkpoints=self._trainer is not None,
-                                                writer=self._writer)
+                output_msg, best_ckpt = self._evaluator.evaluate(writer=self._writer)
+                msg += output_msg
             #  TODO add interactive evaluation
+            if self._config.save_checkpoint_every_n != -1 and \
+                    (self._epoch % self._config.save_checkpoint_every_n == 0 or
+                     self._epoch == self._config.number_of_epochs - 1) and not best_ckpt:
+                self.save_checkpoint(tag=f'{self._epoch:05d}')
+            if best_ckpt and self._config.save_checkpoint_every_n != -1:
+                self.save_checkpoint(tag='best')
             cprint(msg, self._logger)
         cprint(f'Finished.', self._logger)
+
+    def save_checkpoint(self, tag: str = ''):
+        filename = f'checkpoint_{tag}' if tag != '' else 'checkpoint'
+        filename += '.ckpt'
+        checkpoint = {
+            'epoch': self._epoch,
+        }
+        for element, key in zip([self._net, self._trainer, self._environment],
+                                ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
+            if element is not None:
+                checkpoint[key] = element.get_checkpoint()
+        os.makedirs(f'{self._config.output_path}/torch_checkpoints', exist_ok=True)
+        torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/{filename}')
+        torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/checkpoint_latest.ckpt')
+        cprint(f'stored {filename}', self._logger)
+
+    def load_checkpoint(self, checkpoint_dir: str):
+        if not checkpoint_dir.endswith('torch_checkpoints'):
+            checkpoint_dir += '/torch_checkpoints'
+        if len(glob(f'{checkpoint_dir}/*.ckpt')) == 0 and len(glob(f'{checkpoint_dir}/torch_checkpoints/*.ckpt')) == 0:
+            cprint(f'Could not find suitable checkpoint in {checkpoint_dir}', self._logger, MessageType.error)
+            time.sleep(0.1)
+            raise FileNotFoundError
+        # Get checkpoint in following order
+        if os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')):
+            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')
+        elif os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')):
+            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')
+        else:
+            checkpoints = {int(f.split('.')[0].split('_')[-1]): os.path.join(checkpoint_dir, f)
+                           for f in os.listdir(checkpoint_dir)}
+            checkpoint_file = checkpoints[max(checkpoints.keys())]
+        # Load params for each experiment element
+        checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
+        self._epoch = checkpoint['epoch']
+        for element, key in zip([self._net, self._trainer, self._environment],
+                              ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
+            if element is not None and key in checkpoint.keys():
+                element.load_checkpoint(checkpoint[key])
+        cprint(f'loaded network from {checkpoint_file}', self._logger)
 
     def shutdown(self):
         if self._writer is not None:
@@ -183,7 +241,8 @@ if __name__ == "__main__":
                 if 'DATADIR' in os.environ.keys() else os.path.join(os.environ['HOME'], configuration['output_path'])
         shutil.rmtree(configuration['output_path'], ignore_errors=True)
 
-    experiment_config = ExperimentConfig().create(config_file=config_file)
+    experiment_config = ExperimentConfig().create(config_file=config_file,
+                                                  seed=arguments.seed)
     experiment = Experiment(experiment_config)
     experiment.run()
     experiment.shutdown()

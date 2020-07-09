@@ -15,8 +15,15 @@ class Distribution:
 
     def __init__(self, data: Iterator):
         if isinstance(data, list):
-            if isinstance(data[0], torch.Tensor):
-                data = torch.stack(data)
+            try:
+                if isinstance(data[0], torch.Tensor):
+                    data = torch.stack(data)
+            except IndexError:
+                self.mean = 0
+                self.std = 0
+                self.min = 0
+                self.max = 0
+                return
         if isinstance(data, torch.Tensor):
             if not isinstance(data, torch.FloatTensor):
                 data = data.type(torch.float32)
@@ -31,7 +38,7 @@ class Distribution:
             self.std = np.std(data).item()
             self.min = np.min(data)
             self.max = np.max(data)
-        assert not np.isnan(self.mean)
+        #assert not np.isnan(self.mean)
 
 
 class ProcessState(IntEnum):
