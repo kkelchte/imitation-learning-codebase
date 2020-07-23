@@ -114,6 +114,27 @@
               output="screen"/>
     </group>
     <!--######################## ACTOR NODES ########################-->
+    <arg name="joystick" default="false"/>
+    <group if="$(arg joystick)" ns="/actor/joystick">
+        <arg name="joystick_config_file_path_with_extension"
+             default="$(env HOME)/src/sim/ros/config/actor/joystick_turtlebot_sim.yml"/>
+        <rosparam command="load"
+                  file="$(arg joystick_config_file_path_with_extension)"/>
+        <!--<node pkg="imitation_learning_ros_package"
+              type="dummy_joy.py"
+              output="screen"
+              ns="/actor/joystick"/>-->
+        <node pkg="joy" name="joy_node" type="joy_node" output="screen" ns="/actor/joystick">
+            <param name="dev" value="/dev/input/js0" />
+            <param name="deadzone" value="0.2" />
+            <param name="autorepeat_rate" value="20" />
+        </node>
+        <node pkg="imitation_learning_ros_package"
+              name="teleop_twist_joystick"
+              type="teleop_twist_joystick.py"
+              output="screen"/>
+    </group>
+
     <arg name="keyboard" default="false"/>
     <group if="$(arg keyboard)">
         <arg name="keyboard_config_file_path_with_extension"

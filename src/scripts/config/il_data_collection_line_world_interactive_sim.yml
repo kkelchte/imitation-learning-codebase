@@ -1,0 +1,35 @@
+output_path: line_world
+number_of_epochs: 1
+number_of_episodes: 1
+environment_config:
+  factory_key: ROS
+  max_number_of_steps: -1
+  ros_config:
+    observation: forward_camera
+    action: ros_expert
+    store_action: true
+    visible_xterm: true
+    step_rate_fps: 30
+    max_update_wait_period_s: 10
+    ros_launch_config:
+      random_seed: 123
+      robot_name: drone_sim
+      robot_display: true
+      fsm_config: takeover_run
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: true
+      control_mapping_config: joystick
+      world_name: line_worlds/model_000
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 1.0
+      yaw_or: 1.57
+      gazebo: true
+    actor_configs:
+      - name: joystick
+        file: src/sim/ros/config/actor/joystick_drone_sim.yml
+data_saver_config:
+  store_hdf5: false
+  separate_raw_data_runs: true
+  saving_directory_tag: joystick
