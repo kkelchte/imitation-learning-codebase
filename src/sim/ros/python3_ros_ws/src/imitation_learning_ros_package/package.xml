@@ -16,6 +16,7 @@
 
 
   <!-- Dependencies needed after this package is compiled. -->
+    <run_depend>joy</run_depend>
 <!--  <run_depend>hector_quadrotor</run_depend>-->
 <!--  <run_depend>hector_sensors_description</run_depend>-->
 

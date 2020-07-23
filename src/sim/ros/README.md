@@ -100,3 +100,8 @@ source ./entrypoint.sh
 source ./src/sim/ros/entrypoint.sh
 /bin/sh /users/visics/kkelchte/applications/pycharm-community-2019.3.1/bin/pycharm.sh
 ```
+
+# Troubleshoot
+
+bebop_driver failed to start as libarcommands not found:
+cp /opt/ros/melodic/lib/parrot_arsdk/* src/sim/ros/python3_ws/devel/lib
