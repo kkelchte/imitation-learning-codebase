@@ -56,7 +56,7 @@ teleop:
     type: topic
     message_type: "std_msgs/Empty"
     topic_name: /bebop/emergency
-    deadman_buttons: [4,5] # L1+R1
+    deadman_buttons: [4] # L1
     axis_mappings: []
   flattrim:
     type: topic

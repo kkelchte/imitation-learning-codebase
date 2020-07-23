@@ -17,6 +17,17 @@ from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm 
 from src.sim.ros.src.utils import process_image, get_output_path, adapt_twist_to_action
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
+JOYSTICK_BUTTON_MAPPING = {
+    0: 'SQUARE',
+    1: 'X',
+    2: 'O',
+    3: 'TRIANGLE',
+    4: 'L1',
+    5: 'R1',
+    7: 'R2',
+    9: 'start'
+}
+
 
 class RobotDisplay:
 
@@ -28,11 +39,24 @@ class RobotDisplay:
             time.sleep(0.01)
         self._output_path = get_output_path()
         self._rate_fps = 10
+        self._border_width = 300
         self._counter = 0
         self._skip_first_n = 30
         self._skip_every_n = 4
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         self._subscribe()
+        self._add_control_specs()
+
+    def _add_control_specs(self):
+        self._control_specs = {}
+        if rospy.has_param('/actor/joystick/teleop'):
+            specs = rospy.get_param('/actor/joystick/teleop')
+            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera_forward_down']:
+                if name in specs.keys():
+                    button_integers = specs[name][
+                        'deadman_buttons' if 'deadman_buttons' in specs[name].keys() else 'buttons']
+                    self._control_specs[name] = ' '.join([JOYSTICK_BUTTON_MAPPING[button_integer]
+                                                          for button_integer in button_integers])
 
     def _draw_action(self, image: np.ndarray, height: int = -1) -> np.ndarray:
         if self._action is not None:
@@ -56,17 +80,29 @@ class RobotDisplay:
                          'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
                          'battery': f'battery: {self._battery}%' if self._battery is not None else None}.items():
             if msg is not None:
-                image = cv2.putText(image, msg, (3, height + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+                image = cv2.putText(image, msg, (3, height + 15),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
                 height += 15
         return image, height
+
+    def _write_control_specs(self, image: np.ndarray) -> np.ndarray:
+        height = 0
+        for key, value in self._control_specs.items():
+            msg = f'{key}: {value}'
+            image = cv2.putText(image, msg, (image.shape[1] - self._border_width + 5, height + 15),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+            height += 15
+        return image
 
     def _draw(self, image: np.ndarray):
         self._counter += 1
         if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
             return
-        image = cv2.rectangle(image, (0, 0), (200, 300), (0.5, 0.5, 0.5, 0.1), thickness=-1)
+        border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
+        image = np.concatenate([border, image, border], axis=1)
         image, height = self._write_info(image)
         image = self._draw_action(image, height)
+        image = self._write_control_specs(image)
         cv2.imshow("Image window", image)
         cv2.waitKey(3)
 

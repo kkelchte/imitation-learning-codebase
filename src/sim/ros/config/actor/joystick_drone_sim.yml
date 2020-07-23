@@ -37,7 +37,14 @@ teleop:
     topic_name: '/fsm/overtake'
     deadman_buttons: [2] # o
     axis_mappings: []
-  take_off:
+  takeoff:
     action_name: /action/takeoff
     type: action
     buttons: [9]  # start button
+  land:
+    action_name: /action/land
+    type: action
+    buttons: [1]  # X button
+  toggle_camera_forward_down:
+    type: method
+    buttons: [7]  # R2
