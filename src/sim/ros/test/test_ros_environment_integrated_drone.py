@@ -32,6 +32,7 @@ config_dict = {
           "robot_name": "drone_sim",
           "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
           "fsm": True,
+          "robot_display": True,
           "control_mapping": True,
           "waypoint_indicator": True,
           "control_mapping_config": "debug",
@@ -44,7 +45,7 @@ config_dict = {
         },
         "actor_configs": [{
               "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert.yml"
+              "file": "src/sim/ros/config/actor/ros_expert_wp.yml"
             }],
     }
 }
