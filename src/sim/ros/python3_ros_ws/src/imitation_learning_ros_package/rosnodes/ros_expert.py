@@ -10,7 +10,8 @@ from std_msgs.msg import Float32MultiArray, String
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
-from hector_uav_msgs.srv import EnableMotors
+import actionlib
+from hector_uav_msgs.msg import *
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
@@ -58,9 +59,15 @@ class RosExpert(Actor):
         self._robot = rospy.get_param('/robot/robot_type')
 
         if self._robot == 'quadrotor_sim':
-            rospy.wait_for_service('/enable_motors')
-            enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
-            enable_motors_service.call(True)
+            action_name = '/action/takeoff'
+            client = actionlib.SimpleActionClient(action_name, TakeoffAction)
+            client.wait_for_server()
+            client.send_goal(goal=TakeoffActionGoal())
+            client.wait_for_result()
+            cprint(f'takeoff: {client.get_result()}', self._logger)
+            #rospy.wait_for_service('/enable_motors')
+            #enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
+            #enable_motors_service.call(True)
 
     def _subscribe(self):
         # Robot sensors:
