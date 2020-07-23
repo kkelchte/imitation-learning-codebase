@@ -207,7 +207,7 @@ class Experiment:
         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
         self._epoch = checkpoint['epoch']
         for element, key in zip([self._net, self._trainer, self._environment],
-                              ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
+                                ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
             if element is not None and key in checkpoint.keys():
                 element.load_checkpoint(checkpoint[key])
         cprint(f'loaded network from {checkpoint_file}', self._logger)
