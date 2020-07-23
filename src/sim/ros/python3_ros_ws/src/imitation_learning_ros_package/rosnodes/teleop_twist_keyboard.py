@@ -145,7 +145,7 @@ class KeyboardActor(Actor):
     def toggle_camera_forward_down(self):
         if self.camera_direction == 'straight':
             twist = Twist()
-            twist.angular.y = -80
+            twist.angular.y = -90
             self.camera_control_publisher.publish(twist)
             self.camera_direction = 'down'
         elif self.camera_direction == 'down':
