@@ -162,6 +162,7 @@ class Fsm:
 
     def _takeover(self, msg: Empty = None):
         self._set_state(FsmState.TakenOver)
+        self._termination = TerminationType.Unknown
 
     def _shutdown_run(self, msg: Empty = None,
                       outcome: TerminationType = None, reward: float = None):
