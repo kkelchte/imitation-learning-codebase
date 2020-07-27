@@ -1,6 +1,6 @@
-output_path: line_world_real/livingroom_0
+output_path: line_world_real2/concorete_orangecable
 number_of_epochs: 1
-number_of_episodes: 2
+number_of_episodes: 20
 environment_config:
   factory_key: ROS
   max_number_of_steps: -1
