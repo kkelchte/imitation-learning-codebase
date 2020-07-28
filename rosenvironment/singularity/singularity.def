@@ -83,6 +83,8 @@ apt-get update && apt-get install -yq\
     libignition-math2-dev \
     ros-melodic-teleop-twist-keyboard \
     rviz \
+    libglew-dev \
+    libsuitesparse-dev libeigen3-dev libboost-all-dev \
     ros-melodic-rqt \
     ros-melodic-rqt-common-plugins \
     && rm -rf /var/lib/apt/lists/*

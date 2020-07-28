@@ -3,6 +3,7 @@ import warnings
 from copy import deepcopy
 from typing import List, Tuple, Union
 
+import cv2
 import h5py
 import torch
 from PIL import Image
@@ -55,18 +56,29 @@ def filename_to_timestamp(filename: str) -> int:
     return int(os.path.basename(filename).split('.')[0])
 
 
-def load_and_preprocess_file(file_name: str, size: tuple = (), grayscale: bool = False) -> torch.Tensor:
+def load_and_preprocess_file(file_name: str, size: tuple = None) -> torch.Tensor:
+    """
+    file_name: full path to image file
+    size: tuple or list of 3 dimensions: (CHANNEL, WIDTH, HEIGHT) used with
+    """
     data = Image.open(file_name, mode='r')
+    if size is not None:
+        data = cv2.resize(data, dsize=(size[1], size[2]), interpolation=cv2.INTER_CUBIC)
+        if size[0] == 1:
+            data = data.mean(axis=-1, keepdims=True)
     data = np.array(data).astype(np.float32)  # uint8 -> float32
-    data /= 255.  # 0:255 -> 0:1
+    if np.amax(data) > 1:
+        data /= 255.  # 0:255 -> 0:1
     assert np.amax(data) <= 1 and np.amin(data) >= 0
-    if grayscale:
-        data = data.mean(axis=-1, keepdims=True)
     data = data.swapaxes(1, 2).swapaxes(0, 1)  # make channel first
     return torch.as_tensor(data, dtype=torch.float32)
 
 
-def load_data_from_directory(directory: str, size: tuple = ()) -> Tuple[list, list]:
+def load_data_from_directory(directory: str, size: tuple = None) -> Tuple[list, list]:
+    """
+    directory: full path containing the observations
+    size: tuple or list of 3 dimensions: (CHANNEL, WIDTH, HEIGHT)
+    """
     time_stamps = []
     data = []
     for f in sorted(os.listdir(directory)):
@@ -77,6 +89,10 @@ def load_data_from_directory(directory: str, size: tuple = ()) -> Tuple[list, li
 
 
 def load_data_from_file(filename: str, size: tuple = ()) -> Tuple[list, list]:
+    """
+    filename: full path to data file
+    size: tuple or list of desired sample dimensions used with a simple numpy reshape.
+    """
     with open(filename, 'r') as f:
         lines = f.readlines()
     time_stamps = []
@@ -85,13 +101,13 @@ def load_data_from_file(filename: str, size: tuple = ()) -> Tuple[list, list]:
         time_stamp, data_stamp = line.strip().split(':')
         time_stamps.append(float(time_stamp))
         data_vector = torch.as_tensor([float(d) for d in data_stamp.strip().split(' ')], dtype=torch.float32)
-        if size is not None and size != ():
+        if size is not None:
             data_vector = data_vector.reshape(size)
         data.append(data_vector)
     return time_stamps, data
 
 
-def load_data(dataype: str, directory: str, size: tuple = ()) -> Tuple[list, list]:
+def load_data(dataype: str, directory: str, size: tuple = None) -> Tuple[list, list]:
     if os.path.isdir(os.path.join(directory, dataype)):
         return load_data_from_directory(os.path.join(directory, dataype), size=size)
     elif os.path.isfile(os.path.join(directory, dataype)):
@@ -131,20 +147,21 @@ def torch_append(destination: torch.Tensor, source: torch.Tensor) -> torch.Tenso
     return torch.cat((destination, source), 0)
 
 
-def load_run(directory: str, arrange_according_to_timestamp: bool = False) -> List[Experience]:
+def load_run(directory: str, arrange_according_to_timestamp: bool = False, input_size: List[int] = None) \
+        -> List[Experience]:
     run = {}
     time_stamps = {}
     for x in os.listdir(directory):
-        try:
-            time_stamps[x], run[x if not x.endswith('.data') else x[:-5]] = load_data(x, directory)
-        except:
-            pass
+        #try:
+        k = x if not x.endswith('.data') else x[:-5]
+        time_stamps[x], run[k] = load_data(x, directory, size=input_size if k == 'observation' else None)
+        #except:
+        #    pass
     if arrange_according_to_timestamp:
         run = arrange_run_according_timestamps(run, time_stamps)
     if len(run.keys()) == 0:
         return []
     else:
-
         return [Experience(
             observation=run['observation'][index] if 'observation' in run.keys() else None,
             action=run['action'][index] if 'action' in run.keys() else None,

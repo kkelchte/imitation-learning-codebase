@@ -26,6 +26,7 @@ class DataLoaderConfig(Config):
     balance_over_actions: bool = False
     batch_size: int = 64
     subsample: int = 1
+    input_size: Optional[List[int]] = None
 
     def post_init(self):  # add default options
         if self.data_directories is None:
@@ -73,14 +74,14 @@ class DataLoader:
 
     def load_dataset(self, arrange_according_to_timestamp: bool = False):
         if self._config.hdf5_file != '':
-            self._dataset = load_dataset_from_hdf5(self._config.hdf5_file)
+            self._dataset = load_dataset_from_hdf5(self._config.hdf5_file, size=self._config.input_size)
             cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_file}', self._logger,
                    msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
         else:
             directory_generator = tqdm(self._config.data_directories, ascii=True, desc=__name__) \
                 if len(self._config.data_directories) > 10 else self._config.data_directories
             for directory in directory_generator:
-                run = load_run(directory, arrange_according_to_timestamp)
+                run = load_run(directory, arrange_according_to_timestamp, input_size=self._config.input_size)
                 if len(run) != 0:
                     self._dataset.extend(experiences=run)
             cprint(f'Loaded {len(self._dataset)} data points from {len(self._config.data_directories)} directories',

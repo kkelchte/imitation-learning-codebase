@@ -205,7 +205,7 @@ class Experiment:
             checkpoint_file = checkpoints[max(checkpoints.keys())]
         # Load params for each experiment element
         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
-        self._epoch = checkpoint['epoch']
+        self._epoch = checkpoint['epoch'] if 'epoch' in checkpoint.keys() else 0
         for element, key in zip([self._net, self._trainer, self._environment],
                                 ['net_ckpt', 'trainer_ckpt', 'environment_ckpt']):
             if element is not None and key in checkpoint.keys():

@@ -60,6 +60,23 @@ If catkin_packages are not build, it should make it automatically.
 source entrypoint.sh
 ```
 
+## install SLAM: DSO
+Required singularity image version 0.1.3 or higher.
+Install Pangolin:
+```shell script
+cd $HOME/code/imitation-learning-codebase/src/sim/ros
+git clone https://github.com/kkelchte/Pangolin.git
+# follow instruction Pangolin to build package
+git clone https://github.com/kkelchte/dso.git
+# follow instruction dso to build package
+cd python3_ws/src
+git clone -b catkin https://github.com/kkelchte/dso_ros.git
+cd ../..
+catkin_make
+```
+If dso_ros does not want to build, it is probably due to not finding Pangolin or DSO.
+Link CMAKE_PATH_PREFIX to the pangolin directory.
+
 # Pycharm:
 You can add pycharm sourcing scripts to interactively code and debug in pycharm 
 with the correct python interpreter environment.

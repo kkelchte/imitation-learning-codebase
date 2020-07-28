@@ -10,7 +10,7 @@ create-sif-linux:
 	sudo singularity build image-${version}.sif singularity.def
 
 shell-writable-image-linux:
-	sudo singularity shell --bind ../..:/mnt --writable writable_image
+	singularity shell --bind ../..:/mnt --bind /tmp/.X11-unix:/tmp/.X11-unix --writable writable_image
 
 create-writable-image-linux:
 	sudo singularity build --sandbox writable_image image-${version}.sif
