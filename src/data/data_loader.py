@@ -32,6 +32,8 @@ class DataLoaderConfig(Config):
         if self.data_directories is None:
             self.data_directories = []
         assert self.subsample >= 1
+        if self.input_size is None:
+            self.input_size = []
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
@@ -74,7 +76,7 @@ class DataLoader:
 
     def load_dataset(self, arrange_according_to_timestamp: bool = False):
         if self._config.hdf5_file != '':
-            self._dataset = load_dataset_from_hdf5(self._config.hdf5_file, size=self._config.input_size)
+            self._dataset = load_dataset_from_hdf5(self._config.hdf5_file)  # TODO size=self._config.input_size
             cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_file}', self._logger,
                    msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
         else:
