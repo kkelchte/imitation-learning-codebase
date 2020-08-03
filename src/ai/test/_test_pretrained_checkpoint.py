@@ -60,7 +60,7 @@ class LoadCheckpointTest(unittest.TestCase):
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config),
         )
-        checkpoint = torch.load(os.path.join(os.environ['PWD'], 'experimental_data', 'drone_net', 'torch_checkpoints',
+        checkpoint = torch.load(os.path.join(os.environ['PWD'], 'experimental_data', 'dronet', 'torch_checkpoints',
                                              'checkpoint_latest.ckpt'))
         network.load_checkpoint(checkpoint['net_ckpt'])
         self.assertLess(network.conv2d_1.weight.sum().item() - conv2d, 0.001)
