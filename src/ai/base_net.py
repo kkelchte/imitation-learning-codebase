@@ -36,6 +36,7 @@ class ArchitectureConfig(Config):
     initialisation_type: str = 'xavier'
     random_seed: int = 0
     device: str = 'cpu'
+    finetune: bool = False
     weight_decay: Union[float, str] = 'default'
     dropout: Union[float, str] = 'default'
     dtype: str = 'default'

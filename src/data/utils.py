@@ -62,7 +62,7 @@ def load_and_preprocess_file(file_name: str, size: tuple = None) -> torch.Tensor
     size: tuple or list of 3 dimensions: (CHANNEL, WIDTH, HEIGHT) used with
     """
     data = Image.open(file_name, mode='r')
-    if size is not None:
+    if size is not None and len(size) != 0:
         data = cv2.resize(data, dsize=(size[1], size[2]), interpolation=cv2.INTER_CUBIC)
         if size[0] == 1:
             data = data.mean(axis=-1, keepdims=True)
@@ -101,7 +101,7 @@ def load_data_from_file(filename: str, size: tuple = ()) -> Tuple[list, list]:
         time_stamp, data_stamp = line.strip().split(':')
         time_stamps.append(float(time_stamp))
         data_vector = torch.as_tensor([float(d) for d in data_stamp.strip().split(' ')], dtype=torch.float32)
-        if size is not None:
+        if size is not None and len(size) != 0:
             data_vector = data_vector.reshape(size)
         data.append(data_vector)
     return time_stamps, data

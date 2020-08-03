@@ -45,7 +45,11 @@ class Net(BaseNet):
         Outputs steering action only
         """
         inputs = super().forward(inputs=inputs, train=train)
-        x = self.encoder(inputs)
+        if self._config.finetune:
+            with torch.no_grad():
+                x = self.encoder(inputs)
+        else:
+            x = self.encoder(inputs)
         x = x.flatten(start_dim=1)
         if self.dropout is not None:
             x = self.dropout(x)
