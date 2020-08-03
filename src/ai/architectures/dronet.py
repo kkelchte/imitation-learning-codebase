@@ -1,10 +1,12 @@
 #!/bin/python3.8
+from typing import Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 from src.ai.base_net import BaseNet, ArchitectureConfig
+from src.ai.utils import mlp_creator
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -26,12 +28,12 @@ class Net(BaseNet):
             cprint(f'Started.', self._logger)
 
         self.input_size = (1, 200, 200)
-        self.output_size = (1,)
+        self.output_size = (6,)
         self.discrete = False
 
         self.in_planes = 64
 
-        self.conv2d_1 = nn.Conv2d(in_channels=self.output_size[0], out_channels=32,
+        self.conv2d_1 = nn.Conv2d(in_channels=self.input_size[0], out_channels=32,
                                   kernel_size=5, stride=2, padding=1, bias=True)
         self.maxpool_1 = nn.MaxPool2d(kernel_size=3, stride=2)
 
@@ -63,54 +65,80 @@ class Net(BaseNet):
         self.conv2d_10 = nn.Conv2d(in_channels=64, out_channels=128,
                                    kernel_size=1, stride=2, padding=0, bias=True)
 
-        self.dense_1 = nn.Linear(6272, self.output_size[0])
-        self.dense_2 = nn.Linear(6272, self.output_size[0])
+        #self.dense_1 = nn.Linear(6272, 1)
+        #self.dense_2 = nn.Linear(6272, 1)
+
+        self.decoder = mlp_creator(sizes=[6272, 2056, self.output_size[0]],
+                                   activation=nn.ReLU,
+                                   output_activation=nn.Tanh,
+                                   bias_in_last_layer=False)
+
+    def feature_extract(self, inputs: torch.Tensor) -> torch.Tensor:
+        verbose = False
+        x1 = self.maxpool_1(self.conv2d_1(inputs))
+        if verbose:
+            print(f'x1: {x1.size()}')
+        # first residual block
+        x2 = F.relu(self.batch_normalization_1(x1))
+        x2 = F.relu(self.batch_normalization_2(self.conv2d_2(x2)))
+        if verbose:
+            print(f'x2: {x2.size()}')
+        x2 = self.conv2d_3(x2)
+        if verbose:
+            print(f'x2: {x2.size()}')
+        out_res = self.conv2d_4(x1)
+        if verbose:
+            print(f'out_res: {out_res.size()}')
+        x2 += out_res
+        if verbose:
+            print(f'x2: {x2.size()}')
+
+        # second residual block
+        x3 = F.relu(self.batch_normalization_3(x2))
+        if verbose:
+            print(f'x3: {x3.size()}')
+        x3 = F.relu(self.batch_normalization_4(self.conv2d_5(x3)))
+        if verbose:
+            print(f'x3: {x3.size()}')
+        x3 = self.conv2d_6(x3)
+        if verbose:
+            print(f'x3: {x3.size()}')
+        out_res = self.conv2d_7(x2)
+        if verbose:
+            print(f'out_res: {out_res.size()}')
+        x3 += out_res
+        if verbose:
+            print(f'x3: {x3.size()}')
+        # third residual block
+        x4 = F.relu(self.batch_normalization_5(x3))
+        if verbose:
+            print(f'x4: {x4.size()}')
+        x4 = F.relu(self.batch_normalization_6(self.conv2d_8(x4)))
+        if verbose:
+            print(f'x4: {x4.size()}')
+        x4 = self.conv2d_9(x4)
+        if verbose:
+            print(f'x4: {x4.size()}')
+        out_res = self.conv2d_10(x3)
+        if verbose:
+            print(f'out_res: {out_res.size()}')
+        x4 += out_res
+        if verbose:
+            print(f'x4: {x4.size()}')
+        # flatten
+        return x4.view(x4.size(0), -1)
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
         """
         Outputs steering action only
         """
         inputs = super().forward(inputs=inputs, train=train)
-        x1 = self.maxpool_1(self.conv2d_1(inputs))
-        print(f'x1: {x1.size()}')
-        # first residual block
-        x2 = F.relu(self.batch_normalization_1(x1))
-        x2 = F.relu(self.batch_normalization_2(self.conv2d_2(x2)))
-        print(f'x2: {x2.size()}')
-        x2 = self.conv2d_3(x2)
-        print(f'x2: {x2.size()}')
-        out_res = self.conv2d_4(x1)
-        print(f'out_res: {out_res.size()}')
-        x2 += out_res
-        print(f'x2: {x2.size()}')
-
-        # second residual block
-        x3 = F.relu(self.batch_normalization_3(x2))
-        print(f'x3: {x3.size()}')
-        x3 = F.relu(self.batch_normalization_4(self.conv2d_5(x3)))
-        print(f'x3: {x3.size()}')
-        x3 = self.conv2d_6(x3)
-        print(f'x3: {x3.size()}')
-        out_res = self.conv2d_7(x2)
-        print(f'out_res: {out_res.size()}')
-        x3 += out_res
-        print(f'x3: {x3.size()}')
-        # third residual block
-        x4 = F.relu(self.batch_normalization_5(x3))
-        print(f'x4: {x4.size()}')
-        x4 = F.relu(self.batch_normalization_6(self.conv2d_8(x4)))
-        print(f'x4: {x4.size()}')
-        x4 = self.conv2d_9(x4)
-        print(f'x4: {x4.size()}')
-        out_res = self.conv2d_10(x3)
-        print(f'out_res: {out_res.size()}')
-        x4 += out_res
-        print(f'x4: {x4.size()}')
-        # dense layers
-        x4 = x4.view(x4.size(0), -1)
-        steering = self.dense_1(x4)
-        collision = F.sigmoid(self.dense_2(x4))
-        return steering
+        if self._config.finetune:
+            with torch.no_grad():
+                x4 = self.feature_extract(inputs)
+        else:
+            x4 = self.feature_extract(inputs)
+        return self.decoder(x4)
 
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self.forward(inputs, train=train)

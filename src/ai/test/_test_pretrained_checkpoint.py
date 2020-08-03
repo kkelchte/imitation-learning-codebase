@@ -48,7 +48,7 @@ class LoadCheckpointTest(unittest.TestCase):
         base_config['output_path'] = self.output_dir
 
     def test_dronenet_random_input(self):
-        base_config['architecture'] = 'dronenet'
+        base_config['architecture'] = 'dronet'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config),
         )
@@ -56,11 +56,12 @@ class LoadCheckpointTest(unittest.TestCase):
         print(network(torch.randn(network.input_size)))
 
     def test_load_checkpoint(self):
-        base_config['architecture'] = 'dronenet'
+        base_config['architecture'] = 'dronet'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config),
         )
-        checkpoint = torch.load(os.path.join(os.environ['PWD'], 'experimental_data', 'drone_net', 'torch_checkpoints', 'checkpoint_latest.ckpt'))
+        checkpoint = torch.load(os.path.join(os.environ['PWD'], 'experimental_data', 'drone_net', 'torch_checkpoints',
+                                             'checkpoint_latest.ckpt'))
         network.load_checkpoint(checkpoint['net_ckpt'])
         self.assertLess(network.conv2d_1.weight.sum().item() - conv2d, 0.001)
         self.assertLess(network.batch_normalization_1.weight.sum().item() - batch_normalization, 0.001)
@@ -78,8 +79,6 @@ class LoadCheckpointTest(unittest.TestCase):
         self.assertLess(network.batch_normalization_6.weight.sum().item() - batch_normalization_5, 0.001)
         self.assertLess(network.conv2d_10.weight.sum().item() - conv2d_9, 0.001)
         self.assertLess(network.conv2d_9.weight.sum().item() - conv2d_8, 0.001)
-        self.assertLess(network.dense_2.weight.sum().item() - dense_1, 0.001)
-        self.assertLess(network.dense_1.weight.sum().item() - dense, 0.001)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
