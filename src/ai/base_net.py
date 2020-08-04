@@ -96,9 +96,9 @@ class BaseNet(nn.Module):
         # preprocess inputs
         if not isinstance(inputs, torch.Tensor):
             try:
-                inputs = torch.as_tensor(inputs, dtype=self.dtype).squeeze()
+                inputs = torch.as_tensor(inputs, dtype=self.dtype)
             except ValueError:
-                inputs = torch.stack(inputs).type(self.dtype).squeeze()
+                inputs = torch.stack(inputs).type(self.dtype)
         inputs = inputs.type(self.dtype)
         # swap H, W, C --> C, H, W
         if torch.argmin(torch.as_tensor(inputs.size())) != 0 \
