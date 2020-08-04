@@ -89,6 +89,10 @@ class Experiment:
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
         if self._config.load_checkpoint_dir is not None:
+            if not self._config.load_checkpoint_dir.startswith('/'):
+                self._config.load_checkpoint_dir = f'{os.environ["DATADIR"]}/{self._config.load_checkpoint_dir}' \
+                    if "DATADIR" in os.environ.keys() \
+                    else f'{self._config.output_path}/{self._config.load_checkpoint_dir}'
             self.load_checkpoint(self._config.load_checkpoint_dir)
         elif self._config.load_checkpoint_found \
                 and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
