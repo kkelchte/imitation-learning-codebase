@@ -63,7 +63,7 @@ def load_and_preprocess_file(file_name: str, size: tuple = None) -> torch.Tensor
     """
     data = Image.open(file_name, mode='r')
     if size is not None and len(size) != 0:
-        data = cv2.resize(data, dsize=(size[1], size[2]), interpolation=cv2.INTER_CUBIC)
+        data = cv2.resize(np.asarray(data), dsize=(size[1], size[2]), interpolation=cv2.INTER_NEAREST)
         if size[0] == 1:
             data = data.mean(axis=-1, keepdims=True)
     data = np.array(data).astype(np.float32)  # uint8 -> float32
@@ -279,9 +279,10 @@ def create_hdf5_file_from_dataset(filename: str, dataset: Dataset) -> None:
             h5py_dataset[tag] = np.asarray([o.numpy() for o in data])
 
 
-def load_dataset_from_hdf5(filename: str) -> Dataset:
-    dataset = Dataset()
+def load_dataset_from_hdf5(filename: str, input_size: List[int] = None, dataset: Dataset = Dataset()) -> Dataset:
     h5py_file = h5py.File(filename, 'r')
+    if input_size is not None and input_size != []:
+        assert tuple(h5py_file['dataset']['observations'][0].shape) == tuple(input_size)
     dataset.extend(h5py_file['dataset'])
     return dataset
 

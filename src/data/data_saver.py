@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 from dataclasses import dataclass
@@ -155,12 +155,20 @@ class DataSaver:
                        f"Avoid this by setting data_saver_config.separate_raw_data_runs to True.",
                        msg_type=MessageType.warning, logger=self._logger)
 
-    def create_train_validation_hdf5_files(self) -> None:
+    def _get_runs(self) -> list:
+        """
+        parse the parent directory of the saving directory for all raw_data runs.
+        Return a list of the absolute paths to these runs.
+        """
         raw_data_dir = os.path.dirname(self._config.saving_directory)
-        all_runs = [
+        return [
             os.path.join(raw_data_dir, run)
             for run in sorted(os.listdir(raw_data_dir))
         ]
+
+    def create_train_validation_hdf5_files(self, runs: List[str] = None, input_size: List[int] = None) -> None:
+        all_runs = runs if runs is not None else self._get_runs()
+
         number_of_training_runs = int(self._config.training_validation_split*len(all_runs))
         train_runs = all_runs[0:number_of_training_runs]
         validation_runs = all_runs[number_of_training_runs:]
@@ -169,7 +177,8 @@ class DataSaver:
             config = DataLoaderConfig().create(config_dict={
                 'data_directories': runs,
                 'output_path': self._config.output_path,
-                'subsample': self._config.subsample_hdf5
+                'subsample': self._config.subsample_hdf5,
+                'input_size': input_size
             })
             data_loader = DataLoader(config=config)
             data_loader.load_dataset(arrange_according_to_timestamp=False)
