@@ -19,10 +19,10 @@ trainer_config:
   factory_key: BASE
   data_loader_config:
     hdf5_files:
-    - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/real/train.hdf5
-    - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/sim/line_world_sim_dronet.hdf5
-    #- /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/sim/line_world_sim_dronet_augmented.hdf5
-    #- /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/sim/line_world_sim_dronet_noise_augmented.hdf5
+    - line_world_data/real/train.hdf5
+    - line_world_data/sim/line_world_sim_dronet.hdf5
+    #- line_world_data/sim/line_world_sim_dronet_augmented.hdf5
+    #- line_world_data/sim/line_world_sim_dronet_noise_augmented.hdf5
     input_size: [1, 200, 200]
     random_seed: 123
     balance_over_actions: false
@@ -33,7 +33,7 @@ evaluator_config:
   data_loader_config:
     input_size: [1, 200, 200]
     hdf5_files:
-    - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/real/validation.hdf5
+    - line_world_data/real/validation.hdf5
     random_seed: 123
     balance_over_actions: false
     batch_size: 64

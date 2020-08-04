@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
-from src.core.utils import get_filename_without_extension
+from src.core.utils import get_filename_without_extension, get_data_dir
 from src.core.data_types import Dataset
 from src.data.utils import load_run, load_dataset_from_hdf5, balance_weights_over_actions, select
 from src.core.data_types import Experience
@@ -48,7 +48,7 @@ class DataLoaderConfig(Config):
             self.data_directories = [os.path.join(self.output_path, d) for d in self.data_directories]
         if self.hdf5_files is not None and len(self.hdf5_files) != 0:
             self.hdf5_files = [
-                    os.path.join(self.output_path, hdf5_f) if not hdf5_f.startswith('/') else hdf5_f
+                    os.path.join(get_data_dir(os.environ['HOME']), hdf5_f) if not hdf5_f.startswith('/') else hdf5_f
                     for hdf5_f in self.hdf5_files
             ]
         for key, value in self.__dict__.items():

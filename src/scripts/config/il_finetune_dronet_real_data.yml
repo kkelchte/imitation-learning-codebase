@@ -33,7 +33,7 @@ evaluator_config:
   data_loader_config:
     input_size: [1, 200, 200]
     hdf5_files:
-    - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/real/validation.hdf5
+    - line_world_data/real/validation.hdf5
     random_seed: 123
     balance_over_actions: false
     batch_size: 64
