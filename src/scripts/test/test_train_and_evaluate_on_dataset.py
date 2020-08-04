@@ -26,12 +26,12 @@ class DatasetExperimentsTest(unittest.TestCase):
             "trainer_config": {
                 "factory_key": "BASE",
                 "data_loader_config": {"batch_size": 5,
-                                       "hdf5_file": "train.hdf5"},
+                                       "hdf5_files": ["train.hdf5"]},
                 "criterion": "MSELoss",
                 "device": "cpu"},
             "evaluator_config": {
                 "data_loader_config": {"batch_size": 1,
-                                       "hdf5_file": "validation.hdf5"},
+                                       "hdf5_files": ["validation.hdf5"]},
                 "criterion": "MSELoss",
                 "device": "cpu"},
         }
@@ -87,10 +87,10 @@ class DatasetExperimentsTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(external_dataset, 'train.hdf5')))
         self.assertTrue(os.path.isfile(os.path.join(external_dataset, 'validation.hdf5')))
 
-        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_file"] = os.path.join(external_dataset,
-                                                                                              'train.hdf5')
-        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_file"] = os.path.join(external_dataset,
-                                                                                                'validation.hdf5')
+        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_files"] = [os.path.join(external_dataset,
+                                                                                                     'train.hdf5')]
+        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_files"] = [os.path.join(external_dataset,
+                                                                                                       'validation.hdf5')]
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
         experiment.run()
 
@@ -116,8 +116,8 @@ class DatasetExperimentsTest(unittest.TestCase):
             os.path.join(external_dataset, 'raw_data', d)
             for d in os.listdir(os.path.join(external_dataset, 'raw_data'))
         ]
-        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_file"] = ""
-        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_file"] = ""
+        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_files"] = []
+        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_files"] = []
         self.experiment_config["trainer_config"]["data_loader_config"]["data_directories"] = raw_data_directories[:-2]
         self.experiment_config["evaluator_config"]["data_loader_config"]["data_directories"] = raw_data_directories[-2:]
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
