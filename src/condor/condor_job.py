@@ -15,7 +15,7 @@ import yaml
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
-from src.core.utils import get_date_time_tag
+from src.core.utils import get_date_time_tag, get_data_dir
 from src.condor.helper_functions import strip_command
 
 
@@ -175,8 +175,7 @@ class CondorJob:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         self._original_output_path = config_dict['output_path']
         if not self._original_output_path.startswith('/'):
-            self._original_output_path = f'{os.environ["DATADIR"]}/{self._original_output_path}' \
-                if "DATADIR" in os.environ.keys() else f'{os.environ["HOME"]}/{self._original_output_path}'
+            self._original_output_path = f'{get_data_dir(os.environ["HOME"])}/{self._original_output_path}'
         config_dict['output_path'] = self.local_output_path
 
         # TODO: make hacky solution clean, make relative path to hdf5 work

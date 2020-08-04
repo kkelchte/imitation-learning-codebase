@@ -10,7 +10,7 @@ import rospy
 import matplotlib.pyplot as plt
 from nav_msgs.msg import Odometry
 
-from src.core.utils import get_filename_without_extension
+from src.core.utils import get_filename_without_extension, get_data_dir
 from src.core.data_types import ProcessState
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
@@ -21,8 +21,7 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 class TestRobotMapper(unittest.TestCase):
 
     def start_test(self) -> None:
-        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
-                          f'/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
         config = {

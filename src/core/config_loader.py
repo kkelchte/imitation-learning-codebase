@@ -7,7 +7,7 @@ import yaml
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json, Undefined
 
-from src.core.utils import camelcase_to_snake_format, get_date_time_tag
+from src.core.utils import camelcase_to_snake_format, get_date_time_tag, get_data_dir
 
 
 def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
@@ -49,8 +49,7 @@ class Config:
             instant.adjust_seed_in_nested_configs(seed)
             instant.output_path = f'{instant.output_path}_{seed}'
         if not instant.output_path.startswith('/'):
-            instant.output_path = f'{os.environ["DATADIR"]}/{instant.output_path}' if "DATADIR" in os.environ.keys() \
-                else f'{os.environ["HOME"]}/{instant.output_path}'
+            instant.output_path = f'{get_data_dir(os.environ["HOME"])}/{instant.output_path}'
         instant.iterative_add_output_path(output_path=instant.output_path)
         instant.commit = os.popen('git rev-parse HEAD').read().strip()
         instant.post_init()

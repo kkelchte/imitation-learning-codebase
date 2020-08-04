@@ -15,7 +15,7 @@ from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
-from src.core.utils import get_filename_without_extension
+from src.core.utils import get_filename_without_extension, get_data_dir
 from src.core.data_types import TerminationType, Distribution
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
@@ -90,9 +90,8 @@ class Experiment:
             self._writer = TensorboardWrapper(log_dir=config.output_path)
         if self._config.load_checkpoint_dir is not None:
             if not self._config.load_checkpoint_dir.startswith('/'):
-                self._config.load_checkpoint_dir = f'{os.environ["DATADIR"]}/{self._config.load_checkpoint_dir}' \
-                    if "DATADIR" in os.environ.keys() \
-                    else f'{self._config.output_path}/{self._config.load_checkpoint_dir}'
+                self._config.load_checkpoint_dir = f'{get_data_dir(self._config.output_path)}/' \
+                                                   f'{self._config.load_checkpoint_dir}'
             self.load_checkpoint(self._config.load_checkpoint_dir)
         elif self._config.load_checkpoint_found \
                 and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
@@ -241,8 +240,7 @@ if __name__ == "__main__":
         with open(config_file, 'r') as f:
             configuration = yaml.load(f, Loader=yaml.FullLoader)
         if not configuration['output_path'].startswith('/'):
-            configuration['output_path'] = os.path.join(os.environ['DATADIR'], configuration['output_path']) \
-                if 'DATADIR' in os.environ.keys() else os.path.join(os.environ['HOME'], configuration['output_path'])
+            configuration['output_path'] = os.path.join(get_data_dir(os.environ['HOME']), configuration['output_path'])
         shutil.rmtree(configuration['output_path'], ignore_errors=True)
 
     experiment_config = ExperimentConfig().create(config_file=config_file,

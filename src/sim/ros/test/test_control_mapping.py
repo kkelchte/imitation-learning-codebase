@@ -6,7 +6,7 @@ import unittest
 import rospy
 from geometry_msgs.msg import Twist
 
-from src.core.utils import get_filename_without_extension
+from src.core.utils import get_filename_without_extension, get_data_dir
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig
@@ -19,8 +19,7 @@ For each FSM state, test correct mapping of control.
 class TestControlMapper(unittest.TestCase):
 
     def start(self, control_mapper_config: str) -> None:
-        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
-                          f'/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'drone_sim',

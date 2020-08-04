@@ -8,6 +8,15 @@ from typing import List
 import numpy as np
 
 
+def get_data_dir(alternative: str) -> str:
+    """
+    Check if DATADIR is an environment variable, otherwise return provided alternative
+    :param alternative: alternative to be returned in case no datadir was provided
+    :return: Data directory
+    """
+    return os.environ['DATADIR'] if 'DATADIR' in os.environ.keys() else alternative
+
+
 def get_file_length(file_path: str) -> int:
     with open(file_path, 'r') as f:
         return len(f.readlines())

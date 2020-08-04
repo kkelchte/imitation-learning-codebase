@@ -4,7 +4,7 @@ import unittest
 import torch
 import numpy as np
 
-from src.core.utils import camelcase_to_snake_format, get_to_root_dir
+from src.core.utils import camelcase_to_snake_format, get_to_root_dir, get_data_dir
 
 
 class TestUtils(unittest.TestCase):
@@ -30,6 +30,19 @@ class TestUtils(unittest.TestCase):
             get_to_root_dir
         )
 
+    def test_get_data_dir(self):
+        # with datadir environment variable
+        if "DATADIR" not in os.environ.keys():
+            os.environ["DATADIR"] = '/my/wonderful/data/dir'
+        self.assertTrue("DATADIR" in os.environ.keys())
+        result = get_data_dir(os.environ['HOME'])
+        self.assertTrue(result, os.environ["DATADIR"])
+        del os.environ['DATADIR']
+        self.assertFalse("DATADIR" in os.environ.keys())
+        result = get_data_dir(os.environ['HOME'])
+        self.assertTrue(result, os.environ["HOME"])
+
 
 if __name__ == '__main__':
+    get_to_root_dir()
     unittest.main()
