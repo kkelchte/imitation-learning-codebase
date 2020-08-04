@@ -165,7 +165,6 @@ class Experiment:
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
                 output_msg, best_ckpt = self._evaluator.evaluate(writer=self._writer)
                 msg += output_msg
-            #  TODO add interactive evaluation
             if self._config.save_checkpoint_every_n != -1 and \
                     (self._epoch % self._config.save_checkpoint_every_n == 0 or
                      self._epoch == self._config.number_of_epochs - 1) and not best_ckpt:
@@ -173,6 +172,8 @@ class Experiment:
             if best_ckpt and self._config.save_checkpoint_every_n != -1:
                 self.save_checkpoint(tag='best')
             cprint(msg, self._logger)
+        if self._evaluator is not None and self._config.evaluator_config.evaluate_extensive:
+            self._evaluator.evaluate_extensive()
         cprint(f'Finished.', self._logger)
 
     def save_checkpoint(self, tag: str = ''):

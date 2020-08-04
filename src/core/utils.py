@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import List
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def get_data_dir(alternative: str) -> str:
@@ -86,3 +87,30 @@ def generate_random_image(size: tuple) -> np.ndarray:
 def tensorboard_write_distribution(writer, distribution, tag, step) -> None:
     writer.add_scalar(f"{tag} mean", distribution.mean, global_step=step)
     writer.add_scalar(f"{tag} std", distribution.std, global_step=step)
+
+
+def save_output_plots(output_dir: str, data: dict) -> None:
+    """
+    Creates an overview of different arrays stored in data dictionary with key used for legend
+    :param output_dir: location where output_plot.jpg is saved
+    :param data: dictionary with key: val pairs e.g. 'expert': np.array((6, 100)), 'network': np.array((6, 100))
+    :return: None
+    """
+    title_dictionary = {
+        1: ['CMD'],
+        2: ['SPEED', 'TURN'],
+        4: ['linear X', 'linear Y', 'linear Z', 'angular Z'],
+        6: ['linear X', 'linear Y', 'linear Z', 'angular X', 'angular Y', 'angular Z']
+    }
+    colors = [f'C{i}' for i in range(10)]
+    data_shape = list(data.values())[0].shape
+    f, axes = plt.subplots(data_shape[-1], 1,
+                           sharex=True, sharey=True, figsize=(20, 3*data_shape[-1]))
+    for ax_index, ax in enumerate(axes):
+        ax.set_title(title_dictionary[data_shape[-1]][ax_index] if data_shape[-1] in title_dictionary.keys()
+                     else str(ax_index))
+        for key_index, data_key in enumerate(sorted(data.keys())):
+            ax.plot([d[ax_index] for d in data[data_key]], colors[key_index], label=data_key)
+        ax.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'output_plot.jpg'))

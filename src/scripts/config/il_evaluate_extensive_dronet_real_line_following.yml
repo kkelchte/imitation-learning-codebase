@@ -1,0 +1,26 @@
+output_path: /Users/kelchtermans/mount/opal/line_world/dronet_finetuned/real_sim_augmented_noisy/models/seed_5100
+number_of_epochs: 0
+number_of_episodes: -1
+load_checkpoint_dir: /Users/kelchtermans/mount/opal/line_world/dronet_finetuned/real_sim_augmented_noisy/models/seed_5100
+architecture_config:
+  architecture: dronet
+  initialisation_type: xavier
+  random_seed: 123
+  device: cpu
+  weight_decay: default
+  dropout: default
+  dtype: default
+  log_std: default
+  finetune: true
+evaluator_config:
+  data_loader_config:
+    input_size: [1, 200, 200]
+    hdf5_files:
+    - line_world_data/real/validation.hdf5
+    random_seed: 123
+    balance_over_actions: false
+    batch_size: 64
+  criterion: MSELoss
+  device: cpu
+  evaluate_extensive: true
+tensorboard: true
