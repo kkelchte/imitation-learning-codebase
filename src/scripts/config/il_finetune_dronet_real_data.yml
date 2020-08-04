@@ -19,7 +19,7 @@ trainer_config:
   factory_key: BASE
   data_loader_config:
     hdf5_files:
-    - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/real/train.hdf5
+    - line_world_data/real/train.hdf5
     #- /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/sim/line_world_sim_dronet.hdf5
     #- /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/sim/line_world_sim_dronet_augmented.hdf5
     #- /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_data/sim/line_world_sim_dronet_noise_augmented.hdf5
