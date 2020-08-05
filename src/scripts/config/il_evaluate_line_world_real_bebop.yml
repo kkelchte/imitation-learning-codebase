@@ -1,17 +1,14 @@
-output_path: line_world
+output_path: /home/klaas/code/imitation-learning-codebase/experimental_data/dronet_finetuned/real_sim_augmented_noisy/models/seed_5100
 number_of_epochs: 1
-number_of_episodes: 1
+number_of_episodes: 10
+load_checkpoint_dir: /home/klaas/code/imitation-learning-codebase/experimental_data/dronet_finetuned/real_sim_augmented_noisy/models/seed_5100
 architecture_config:
-  architecture: tiny_128_rgb_6c
-  load_checkpoint_dir: /home/klaas/seed_5100
+  architecture: dronet
   device: cpu
 environment_config:
   factory_key: ROS
   max_number_of_steps: -1
   ros_config:
-    info:
-      -current_waypoint
-      -sensor/odometry
     observation: forward_camera
     visible_xterm: true
     step_rate_fps: 100
@@ -23,7 +20,7 @@ environment_config:
       fsm: true
       control_mapping: true
       waypoint_indicator: false
-      control_mapping_config: takeover
+      control_mapping_config: takeover_joystick
       world_name: empty
       x_pos: 0.0
       y_pos: 0.0
@@ -31,8 +28,10 @@ environment_config:
       yaw_or: 1.57
       gazebo: false
     actor_configs:
-        - name: keyboard
-          file: src/sim/ros/config/actor/keyboard_bebop_real.yml
+        #- name: keyboard
+        #  file: src/sim/ros/config/actor/keyboard_bebop_real.yml
+        - name: joystick
+          file: src/sim/ros/config/actor/joystick_bebop_real.yml
 data_saver_config:
   store_hdf5: false
   separate_raw_data_runs: true

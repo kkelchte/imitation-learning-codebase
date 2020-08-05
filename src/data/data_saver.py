@@ -131,14 +131,17 @@ class DataSaver:
         self._check_dataset_size_on_file_system()
 
     def _store_frame(self, data: np.ndarray, dst: str, time_stamp: int) -> None:
-        if len(data.shape) in [2, 3]:
-            if not os.path.isdir(os.path.join(self._config.saving_directory, dst)):
-                os.makedirs(os.path.join(self._config.saving_directory, dst), exist_ok=True)
-            store_image(data=data, file_name=os.path.join(self._config.saving_directory, dst,
-                                                          timestamp_to_filename(time_stamp)) + '.jpg')
-        elif len(data.shape) in [0, 1]:
-            store_array_to_file(data=data, file_name=os.path.join(self._config.saving_directory, dst + '.data'),
-                                time_stamp=time_stamp)
+        try:
+            if len(data.shape) in [2, 3]:
+                if not os.path.isdir(os.path.join(self._config.saving_directory, dst)):
+                    os.makedirs(os.path.join(self._config.saving_directory, dst), exist_ok=True)
+                store_image(data=data, file_name=os.path.join(self._config.saving_directory, dst,
+                                                              timestamp_to_filename(time_stamp)) + '.jpg')
+            elif len(data.shape) in [0, 1]:
+                store_array_to_file(data=data, file_name=os.path.join(self._config.saving_directory, dst + '.data'),
+                                    time_stamp=time_stamp)
+        except Exception as e:
+            cprint(f'Failed to store frame: {e}', self._logger, msg_type=MessageType.error)
 
     def _check_dataset_size_on_file_system(self):
         self._frame_counter += 1

@@ -7,9 +7,12 @@ sensors:
 forward_camera_topic: '/bebop/image_raw'
 forward_camera_type: 'Image'
 forward_camera_stats:
-  height: 128
-  width: 128
-  depth: 3
+#  height: 128
+#  width: 128
+#  depth: 3
+  height: 200
+  width: 200
+  depth: 1
 odometry_topic: '/bebop/odom'
 odometry_type: 'Odometry'
 gps_topic: '/bebop/fix'

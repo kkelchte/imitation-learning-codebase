@@ -35,7 +35,6 @@ digraph G {
 	"scripts.experiment" -> "ai.evaluator"
 	"scripts.experiment" -> "ai.trainer"
 	"scripts.experiment" -> "ai.trainer_factory"
-	"scripts.experiment" -> "ai.utils"
 	"scripts.experiment" -> "data.data_saver"
 	"scripts.experiment" -> "sim.common.environment"
 	"scripts.experiment" -> "sim.common.environment_factory"
