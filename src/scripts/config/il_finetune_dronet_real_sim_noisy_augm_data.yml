@@ -20,8 +20,6 @@ trainer_config:
   data_loader_config:
     hdf5_files:
     - line_world_data/real/train.hdf5
-    #- line_world_data/sim/line_world_sim_dronet.hdf5
-    #- line_world_data/sim/line_world_sim_dronet_augmented.hdf5
     - line_world_data/sim/line_world_sim_dronet_noise_augmented.hdf5
     input_size: [1, 200, 200]
     random_seed: 123

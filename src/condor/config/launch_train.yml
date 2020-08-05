@@ -1,4 +1,4 @@
-output_path: line_world/dronet_finetuned/real
+output_path: line_world/dronet_finetuned/sim_and_real_L1
 mode: train
 job_configs:
   - command: python3.8 src/scripts/experiment.py
@@ -16,4 +16,4 @@ job_configs:
 number_of_jobs:
   - 1
 base_config_files:
-  - src/scripts/config/il_finetune_dronet_real_data.yml
+  - src/scripts/config/il_finetune_dronet_real_sim_noisy_augm_data.yml
