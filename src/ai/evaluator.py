@@ -13,7 +13,7 @@ from src.ai.utils import data_to_tensor
 from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
-from src.core.utils import get_filename_without_extension, save_output_plots
+from src.core.utils import get_filename_without_extension, save_output_plots, create_output_video
 from src.data.data_loader import DataLoaderConfig, DataLoader
 
 """Given model, config, data_loader, evaluates a model and logs relevant training information
@@ -97,6 +97,10 @@ class Evaluator:
                           data={'expert': np.stack(dataset.actions),
                                 'network': predictions.numpy(),
                                 'difference': error.numpy()})
+        create_output_video(output_dir=self._config.output_path,
+                            observations=dataset.observations,
+                            actions={'expert': np.stack(dataset.actions),
+                                     'network': predictions.numpy()})
 
     def remove(self):
         self.data_loader.remove()

@@ -1,12 +1,14 @@
 #!/usr/python
-
+import glob
 import os
 import subprocess
 from datetime import datetime
 from typing import List
 
+import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 def get_data_dir(alternative: str) -> str:
@@ -88,6 +90,10 @@ def tensorboard_write_distribution(writer, distribution, tag, step) -> None:
     writer.add_scalar(f"{tag} mean", distribution.mean, global_step=step)
     writer.add_scalar(f"{tag} std", distribution.std, global_step=step)
 
+#######################################
+# Extensive evaluation helper functions
+#######################################
+
 
 def save_output_plots(output_dir: str, data: dict) -> None:
     """
@@ -114,3 +120,55 @@ def save_output_plots(output_dir: str, data: dict) -> None:
         ax.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, 'output_plot.jpg'))
+
+
+def create_output_video(output_dir: str, observations: list, actions: dict) -> None:
+    """
+    Creates a video where actions are annotated on frames.
+    :param output_dir: location where output_plot.jpg is saved
+    :param observations: list of images
+    :param actions: dictionary with key: val pairs e.g. 'expert': np.array((6, 100)), 'network': np.array((6, 100))
+    :return: None
+    """
+    folder = os.path.join(output_dir, 'video')
+    os.makedirs(folder, exist_ok=True)
+
+    for image_index in tqdm(range(len(observations)), ascii=True, desc='video'):
+        plt.figure()
+        border_width = 100
+        image = observations[image_index].squeeze()
+
+        image = np.stack((image,) * 3, axis=-1)
+        border = np.ones((image.shape[0], border_width, 3), dtype=image.dtype)
+        image = np.concatenate([border, image], axis=1)
+
+        colors = [(190 / 255., 114 / 255., 64 / 255.),
+                  (75 / 255., 150 / 255., 200 / 255.)]
+
+        for index, (label, value) in enumerate(actions.items()):
+            forward_speed = 100 * (value[image_index][0] + 0.1)
+            direction = np.arccos(value[image_index][-1])
+            origin = (50, int(image.shape[0] / 2))
+            steering_point = (int(origin[0] - forward_speed * np.cos(direction)),
+                              int(origin[1] - forward_speed * np.sin(direction)))
+            image = cv2.arrowedLine(image, origin, steering_point, color=colors[index], thickness=1)
+            image = cv2.putText(image, label, (3, origin[1] + 55 + index * 15),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, colors[index], thickness=1)
+        image = cv2.circle(image, origin, radius=20, color=(0, 0, 0, 0.3), thickness=1)
+
+        plt.tight_layout()
+        plt.axis('off')
+        plt.imshow(image)
+        plt.savefig(folder + "/file%02d.jpg" % image_index)
+        plt.close()
+        plt.cla()
+
+    original_directory = os.getcwd()
+    os.chdir(folder)
+    subprocess.call([
+        'ffmpeg', '-framerate', '8', '-i', 'file%02d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+        'video.mp4'
+    ])
+    for file_name in glob.glob("*.jpg"):
+        os.remove(file_name)
+    os.chdir(original_directory)
