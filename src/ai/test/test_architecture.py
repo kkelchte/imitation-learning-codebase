@@ -107,6 +107,23 @@ class ArchitectureTest(unittest.TestCase):
                 self.assertEqual(torch.min(p), 0.03)
                 self.assertEqual(torch.max(p), 0.03)
 
+    def test_sidetuned_network(self):
+        base_config['architecture'] = 'dronet_sidetuned'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        fixed_weight_checksum = network.conv2d_1.weight.data.sum().item()
+        variable_weight_checksum = network.sidetune_conv2d_1.weight.data.sum().item()
+        alpha_value = network.alpha.item()
+        optimizer = torch.optim.Adam(network.parameters())
+        for i in range(10):
+            optimizer.zero_grad()
+            network.forward(torch.randn(network.input_size)).mean().backward()
+            optimizer.step()
+        self.assertEqual(fixed_weight_checksum, network.conv2d_1.weight.data.sum().item())
+        self.assertNotEqual(variable_weight_checksum, network.sidetune_conv2d_1.weight.data.sum().item())
+        self.assertNotEqual(alpha_value, network.alpha.item())
+
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
 
