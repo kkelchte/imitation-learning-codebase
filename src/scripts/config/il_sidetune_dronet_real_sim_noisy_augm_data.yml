@@ -12,20 +12,21 @@ architecture_config:
   dropout: default
   dtype: default
   log_std: default
-  finetune: true
+  finetune: false
 trainer_config:
-  optimizer: SGD
+  optimizer: Adam
   learning_rate: 0.01
   factory_key: BASE
   data_loader_config:
     hdf5_files:
+    - line_world_data/sim/line_world_sim_dronet_noise_augmented_wp.hdf5
     - line_world_data/real/train.hdf5
-    - line_world_data/sim/line_world_sim_dronet_noise_augmented.hdf5
+    - line_world_data/sim/line_world_sim_dronet_noise_augmented_manual.hdf5
     input_size: [1, 200, 200]
     random_seed: 123
     balance_over_actions: false
     batch_size: 64
-  criterion: MSELoss
+  criterion: L1Loss
   device: cuda
 evaluator_config:
   data_loader_config:
@@ -37,4 +38,5 @@ evaluator_config:
     batch_size: 64
   criterion: MSELoss
   device: cpu
+  evaluate_extensive: true
 tensorboard: true

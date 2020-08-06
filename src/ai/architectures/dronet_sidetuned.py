@@ -32,8 +32,7 @@ class Net(BaseNet):
         self.input_size = (1, 200, 200)
         self.output_size = (6,)
         self.discrete = False
-
-        self.in_planes = 64
+        self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
 
         self.conv2d_1 = nn.Conv2d(in_channels=self.input_size[0], out_channels=32,
                                   kernel_size=5, stride=2, padding=1, bias=True)
@@ -188,8 +187,15 @@ class Net(BaseNet):
         """
         inputs = super().forward(inputs=inputs, train=train)
         with torch.no_grad():
-            dronet_features = self.feature_extract(inputs)
-        features = self.alpha * dronet_features + (1-self.alpha) * self.sidetune_feature_extract(inputs)
+            pretrained_features = self.feature_extract(inputs)
+        if self._config.finetune:
+            with torch.no_grad():
+                new_features = self.sidetune_feature_extract(inputs)
+        else:
+            new_features = self.sidetune_feature_extract(inputs)
+        features = self.alpha * pretrained_features + (1-self.alpha) * new_features
+        if self.dropout is not None:
+            features = self.dropout(features)
         return self.decoder(features)
 
     def get_action(self, inputs, train: bool = False) -> Action:

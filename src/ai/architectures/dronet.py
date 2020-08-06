@@ -30,8 +30,7 @@ class Net(BaseNet):
         self.input_size = (1, 200, 200)
         self.output_size = (6,)
         self.discrete = False
-
-        self.in_planes = 64
+        self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
 
         self.conv2d_1 = nn.Conv2d(in_channels=self.input_size[0], out_channels=32,
                                   kernel_size=5, stride=2, padding=1, bias=True)
@@ -138,6 +137,8 @@ class Net(BaseNet):
                 x4 = self.feature_extract(inputs)
         else:
             x4 = self.feature_extract(inputs)
+        if self.dropout is not None:
+            x4 = self.dropout(x4)
         return self.decoder(x4)
 
     def get_action(self, inputs, train: bool = False) -> Action:
