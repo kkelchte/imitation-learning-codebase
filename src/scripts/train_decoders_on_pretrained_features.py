@@ -72,7 +72,8 @@ if __name__ == '__main__':
     ################################################################################
     # Predict on real validation images                                            #
     ################################################################################
-    output_path = '/tmp/out'
+    output_path = arguments.output_path if arguments.output_path.startswith('/') \
+        else os.path.join(os.environ['DATADIR'], arguments.output_path)
     os.makedirs(output_path, exist_ok=True)
 
     validation_runs = [
