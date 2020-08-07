@@ -2,10 +2,10 @@
 # Submit an interactive job
 ###########################
 
-RequestCpus     = 4
-RequestMemory   = 10G
-+RequestWallTime = 2*60*60
-Request_GPUS    = 1
+RequestCpus     = 1
+RequestMemory   = 15G
++RequestWallTime = 60*60
+Request_GPUs = 0
 
 # If you want X11 forwarding, uncomment this
 Requirements = ( OpSysAndVer == "Fedora32" )
