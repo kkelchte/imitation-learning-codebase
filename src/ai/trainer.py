@@ -75,7 +75,7 @@ class Trainer(Evaluator):
             lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
             self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
                 if self._config.scheduler_config is not None else None
-
+            
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         total_error = []
@@ -121,3 +121,8 @@ class Trainer(Evaluator):
         self._optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         if self._scheduler is not None:
             self._scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        if self._config.device != 'cpu':
+            for state in self._optimizer.state.values():
+                for k, v in state.items():
+                    if isinstance(v, torch.Tensor):
+                        state[k] = v.cuda() 

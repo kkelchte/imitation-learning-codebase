@@ -2,7 +2,7 @@ output_path: line_world/dronet_train_extra_real
 number_of_epochs: 31
 number_of_episodes: -1
 save_checkpoint_every_n: 10
-load_checkpoint_dir: line_world/dronet_sidetuned
+load_checkpoint_dir: line_world/dronet_sidetuned/adam_lr00001/models/seed_5100
 architecture_config:
   architecture: dronet_sidetuned
   initialisation_type: xavier
