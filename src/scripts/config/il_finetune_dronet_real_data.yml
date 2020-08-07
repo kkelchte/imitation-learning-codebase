@@ -1,10 +1,10 @@
-output_path: line_world/dronet_finetuned/real
+output_path: line_world/dronet_train_extra_real
 number_of_epochs: 31
 number_of_episodes: -1
 save_checkpoint_every_n: 10
-load_checkpoint_dir: dronet
+load_checkpoint_dir: line_world/dronet_sidetuned
 architecture_config:
-  architecture: dronet
+  architecture: dronet_sidetuned
   initialisation_type: xavier
   random_seed: 123
   device: cpu
@@ -14,8 +14,8 @@ architecture_config:
   log_std: default
   finetune: true
 trainer_config:
-  optimizer: SGD
-  learning_rate: 0.01
+  optimizer: Adam
+  learning_rate: 0.000001
   factory_key: BASE
   data_loader_config:
     hdf5_files:
