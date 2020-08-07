@@ -14,8 +14,8 @@ architecture_config:
   log_std: default
   finetune: true
 trainer_config:
-  optimizer: Adam
-  learning_rate: 0.01
+  optimizer: SGD
+  learning_rate: 0.0001
   factory_key: BASE
   data_loader_config:
     hdf5_files:
