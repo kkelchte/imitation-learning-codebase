@@ -1,5 +1,5 @@
-output_path: line_world/dronet_sidetuned/adam_lr001
-#output_path: line_world/dronet_finetuned/adam_lr001
+output_path: line_world/dronet_sidetuned_extra_train_ctr/adam_lr000001_e2e
+#output_path: line_world/dronet_finetuned/sgd_lr00001
 mode: train
 job_configs:
   - command: python3.8 src/scripts/experiment.py
@@ -18,4 +18,4 @@ number_of_jobs:
   - 1
 base_config_files:
   - src/scripts/config/il_sidetune_dronet_real_sim_noisy_augm_data.yml
-#  - src/scripts/config/il_finetune_dronet_real_sim_noisy_augm_data.yml
+    #  - src/scripts/config/il_finetune_dronet_real_sim_noisy_augm_data.yml
