@@ -121,3 +121,4 @@ class Trainer(Evaluator):
         self._optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         if self._scheduler is not None:
             self._scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        self._optimizer.to(torch.device(self._config.device))
