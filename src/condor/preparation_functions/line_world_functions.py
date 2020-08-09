@@ -134,11 +134,13 @@ def prepare_dag_data_collection_train_evaluate_line_world(base_config_files: Lis
                dag_directory=os.path.join(output_path, 'dag', get_date_time_tag()))
 
 
-def prepare_train_task_decoders(base_config_files: List[str],
-                                job_configs: List[CondorJobConfig],
-                                number_of_jobs: List[int],
+def prepare_train_task_decoders(base_config_file: str,
+                                job_config_object: CondorJobConfig,
+                                number_of_jobs: int,
                                 output_path: str) -> List[CondorJob]:
-    job_config = job_configs[0]
+    job_config = job_config_object
+    os.makedirs(output_path if output_path.startswith('/') else os.path.join(os.environ['DATADIR'], output_path), 
+                exist_ok=True)
 
     jobs = []
     tasks = ['autoencoding', 'depth_euclidean', 'jigsaw', 'reshading', 'colorization', 'edge_occlusion', 'keypoints2d',
@@ -151,12 +153,12 @@ def prepare_train_task_decoders(base_config_files: List[str],
     training_epochs = 100
 
     # TODO Remove
-    tasks = ['normal']
-    learning_rates = [0.00001]
-    batch_size = 2
-    training_epochs = 1
+    #tasks = ['normal']
+    #learning_rates = [0.00001]
+    #batch_size = 2
+    #training_epochs = 1
 
-    for i in range(number_of_jobs[0]):
+    for i in range(number_of_jobs):
         for task in tasks:
             if task in not_working_models:
                 continue
@@ -168,6 +170,9 @@ def prepare_train_task_decoders(base_config_files: List[str],
                                      f'--learning_rate {learning_rate} ' \
                                      f'--task {task} ' \
                                      f'--batch_size {batch_size} --training_epochs {training_epochs}'
-                jobs.append(CondorJob(config=job_config))
+                condor_job = CondorJob(config=job_config)
+                condor_job.write_job_file()
+                condor_job.write_executable_file()
+                jobs.append(condor_job)
 
     return jobs

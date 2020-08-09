@@ -14,4 +14,5 @@ job_configs:
     save_locally: false
 number_of_jobs:
   - 1
-base_config_files: []
+base_config_files: 
+    - ''

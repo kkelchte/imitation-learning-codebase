@@ -31,8 +31,8 @@ if __name__ == '__main__':
 
     output_path = arguments.output_path if arguments.output_path.startswith('/') \
         else os.path.join(os.environ['DATADIR'], arguments.output_path)
-    if os.path.isdir(output_path):
-        shutil.rmtree(output_path, ignore_errors=True)
+    #if os.path.isdir(output_path):
+    #    shutil.rmtree(output_path, ignore_errors=True)
     os.makedirs(output_path, exist_ok=True)
 
     from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -97,7 +97,7 @@ if __name__ == '__main__':
             plt.imshow(pred)
             plt.axis('off')
             plt.tight_layout()
-            plt.savefig(os.path.join(output_path, f'{fig_counter:010d}.jpg'))
+            plt.savefig(os.path.join(output_path, 'out', f'{fig_counter:010d}.jpg'))
             fig_counter += 1
 
     ################################################################################
