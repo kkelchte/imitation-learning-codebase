@@ -63,9 +63,16 @@ class CondorJob:
 
     def __init__(self, config: CondorJobConfig):
         self._config = config
+        
+
         self.output_dir = os.path.basename(config.config_file).split('.')[0] if config.config_file != '' else \
             f'{get_date_time_tag()}_{strip_command(config.command)}'
         self.output_dir = os.path.join(config.output_path, 'condor', self.output_dir)
+
+        i = 0
+        while os.path.isdir(self.output_dir):
+            self.output_dir = f'{self.output_dir}_{i}' if i == 0 else '_'.join(self.output_dir.split('_')[:-1]) + '_' + str(i)
+            i += 1
 
         os.makedirs(self.output_dir)
 

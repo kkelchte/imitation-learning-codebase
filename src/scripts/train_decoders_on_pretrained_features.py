@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import visualpriors
+import subprocess
 
 from src.ai.utils import mlp_creator
 from src.data.utils import load_data_from_directory
@@ -88,8 +89,9 @@ if __name__ == '__main__':
         ['concrete_bluecable', 'concrete_orangecable', 'concrete_whitecable', 'grass_bluecable', 'grass_orangecable']
         for sd in os.listdir(os.path.join(os.environ['DATADIR'], 'line_world_data', 'real', 'raw_data', d, 'raw_data'))]
     fig_counter = 0
+    os.makedirs(os.path.join(output_path, 'out'))
     for run in validation_runs[0:1]:
-        data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
+        data = load_data_from_directory(run, size=(3, 256, 256))[1][::4]
         representation = visualpriors.representation_transform(torch.stack(data), feature_type, device='cpu')
         with torch.no_grad():
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
@@ -97,8 +99,13 @@ if __name__ == '__main__':
             plt.imshow(pred)
             plt.axis('off')
             plt.tight_layout()
-            plt.savefig(os.path.join(output_path, 'out', f'{fig_counter:010d}.jpg'))
+            plt.savefig(os.path.join(output_path, 'out', f'file{fig_counter:05d}.jpg'))
             fig_counter += 1
+
+    subprocess.call([
+        'ffmpeg', '-framerate', '8', '-i', f'{output_path}/out/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+        f'{output_path}/video.mp4'
+    ])
 
     ################################################################################
     # Save checkpoint                                                              #
