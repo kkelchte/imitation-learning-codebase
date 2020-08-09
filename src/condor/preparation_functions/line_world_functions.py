@@ -132,3 +132,42 @@ def prepare_dag_data_collection_train_evaluate_line_world(base_config_files: Lis
     # Create DAG object
     return Dag(lines_dag_file=dag_lines,
                dag_directory=os.path.join(output_path, 'dag', get_date_time_tag()))
+
+
+def prepare_train_task_decoders(base_config_files: List[str],
+                                job_configs: List[CondorJobConfig],
+                                number_of_jobs: List[int],
+                                output_path: str) -> List[CondorJob]:
+    job_config = job_configs[0]
+
+    jobs = []
+    tasks = ['autoencoding', 'depth_euclidean', 'jigsaw', 'reshading', 'colorization', 'edge_occlusion', 'keypoints2d',
+             'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
+             'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
+             'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
+    learning_rates = [0.0001, 0.00001, 0.000001]
+    not_working_models = ['colorization', 'reshading']
+    batch_size = 64
+    training_epochs = 100
+
+    # TODO Remove
+    tasks = ['normal']
+    learning_rates = [0.00001]
+    batch_size = 2
+    training_epochs = 1
+
+    for i in range(number_of_jobs[0]):
+        for task in tasks:
+            if task in not_working_models:
+                continue
+            for learning_rate in learning_rates:
+                job_output_path = f'{output_path}/{task}/{learning_rate}' if i == 0 \
+                    else f'{output_path}_{i}/{task}/{learning_rate}'
+                job_config.command = f'python3.8 src/scripts/train_decoders_on_pretrained_features.py ' \
+                                     f'--output_path {job_output_path} ' \
+                                     f'--learning_rate {learning_rate} ' \
+                                     f'--task {task} ' \
+                                     f'--batch_size {batch_size} --training_epochs {training_epochs}'
+                jobs.append(CondorJob(config=job_config))
+
+    return jobs

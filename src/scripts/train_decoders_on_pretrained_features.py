@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 
 import h5py
 import torch
@@ -23,11 +24,19 @@ class Parser(argparse.ArgumentParser):
         self.add_argument("--batch_size", type=int, default=64)
         self.add_argument("--training_epochs", type=int, default=100)
         self.add_argument("--task", type=str, default='normal')
-        self.add_argument("--rm", action='store_true', help="remove current output dir before start")
 
 
 if __name__ == '__main__':
     arguments = Parser().parse_args()
+
+    output_path = arguments.output_path if arguments.output_path.startswith('/') \
+        else os.path.join(os.environ['DATADIR'], arguments.output_path)
+    if os.path.isdir(output_path):
+        shutil.rmtree(output_path, ignore_errors=True)
+    os.makedirs(output_path, exist_ok=True)
+
+    from src.core.tensorboard_wrapper import TensorboardWrapper
+    writer = TensorboardWrapper(log_dir=output_path)
 
     ################################################################################
     # Load data                                                                    #
@@ -67,15 +76,12 @@ if __name__ == '__main__':
         loss.backward()
         optimizer.step()
         losses.append(loss.item())
+        writer.write_scalar(loss.item(), 'training_loss')
         print(f'epoch {epoch}, loss: {loss.item()}')
 
     ################################################################################
     # Predict on real validation images                                            #
     ################################################################################
-    output_path = arguments.output_path if arguments.output_path.startswith('/') \
-        else os.path.join(os.environ['DATADIR'], arguments.output_path)
-    os.makedirs(output_path, exist_ok=True)
-
     validation_runs = [
         os.path.join(os.environ['DATADIR'], 'line_world_data', 'real', 'raw_data', d, 'raw_data', sd, 'observation')
         for d in
@@ -90,7 +96,13 @@ if __name__ == '__main__':
         for pred in predictions:
             plt.imshow(pred)
             plt.axis('off')
+            plt.tight_layout()
             plt.savefig(os.path.join(output_path, f'{fig_counter:010d}.jpg'))
             fig_counter += 1
 
+    ################################################################################
+    # Save checkpoint                                                              #
+    ################################################################################
+    torch.save({'state_dict': decoder.state_dict()},
+               f'{output_path}/checkpoint.ckpt')
     print('done')
