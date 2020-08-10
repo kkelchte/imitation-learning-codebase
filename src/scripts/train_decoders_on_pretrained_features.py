@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # Take some training steps                                                     #
     ################################################################################
 
-    total = len(h5py_file['dataset']['observations'])
+    total = len(h5py_file['dataset']['observations']) - 100
     feature_type = 'normal'
     optimizer = torch.optim.Adam(params=decoder.parameters(), lr=arguments.learning_rate)
     losses = []
@@ -82,6 +82,33 @@ if __name__ == '__main__':
         print(f'epoch {epoch}, loss: {loss.item()}')
 
     ################################################################################
+    # Predict on training images                                                   #
+    ################################################################################
+
+    fig_counter = 0
+    output_dir = os.path.join(output_path, 'out_train')
+    if os.path.isdir(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+
+    data = h5py_file['dataset']['observations'][-100:]
+    representation = visualpriors.representation_transform(torch.stack(data), feature_type, device='cpu')
+    with torch.no_grad():
+        predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
+
+    for pred in zip(data, predictions):
+        plt.imshow(pred)
+        plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, f'file{fig_counter:05d}.jpg'))
+        fig_counter += 1
+
+    subprocess.call([
+        'ffmpeg', '-framerate', '8', '-i', f'{output_dir}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+        f'{output_path}/video_train.mp4'
+    ])
+
+    ################################################################################
     # Predict on real validation images                                            #
     ################################################################################
     validation_runs = [
@@ -90,7 +117,12 @@ if __name__ == '__main__':
         ['concrete_bluecable', 'concrete_orangecable', 'concrete_whitecable', 'grass_bluecable', 'grass_orangecable']
         for sd in os.listdir(os.path.join(os.environ['DATADIR'], 'line_world_data', 'real', 'raw_data', d, 'raw_data'))]
     fig_counter = 0
-    os.makedirs(os.path.join(output_path, 'out'))
+
+    output_dir = os.path.join(output_path, 'out_val')
+    if os.path.isdir(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+
     for run in validation_runs[0:1]:
         data = load_data_from_directory(run, size=(3, 256, 256))[1][::4]
         representation = visualpriors.representation_transform(torch.stack(data), feature_type, device='cpu')
@@ -101,12 +133,12 @@ if __name__ == '__main__':
             plt.imshow(img)
             plt.axis('off')
             plt.tight_layout()
-            plt.savefig(os.path.join(output_path, 'out', f'file{fig_counter:05d}.jpg'))
+            plt.savefig(os.path.join(output_dir, f'file{fig_counter:05d}.jpg'))
             fig_counter += 1
 
     subprocess.call([
-        'ffmpeg', '-framerate', '8', '-i', f'{output_path}/out/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
-        f'{output_path}/video.mp4'
+        'ffmpeg', '-framerate', '8', '-i', f'{output_dir}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+        f'{output_path}/video_val.mp4'
     ])
 
     ################################################################################
