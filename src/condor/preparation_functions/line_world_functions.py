@@ -147,16 +147,18 @@ def prepare_train_task_decoders(base_config_file: str,
              'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
              'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
              'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
-    learning_rates = [0.0001, 0.00001, 0.000001]
+    # learning_rates = [0.0001, 0.00001, 0.000001]
+    learning_rates = [0.001, 0.01, 0.1]
+
     not_working_models = ['colorization', 'reshading']
     batch_size = 64
     training_epochs = 100
 
     # TODO Remove
-    #tasks = ['normal']
-    #learning_rates = [0.00001]
-    #batch_size = 2
-    #training_epochs = 1
+    tasks = ['normal']
+    learning_rates = [0.0000001]
+    batch_size = 2
+    training_epochs = 1
 
     for i in range(number_of_jobs):
         for task in tasks:

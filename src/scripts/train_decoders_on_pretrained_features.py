@@ -78,6 +78,7 @@ if __name__ == '__main__':
         optimizer.step()
         losses.append(loss.item())
         writer.write_scalar(loss.item(), 'training_loss')
+        writer.increment_step()
         print(f'epoch {epoch}, loss: {loss.item()}')
 
     ################################################################################
@@ -95,11 +96,15 @@ if __name__ == '__main__':
         representation = visualpriors.representation_transform(torch.stack(data), feature_type, device='cpu')
         with torch.no_grad():
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
-        for pred in predictions:
-            plt.imshow(pred)
-            plt.axis('off')
+        for obs, pred in zip(data, predictions):
+            fig, (ax1, ax2) = plt.subplot(1, 2)
+            ax1.imshow(obs)
+            ax2.imshow(pred)
+            ax1.axis('off')
+            ax2.axis('off')
             plt.tight_layout()
             plt.savefig(os.path.join(output_path, 'out', f'file{fig_counter:05d}.jpg'))
+            plt.close(fig)
             fig_counter += 1
 
     subprocess.call([
