@@ -97,14 +97,11 @@ if __name__ == '__main__':
         with torch.no_grad():
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
         for obs, pred in zip(data, predictions):
-            fig, (ax1, ax2) = plt.subplot(1, 2)
-            ax1.imshow(obs)
-            ax2.imshow(pred)
-            ax1.axis('off')
-            ax2.axis('off')
+            img = 0.5 * obs + 0.5 * pred
+            plt.imshow(img)
+            plt.axis('off')
             plt.tight_layout()
             plt.savefig(os.path.join(output_path, 'out', f'file{fig_counter:05d}.jpg'))
-            plt.close(fig)
             fig_counter += 1
 
     subprocess.call([
