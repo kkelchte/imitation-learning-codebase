@@ -155,10 +155,10 @@ def prepare_train_task_decoders(base_config_file: str,
     training_epochs = 150
 
     # TODO Remove
-    tasks = ['normal']
-    learning_rates = [0.0000001]
-    batch_size = 2
-    training_epochs = 1
+    # tasks = ['normal']
+    # learning_rates = [0.0000001]
+    # batch_size = 2
+    # training_epochs = 1
 
     for i in range(number_of_jobs):
         for task in tasks:
