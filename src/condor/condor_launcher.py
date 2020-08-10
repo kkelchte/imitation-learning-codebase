@@ -16,6 +16,7 @@ from src.core.utils import get_data_dir
 @dataclass
 class CondorLauncherConfig(Config):
     mode: str = None
+    wait_time_between_jobs_sec: int = 0
     number_of_jobs: List[int] = 1
     base_config_files: List[str] = None
     job_configs: List[CondorJobConfig] = None
@@ -36,6 +37,7 @@ class CondorLauncher:
         else:
             for job in self._jobs:
                 job.submit()
+                time.sleep(self._config.wait_time_between_jobs_sec)
 
     def prepare_factory(self):
         if 'dag' not in self._config.mode:

@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List
 
 from src.condor.condor_job import CondorJobConfig, CondorJob, create_jobs_from_job_config_files
@@ -148,7 +149,7 @@ def prepare_train_task_decoders(base_config_file: str,
              'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
              'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
     # learning_rates = [0.0001, 0.00001, 0.000001]
-    learning_rates = [0.001, 0.0001, 0.00001]
+    learning_rates = [0.001]
 
     not_working_models = ['colorization', 'reshading']
     batch_size = 64
@@ -176,5 +177,4 @@ def prepare_train_task_decoders(base_config_file: str,
                 condor_job.write_job_file()
                 condor_job.write_executable_file()
                 jobs.append(condor_job)
-
     return jobs

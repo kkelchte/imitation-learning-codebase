@@ -1,5 +1,6 @@
 output_path: line_world_decoders
 mode: train_task_decoders
+wait_time_between_jobs_sec: 300
 job_configs:
   - command: python3.8 src/scripts/train_decoders_on_pretrained_features.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
@@ -10,8 +11,9 @@ job_configs:
     wall_time_s: 3 * 60 * 60
     nice: true
     use_singularity: false
-    check_if_ros_already_in_use: false
+    check_if_ros_already_in_use: true
     save_locally: false
+    extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
   - 1
 base_config_files: 

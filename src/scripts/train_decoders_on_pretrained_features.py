@@ -92,8 +92,6 @@ if __name__ == '__main__':
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64)
         else:
             predictions = (decoder(representation) + 1)/2
-        assert predictions.min() > 0
-        assert predictions.max() < 1
 
         if arguments.loss == 'L1':
             training_loss = (torch.stack(targets) - predictions[:, :, ::2, ::2]).abs().sum()
