@@ -5,7 +5,7 @@ job_configs:
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 4
     gpus: 0
-    cpu_mem_gb: 10
+    cpu_mem_gb: 15
     disk_mem_gb: 52
     wall_time_s: 3 * 60 * 60
     nice: true
