@@ -148,11 +148,12 @@ def prepare_train_task_decoders(base_config_file: str,
              'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
              'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
              'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
-    tasks = ['normal']
-    dataset = 'vanilla'
+#    tasks = ['normal']
+    dataset = 'noisy_augmented'  # 'vanilla'  
 
     # learning_rates = [0.0001, 0.00001, 0.000001]
-    learning_rates = [0.01, 0.001, 0.0001]
+    # learning_rates = [0.01, 0.001, 0.0001]
+    learning_rates = [0.001]
 
     not_working_models = ['colorization', 'reshading']
     batch_size = 64
