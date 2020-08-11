@@ -66,6 +66,8 @@ if __name__ == '__main__':
     input_size = 8 * 16 * 16
     output_size = 64 * 64
 
+    VisualPriorRepresentation._load_unloaded_nets([feature_type])
+
     encoder = VisualPriorRepresentation.feature_task_to_net[feature_type]
     if arguments.end_to_end:
         for p in encoder.parameters():
@@ -173,7 +175,7 @@ if __name__ == '__main__':
     os.makedirs(output_dir, exist_ok=True)
 
     for run in validation_runs[::3]:
-        data = load_data_from_directory(run, size=(3, 256, 256))[1][::10]
+        data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
         representation = encoder(torch.stack(data))
         with torch.no_grad():
             if arguments.mlp:
