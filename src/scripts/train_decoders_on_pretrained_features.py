@@ -8,7 +8,6 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-import visualpriors
 from visualpriors.taskonomy_network import TaskonomyDecoder
 import subprocess
 from visualpriors.transforms import VisualPriorRepresentation
@@ -44,9 +43,6 @@ if __name__ == '__main__':
     #if os.path.isdir(output_path):
     #    shutil.rmtree(output_path, ignore_errors=True)
     os.makedirs(output_path, exist_ok=True)
-
-    from src.core.tensorboard_wrapper import TensorboardWrapper
-    writer = TensorboardWrapper(log_dir=output_path)
 
     ################################################################################
     # Load data                                                                    #
@@ -120,8 +116,6 @@ if __name__ == '__main__':
         if arguments.end_to_end:
             encoder_optimizer.step()
         losses.append(training_loss.item())
-        writer.write_scalar(training_loss.item(), 'training_loss')
-        writer.increment_step()
         print(f'epoch {epoch}, loss: {training_loss.item()}')
 
     ################################################################################
@@ -188,6 +182,8 @@ if __name__ == '__main__':
             plt.axis('off')
             plt.tight_layout()
             plt.savefig(os.path.join(output_dir_val, f'file{fig_counter:05d}.jpg'))
+            plt.close()
+            plt.cla()
             fig_counter += 1
 
     ################################################################################
@@ -211,6 +207,11 @@ if __name__ == '__main__':
     ])
     shutil.rmtree(output_dir_val)
 
+    plt.plot(losses)
+    plt.savefig(f'{output_path}/loss.jpg')
+    plt.close()
+
+    np.save(f'{output_path}/loss.npy', losses)
 
     torch.save({'decoder': {'state_dict': decoder.state_dict()},
                 'encoder': {'state_dict': encoder.state_dict()}},
