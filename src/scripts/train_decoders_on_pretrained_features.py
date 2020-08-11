@@ -177,7 +177,7 @@ if __name__ == '__main__':
             if arguments.mlp:
                 pred = pred.repeat(4, axis=0).repeat(4, axis=1)
             pred = np.stack([pred] * 3, axis=-1)
-            img = 0.5 * obs + 0.5 * pred
+            img = obs * pred
             plt.imshow(img)
             plt.axis('off')
             plt.tight_layout()
