@@ -176,7 +176,7 @@ def prepare_train_task_decoders(base_config_file: str,
                                      f'--learning_rate {learning_rate} ' \
                                      f'--task {task} ' \
                                      f'--dataset {dataset} ' \
-                                     f'--datadir /gluster/visics/kkelchte'
+                                     f'--datadir /gluster/visics/kkelchte' \
                                      f'--batch_size {batch_size} --training_epochs {training_epochs}'
                 condor_job = CondorJob(config=job_config)
                 condor_job.write_job_file()
