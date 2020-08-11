@@ -181,7 +181,7 @@ if __name__ == '__main__':
             else:
                 predictions = ((decoder(representation) + 1)/2).view(-1, 256, 256).detach().numpy()
             data = torch.stack(data).detach().numpy().swapaxes(1, 2).swapaxes(2, 3)
-        for obs, pred in zip(data, predictions):
+        for obs, pred in tqdm(zip(data, predictions)):
             if arguments.mlp:
                 pred = pred.repeat(4, axis=0).repeat(4, axis=1)
             pred = np.stack([pred] * 3, axis=-1)
