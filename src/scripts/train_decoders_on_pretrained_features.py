@@ -1,6 +1,8 @@
 import argparse
+import copy
 import os
 import shutil
+from glob import glob
 
 import h5py
 import torch
@@ -32,17 +34,16 @@ class Parser(argparse.ArgumentParser):
         self.add_argument("--loss", type=str, default='cross-entropy', help='options: cross-entropy, L1')
         self.add_argument("--mlp", action='store_true', help="use simple MLP instead of taskonomy decoder")
         self.add_argument("--end_to_end", action='store_true', help="allow encoder net to change (with lower LR)")
+        self.add_argument("--side_tuning", action='store_true', help="allow one encoder net to change")
 
 
 if __name__ == '__main__':
     arguments = Parser().parse_args()
     feature_type = arguments.task
-    
-    output_path = arguments.output_path if arguments.output_path.startswith('/') \
-        else os.path.join(os.environ['DATADIR'], arguments.output_path)
-    #if os.path.isdir(output_path):
-    #    shutil.rmtree(output_path, ignore_errors=True)
-    os.makedirs(output_path, exist_ok=True)
+
+    local_output_path = os.path.join(f'{os.environ["TEMP"]}/train_decoders')
+    from src.core.tensorboard_wrapper import TensorboardWrapper
+    writer = TensorboardWrapper(log_dir=local_output_path)
 
     ################################################################################
     # Load data                                                                    #
@@ -62,7 +63,9 @@ if __name__ == '__main__':
     VisualPriorRepresentation._load_unloaded_nets([feature_type])
 
     encoder = VisualPriorRepresentation.feature_task_to_net[feature_type]
-    if arguments.end_to_end:
+
+    fixed_encoder = copy.deepcopy(encoder) if arguments.side_tuning else None
+    if arguments.end_to_end or arguments.side_tuning:
         for p in encoder.parameters():
             p.requires_grad = True
 
@@ -94,13 +97,15 @@ if __name__ == '__main__':
         sample_indices = np.random.choice(list(range(total)),
                                           size=arguments.batch_size)
         observations = torch.stack([torch.as_tensor(h5py_file['dataset']['observations'][i], dtype=torch.float32) for i in
-                                sample_indices])
+                                    sample_indices])
         targets = torch.stack([torch.as_tensor(h5py_file['dataset']['targets'][i],
                                                dtype=torch.float32) for i in sample_indices]).detach()
-        print(observations.shape)
-        print(targets.shape)
+
 #        representation = visualpriors.representation_transform(torch.stack(observations), feature_type, device='cpu')
         representation = encoder(observations)
+        if arguments.side_tuning:
+            fixed_representation = fixed_encoder(observations)
+            representation += fixed_representation
         if arguments.mlp:
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64)
         else:
@@ -113,9 +118,11 @@ if __name__ == '__main__':
         
         training_loss.backward()
         optimizer.step()
-        if arguments.end_to_end:
+        if arguments.end_to_end or arguments.side_tuning:
             encoder_optimizer.step()
         losses.append(training_loss.item())
+        writer.write_scalar(training_loss.item(), 'training_loss')
+        writer.increment_step()
         print(f'epoch {epoch}, loss: {training_loss.item()}')
 
     ################################################################################
@@ -124,7 +131,7 @@ if __name__ == '__main__':
     print(f'{get_date_time_tag()}: Predict on training images')
     
     fig_counter = 0
-    output_dir = os.path.join(os.environ['TEMP'], 'out_train')
+    output_dir = os.path.join(local_output_path, 'out_train')
     if os.path.isdir(output_dir):
         shutil.rmtree(output_dir)
     os.makedirs(output_dir, exist_ok=True)
@@ -159,7 +166,7 @@ if __name__ == '__main__':
         for sd in os.listdir(os.path.join(datadir, 'line_world_data', 'real', 'raw_data', d, 'raw_data'))]
     fig_counter = 0
 
-    output_dir_val = os.path.join(os.environ['TEMP'], 'out_val')
+    output_dir_val = os.path.join(local_output_path, 'out_val')
     if os.path.isdir(output_dir_val):
         shutil.rmtree(output_dir_val)
     os.makedirs(output_dir_val, exist_ok=True)
@@ -190,6 +197,10 @@ if __name__ == '__main__':
     # Save checkpoint      (mount opal the latest)                                 #
     ################################################################################
     print(f'{get_date_time_tag()}: Save checkpoint')
+
+    output_path = arguments.output_path if arguments.output_path.startswith('/') \
+        else os.path.join(os.environ['DATADIR'], arguments.output_path)
+    os.makedirs(output_path, exist_ok=True)
     
     if os.path.isfile(f'{output_path}/video_train.mp4'):
         os.remove(f'{output_path}/video_train.mp4')
@@ -207,11 +218,8 @@ if __name__ == '__main__':
     ])
     shutil.rmtree(output_dir_val)
 
-    plt.plot(losses)
-    plt.savefig(f'{output_path}/loss.jpg')
-    plt.close()
-
-    np.save(f'{output_path}/loss.npy', losses)
+    tensorboard_file = glob(f'{local_output_path}/events.*')[0]
+    os.replace(tensorboard_file, f'{output_path}/{os.path.basename(tensorboard_file)}')
 
     torch.save({'decoder': {'state_dict': decoder.state_dict()},
                 'encoder': {'state_dict': encoder.state_dict()}},

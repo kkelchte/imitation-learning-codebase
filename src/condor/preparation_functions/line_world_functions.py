@@ -148,40 +148,33 @@ def prepare_train_task_decoders(base_config_file: str,
              'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
              'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
              'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
-#    tasks = ['normal']
-    dataset = 'noisy_augmented'  # 'vanilla'  
-
-    # learning_rates = [0.0001, 0.00001, 0.000001]
-    # learning_rates = [0.01, 0.001, 0.0001]
+    tasks = ['normal']
+    dataset = 'vanilla'  # 'noisy_augmented'
     learning_rates = [0.001]
 
     not_working_models = ['colorization', 'reshading']
     batch_size = 64
     training_epochs = 150
 
-    # TODO Remove
-    # tasks = ['normal']
-    # learning_rates = [0.0000001]
-    # batch_size = 2
-    # training_epochs = 1
-
     for i in range(number_of_jobs):
-        for task in tasks:
-            if task in not_working_models:
-                continue
-            for learning_rate in learning_rates:
-                job_output_path = f'{output_path}/{task}/{learning_rate}' if i == 0 \
-                    else f'{output_path}_{i}/{task}/{learning_rate}'
-                job_config.command = f'python3.8 src/scripts/train_decoders_on_pretrained_features.py ' \
-                                     f'--output_path {job_output_path} ' \
-                                     f'--learning_rate {learning_rate} ' \
-                                     f'--task {task} ' \
-                                     f'--dataset {dataset} ' \
-                                     f'--end_to_end ' \
-                                     f'--datadir /gluster/visics/kkelchte ' \
-                                     f'--batch_size {batch_size} --training_epochs {training_epochs}'
-                condor_job = CondorJob(config=job_config)
-                condor_job.write_job_file()
-                condor_job.write_executable_file()
-                jobs.append(condor_job)
+        for mode in ['default', 'end_to_end', 'side_tuning']:
+            for task in tasks:
+                if task in not_working_models:
+                    continue
+                for learning_rate in learning_rates:
+                    job_output_path = f'{output_path}/{mode}/{task}/{learning_rate}' if i == 0 \
+                        else f'{output_path}/{task}/{learning_rate}_{i}'
+                    job_config.command = f'python3.8 src/scripts/train_decoders_on_pretrained_features.py ' \
+                                         f'--output_path {job_output_path} ' \
+                                         f'--learning_rate {learning_rate} ' \
+                                         f'--task {task} ' \
+                                         f'--dataset {dataset} ' \
+                                         f'--datadir /gluster/visics/kkelchte ' \
+                                         f'--batch_size {batch_size} --training_epochs {training_epochs}'
+                    if mode != 'default':
+                        job_config.command += f' --{mode}'
+                    condor_job = CondorJob(config=job_config)
+                    condor_job.write_job_file()
+                    condor_job.write_executable_file()
+                    jobs.append(condor_job)
     return jobs
