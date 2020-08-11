@@ -172,7 +172,7 @@ if __name__ == '__main__':
         shutil.rmtree(output_dir_val)
     os.makedirs(output_dir_val, exist_ok=True)
 
-    for run in validation_runs[::3]:
+    for run in tqdm(validation_runs[::3]):
         data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
         representation = encoder(torch.stack(data))
         with torch.no_grad():
