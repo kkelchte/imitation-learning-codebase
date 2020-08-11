@@ -66,6 +66,7 @@ if __name__ == '__main__':
     encoder = VisualPriorRepresentation.feature_task_to_net[feature_type]
 
     fixed_encoder = copy.deepcopy(encoder) if arguments.side_tuning else None
+    
     if arguments.end_to_end or arguments.side_tuning:
         for p in encoder.parameters():
             p.requires_grad = True
@@ -221,13 +222,13 @@ if __name__ == '__main__':
 
     tensorboard_file = glob(f'{local_output_path}/events.*')[0]
     os.system(f'mv {tensorboard_file} {output_path}/{os.path.basename(tensorboard_file)}')
-    #os.replace(tensorboard_file, f'{output_path}/{os.path.basename(tensorboard_file)}')
 
     torch.save({'decoder': {'state_dict': decoder.state_dict()},
                 'encoder': {'state_dict': encoder.state_dict()}},
                f'{output_path}/checkpoint.ckpt')
 
-    with os.path.join(output_path, 'config.json', 'w') as f:
+    with open(os.path.join(output_path, 'config.json'), 'w') as f:
         json.dump(arguments.__dict__, f)
 
+    shutil.rmtree(local_output_path)
     print(f'{get_date_time_tag()}: done')
