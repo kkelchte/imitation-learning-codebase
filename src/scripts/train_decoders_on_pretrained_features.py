@@ -26,6 +26,7 @@ class Parser(argparse.ArgumentParser):
         self.add_argument("--output_path", type=str, default='/tmp/out')
         self.add_argument("--learning_rate", type=float, default=0.001)
         self.add_argument("--batch_size", type=int, default=64)
+        self.add_argument("--num_datasets", type=int, default=1)
         self.add_argument("--training_epochs", type=int, default=100)
         self.add_argument("--task", type=str, default='normal')
         self.add_argument("--loss", type=str, default='cross-entropy', help='options: cross-entropy, L1')
@@ -50,8 +51,13 @@ if __name__ == '__main__':
     # Load data                                                                    #
     ################################################################################
     print(f'{get_date_time_tag()}: load training data')
-    filename = os.path.join(os.environ['DATADIR'], 'line_world_data', 'sim', f'noisy_augmented_3x256x256_0.hdf5')
-    h5py_file = h5py.File(filename, 'r')
+
+    h5py_files = [h5py.File(os.path.join(os.environ['DATADIR'], 'line_world_data', 'sim',
+                            f'noisy_augmented_3x256x256_{index}.hdf5'), 'r') for index in range(arguments.num_datasets)]
+    observations = torch.cat([torch.as_tensor(h5py_file['dataset']['observations'], dtype=torch.float32)
+                              for h5py_file in h5py_files])
+    targets = torch.cat([torch.as_tensor(h5py_file['dataset']['targets'], dtype=torch.float32)
+                         for h5py_file in h5py_files])
 
     ################################################################################
     # Define network                                                               #
@@ -59,6 +65,8 @@ if __name__ == '__main__':
     print(f'{get_date_time_tag()}: Define network')
     input_size = 8 * 16 * 16
     output_size = 64 * 64
+
+    VisualPriorRepresentation._load_unloaded_nets([feature_type])
 
     encoder = VisualPriorRepresentation.feature_task_to_net[feature_type]
     if arguments.end_to_end:
@@ -83,7 +91,7 @@ if __name__ == '__main__':
     ################################################################################
     print(f'{get_date_time_tag()}: Take {arguments.training_epochs} training steps')
     
-    total = len(h5py_file['dataset']['observations']) - 100
+    total = len(observations) - 100
     encoder_optimizer = torch.optim.Adam(params=encoder.parameters(), lr=arguments.learning_rate/10)
     optimizer = torch.optim.Adam(params=decoder.parameters(), lr=arguments.learning_rate)
     losses = []
@@ -92,12 +100,10 @@ if __name__ == '__main__':
         encoder_optimizer.zero_grad()
         sample_indices = np.random.choice(list(range(total)),
                                           size=arguments.batch_size)
-        observations = [torch.as_tensor(h5py_file['dataset']['observations'][i], dtype=torch.float32) for i in
-                        sample_indices]
-        targets = torch.stack([torch.as_tensor(h5py_file['dataset']['targets'][i].repeat(2, axis=1).repeat(2, axis=2),
-                                               dtype=torch.float32) for i in sample_indices]).detach()
-        
-        representation = encoder(torch.stack(observations))
+        batch_observations = observations[sample_indices]
+        batch_targets = targets[sample_indices]
+
+        representation = encoder(observations)
         if arguments.mlp:
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64)
         else:
@@ -128,8 +134,7 @@ if __name__ == '__main__':
         shutil.rmtree(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
-    data = [torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['observations'][-100::2]]
-    representation = encoder(torch.stack(data))
+    representation = encoder(observations[-100::2])
     with torch.no_grad():
         if arguments.mlp:
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
@@ -170,7 +175,7 @@ if __name__ == '__main__':
     os.makedirs(output_dir, exist_ok=True)
 
     for run in validation_runs[::3]:
-        data = load_data_from_directory(run, size=(3, 256, 256))[1][::10]
+        data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
         representation = encoder(torch.stack(data))
         with torch.no_grad():
             if arguments.mlp:
