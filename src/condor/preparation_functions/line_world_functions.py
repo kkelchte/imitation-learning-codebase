@@ -148,8 +148,11 @@ def prepare_train_task_decoders(base_config_file: str,
              'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
              'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
              'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
+    tasks = ['normal']
+    dataset = 'vanilla'
+
     # learning_rates = [0.0001, 0.00001, 0.000001]
-    learning_rates = [0.001]
+    learning_rates = [0.01, 0.001, 0.0001]
 
     not_working_models = ['colorization', 'reshading']
     batch_size = 64
@@ -172,6 +175,7 @@ def prepare_train_task_decoders(base_config_file: str,
                                      f'--output_path {job_output_path} ' \
                                      f'--learning_rate {learning_rate} ' \
                                      f'--task {task} ' \
+                                     f'--dataset {dataset} ' \
                                      f'--batch_size {batch_size} --training_epochs {training_epochs}'
                 condor_job = CondorJob(config=job_config)
                 condor_job.write_job_file()
