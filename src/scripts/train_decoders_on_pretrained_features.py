@@ -25,6 +25,7 @@ class Parser(argparse.ArgumentParser):
         super().__init__()
         self.add_argument("--output_path", type=str, default='/tmp/out')
         self.add_argument("--dataset", type=str, default='noisy_augmented')
+        self.add_argument("--datadir", type=str, default=None)
         self.add_argument("--learning_rate", type=float, default=0.001)
         self.add_argument("--batch_size", type=int, default=64)
         self.add_argument("--training_epochs", type=int, default=100)
@@ -51,7 +52,8 @@ if __name__ == '__main__':
     # Load data                                                                    #
     ################################################################################
     print(f'{get_date_time_tag()}: load training data')
-    filename = os.path.join(os.environ['DATADIR'], 'line_world_data', 'sim', f'{arguments.dataset}_3x256x256_0.hdf5')
+    filename = os.path.join(os.environ['DATADIR'] is arguments.datadir is None else arguments.datadir, 
+        'line_world_data', 'sim', f'{arguments.dataset}_3x256x256_0.hdf5')
     h5py_file = h5py.File(filename, 'r')
 
     ################################################################################
