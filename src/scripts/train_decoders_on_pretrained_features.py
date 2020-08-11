@@ -52,8 +52,8 @@ if __name__ == '__main__':
     # Load data                                                                    #
     ################################################################################
     print(f'{get_date_time_tag()}: load training data')
-    filename = os.path.join(os.environ['DATADIR'] if arguments.datadir is None else arguments.datadir, 
-        'line_world_data', 'sim', f'{arguments.dataset}_3x256x256_0.hdf5')
+    datadir = os.environ['DATADIR'] if arguments.datadir is None else arguments.datadir
+    filename = os.path.join(datadir, 'line_world_data', 'sim', f'{arguments.dataset}_3x256x256_0.hdf5')
     h5py_file = h5py.File(filename, 'r')
 
     ################################################################################
@@ -150,13 +150,6 @@ if __name__ == '__main__':
         plt.savefig(os.path.join(output_dir, f'file{fig_counter:05d}.jpg'))
         fig_counter += 1
 
-    if os.path.isfile(f'{output_path}/video_train.mp4'):
-        os.remove(f'{output_path}/video_train.mp4')
-    subprocess.call([
-        'ffmpeg', '-framerate', '8', '-i', f'{output_dir}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
-        f'{output_path}/video_train.mp4'
-    ])
-    shutil.rmtree(output_dir) 
     data = None
     predictions = None
 
@@ -164,17 +157,18 @@ if __name__ == '__main__':
     # Predict on real validation images                                            #
     ################################################################################
     print(f'{get_date_time_tag()}: Predict on real validation images')
+
     validation_runs = [
-        os.path.join(os.environ['DATADIR'], 'line_world_data', 'real', 'raw_data', d, 'raw_data', sd, 'observation')
+        os.path.join(datadir, 'line_world_data', 'real', 'raw_data', d, 'raw_data', sd, 'observation')
         for d in
         ['concrete_bluecable', 'concrete_orangecable', 'concrete_whitecable', 'grass_bluecable', 'grass_orangecable']
-        for sd in os.listdir(os.path.join(os.environ['DATADIR'], 'line_world_data', 'real', 'raw_data', d, 'raw_data'))]
+        for sd in os.listdir(os.path.join(datadir, 'line_world_data', 'real', 'raw_data', d, 'raw_data'))]
     fig_counter = 0
 
-    output_dir = os.path.join(os.environ['TEMP'], 'out_val')
-    if os.path.isdir(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir_val = os.path.join(os.environ['TEMP'], 'out_val')
+    if os.path.isdir(output_dir_val):
+        shutil.rmtree(output_dir_val)
+    os.makedirs(output_dir_val, exist_ok=True)
 
     for run in validation_runs[::3]:
         data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
@@ -193,23 +187,34 @@ if __name__ == '__main__':
             plt.imshow(img)
             plt.axis('off')
             plt.tight_layout()
-            plt.savefig(os.path.join(output_dir, f'file{fig_counter:05d}.jpg'))
+            plt.savefig(os.path.join(output_dir_val, f'file{fig_counter:05d}.jpg'))
             fig_counter += 1
+
+    ################################################################################
+    # Save checkpoint      (mount opal the latest)                                 #
+    ################################################################################
+    print(f'{get_date_time_tag()}: Save checkpoint')
+    
+    if os.path.isfile(f'{output_path}/video_train.mp4'):
+        os.remove(f'{output_path}/video_train.mp4')
+    subprocess.call([
+        'ffmpeg', '-framerate', '8', '-i', f'{output_dir}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+        f'{output_path}/video_train.mp4'
+    ])
+    shutil.rmtree(output_dir) 
 
     if os.path.isfile(f'{output_path}/video_val.mp4'):
         os.remove(f'{output_path}/video_val.mp4')
     subprocess.call([
-        'ffmpeg', '-framerate', '8', '-i', f'{output_dir}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+        'ffmpeg', '-framerate', '8', '-i', f'{output_dir_val}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
         f'{output_path}/video_val.mp4'
     ])
-    shutil.rmtree(output_dir)
+    shutil.rmtree(output_dir_val)
 
-    ################################################################################
-    # Save checkpoint                                                              #
-    ################################################################################
-    print(f'{get_date_time_tag()}: Save checkpoint')
-    
+
     torch.save({'decoder': {'state_dict': decoder.state_dict()},
                 'encoder': {'state_dict': encoder.state_dict()}},
                f'{output_path}/checkpoint.ckpt')
+
+
     print(f'{get_date_time_tag()}: done')
