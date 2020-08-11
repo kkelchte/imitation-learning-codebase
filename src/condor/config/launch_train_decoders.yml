@@ -1,4 +1,4 @@
-output_path: line_world_decoders_side_tuning
+output_path: line_world_decoders
 mode: train_task_decoders
 wait_time_between_jobs_sec: 3
 job_configs:
