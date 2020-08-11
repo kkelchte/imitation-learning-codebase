@@ -1,6 +1,6 @@
 output_path: line_world_decoders_end_to_end
 mode: train_task_decoders
-wait_time_between_jobs_sec: 100
+wait_time_between_jobs_sec: 3
 job_configs:
   - command: python3.8 src/scripts/train_decoders_on_pretrained_features.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
