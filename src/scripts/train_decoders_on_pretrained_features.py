@@ -1,5 +1,6 @@
 import argparse
 import copy
+import json
 import os
 import shutil
 from glob import glob
@@ -225,5 +226,7 @@ if __name__ == '__main__':
                 'encoder': {'state_dict': encoder.state_dict()}},
                f'{output_path}/checkpoint.ckpt')
 
+    with os.path.join(output_path, 'config.json', 'w') as f:
+        json.dump(arguments.__dict__, f)
 
     print(f'{get_date_time_tag()}: done')
