@@ -220,7 +220,8 @@ if __name__ == '__main__':
     shutil.rmtree(output_dir_val)
 
     tensorboard_file = glob(f'{local_output_path}/events.*')[0]
-    os.replace(tensorboard_file, f'{output_path}/{os.path.basename(tensorboard_file)}')
+    os.system(f'mv {tensorboard_file} {output_path}/{os.path.basename(tensorboard_file)}')
+    #os.replace(tensorboard_file, f'{output_path}/{os.path.basename(tensorboard_file)}')
 
     torch.save({'decoder': {'state_dict': decoder.state_dict()},
                 'encoder': {'state_dict': encoder.state_dict()}},
