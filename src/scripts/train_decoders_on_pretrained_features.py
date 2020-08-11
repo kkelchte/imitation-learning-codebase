@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # Load data                                                                    #
     ################################################################################
     print(f'{get_date_time_tag()}: load training data')
-    filename = os.path.join(os.environ['DATADIR'] is arguments.datadir is None else arguments.datadir, 
+    filename = os.path.join(os.environ['DATADIR'] if arguments.datadir is None else arguments.datadir, 
         'line_world_data', 'sim', f'{arguments.dataset}_3x256x256_0.hdf5')
     h5py_file = h5py.File(filename, 'r')
 
@@ -97,13 +97,14 @@ if __name__ == '__main__':
         encoder_optimizer.zero_grad()
         sample_indices = np.random.choice(list(range(total)),
                                           size=arguments.batch_size)
-        observations = [torch.as_tensor(h5py_file['dataset']['observations'][i], dtype=torch.float32) for i in
-                        sample_indices]
-        targets = torch.stack([torch.as_tensor(h5py_file['dataset']['targets'][i].repeat(2, axis=1).repeat(2, axis=2),
+        observations = torch.stack([torch.as_tensor(h5py_file['dataset']['observations'][i], dtype=torch.float32) for i in
+                                sample_indices])
+        targets = torch.stack([torch.as_tensor(h5py_file['dataset']['targets'][i],
                                                dtype=torch.float32) for i in sample_indices]).detach()
-
+        print(observations.shape)
+        print(targets.shape)
 #        representation = visualpriors.representation_transform(torch.stack(observations), feature_type, device='cpu')
-        representation = encoder(torch.stack(observations))
+        representation = encoder(observations)
         if arguments.mlp:
             predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64)
         else:

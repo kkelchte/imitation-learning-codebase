@@ -3,7 +3,7 @@
 ###########################
 
 RequestCpus     = 1
-RequestMemory   = 30G
+RequestMemory   = 15G
 +RequestWallTime = 2*60*60
 Request_GPUs = 1
 
