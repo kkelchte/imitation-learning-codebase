@@ -172,7 +172,7 @@ if __name__ == '__main__':
         shutil.rmtree(output_dir_val)
     os.makedirs(output_dir_val, exist_ok=True)
 
-    for run in validation_runs[::3]:
+    for run in tqdm(validation_runs[::3]):
         data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
         representation = encoder(torch.stack(data))
         with torch.no_grad():
@@ -181,7 +181,7 @@ if __name__ == '__main__':
             else:
                 predictions = ((decoder(representation) + 1)/2).view(-1, 256, 256).detach().numpy()
             data = torch.stack(data).detach().numpy().swapaxes(1, 2).swapaxes(2, 3)
-        for obs, pred in tqdm(zip(data, predictions)):
+        for obs, pred in zip(data, predictions):
             if arguments.mlp:
                 pred = pred.repeat(4, axis=0).repeat(4, axis=1)
             pred = np.stack([pred] * 3, axis=-1)
