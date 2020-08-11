@@ -1,4 +1,4 @@
-output_path: line_world_decoders_vanilla
+output_path: line_world_decoders_end_to_end
 mode: train_task_decoders
 wait_time_between_jobs_sec: 100
 job_configs:
@@ -12,7 +12,7 @@ job_configs:
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: true
-    save_locally: true
+    save_locally: false
     extra_requirements: ( Has_ssse3 == True )
 number_of_jobs:
   - 1
