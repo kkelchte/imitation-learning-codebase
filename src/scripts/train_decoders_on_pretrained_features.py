@@ -124,10 +124,13 @@ if __name__ == '__main__':
         if arguments.loss == 'L1':
             training_loss = (targets - predictions[:, :, ::2, ::2]).abs().mean()
         else:
+            predictions = torch.clamp(predictions, 0, 1)
             training_loss = (-targets * predictions.log() - (1 - targets) * (1 - predictions).log()).mean()
         training_loss.backward()
+        torch.nn.utils.clip_grad_norm_(decoder.parameters(), max_norm=5)
         optimizer.step()
         if arguments.end_to_end or arguments.side_tuning:
+            torch.nn.utils.clip_grad_norm_(encoder.parameters(), max_norm=5)
             encoder_optimizer.step()
         
         losses.append(training_loss.item())
