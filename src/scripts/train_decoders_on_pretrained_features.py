@@ -15,7 +15,7 @@ from visualpriors.taskonomy_network import TaskonomyDecoder
 import subprocess
 from visualpriors.transforms import VisualPriorRepresentation
 
-from src.ai.utils import mlp_creator
+from src.ai.utils import mlp_creator, get_checksum_network_parameters
 from src.data.utils import load_data_from_directory
 from src.core.utils import get_date_time_tag
 
@@ -84,6 +84,10 @@ if __name__ == '__main__':
         for p in decoder.parameters():
             p.requires_grad = True
 
+    print(f'encoder: {get_checksum_network_parameters(encoder.parameters())}')
+    print(f'decoder: {get_checksum_network_parameters(decoder.parameters())}')
+    if arguments.side_tuning:
+        print(f'fixed_encoder: {get_checksum_network_parameters(fixed_encoder.parameters())}')
     ################################################################################
     # Take some training steps                                                     #
     ################################################################################
@@ -142,6 +146,11 @@ if __name__ == '__main__':
         writer.write_scalar(validation_loss.item(), 'validation_loss')
         writer.increment_step()
         print(f'epoch {epoch}, training loss: {training_loss.item()}, validation loss: {validation_loss.item()}')
+
+    print(f'encoder: {get_checksum_network_parameters(encoder.parameters())}')
+    print(f'decoder: {get_checksum_network_parameters(decoder.parameters())}')
+    if arguments.side_tuning:
+        print(f'fixed_encoder: {get_checksum_network_parameters(fixed_encoder.parameters())}')
 
     ################################################################################
     # Predict on simulated images                                                   #
