@@ -148,13 +148,10 @@ def prepare_train_task_decoders(base_config_file: str,
     #          'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
     #          'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
     #          'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
-    # tasks = ['normal']
-    tasks = ['autoencoding', 'depth_euclidean', 'jigsaw', 'reshading', 'colorization', 'edge_occlusion', 'keypoints2d',
-             'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
-             'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
-             'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
+    
+    tasks = ['keypoints3d']
     dataset = 'vanilla'  # 'noisy_augmented'
-    learning_rates = [0.001]
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
 
     not_working_models = ['colorization', 'reshading']
     batch_size = 64
