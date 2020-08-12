@@ -36,6 +36,8 @@ class Parser(argparse.ArgumentParser):
         self.add_argument("--mlp", action='store_true', help="use simple MLP instead of taskonomy decoder")
         self.add_argument("--end_to_end", action='store_true', help="allow encoder net to change (with lower LR)")
         self.add_argument("--side_tuning", action='store_true', help="allow one encoder net to change")
+        self.add_argument("--skip_sim_video", action='store_true', help="skip video creation")
+        self.add_argument("--skip_real_video", action='store_true', help="skip video creation")
 
 
 if __name__ == '__main__':
@@ -62,9 +64,7 @@ if __name__ == '__main__':
     output_size = 64 * 64
 
     VisualPriorRepresentation._load_unloaded_nets([feature_type])
-
     encoder = VisualPriorRepresentation.feature_task_to_net[feature_type]
-
     fixed_encoder = copy.deepcopy(encoder) if arguments.side_tuning else None
     
     if arguments.end_to_end or arguments.side_tuning:
@@ -93,6 +93,10 @@ if __name__ == '__main__':
     encoder_optimizer = torch.optim.Adam(params=encoder.parameters(), lr=arguments.learning_rate/10)
     optimizer = torch.optim.Adam(params=decoder.parameters(), lr=arguments.learning_rate)
     losses = []
+
+    validation_observations = torch.stack([torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['observations'][-100::2]])
+    validation_targets = torch.stack([torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['targets'][-100::2]])
+        
     for epoch in tqdm(range(arguments.training_epochs)):
         optimizer.zero_grad()
         encoder_optimizer.zero_grad()
@@ -114,86 +118,100 @@ if __name__ == '__main__':
             predictions = (decoder(representation) + 1)/2
 
         if arguments.loss == 'L1':
-            training_loss = (targets - predictions[:, :, ::2, ::2]).abs().sum()
+            training_loss = (targets - predictions[:, :, ::2, ::2]).abs().mean()
         else:
             training_loss = (-targets * predictions.log() - (1 - targets) * (1 - predictions).log()).mean()
-        
         training_loss.backward()
         optimizer.step()
         if arguments.end_to_end or arguments.side_tuning:
             encoder_optimizer.step()
+        
         losses.append(training_loss.item())
         writer.write_scalar(training_loss.item(), 'training_loss')
-        writer.increment_step()
-        print(f'epoch {epoch}, loss: {training_loss.item()}')
-
-    ################################################################################
-    # Predict on training images                                                   #
-    ################################################################################
-    print(f'{get_date_time_tag()}: Predict on training images')
-    
-    fig_counter = 0
-    output_dir = os.path.join(local_output_path, 'out_train')
-    if os.path.isdir(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir, exist_ok=True)
-
-    data = [torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['observations'][-100::2]]
-    representation = encoder(torch.stack(data))
-    with torch.no_grad():
+        
+        # calculate validation loss
+        representation = encoder(validation_observations)
+        if arguments.side_tuning:
+            fixed_representation = fixed_encoder(validation_observations)
+            representation += fixed_representation
         if arguments.mlp:
-            predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
+            predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64)
         else:
-            predictions = ((decoder(representation) + 1)/2).view(-1, 256, 256).detach().numpy()
-
-    for pred in tqdm(predictions):
-        plt.imshow(pred)
-        plt.axis('off')
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, f'file{fig_counter:05d}.jpg'))
-        fig_counter += 1
-
-    data = None
-    predictions = None
+            predictions = (decoder(representation) + 1)/2
+        validation_loss = (validation_targets - predictions).abs().mean()
+        writer.write_scalar(validation_loss.item(), 'validation_loss')
+        writer.increment_step()
+        print(f'epoch {epoch}, training loss: {training_loss.item()}, validation loss: {validation_loss.item()}')
 
     ################################################################################
-    # Predict on real validation images                                            #
+    # Predict on simulated images                                                   #
     ################################################################################
-    print(f'{get_date_time_tag()}: Predict on real validation images')
+    if not arguments.skip_sim_video:
+        print(f'{get_date_time_tag()}: Predict on simulated images')
+        
+        fig_counter = 0
+        output_dir = os.path.join(local_output_path, 'out_train')
+        if os.path.isdir(output_dir):
+            shutil.rmtree(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
-    validation_runs = [
-        os.path.join(datadir, 'line_world_data', 'real', 'raw_data', d, 'raw_data', sd, 'observation')
-        for d in
-        ['concrete_bluecable', 'concrete_orangecable', 'concrete_whitecable', 'grass_bluecable', 'grass_orangecable']
-        for sd in os.listdir(os.path.join(datadir, 'line_world_data', 'real', 'raw_data', d, 'raw_data'))]
-    fig_counter = 0
-
-    output_dir_val = os.path.join(local_output_path, 'out_val')
-    if os.path.isdir(output_dir_val):
-        shutil.rmtree(output_dir_val)
-    os.makedirs(output_dir_val, exist_ok=True)
-
-    for run in tqdm(validation_runs[::3]):
-        data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
+        data = [torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['observations'][-100::2]]
         representation = encoder(torch.stack(data))
         with torch.no_grad():
             if arguments.mlp:
                 predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
             else:
                 predictions = ((decoder(representation) + 1)/2).view(-1, 256, 256).detach().numpy()
-            data = torch.stack(data).detach().numpy().swapaxes(1, 2).swapaxes(2, 3)
-        for obs, pred in zip(data, predictions):
-            if arguments.mlp:
-                pred = pred.repeat(4, axis=0).repeat(4, axis=1)
-            pred = np.stack([pred] * 3, axis=-1)
-            img = obs * pred
-            plt.imshow(img)
+
+        for pred in tqdm(predictions):
+            plt.imshow(pred)
             plt.axis('off')
             plt.tight_layout()
-            plt.savefig(os.path.join(output_dir_val, f'file{fig_counter:05d}.jpg'))
-            plt.close()
-            plt.cla()
+            plt.savefig(os.path.join(output_dir, f'file{fig_counter:05d}.jpg'))
             fig_counter += 1
+
+        data = None
+        predictions = None
+
+    ################################################################################
+    # Predict on real validation images                                            #
+    ################################################################################
+    if not arguments.skip_real_video:
+        print(f'{get_date_time_tag()}: Predict on real validation images')
+
+        validation_runs = [
+            os.path.join(datadir, 'line_world_data', 'real', 'raw_data', d, 'raw_data', sd, 'observation')
+            for d in
+            ['concrete_bluecable', 'concrete_orangecable', 'concrete_whitecable', 'grass_bluecable', 'grass_orangecable']
+            for sd in os.listdir(os.path.join(datadir, 'line_world_data', 'real', 'raw_data', d, 'raw_data'))]
+        fig_counter = 0
+
+        output_dir_val = os.path.join(local_output_path, 'out_val')
+        if os.path.isdir(output_dir_val):
+            shutil.rmtree(output_dir_val)
+        os.makedirs(output_dir_val, exist_ok=True)
+
+        for run in tqdm(validation_runs[::3]):
+            data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
+            representation = encoder(torch.stack(data))
+            with torch.no_grad():
+                if arguments.mlp:
+                    predictions = decoder(representation.view(-1, 2048)).view(-1, 64, 64).detach().numpy()
+                else:
+                    predictions = ((decoder(representation) + 1)/2).view(-1, 256, 256).detach().numpy()
+                data = torch.stack(data).detach().numpy().swapaxes(1, 2).swapaxes(2, 3)
+            for obs, pred in zip(data, predictions):
+                if arguments.mlp:
+                    pred = pred.repeat(4, axis=0).repeat(4, axis=1)
+                pred = np.stack([pred] * 3, axis=-1)
+                img = obs * pred
+                plt.imshow(img)
+                plt.axis('off')
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_dir_val, f'file{fig_counter:05d}.jpg'))
+                plt.close()
+                plt.cla()
+                fig_counter += 1
 
     ################################################################################
     # Save checkpoint      (mount opal the latest)                                 #
@@ -204,21 +222,23 @@ if __name__ == '__main__':
         else os.path.join(os.environ['DATADIR'], arguments.output_path)
     os.makedirs(output_path, exist_ok=True)
     
-    if os.path.isfile(f'{output_path}/video_train.mp4'):
-        os.remove(f'{output_path}/video_train.mp4')
-    subprocess.call([
-        'ffmpeg', '-framerate', '8', '-i', f'{output_dir}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
-        f'{output_path}/video_train.mp4'
-    ])
-    shutil.rmtree(output_dir) 
+    if not arguments.skip_sim_video:
+        if os.path.isfile(f'{output_path}/video_train.mp4'):
+            os.remove(f'{output_path}/video_train.mp4')
+        subprocess.call([
+            'ffmpeg', '-framerate', '8', '-i', f'{output_dir}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+            f'{output_path}/video_train.mp4'
+        ])
+        shutil.rmtree(output_dir) 
 
-    if os.path.isfile(f'{output_path}/video_val.mp4'):
-        os.remove(f'{output_path}/video_val.mp4')
-    subprocess.call([
-        'ffmpeg', '-framerate', '8', '-i', f'{output_dir_val}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
-        f'{output_path}/video_val.mp4'
-    ])
-    shutil.rmtree(output_dir_val)
+    if not arguments.skip_real_video:
+        if os.path.isfile(f'{output_path}/video_val.mp4'):
+            os.remove(f'{output_path}/video_val.mp4')
+        subprocess.call([
+            'ffmpeg', '-framerate', '8', '-i', f'{output_dir_val}/file%05d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+            f'{output_path}/video_val.mp4'
+        ])
+        shutil.rmtree(output_dir_val)
 
     tensorboard_file = glob(f'{local_output_path}/events.*')[0]
     os.system(f'mv {tensorboard_file} {output_path}/{os.path.basename(tensorboard_file)}')
