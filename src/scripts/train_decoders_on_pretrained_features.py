@@ -168,7 +168,7 @@ if __name__ == '__main__':
         os.makedirs(output_dir, exist_ok=True)
 
 #        data = [torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['observations'][-100::2]]
-        data = [torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['observations'][0:100::2]]
+        data = [torch.as_tensor(t, dtype=torch.float32) for t in h5py_file['dataset']['observations'][0:100]]
         representation = encoder(torch.stack(data))
         with torch.no_grad():
             if arguments.mlp:

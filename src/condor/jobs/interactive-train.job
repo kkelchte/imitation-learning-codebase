@@ -8,6 +8,6 @@ RequestMemory   = 15G
 Request_GPUs = 1
 
 # If you want X11 forwarding, uncomment this
-Requirements = ( OpSysAndVer == "Fedora32" )
+Requirements = ( OpSysAndVer == "Fedora32" ) && (Has_ssse3 == true)
 
 Queue
