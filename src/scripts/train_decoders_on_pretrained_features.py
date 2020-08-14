@@ -106,10 +106,10 @@ if __name__ == '__main__':
         encoder_optimizer.zero_grad()
         sample_indices = np.random.choice(list(range(total)),
                                           size=arguments.batch_size)
-        observations = torch.stack([torch.as_tensor(h5py_file['dataset']['observations'][i], dtype=torch.float32) for i in
-                                    sample_indices])
-        targets = torch.stack([torch.as_tensor(h5py_file['dataset']['targets'][i],
-                                               dtype=torch.float32) for i in sample_indices]).detach()
+        observations = torch.stack([torch.as_tensor(h5py_file['dataset']['observations'][i], dtype=torch.float32)
+                                    for i in sample_indices])
+        targets = torch.stack([torch.as_tensor(h5py_file['dataset']['targets'][i], dtype=torch.float32)
+                               for i in sample_indices]).detach()
 
 #        representation = visualpriors.representation_transform(torch.stack(observations), feature_type, device='cpu')
         representation = encoder(observations)
