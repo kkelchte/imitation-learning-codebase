@@ -26,7 +26,8 @@ class TestControlMapper(unittest.TestCase):
             'fsm': False,
             'control_mapping': True,
             'control_mapping_config': control_mapper_config,
-            'output_path': self.output_dir
+            'output_path': self.output_dir,
+            'waypoint_indicator': False
         }
 
         # spinoff roslaunch
@@ -70,8 +71,7 @@ class TestControlMapper(unittest.TestCase):
         # for each fsm state
         for fsm_state in [FsmState.Running,
                           FsmState.DriveBack,
-                          FsmState.TakenOver,
-                          FsmState.TakeOff]:
+                          FsmState.TakenOver]:
             print(f'FSM STATE: {fsm_state}')
             #   publish fsm state
             self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
@@ -96,6 +96,7 @@ class TestControlMapper(unittest.TestCase):
                 received_control = self.ros_topic.topic_values[self.supervision_topic]
                 self.assertEqual(received_control.linear.x, solution[original_topic])
 
+    #@unittest.skip
     def test_control_mapper_noisy(self):
         self.start(control_mapper_config='test_noisy')
         # for each fsm state
@@ -106,10 +107,7 @@ class TestControlMapper(unittest.TestCase):
             #   publish fsm state
             self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
             #   wait
-            time.sleep(2)
-            for k in self.ros_topic.topic_values.keys():
-                del self.ros_topic.topic_values[k]
-
+            time.sleep(1)
             #   publish on all controls
             solution = {}
             for index, control_topic in enumerate(list(set(self._control_topics))):
@@ -118,13 +116,7 @@ class TestControlMapper(unittest.TestCase):
                 solution[control_topic] = control_command.linear.x
                 self.ros_topic.publishers[control_topic].publish(control_command)
             #   wait
-            max_duration = 5
-            start_time = time.time()
-            while self.command_topic not in self.ros_topic.topic_values.keys() \
-                    and self.supervision_topic not in self.ros_topic.topic_values.keys() \
-                    and time.time() - start_time < max_duration:
-                time.sleep(0.5)
-
+            time.sleep(1)
             #   assert control is equal to intended control
             if 'command' in self._mapping[fsm_state.name].keys():
                 original_topic = self._mapping[fsm_state.name]['command']
