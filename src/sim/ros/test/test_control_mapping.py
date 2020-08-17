@@ -106,7 +106,10 @@ class TestControlMapper(unittest.TestCase):
             #   publish fsm state
             self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
             #   wait
-            time.sleep(1)
+            time.sleep(2)
+            for k in self.ros_topic.topic_values.keys():
+                del self.ros_topic.topic_values[k]
+
             #   publish on all controls
             solution = {}
             for index, control_topic in enumerate(list(set(self._control_topics))):
@@ -118,8 +121,10 @@ class TestControlMapper(unittest.TestCase):
             max_duration = 5
             start_time = time.time()
             while self.command_topic not in self.ros_topic.topic_values.keys() \
+                    and self.supervision_topic not in self.ros_topic.topic_values.keys() \
                     and time.time() - start_time < max_duration:
                 time.sleep(0.5)
+
             #   assert control is equal to intended control
             if 'command' in self._mapping[fsm_state.name].keys():
                 original_topic = self._mapping[fsm_state.name]['command']
