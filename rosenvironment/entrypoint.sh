@@ -14,6 +14,8 @@ fi
 if [ ! -d python3_ros_ws/devel ] ; then
   make install_python3_ros_ws
   make python3_ros_ws/devel/setup.bash
+  rm -r python3_ros_ws/devel
+  make python3_ros_ws/devel/setup.bash
 fi
 
 # shellcheck disable=SC1090
