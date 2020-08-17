@@ -11,7 +11,7 @@ if [ ! -d python2_ros_ws ] ; then
   make install_python2_ros_ws
   make python2_ros_ws/devel/setup.bash
 fi
-if [ ! -d python3_ros_ws ] ; then
+if [ ! -d python3_ros_ws/devel ] ; then
   make install_python3_ros_ws
   make python3_ros_ws/devel/setup.bash
 fi
