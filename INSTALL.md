@@ -47,8 +47,9 @@ __install catkin ROS packages__
 cd rosenvironment/singularity
 make singularity-shell
 source rosenvironment/entrypoint.sh
-# make sure all builds are successfull otherwise perform them again manually:
-source rosenvironment/entrypoint.sh
-
+# make sure all builds are successfull otherwise perform them again manually. See troubleshoot in src/sim/ros/README.md
+# test installation
+cd src/sim/ros
+make test_suite
 ```
 

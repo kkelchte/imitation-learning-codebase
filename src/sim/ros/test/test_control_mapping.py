@@ -115,7 +115,11 @@ class TestControlMapper(unittest.TestCase):
                 solution[control_topic] = control_command.linear.x
                 self.ros_topic.publishers[control_topic].publish(control_command)
             #   wait
-            time.sleep(1)
+            max_duration = 5
+            start_time = time.time()
+            while self.command_topic not in self.ros_topic.topic_values.keys() \
+                    and time.time() - start_time < max_duration:
+                time.sleep(0.5)
             #   assert control is equal to intended control
             if 'command' in self._mapping[fsm_state.name].keys():
                 original_topic = self._mapping[fsm_state.name]['command']
