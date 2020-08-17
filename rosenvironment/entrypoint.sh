@@ -26,10 +26,10 @@ source "${HOME}/src/sim/ros/python3_ros_ws/devel/setup.bash" --extend || exit 2
 export GAZEBO_MODEL_PATH="${HOME}/src/sim/ros/gazebo/models"
 export PYTHONPATH=${PYTHONPATH}:${HOME}
 
-export LD_LIBRARY_PATH=/opt/ros/melodic/lib:/home/klaas/code/imitation-learning-codebase/src/sim/ros/python2_ros_ws/devel/lib:/home/klaas/code/imitation-learning-codebase/src/sim/ros/python3_ros_ws/devel/lib:/.singularity.d/libs
-export CMAKE_PREFIX_PATH=/opt/ros/melodic:/home/klaas/code/imitation-learning-codebase/src/sim/ros/python2_ros_ws/devel:/home/klaas/code/imitation-learning-codebase/src/sim/ros/python3_ros_ws/devel
+export LD_LIBRARY_PATH=/opt/ros/melodic/lib:${HOME}/src/sim/ros/python2_ros_ws/devel/lib:${HOME}/src/sim/ros/python3_ros_ws/devel/lib:/.singularity.d/libs
+export CMAKE_PREFIX_PATH=/opt/ros/melodic:${HOME}/src/sim/ros/python2_ros_ws/devel:${HOME}/src/sim/ros/python3_ros_ws/devel
 
-export DSO_PATH=/home/klaas/code/imitation-learning-codebase/src/sim/ros/dso
+export DSO_PATH=${HOME}/src/sim/ros/dso
 
 cd "${HOME}" || exit 1
 
