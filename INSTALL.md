@@ -29,6 +29,8 @@ The condor test will fail if the singularity image (*.sif) is not downloaded yet
 
 ## Install ROS Gazebo environment
 
+Assuming virtual environment installation is already done.
+
 __copy singularity image locally__
 
 ```bash
@@ -44,9 +46,9 @@ __install catkin ROS packages__
 # if you are in a singularity image, skip first three lines
 cd rosenvironment/singularity
 make singularity-shell
-export HOME=$PWD
-source /opt/ros/melodic/setup.bash
-
+source rosenvironment/entrypoint.sh
+# make sure all builds are successfull otherwise perform them again manually:
+source rosenvironment/entrypoint.sh
 
 ```
 
