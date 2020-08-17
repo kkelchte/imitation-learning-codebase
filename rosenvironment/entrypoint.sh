@@ -7,12 +7,12 @@ source /opt/ros/melodic/setup.bash
 # perform catkin make if source files have changed.
 cd "${HOME}/src/sim/ros" || exit 1
 
-if [ ! -d python3_ros_ws ] ; then
-  make install_python3_ros_ws
-  make python2_ros_ws/devel/setup.bash
-fi
 if [ ! -d python2_ros_ws ] ; then
   make install_python2_ros_ws
+  make python2_ros_ws/devel/setup.bash
+fi
+if [ ! -d python3_ros_ws ] ; then
+  make install_python3_ros_ws
   make python3_ros_ws/devel/setup.bash
 fi
 
