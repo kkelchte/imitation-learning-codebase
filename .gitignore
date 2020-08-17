@@ -177,4 +177,6 @@ test_dir/
 # mac
 *.DS_Store
 /.cmake/packages/Pangolin/6df06e0afbd219d36ab58a9a27fe6ea6
-/src/sim/ros/catkin_ws
+/src/sim/ros/dso/
+/src/sim/ros/Pangolin/
+/src/sim/ros/python3_ros_ws/src/dso_ros/
