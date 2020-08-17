@@ -1,9 +1,9 @@
-output_path: /home/klaas/code/imitation-learning-codebase/experimental_data/dronet_finetuned/real_sim_augmented_noisy/models/seed_5100
+output_path: /home/klaas/code/imitation-learning-codebase/experimental_data/adam_lr000001/models/seed_5100
 number_of_epochs: 1
 number_of_episodes: 10
-load_checkpoint_dir: /home/klaas/code/imitation-learning-codebase/experimental_data/dronet_finetuned/real_sim_augmented_noisy/models/seed_5100
+load_checkpoint_dir: /home/klaas/code/imitation-learning-codebase/experimental_data/adam_lr000001/models/seed_5100
 architecture_config:
-  architecture: dronet
+  architecture: dronet_sidetuned
   device: cpu
 environment_config:
   factory_key: ROS

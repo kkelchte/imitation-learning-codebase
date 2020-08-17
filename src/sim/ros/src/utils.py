@@ -96,11 +96,10 @@ def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
         sensor_stats['width'],
         sensor_stats['depth'],
     ]
-    scale = [int(img.shape[i] / size[i]) for i in range(2)]
-    img = img[
-          ::scale[0],
-          ::scale[1],
-          :]
+    scale = [max(int(img.shape[i] / size[i]), 1) for i in range(2)]
+    img = img[::scale[0],
+              ::scale[1],
+              :]
     img = sm.resize(img, size, mode='constant').astype(np.float32)
     if size[-1] == 1:
         img = img.mean(axis=-1, keepdims=True)

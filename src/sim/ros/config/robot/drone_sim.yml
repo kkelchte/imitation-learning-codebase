@@ -6,8 +6,8 @@ sensors:
 forward_camera_topic: /down_cam/camera/image
 forward_camera_type: Image
 forward_camera_stats:
-  height: 128
-  width: 128
+  height: 200
+  width: 200
   depth: 3
 #imu_topic: /raw_imu
 #imu_type: Imu

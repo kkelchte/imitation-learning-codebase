@@ -1,4 +1,4 @@
-output_path: line_world
+output_path: line_world_data/sim
 number_of_epochs: 1
 number_of_episodes: 1
 environment_config:
