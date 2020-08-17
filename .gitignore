@@ -180,3 +180,4 @@ test_dir/
 /src/sim/ros/dso/
 /src/sim/ros/Pangolin/
 /src/sim/ros/python3_ros_ws/src/dso_ros/
+/.keras/

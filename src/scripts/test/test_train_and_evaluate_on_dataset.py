@@ -14,31 +14,29 @@ from src.scripts.experiment import Experiment, ExperimentConfig
 class DatasetExperimentsTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.experiment_config = {
-            "output_path": "/tmp",
-            "number_of_epochs": 4,
-            "architecture_config": {
-                "architecture": "tiny_128_rgb_6c",
-                "initialisation_type": 'xavier',
-                "random_seed": 0,
-                "device": 'cpu'},
-            "save_checkpoint_every_n": 2,
-            "trainer_config": {
-                "factory_key": "BASE",
-                "data_loader_config": {"batch_size": 5,
-                                       "hdf5_files": ["train.hdf5"]},
-                "criterion": "MSELoss",
-                "device": "cpu"},
-            "evaluator_config": {
-                "data_loader_config": {"batch_size": 1,
-                                       "hdf5_files": ["validation.hdf5"]},
-                "criterion": "MSELoss",
-                "device": "cpu"},
-        }
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
-        self.experiment_config['output_path'] = self.output_dir
-        self.experiment_config['architecture_config']['output_path'] = self.output_dir
+        self.experiment_config = {"output_path": self.output_dir,
+                                  "number_of_epochs": 4,
+                                  "architecture_config": {
+                                    "output_path": self.output_dir,
+                                    "architecture": "tiny_128_rgb_6c",
+                                    "initialisation_type": 'xavier',
+                                    "random_seed": 0,
+                                    "device": 'cpu'},
+                                  "save_checkpoint_every_n": 2,
+                                  "trainer_config": {
+                                    "factory_key": "BASE",
+                                    "data_loader_config": {"batch_size": 5,
+                                                           "hdf5_files": [os.path.join(self.output_dir, "train.hdf5")]},
+                                    "criterion": "MSELoss",
+                                    "device": "cpu"},
+                                  "evaluator_config": {
+                                    "data_loader_config": {"batch_size": 1,
+                                                           "hdf5_files": [os.path.join(self.output_dir,
+                                                                                       "validation.hdf5")]},
+                                    "criterion": "MSELoss",
+                                    "device": "cpu"}}
 
     def test_train_model_on_generated_dataset(self):
         network = eval(self.experiment_config['architecture_config']['architecture']).Net(

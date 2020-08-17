@@ -74,7 +74,8 @@ class TestDataLoader(unittest.TestCase):
 
     def test_data_loader_with_relative_paths(self):
         config_dict = {
-            'data_directories': ['raw_data/' + os.path.basename(p) for p in self.info['episode_directories']],
+            'data_directories': [f'{self.output_dir}/raw_data/' + os.path.basename(p)
+                                 for p in self.info['episode_directories']],
             'output_path': self.output_dir,
         }
         config = DataLoaderConfig().create(config_dict=config_dict)

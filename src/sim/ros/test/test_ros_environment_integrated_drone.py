@@ -25,7 +25,7 @@ config_dict = {
         "max_update_wait_period_s": 10,
         "store_action": True,
         "store_reward": True,
-        "visible_xterm": False,
+        "visible_xterm": True,
         "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,

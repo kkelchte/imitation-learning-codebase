@@ -45,7 +45,7 @@ class DataLoaderConfig(Config):
                 self.output_path = output_path.split('models')[0]
         if self.data_directories is not None and len(self.data_directories) != 0 \
                 and not self.data_directories[0].startswith('/'):
-            self.data_directories = [os.path.join(self.output_path, d) for d in self.data_directories]
+            self.data_directories = [os.path.join(get_data_dir(os.environ['HOME']), d) for d in self.data_directories]
         if self.hdf5_files is not None and len(self.hdf5_files) != 0:
             self.hdf5_files = [
                     os.path.join(get_data_dir(os.environ['HOME']), hdf5_f) if not hdf5_f.startswith('/') else hdf5_f

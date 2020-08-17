@@ -71,7 +71,7 @@ class DummyDatasetGeneratorTest(unittest.TestCase):
                                                    store_hdf5=True)
         data_loader_config = {
             'output_path': self.output_dir,
-            'hdf5_files': ['train.hdf5']
+            'hdf5_files': [os.path.join(self.output_dir, 'train.hdf5')]
         }
         data_loader = DataLoader(config=DataLoaderConfig().create(config_dict=data_loader_config))
         data_loader.load_dataset()
