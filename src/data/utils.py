@@ -152,11 +152,11 @@ def load_run(directory: str, arrange_according_to_timestamp: bool = False, input
     run = {}
     time_stamps = {}
     for x in os.listdir(directory):
-        #try:
-        k = x if not x.endswith('.data') else x[:-5]
-        time_stamps[x], run[k] = load_data(x, directory, size=input_size if k == 'observation' else None)
-        #except:
-        #    pass
+        try:
+            k = x if not x.endswith('.data') else x[:-5]
+            time_stamps[x], run[k] = load_data(x, directory, size=input_size if k == 'observation' else None)
+        except:
+            pass
     if arrange_according_to_timestamp:
         run = arrange_run_according_timestamps(run, time_stamps)
     if len(run.keys()) == 0:
