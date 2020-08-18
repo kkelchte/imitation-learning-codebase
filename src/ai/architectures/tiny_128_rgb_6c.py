@@ -30,9 +30,13 @@ class Net(BaseNet):
         self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 32, 4, stride=2),
+            nn.ReLU(),
             nn.Conv2d(32, 64, 4, stride=2),
+            nn.ReLU(),
             nn.Conv2d(64, 128, 4, stride=2),
+            nn.ReLU(),
             nn.Conv2d(128, 256, 4, stride=2),
+            nn.ReLU(),
         )
         self.decoder = mlp_creator(sizes=[256 * 6 * 6, 128, 128, self.output_size[0]],
                                    activation=nn.ReLU,

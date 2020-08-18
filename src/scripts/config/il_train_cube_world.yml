@@ -1,5 +1,5 @@
 output_path: cube_world
-number_of_epochs: 100
+number_of_epochs: 60
 number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
@@ -7,16 +7,16 @@ architecture_config:
   initialisation_type: xavier
   random_seed: 123
   device: cpu
-  weight_decay: default
   dropout: default
   dtype: default
   log_std: default
 trainer_config:
   optimizer: SGD
+  weight_decay: 0.0001
   learning_rate: 0.01
   factory_key: BASE
   data_loader_config:
-    hdf5_files: train.hdf5
+    hdf5_files: [cube_world/train.hdf5]
     random_seed: 123
     balance_over_actions: false
     batch_size: 64
@@ -24,7 +24,7 @@ trainer_config:
   device: cuda
 evaluator_config:
   data_loader_config:
-    hdf5_files: validation.hdf5
+    hdf5_files: [cube_world/validation.hdf5]
     random_seed: 123
     balance_over_actions: false
     batch_size: 64
