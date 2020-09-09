@@ -7,16 +7,13 @@ job_configs:
     gpus: 0
     cpu_mem_gb: 25
     disk_mem_gb: 52
-    wall_time_s: 15 * 60
+    wall_time_s: 30 * 60
     nice: true
     use_singularity: true
     check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 300
   - 1
-  - 3
-  - 3
 base_config_files:
   - src/scripts/config/il_data_collection_line_world.yml
