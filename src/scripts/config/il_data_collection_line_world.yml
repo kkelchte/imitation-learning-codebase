@@ -18,7 +18,7 @@ environment_config:
       fsm: true
       control_mapping: true
       waypoint_indicator: true
-      control_mapping_config: default
+      control_mapping_config: noisy_line_worlds
       world_name: line_worlds/model_000
       x_pos: 0.0
       y_pos: 0.0
@@ -27,7 +27,7 @@ environment_config:
       gazebo: true
     actor_configs:
       - name: ros_expert
-        file: src/sim/ros/config/actor/ros_expert_drone.yml
+        file: src/sim/ros/config/actor/ros_expert_wp_slow.yml
 data_saver_config:
   store_hdf5: false
   separate_raw_data_runs: true

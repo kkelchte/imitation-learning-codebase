@@ -11,7 +11,7 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-WORLDNAME = 'line_worlds/model_000'
+WORLDNAME = 'line_worlds/model_009'
 config_dict = {
     "output_path": "/tmp",
     "factory_key": "ROS",
@@ -33,7 +33,7 @@ config_dict = {
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
-          "control_mapping_config": "default",
+          "control_mapping_config": "noisy_line_worlds",  # default
           "world_name": WORLDNAME,
           "x_pos": 0.0,
           "y_pos": 0.0,
@@ -43,7 +43,7 @@ config_dict = {
         },
         "actor_configs": [{
               "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert.yml"
+              "file": "src/sim/ros/config/actor/ros_expert_wp_slow.yml"
             }],
     }
 }

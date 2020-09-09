@@ -1,0 +1,10 @@
+specs:
+  command_topic: '/actor/ros_expert/cmd_vel'
+  field_of_view: 100
+  front_width: 40
+  speed: 0.15
+  aggressiveness: 0
+  collision_avoidance_weight: 0.
+  waypoint_following_weight: 1.0
+  max_yaw_deviation_waypoint: 5
+  rate_fps: 10

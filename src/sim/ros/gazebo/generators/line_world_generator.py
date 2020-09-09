@@ -11,14 +11,16 @@ from scipy.interpolate import CubicSpline
 # settings
 from tqdm import tqdm
 
-number_of_points = 20
-dev = 0.3
 number_of_worlds = 1000
 
 for world_index in tqdm(range(number_of_worlds)):
+    number_of_points = np.random.randint(10, 30)
+    dev = np.random.uniform(0.1, 0.5)
+
     # start from loop
     t = np.arange(0, 1., 1/number_of_points)
-    xo = -np.cos(2*np.pi*t) + 1
+    clockwise = np.random.normal(0, 1) >= 0
+    xo = np.cos(2*np.pi*t) - 1 if not clockwise else -np.cos(2*np.pi*t) + 1
     yo = np.sin(2*np.pi*t)
 
     # deviate points with noise
@@ -28,14 +30,16 @@ for world_index in tqdm(range(number_of_worlds)):
          for i, eyo in enumerate(yo)]
     x += [x[0]]
     y += [y[0]]
-    waypoints = [[x[i], y[i]] for i in range(len(x)-1)]
+    z = np.random.uniform(0.5, 2)
+
+    waypoints = [[x[i], y[i], z] for i in range(len(x)-1)]
     tck, u = interpolate.splprep([x, y], s=0, k=3, per=True)
     unew = np.arange(0, 1.01, 1/(10*number_of_points))
     out = interpolate.splev(unew, tck)
 
     # Use interpolated points to connect tiny cylinders in gazebo
     r = 0.01
-    l = 0.06
+    l = 0.08
 
     # Load empty world:
     world_dir = 'src/sim/ros/gazebo/worlds'
@@ -90,13 +94,13 @@ for world_index in tqdm(range(number_of_worlds)):
         'minimum_distance_px': 40,
         'max_distance_from_start': 10,
         'delay_evaluation': 1,
-        'waypoints': [[float(w[0]), float(w[1])] for w in waypoints],
+        'waypoints': [[float(w[0]), float(w[1]), float(w[2])] for w in waypoints],
         'waypoint_reached_distance': 0.2,
         'goal': {
-            'x': {'min': float(waypoints[-1][0]) - 0.3,
-                  'max': float(waypoints[-1][0]) + 0.3},
-            'y': {'min': float(waypoints[-1][1]) - 0.3,
-                  'max': float(waypoints[-1][1]) + 0.3},
+            'x': {'min': float(waypoints[-3][0]) - 0.3,
+                  'max': float(waypoints[-3][0]) + 0.3},
+            'y': {'min': float(waypoints[-3][1]) - 0.3,
+                  'max': float(waypoints[-3][1]) + 0.3},
             'z': {'min': 0.3,
                   'max': 1.8},
         },
@@ -111,7 +115,10 @@ for world_index in tqdm(range(number_of_worlds)):
     plt.figure(figsize=(11, 11))
     plt.plot(out[0], out[1])
     plt.ylim(-1.5, 1.5)
-    plt.xlim(-0.5, 2.5)
+    if clockwise:
+        plt.xlim(-0.5, 2.5)
+    else:
+        plt.xlim(-2.5, 0.5)
     plt.axis('off')
 
     os.makedirs(os.path.join(os.environ['PWD'], 'src/sim/ros/gazebo/background_images', 'line_worlds'), exist_ok=True)
