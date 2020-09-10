@@ -3,17 +3,17 @@ mode: data_collection_line_world
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 11
+    cpus: 7
     gpus: 0
     cpu_mem_gb: 25
     disk_mem_gb: 52
-    wall_time_s: 30 * 60
+    wall_time_s: 10 * 60
     nice: true
     use_singularity: true
     check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 1
+  - 500
 base_config_files:
   - src/scripts/config/il_data_collection_line_world.yml
