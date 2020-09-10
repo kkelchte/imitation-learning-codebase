@@ -164,9 +164,9 @@ virtualenvironment/venv
 test_dir/
 
 /src/sim/ros/python3_ros_ws/src/bebop_autonomy
-/src/sim/ros/python2_ros_ws/src/hector_localization
-/src/sim/ros/python2_ros_ws/src/hector_quadrotor
 /src/sim/ros/python3_ros_ws/src/vision_opencv
+/src/sim/ros/python2_ros_ws/*
+src/sim/ros/python3_ros_ws/src/CMakeLists.txt
 
 /experimental_data
 /src/ai/algorithms/results
