@@ -26,6 +26,7 @@ class DataCleaningConfig(Config):
     remove_first_n_timestamps: Optional[int] = 0
     augment_background_noise: bool = False
     binary_maps_as_target: bool = False
+    require_success: bool = False
     max_hdf5_size: int = 10**9
     max_run_length: int = -1
 
@@ -56,6 +57,9 @@ class DataCleaner:
         filename_index = 0
         hdf5_data = Dataset()
         for run in tqdm(runs):
+            if self._config.require_success:
+                if not os.path.isfile(os.path.join(run, 'Success')):
+                    continue
             # load data in dataset in input size
             run_dataset = self._data_loader.load_dataset_from_directories([run])
             if len(run_dataset) <= self._config.remove_first_n_timestamps:
