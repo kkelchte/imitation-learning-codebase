@@ -380,11 +380,12 @@ def augment_background_noise(dataset: Dataset) -> Dataset:
     binary_images = parse_binary_maps(copy.deepcopy(dataset.observations))
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
+    num_channels = dataset.observations[0].shape[0]
     for image in tqdm(binary_images):
-        new_shape = (*image.shape, 3)
+        new_shape = (*image.shape, num_channels)
         bg = np.random.uniform(0, 1, size=new_shape)
         fg = np.zeros(new_shape) + np.random.uniform(0, 1)
-        three_channel_mask = np.stack([image] * 3, axis=-1)
+        three_channel_mask = np.stack([image] * num_channels, axis=-1)
         new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg) / 2.)
         augmented_dataset.observations.append(new_img.permute(2, 0, 1))
     return augmented_dataset
