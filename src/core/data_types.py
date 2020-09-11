@@ -133,6 +133,14 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
         self.rewards.pop(0)
         self.done.pop(0)
 
+    def clip(self, length: int):
+        """clip dataset sequence at a fixed length"""
+        if self.__len__() > length:
+            self.observations = self.observations[:length]
+            self.actions = self.actions[:length]
+            self.rewards = self.rewards[:length]
+            self.done = self.done[:length]
+
     def _check_length(self):
         while len(self) > self.max_size != -1:
             self.pop()

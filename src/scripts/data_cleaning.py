@@ -1,6 +1,7 @@
 import os
 import sys
 
+from tqdm import tqdm
 from dataclasses import dataclass
 from typing import Optional, List
 
@@ -26,6 +27,7 @@ class DataCleaningConfig(Config):
     augment_background_noise: bool = False
     binary_maps_as_target: bool = False
     max_hdf5_size: int = 10**9
+    max_run_length: int = -1
 
     def __post_init__(self):
         assert 0 <= self.training_validation_split <= 1
@@ -53,7 +55,7 @@ class DataCleaner:
     def _clean(self, filename_tag: str, runs: List[str]) -> None:
         filename_index = 0
         hdf5_data = Dataset()
-        for run in runs:
+        for run in tqdm(runs):
             # load data in dataset in input size
             run_dataset = self._data_loader.load_dataset_from_directories([run])
             if len(run_dataset) <= self._config.remove_first_n_timestamps:
@@ -63,6 +65,9 @@ class DataCleaner:
                 run_dataset.pop()
             # subsample
             run_dataset.subsample(self._config.data_loader_config.subsample)
+            # enforce max run length
+            if self._config.max_run_length != -1:
+                run_dataset.clip(self._config.max_run_length)
             # augment with background noise and change target to binary map
             if self._config.binary_maps_as_target:
                 run_dataset = set_binary_maps_as_target(run_dataset)
