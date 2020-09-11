@@ -26,6 +26,7 @@ class DataLoaderConfig(Config):
     balance_over_actions: bool = False
     batch_size: int = 64
     subsample: int = 1
+    loop_over_hdf5_files: bool = False
     input_size: Optional[List[int]] = None
 
     def post_init(self):  # add default options
@@ -68,6 +69,7 @@ class DataLoader:
         self._num_runs = 0
         self._probabilities: List = []
         self.seed()
+        self._hdf5_file_index = -1
 
     def seed(self, seed: int = None):
         np.random.seed(self._config.random_seed) if seed is None else np.random.seed(seed)
@@ -81,12 +83,21 @@ class DataLoader:
 
     def load_dataset(self):
         if len(self._config.hdf5_files) != 0:
-            for hdf5_file in self._config.hdf5_files:
-                self._dataset = load_dataset_from_hdf5(hdf5_file,
-                                                       input_size=self._config.input_size,
-                                                       dataset=self._dataset)
-            cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_files}', self._logger,
-                   msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
+            if self._config.loop_over_hdf5_files:
+                self._hdf5_file_index += 1
+                self._hdf5_file_index %= len(self._config.hdf5_files)
+                self._dataset = Dataset()
+                self._dataset.extend(load_dataset_from_hdf5(self._config.hdf5_files[self._hdf5_file_index],
+                                                            input_size=self._config.input_size))
+                cprint(f'Loaded {len(self._dataset)} datapoints from {self._config.hdf5_files[self._hdf5_file_index]}',
+                       self._logger,
+                       msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
+            else:
+                for hdf5_file in self._config.hdf5_files:
+                    self._dataset.extend(load_dataset_from_hdf5(hdf5_file,
+                                                                input_size=self._config.input_size))
+                cprint(f'Loaded {len(self._dataset)} datapoints from {self._config.hdf5_files}', self._logger,
+                       msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
         else:
             self.load_dataset_from_directories(self._config.data_directories)
 
@@ -122,6 +133,8 @@ class DataLoader:
         return self._dataset
 
     def get_data_batch(self) -> Generator[Dataset, None, None]:
+        if len(self._dataset) == 0 or self._config.loop_over_hdf5_files:
+            self.load_dataset()
         index = 0
         while index < len(self._dataset):
             batch = Dataset()
@@ -131,7 +144,7 @@ class DataLoader:
             batch.actions = self._dataset.actions[index:end_index]
             batch.done = self._dataset.done[index:end_index]
             batch.rewards = self._dataset.rewards[index:end_index]
-            index += self._config.batch_size
+            index = index + self._config.batch_size if self._config.batch_size != -1 else len(self._dataset)
             yield batch
 
     def sample_shuffled_batch(self, max_number_of_batches: int = 1000) \
@@ -143,11 +156,8 @@ class DataLoader:
         :param dataset: list of runs with inputs, outputs and batches
         :return: yield a batch up until all samples are done
         """
-        if len(self._dataset) == 0:
-            msg = f'Cannot sample batch from dataset of size {len(self._dataset)}, ' \
-                  f'make sure you call DataLoader.load_dataset()'
-            cprint(msg, self._logger, msg_type=MessageType.error)
-            raise IOError(msg)
+        if len(self._dataset) == 0 or self._config.loop_over_hdf5_files:
+            self.load_dataset()
         # Get data indices:
         batch_count = 0
         while batch_count < min(len(self._dataset), max_number_of_batches * self._config.batch_size):

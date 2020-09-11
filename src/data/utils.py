@@ -279,12 +279,11 @@ def create_hdf5_file_from_dataset(filename: str, dataset: Dataset) -> None:
             h5py_dataset[tag] = np.asarray([o.numpy() for o in data])
 
 
-def load_dataset_from_hdf5(filename: str, input_size: List[int] = None, dataset: Dataset = Dataset()) -> Dataset:
+def load_dataset_from_hdf5(filename: str, input_size: List[int] = None) -> h5py.Group:
     h5py_file = h5py.File(filename, 'r')
     if input_size is not None and input_size != []:
         assert tuple(h5py_file['dataset']['observations'][0].shape) == tuple(input_size)
-    dataset.extend(h5py_file['dataset'])
-    return dataset
+    return h5py_file['dataset']
 
 
 def add_run_to_h5py(h5py_file: h5py.File, run: str) -> h5py.File:

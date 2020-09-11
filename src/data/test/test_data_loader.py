@@ -7,7 +7,7 @@ import numpy as np
 import torch
 
 from src.data.data_loader import DataLoader, DataLoaderConfig
-from src.core.utils import get_filename_without_extension
+from src.core.utils import get_filename_without_extension, get_data_dir
 from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 from src.data.utils import arrange_run_according_timestamps, calculate_weights, select
@@ -16,7 +16,7 @@ from src.data.utils import arrange_run_according_timestamps, calculate_weights, 
 class TestDataLoader(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         config_dict = {
@@ -35,7 +35,7 @@ class TestDataLoader(unittest.TestCase):
         }
         config = DataLoaderConfig().create(config_dict=config_dict)
         data_loader = DataLoader(config=config)
-        data_loader.load_dataset(arrange_according_to_timestamp=False)
+        data_loader.load_dataset()
 
         # assert nothing is empty
         for k in ['observations', 'actions', 'rewards', 'done']:
@@ -188,6 +188,49 @@ class TestDataLoader(unittest.TestCase):
         indices = [3, 5]
         result = select(data, indices)
         self.assertEqual((result - np.asarray([[3, 1, 7], [5, 1, 5]])).sum(), 0)
+
+    def test_big_data_hdf5_loop(self):
+        # create 3 datasets as hdf5 files
+        hdf5_files = []
+        infos = []
+        for index in range(3):
+            output_path = os.path.join(self.output_dir, f'ds{index}')
+            os.makedirs(output_path, exist_ok=True)
+            config_dict = {
+                'output_path': output_path,
+                'store_hdf5': True,
+                'training_validation_split': 1.0
+            }
+            config = DataSaverConfig().create(config_dict=config_dict)
+            self.data_saver = DataSaver(config=config)
+            infos.append(generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(3, 10, 10),
+                                                fixed_input_value=(0.3 * index) * np.ones((3, 10, 10)), store_hdf5=True))
+            self.assertTrue(os.path.isfile(os.path.join(output_path, 'train.hdf5')))
+            hdf5_files.append(os.path.join(output_path, 'train.hdf5'))
+
+        # create data loader with big data tag and three hdf5 training sets
+        conf = {'output_path': self.output_dir,
+                'hdf5_files': hdf5_files,
+                'batch_size': 15,
+                'loop_over_hdf5_files': True}
+        loader = DataLoader(DataLoaderConfig().create(config_dict=conf))
+
+        # sample data batches and see that index increases every two batches sampled
+        for batch in loader.get_data_batch():
+            self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0)
+        for batch in loader.get_data_batch():
+            self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0.3, 2)
+        for batch in loader.get_data_batch():
+            self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0.6, 2)
+        for batch in loader.get_data_batch():
+            self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0, 2)
+        for batch in loader.sample_shuffled_batch():
+            self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0.3, 2)
+        for batch in loader.sample_shuffled_batch():
+            self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0.6, 2)
+        for batch in loader.sample_shuffled_batch():
+            self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0, 2)
+
 
     # def test_data_balancing(self): TODO
     #     # average action variance in batch with action balancing

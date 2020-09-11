@@ -185,7 +185,7 @@ class DataSaver:
                 'input_size': input_size
             })
             data_loader = DataLoader(config=config)
-            data_loader.load_dataset(arrange_according_to_timestamp=False)
+            data_loader.load_dataset()
             create_hdf5_file_from_dataset(filename=os.path.join(self._config.output_path, file_name + '.hdf5'),
                                           dataset=data_loader.get_dataset())
             cprint(f'created {file_name}.hdf5', self._logger)

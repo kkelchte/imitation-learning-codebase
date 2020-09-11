@@ -4,7 +4,7 @@ from src.data.data_saver import DataSaver
 from src.core.data_types import Experience, TerminationType
 
 
-def experience_generator(input_size: tuple = (100, 100, 3),
+def experience_generator(input_size: tuple = (3, 100, 100),
                          output_size: tuple = (1,),
                          continuous: bool = True,
                          fixed_input_value: float = None,
