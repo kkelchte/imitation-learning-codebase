@@ -1,4 +1,4 @@
-output_path: test_line_world_mixed
+output_path: line_world_mixed
 training_validation_split: 0.7
 remove_first_n_timestamps: 30
 augment_background_noise: True
