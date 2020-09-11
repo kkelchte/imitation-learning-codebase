@@ -3,7 +3,7 @@
 ###########################
 Universe 	= vanilla
 RequestCpus     = 1
-RequestMemory   = 10 G
+RequestMemory   = 12 G
 RequestDisk	= 5 G
 # max time 4h
 +RequestWallTime = 15*60
