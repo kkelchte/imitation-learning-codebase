@@ -87,7 +87,7 @@ for world_index in tqdm(range(number_of_worlds)):
 
     # Create world config with waypoints
     world_config_dir = 'src/sim/ros/config/world'
-    background_file = f'src/sim/ros/gazebo/background_images/line_worlds/{model_name}_1_0_5.jpg'
+    background_file = f'src/sim/ros/gazebo/background_images/line_worlds/{model_name}_{1 if clockwise else -1}_0_5.jpg'
     config = {
         'world_name': model_name,
         'max_duration': 300,
