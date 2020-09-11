@@ -1,12 +1,14 @@
 ###########################
 # Submit an interactive job
 ###########################
-
-RequestCpus     = 2
-RequestMemory   = 1G
-# max time 4h... should probably ask less
-+RequestWallTime = 30*60
+Universe 	= vanilla
+RequestCpus     = 1
+RequestMemory   = 10 G
+RequestDisk	= 5 G
+# max time 4h
++RequestWallTime = 15*60
 Request_GPUS    = 0
+Requirements = (machineowner == "Visics") && HasSingularity && ( OpSysAndVer == "Fedora32" ) && ( Mips >= 26000 )
 
 # If you want X11 forwarding, uncomment this
 Requirements = ( OpSysAndVer == "Fedora32" )
