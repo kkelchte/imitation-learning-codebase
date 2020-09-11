@@ -3,7 +3,7 @@ training_validation_split: 0.7
 remove_first_n_timestamps: 30
 augment_background_noise: True
 binary_maps_as_target: True
-require_success: True
+require_success: False
 max_run_length: 150
 data_loader_config:
   subsample: 4
