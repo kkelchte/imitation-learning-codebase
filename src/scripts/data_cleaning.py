@@ -56,6 +56,8 @@ class DataCleaner:
         for run in runs:
             # load data in dataset in input size
             run_dataset = self._data_loader.load_dataset_from_directories([run])
+            if len(run_dataset) <= self._config.remove_first_n_timestamps:
+                continue
             # remove first N frames
             for _ in range(self._config.remove_first_n_timestamps):
                 run_dataset.pop()
