@@ -107,7 +107,7 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
         return len(self.observations)
 
     def _get_size_of_field(self, data: List[torch.Tensor]) -> int:
-        if data is None or len(data) == 0:
+        if data is None or len(data) == 0 or None in data:
             return 0
         num_elements = len(data) * np.prod(data[0].shape)
         try:
