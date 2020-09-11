@@ -1,0 +1,9 @@
+output_path: test_line_world_mixed
+training_validation_split: 0.7
+remove_first_n_timestamps: 30
+augment_background_noise: True
+binary_maps_as_target: True
+data_loader_config:
+  subsample: 4
+  input_size: [1, 200, 200]
+  data_directories: []

@@ -69,6 +69,7 @@ def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.M
 def generate_random_dataset_in_raw_data(output_dir: str, num_runs: int = 20,
                                         input_size: tuple = (100, 100, 3), output_size: tuple = (1,),
                                         continuous: bool = True,
+                                        fixed_input_value: Union[float, np.ndarray] = None,
                                         fixed_output_value: Union[float, np.ndarray] = None,
                                         store_hdf5: bool = False) -> dict:
     """Generate data, stored in raw_data directory of output_dir"""
@@ -79,6 +80,7 @@ def generate_random_dataset_in_raw_data(output_dir: str, num_runs: int = 20,
                                   input_size=input_size,
                                   output_size=output_size,
                                   continuous=continuous,
+                                  fixed_input_value=fixed_input_value,
                                   fixed_output_value=fixed_output_value,
                                   store_hdf5=store_hdf5)
     return info

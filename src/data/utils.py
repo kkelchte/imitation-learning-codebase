@@ -1,5 +1,5 @@
+import copy
 import os
-import warnings
 from copy import deepcopy
 from typing import List, Tuple, Union
 
@@ -48,7 +48,7 @@ def store_array_to_file(data: np.ndarray, file_name: str, time_stamp: int = 0) -
         f.write(message)
 
 ##############################################################################
-#  Helper functions to data loading and preprocessing used by data_loader.py #
+#  Helper functions data loading and preprocessing used by data_loader.py #
 ##############################################################################
 
 
@@ -351,3 +351,40 @@ def select(data: Union[list, torch.Tensor, np.ndarray, Dataset], indices: List[i
         )
     else:  # assuming Tensor or numpy array
         return data.squeeze()[indices]
+
+###################################################################
+#  Helper functions to create or load HDF5 file                   #
+###################################################################
+
+
+def parse_binary_maps(observations: List[torch.Tensor]) -> List[np.ndarray]:
+    '''
+    create binary maps from observations based on R-channel which is 1 on background and 0 at blue line.
+    :param observations: [channels (RGB) x height x width ]
+    :return: binary maps : [1 x height x width ]
+    '''
+    observations = [o.numpy() for o in observations]
+    binary_images = [
+        cv2.threshold(o.mean(axis=0), 0.5, 1, cv2.THRESH_BINARY)[1] for o in observations
+    ]
+    return binary_images
+
+
+def set_binary_maps_as_target(dataset: Dataset) -> Dataset:
+    binary_maps = parse_binary_maps(copy.deepcopy(dataset.observations))
+    dataset.actions = [torch.as_tensor(b) for b in binary_maps]
+    return dataset
+
+
+def augment_background_noise(dataset: Dataset) -> Dataset:
+    binary_images = parse_binary_maps(copy.deepcopy(dataset.observations))
+    augmented_dataset = copy.deepcopy(dataset)
+    augmented_dataset.observations = []
+    for image in tqdm(binary_images):
+        new_shape = (*image.shape, 3)
+        bg = np.random.uniform(0, 1, size=new_shape)
+        fg = np.zeros(new_shape) + np.random.uniform(0, 1)
+        three_channel_mask = np.stack([image] * 3, axis=-1)
+        new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg) / 2.)
+        augmented_dataset.observations.append(new_img.permute(2, 0, 1))
+    return augmented_dataset

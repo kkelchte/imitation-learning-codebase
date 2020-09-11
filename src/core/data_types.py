@@ -1,3 +1,4 @@
+import sys
 from typing import Dict, Union, List, Iterator
 from enum import IntEnum
 
@@ -38,7 +39,7 @@ class Distribution:
             self.std = np.std(data).item()
             self.min = np.min(data)
             self.max = np.max(data)
-        #assert not np.isnan(self.mean)
+        # assert not np.isnan(self.mean)
 
 
 class ProcessState(IntEnum):
@@ -75,9 +76,13 @@ class Experience:
     info: Dict = None
 
 
-def to_torch(value: Union[np.ndarray, int, float],
-             dtype: torch.dtype = torch.float32):
-    return torch.as_tensor(value, dtype=dtype) if value is not None else None
+def to_torch(value: Union[np.ndarray, int, float, torch.Tensor],
+             dtype: torch.dtype = None):
+    if isinstance(value, torch.Tensor):
+        return value if dtype is None else value.type(dtype)
+    else:
+        return torch.as_tensor(value, dtype=dtype if dtype is not None else torch.float32) \
+            if value is not None else None
 
 
 @dataclass
@@ -100,6 +105,19 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
 
     def __len__(self):
         return len(self.observations)
+
+    def _get_size_of_field(self, data: List[torch.Tensor]) -> int:
+        if data is None or len(data) == 0:
+            return 0
+        num_elements = len(data) * np.prod(data[0].shape)
+        try:
+            byte_number = int(str(data[0].dtype)[-2:])
+        except ValueError:
+            byte_number = 32
+        return int(byte_number * num_elements / 8)
+
+    def get_memory_size(self) -> int:
+        return sum(self._get_size_of_field(d) for d in [self.observations, self.actions, self.rewards, self.done])
 
     def append(self, experience: Experience):
         self.observations.append(to_torch(experience.observation))
@@ -136,8 +154,9 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
                     field.extend([torch.zeros(0) for _ in experiences['observations']])
             self._check_length()
         elif isinstance(experiences, Dataset):
-            for data, field in zip([experiences.observations, experiences.actions, experiences.rewards, experiences.done],
-                                  [self.observations, self.actions, self.rewards, self.done]):
+            for data, field in zip([experiences.observations, experiences.actions, experiences.rewards,
+                                    experiences.done],
+                                   [self.observations, self.actions, self.rewards, self.done]):
                 if len(data) != 0:
                     field.extend(data)
                 else:

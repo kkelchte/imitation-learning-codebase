@@ -79,7 +79,7 @@ class DataLoader:
             self._config.data_directories.append(os.path.join(self._config.output_path, 'raw_data', d))
         self._config.data_directories = list(set(self._config.data_directories))
 
-    def load_dataset(self, arrange_according_to_timestamp: bool = False):
+    def load_dataset(self):
         if len(self._config.hdf5_files) != 0:
             for hdf5_file in self._config.hdf5_files:
                 self._dataset = load_dataset_from_hdf5(hdf5_file,
@@ -88,20 +88,27 @@ class DataLoader:
             cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_files}', self._logger,
                    msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
         else:
-            directory_generator = tqdm(self._config.data_directories, ascii=True, desc=__name__) \
-                if len(self._config.data_directories) > 10 else self._config.data_directories
-            for directory in directory_generator:
-                run = load_run(directory, arrange_according_to_timestamp, input_size=self._config.input_size)
-                if len(run) != 0:
-                    self._dataset.extend(experiences=run)
-            cprint(f'Loaded {len(self._dataset)} data points from {len(self._config.data_directories)} directories',
-                   self._logger, msg_type=MessageType.warning if len(self._dataset) == 0 else MessageType.info)
+            self.load_dataset_from_directories(self._config.data_directories)
 
         if self._config.subsample != 1:
             self._dataset.subsample(self._config.subsample)
 
         if self._config.balance_over_actions:
             self._probabilities = balance_weights_over_actions(self._dataset)
+
+    def load_dataset_from_directories(self, directories: List[str] = None) -> Dataset:
+        directory_generator = tqdm(directories, ascii=True, desc=__name__) \
+            if len(directories) > 10 else directories
+        for directory in directory_generator:
+            run = load_run(directory, arrange_according_to_timestamp=False, input_size=self._config.input_size)
+            if len(run) != 0:
+                self._dataset.extend(experiences=run)
+        cprint(f'Loaded {len(self._dataset)} data points from {len(directories)} directories',
+               self._logger, msg_type=MessageType.warning if len(self._dataset) == 0 else MessageType.info)
+        return self._dataset
+
+    def empty_dataset(self) -> None:
+        self._dataset = Dataset()
 
     def set_dataset(self, ds: Dataset = None) -> None:
         if ds is not None:

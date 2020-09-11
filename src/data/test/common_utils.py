@@ -7,6 +7,7 @@ from src.core.data_types import Experience, TerminationType
 def experience_generator(input_size: tuple = (100, 100, 3),
                          output_size: tuple = (1,),
                          continuous: bool = True,
+                         fixed_input_value: float = None,
                          fixed_output_value: float = None):
     starting = 5
     running = np.random.randint(10, 12)
@@ -20,7 +21,8 @@ def experience_generator(input_size: tuple = (100, 100, 3),
         else:
             experience.done = TerminationType.Success
         experience.time_stamp = step
-        experience.observation = np.random.randint(0, 255, size=input_size, dtype=np.uint8)
+        experience.observation = np.random.randint(0, 255, size=input_size, dtype=np.uint8) \
+            if fixed_input_value is None else fixed_input_value
         if fixed_output_value is not None:
             experience.action = np.asarray(fixed_output_value)
         else:
@@ -41,6 +43,7 @@ def generate_dummy_dataset(data_saver: DataSaver,
                            input_size: tuple = (100, 100, 3),
                            output_size: tuple = (1,),
                            continuous: bool = True,
+                           fixed_input_value: float = None,
                            fixed_output_value: float = None,
                            store_hdf5: bool = False) -> dict:
     episode_lengths = []
@@ -52,6 +55,7 @@ def generate_dummy_dataset(data_saver: DataSaver,
         for count, experience in enumerate(experience_generator(input_size=input_size,
                                                                 output_size=output_size,
                                                                 continuous=continuous,
+                                                                fixed_input_value=fixed_input_value,
                                                                 fixed_output_value=fixed_output_value)):
             if experience.done != TerminationType.Unknown:
                 episode_length += 1

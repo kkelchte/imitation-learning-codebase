@@ -169,7 +169,8 @@ class DataSaver:
             for run in sorted(os.listdir(raw_data_dir))
         ]
 
-    def create_train_validation_hdf5_files(self, runs: List[str] = None, input_size: List[int] = None) -> None:
+    def create_train_validation_hdf5_files(self, runs: List[str] = None,
+                                           input_size: List[int] = None) -> None:
         all_runs = runs if runs is not None else self._get_runs()
 
         number_of_training_runs = int(self._config.training_validation_split*len(all_runs))
