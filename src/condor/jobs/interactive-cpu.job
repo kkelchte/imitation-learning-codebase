@@ -2,13 +2,13 @@
 # Submit an interactive job
 ###########################
 
-RequestCpus     = 1
+RequestCpus     = 2
 RequestMemory   = 1G
 # max time 4h... should probably ask less
-+RequestWallTime = 15*60
++RequestWallTime = 30*60
 Request_GPUS    = 0
 
 # If you want X11 forwarding, uncomment this
-Requirements = ( OpSysAndVer == "Fedora32" ) && ( machine == "jade.esat.kuleuven.be" )
+Requirements = ( OpSysAndVer == "Fedora32" )
 
 Queue
