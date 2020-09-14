@@ -1,0 +1,13 @@
+output_path: test_line_world_mixed_clean
+training_validation_split: 0.5
+remove_first_n_timestamps: 30
+augment_background_noise: False
+binary_maps_as_target: True
+require_success: True
+max_run_length: 4
+data_loader_config:
+  subsample: 100
+  input_size: [1, 64, 64]
+  data_directories:
+  - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_14-48-23_runner_487
+  - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_14-02-58_runner_490

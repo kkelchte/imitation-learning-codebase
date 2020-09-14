@@ -1,0 +1,36 @@
+output_path: test_line_world_mixed
+number_of_epochs: 10
+number_of_episodes: -1
+save_checkpoint_every_n: 10
+architecture_config:
+  architecture: encoder_decoder_line_world
+  initialisation_type: xavier
+  random_seed: 123
+  device: cpu
+  weight_decay: default
+  dropout: default
+  dtype: default
+  log_std: default
+trainer_config:
+  optimizer: Adam
+  learning_rate: 0.0001
+  factory_key: BASE
+  data_loader_config:
+    hdf5_files:
+    - line_world_mixed/train_0.hdf5
+    - line_world_mixed/train_1.hdf5
+    random_seed: 123
+    balance_over_actions: false
+    batch_size: 2
+  criterion: MSELoss
+  device: cuda
+evaluator_config:
+  data_loader_config:
+    hdf5_files:
+    - line_world_mixed/validation_0.hdf5
+    random_seed: 123
+    balance_over_actions: false
+    batch_size: 2
+  criterion: MSELoss
+  device: cpu
+tensorboard: true
