@@ -25,6 +25,7 @@ class Net(BaseNet):
         if not quiet:
             cprint(f'Started.', self._logger)
         self.input_size = (1, 64, 64)
+        self.input_scope = 'default'
         self.output_size = (64, 64)
         self.discrete = False
         self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
