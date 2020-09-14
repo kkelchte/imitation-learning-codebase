@@ -72,6 +72,7 @@ class DataCleaner:
             # enforce max run length
             if self._config.max_run_length != -1:
                 run_dataset.clip(self._config.max_run_length)
+                assert len(run_dataset) <= self._config.max_run_length
             # augment with background noise and change target to binary map
             if self._config.binary_maps_as_target:
                 run_dataset = set_binary_maps_as_target(run_dataset)

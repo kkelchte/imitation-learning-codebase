@@ -128,13 +128,14 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
         self._check_length()
 
     def pop(self):
+        """pop oldest experience"""
         self.observations.pop(0)
         self.actions.pop(0)
         self.rewards.pop(0)
         self.done.pop(0)
 
     def clip(self, length: int):
-        """clip dataset sequence at a fixed length"""
+        """clip dataset sequence at a fixed length at the end of the sequence"""
         if self.__len__() > length:
             self.observations = self.observations[:length]
             self.actions = self.actions[:length]
@@ -142,6 +143,7 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
             self.done = self.done[:length]
 
     def _check_length(self):
+        """remove oldest experience to fit in max_size of buffer"""
         while len(self) > self.max_size != -1:
             self.pop()
 

@@ -86,9 +86,10 @@ class DatacleaningTest(unittest.TestCase):
             'output_path': self.output_dir,
             'data_loader_config': {
                 'data_directories': info['episode_directories'],
+                'subsample': 2
             },
             'training_validation_split': 1.0,
-            'remove_first_n_timestamps': 5
+            'remove_first_n_timestamps': 5,
         }
         data_cleaner = DataCleaner(config=DataCleaningConfig().create(config_dict=cleaner_config_dict))
         data_cleaner.clean()
@@ -97,7 +98,34 @@ class DatacleaningTest(unittest.TestCase):
             'hdf5_files': glob(f'{self.output_dir}/train*.hdf5')
         }))
         data_loader.load_dataset()
-        self.assertEqual(sum(e for e in info['episode_lengths']) - len(info['episode_lengths']) * 5,
+        self.assertEqual(sum(int((e - 5) / 2) + 1 for e in info['episode_lengths']),
+                         len(data_loader.get_dataset()))
+
+    def test_clip_max_length(self):
+        info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
+                                                   num_runs=20,
+                                                   input_size=(100, 100, 3),
+                                                   output_size=(1,),
+                                                   continuous=True,
+                                                   store_hdf5=False)
+        cleaner_config_dict = {
+            'output_path': self.output_dir,
+            'data_loader_config': {
+                'data_directories': info['episode_directories'],
+                'subsample': 2
+            },
+            'training_validation_split': 1.0,
+            'remove_first_n_timestamps': 5,
+            'max_run_length': 2
+        }
+        data_cleaner = DataCleaner(config=DataCleaningConfig().create(config_dict=cleaner_config_dict))
+        data_cleaner.clean()
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict={
+            'output_path': self.output_dir,
+            'hdf5_files': glob(f'{self.output_dir}/train*.hdf5')
+        }))
+        data_loader.load_dataset()
+        self.assertEqual(2*len(info['episode_lengths']),
                          len(data_loader.get_dataset()))
 
     @unittest.skip
