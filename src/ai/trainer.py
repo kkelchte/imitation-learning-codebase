@@ -79,7 +79,7 @@ class Trainer(Evaluator):
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         total_error = []
-#        for batch in tqdm(self.data_loader.sample_shuffled_batch(), ascii=True, desc='train'):
+        #        for batch in tqdm(self.data_loader.sample_shuffled_batch(), ascii=True, desc='train'):
         for batch in self.data_loader.sample_shuffled_batch():
             self._optimizer.zero_grad()
             predictions = self._net.forward(batch.observations, train=True)
@@ -101,6 +101,10 @@ class Trainer(Evaluator):
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(error_distribution, 'training')
+            if self._config.store_output_on_tensorboard:
+                writer.write_output_image(predictions, 'training/predictions')
+                writer.write_output_image(targets, 'training/targets')
+                writer.write_output_image(torch.stack(batch.observations), 'training/inputs')
         return f' training {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
 
     def get_checkpoint(self) -> dict:
@@ -121,7 +125,7 @@ class Trainer(Evaluator):
         self._optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         if self._scheduler is not None:
             self._scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        if self._config.device != 'cpu':
+        if self._device.type != 'cpu':
             for state in self._optimizer.state.values():
                 for k, v in state.items():
                     if isinstance(v, torch.Tensor):

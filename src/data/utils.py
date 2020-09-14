@@ -63,7 +63,7 @@ def load_and_preprocess_file(file_name: str, size: tuple = None) -> torch.Tensor
     """
     data = Image.open(file_name, mode='r')
     if size is not None and len(size) != 0:
-        data = cv2.resize(np.asarray(data), dsize=(size[1], size[2]), interpolation=cv2.INTER_NEAREST)
+        data = cv2.resize(np.asarray(data), dsize=(size[1], size[2]), interpolation=cv2.INTER_LANCZOS4)
         if size[0] == 1:
             data = data.mean(axis=-1, keepdims=True)
     data = np.array(data).astype(np.float32)  # uint8 -> float32

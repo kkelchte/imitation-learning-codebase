@@ -30,7 +30,7 @@ class Net(BaseNet):
         self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
         self.h = 64
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 32, 5, stride=2),
+            nn.Conv2d(1, 32, 5, stride=2),
             nn.LeakyReLU(),
             nn.Conv2d(32, 64, 5, stride=2),
             nn.LeakyReLU(),
@@ -60,7 +60,6 @@ class Net(BaseNet):
                 x = self.encoder(inputs)
         else:
             x = self.encoder(inputs)
-        x = x.flatten(start_dim=1)
         if self.dropout is not None:
             x = self.dropout(x)
         x = self.decoder(x)

@@ -13,6 +13,7 @@ from src.ai.utils import data_to_tensor
 from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
+from src.core.tensorboard_wrapper import TensorboardWrapper
 from src.core.utils import get_filename_without_extension, save_output_plots, create_output_video
 from src.data.data_loader import DataLoaderConfig, DataLoader
 
@@ -29,6 +30,7 @@ class EvaluatorConfig(Config):
     criterion: str = 'MSELoss'
     device: str = 'cpu'
     evaluate_extensive: bool = False
+    store_output_on_tensorboard: bool = False
 
 
 class Evaluator:
@@ -74,6 +76,9 @@ class Evaluator:
         self.put_model_back_to_original_device()
         if writer is not None:
             writer.write_distribution(error_distribution, 'validation')
+            if self._config.store_output_on_tensorboard:
+                writer.write_output_image(predictions, 'validation')
+
         msg = f' validation {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
 
         best_checkpoint = False

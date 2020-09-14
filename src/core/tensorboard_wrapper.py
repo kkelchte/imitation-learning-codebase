@@ -1,6 +1,9 @@
 import os
+from typing import Union
 
+import torch
 from torch.utils.tensorboard import SummaryWriter
+import numpy as np
 
 from src.core.data_types import Distribution
 
@@ -31,3 +34,11 @@ class TensorboardWrapper(SummaryWriter):
 
     def write_scalar(self, data: float, tag: str):
         self._add_scalar(tag, data)
+
+    def write_output_image(self, images: torch.Tensor, tag: str = ""):
+        if len(images.shape) == 3:  # if input has 3 dimension add batch dimension
+            images.unsqueeze_(0)
+        if images.shape[1] == 1:  # if channel is 1D
+            images = images.squeeze(dim=1)
+            images = torch.stack(3*[images], dim=1)
+        self.add_images(tag, images, self.step, dataformats='NCHW')

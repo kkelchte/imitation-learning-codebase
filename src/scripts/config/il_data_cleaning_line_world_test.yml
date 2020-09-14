@@ -4,10 +4,10 @@ remove_first_n_timestamps: 30
 augment_background_noise: False
 binary_maps_as_target: True
 require_success: True
-max_run_length: 4
+max_run_length: 1
 data_loader_config:
-  subsample: 100
+  subsample: 300
   input_size: [1, 64, 64]
   data_directories:
-  - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_14-48-23_runner_487
-  - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_14-02-58_runner_490
+  - /Users/kelchtermans/mount/opal/line_world_mixed/raw_data/20-09-10_14-48-23_runner_487
+  - /Users/kelchtermans/mount/opal/line_world_mixed/raw_data/20-09-10_14-02-58_runner_490
