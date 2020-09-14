@@ -28,6 +28,7 @@ class DataLoaderConfig(Config):
     subsample: int = 1
     loop_over_hdf5_files: bool = False
     input_size: Optional[List[int]] = None
+    input_scope: Optional[str] = 'default'
 
     def post_init(self):  # add default options
         if self.data_directories is None:
@@ -111,7 +112,8 @@ class DataLoader:
         directory_generator = tqdm(directories, ascii=True, desc=__name__) \
             if len(directories) > 10 else directories
         for directory in directory_generator:
-            run = load_run(directory, arrange_according_to_timestamp=False, input_size=self._config.input_size)
+            run = load_run(directory, arrange_according_to_timestamp=False, input_size=self._config.input_size,
+                           scope=self._config.input_scope)
             if len(run) != 0:
                 self._dataset.extend(experiences=run)
         cprint(f'Loaded {len(self._dataset)} data points from {len(directories)} directories',

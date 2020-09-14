@@ -58,7 +58,7 @@ def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.M
         layers += [nn.Linear(sizes[j], sizes[j+1], bias=True if bias_in_last_layer else is_not_last_layer)]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
-            layers += [act()]
+            layers += [act]
     return nn.Sequential(*layers)
 
 ##################################################################

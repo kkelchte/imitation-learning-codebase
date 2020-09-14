@@ -69,15 +69,18 @@ class Evaluator:
 #        for batch in tqdm(self.data_loader.get_data_batch(), ascii=True, desc='evaluate'):
         for batch in self.data_loader.get_data_batch():
             predictions = self._net.forward(batch.observations, train=False)
+            targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
             error = self._criterion(predictions,
-                                    data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)).mean()
+                                    targets).mean()
             total_error.append(error)
         error_distribution = Distribution(total_error)
         self.put_model_back_to_original_device()
         if writer is not None:
             writer.write_distribution(error_distribution, 'validation')
             if self._config.store_output_on_tensorboard:
-                writer.write_output_image(predictions, 'validation')
+                writer.write_output_image(predictions, 'validation/predictions')
+                writer.write_output_image(targets, 'validation/targets')
+                writer.write_output_image(torch.stack(batch.observations), 'validation/inputs')
 
         msg = f' validation {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
 

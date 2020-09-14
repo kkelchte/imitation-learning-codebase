@@ -3,7 +3,7 @@ import os
 from copy import deepcopy
 from typing import List, Tuple, Union
 
-import cv2
+from cv2 import cv2
 import h5py
 import torch
 from PIL import Image
@@ -12,11 +12,11 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 from src.core.data_types import Dataset
+from src.core.data_types import Experience
 
 #############################################################
 #  Helper functions to store data used by data_saver.py     #
 #############################################################
-from src.core.data_types import Experience
 
 
 def timestamp_to_filename(time_stamp_ms: int) -> str:
@@ -56,10 +56,11 @@ def filename_to_timestamp(filename: str) -> int:
     return int(os.path.basename(filename).split('.')[0])
 
 
-def load_and_preprocess_file(file_name: str, size: tuple = None) -> torch.Tensor:
+def load_and_preprocess_file(file_name: str, size: tuple = None, scope: str = 'default') -> torch.Tensor:
     """
     file_name: full path to image file
     size: tuple or list of 3 dimensions: (CHANNEL, WIDTH, HEIGHT) used with
+    range: 'default' ~ 0:1, 'uint8' ~ 0:255, 'zero_centered' ~ -1:1
     """
     data = Image.open(file_name, mode='r')
     if size is not None and len(size) != 0:
@@ -67,14 +68,27 @@ def load_and_preprocess_file(file_name: str, size: tuple = None) -> torch.Tensor
         if size[0] == 1:
             data = data.mean(axis=-1, keepdims=True)
     data = np.array(data).astype(np.float32)  # uint8 -> float32
+
+    if np.amin(data) < 0:
+        data -= np.amin(data)
     if np.amax(data) > 1:
-        data /= 255.  # 0:255 -> 0:1
-    assert np.amax(data) <= 1 and np.amin(data) >= 0
+        data /= np.amax(data)
+
+    if scope == 'zero_centered':
+        data *= 2
+        data -= 1
+
+    # check correct range
+    if scope == "default":
+        assert np.amax(data) <= 1 and np.amin(data) >= 0
+    elif scope == "zero_centered":
+        assert 0 <= np.amax(data) <= 1 and -1 <= np.amin(data) < 0
+
     data = data.swapaxes(1, 2).swapaxes(0, 1)  # make channel first
     return torch.as_tensor(data, dtype=torch.float32)
 
 
-def load_data_from_directory(directory: str, size: tuple = None) -> Tuple[list, list]:
+def load_data_from_directory(directory: str, size: tuple = None, scope: str = 'default') -> Tuple[list, list]:
     """
     directory: full path containing the observations
     size: tuple or list of 3 dimensions: (CHANNEL, WIDTH, HEIGHT)
@@ -83,7 +97,8 @@ def load_data_from_directory(directory: str, size: tuple = None) -> Tuple[list, 
     data = []
     for f in sorted(os.listdir(directory)):
         data.append(load_and_preprocess_file(file_name=os.path.join(directory, f),
-                                             size=size))
+                                             size=size,
+                                             scope=scope))
         time_stamps.append(filename_to_timestamp(f))
     return time_stamps, data
 
@@ -107,9 +122,9 @@ def load_data_from_file(filename: str, size: tuple = ()) -> Tuple[list, list]:
     return time_stamps, data
 
 
-def load_data(dataype: str, directory: str, size: tuple = None) -> Tuple[list, list]:
+def load_data(dataype: str, directory: str, size: tuple = None, scope: str = 'default') -> Tuple[list, list]:
     if os.path.isdir(os.path.join(directory, dataype)):
-        return load_data_from_directory(os.path.join(directory, dataype), size=size)
+        return load_data_from_directory(os.path.join(directory, dataype), size=size, scope=scope)
     elif os.path.isfile(os.path.join(directory, dataype)):
         return load_data_from_file(os.path.join(directory, dataype), size=size)
     else:
@@ -147,14 +162,15 @@ def torch_append(destination: torch.Tensor, source: torch.Tensor) -> torch.Tenso
     return torch.cat((destination, source), 0)
 
 
-def load_run(directory: str, arrange_according_to_timestamp: bool = False, input_size: List[int] = None) \
-        -> List[Experience]:
+def load_run(directory: str, arrange_according_to_timestamp: bool = False, input_size: List[int] = None,
+             scope: str = 'default') -> List[Experience]:
     run = {}
     time_stamps = {}
     for x in os.listdir(directory):
         #try:
         k = x if not x.endswith('.data') else x[:-5]
-        time_stamps[x], run[k] = load_data(x, directory, size=input_size if k == 'observation' else None)
+        time_stamps[x], run[k] = load_data(x, directory, size=input_size if k == 'observation' else None,
+                                           scope=scope if k == 'observation' else None)
         #except:
         #    pass
     if arrange_according_to_timestamp:
@@ -382,8 +398,8 @@ def augment_background_noise(dataset: Dataset) -> Dataset:
     num_channels = dataset.observations[0].shape[0]
     for image in tqdm(binary_images):
         new_shape = (*image.shape, num_channels)
-        bg = np.random.uniform(0, 1, size=new_shape)
-        fg = np.zeros(new_shape) + np.random.uniform(0, 1)
+        bg = np.random.uniform(-1, 1, size=new_shape)
+        fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
         three_channel_mask = np.stack([image] * num_channels, axis=-1)
         new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg) / 2.)
         augmented_dataset.observations.append(new_img.permute(2, 0, 1))

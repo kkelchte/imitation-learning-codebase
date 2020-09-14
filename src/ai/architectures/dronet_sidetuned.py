@@ -103,8 +103,8 @@ class Net(BaseNet):
                                             kernel_size=1, stride=2, padding=0, bias=True)
 
         self.decoder = mlp_creator(sizes=[6272, 2056, self.output_size[0]],
-                                   activation=nn.ReLU,
-                                   output_activation=nn.Tanh,
+                                   activation=nn.ReLU(),
+                                   output_activation=nn.Tanh(),
                                    bias_in_last_layer=False)
 
     def feature_extract(self, inputs: torch.Tensor) -> torch.Tensor:

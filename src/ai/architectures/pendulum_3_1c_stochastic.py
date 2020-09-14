@@ -37,11 +37,11 @@ class Net(BaseNet):
         self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * self.output_size[0]), requires_grad=False)
 
         self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
-                                  activation=nn.Tanh,
+                                  activation=nn.Tanh(),
                                   output_activation=None)
 
         self._critic = mlp_creator(sizes=[self.input_size[0], 64, 64, 1],
-                                   activation=nn.Tanh,
+                                   activation=nn.Tanh(),
                                    output_activation=None)
         self.initialize_architecture()
 

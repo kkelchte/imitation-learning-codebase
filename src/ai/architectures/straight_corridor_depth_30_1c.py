@@ -29,8 +29,8 @@ class Net(BaseNet):
 
         self.discrete = False
         self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
-                                  activation=nn.Tanh,
-                                  output_activation=nn.Tanh)
+                                  activation=nn.Tanh(),
+                                  output_activation=nn.Tanh())
 
         log_std = self._config.log_std if self._config.log_std != 'default' else 0.5
         self.log_std = torch.nn.Parameter(torch.ones(self.output_size, dtype=torch.float32) * log_std,

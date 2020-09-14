@@ -3,6 +3,7 @@ import time
 
 import torch
 import numpy as np
+from cv2 import cv2
 from dataclasses import dataclass
 from typing import Union, Any, Optional
 
@@ -48,6 +49,8 @@ class BaseNet(nn.Module):
     def __init__(self, config: ArchitectureConfig, quiet: bool = True):
         super().__init__()
         self.input_size = None
+        # input range from 0 -> 1 is expected, for range -1 -> 1 this field should state 'zero_centered'
+        self.input_scope = 'default'
         self.output_size = None
         self.discrete = None
         self._config = config
@@ -93,24 +96,36 @@ class BaseNet(nn.Module):
             self.train()
         else:
             self.eval()
-        # preprocess inputs
+
+        if len(self.input_size) == 3:
+            # check if 2D input is correct
+            # compare channel first / last for single image:
+            if len(inputs.shape) == 3 and inputs.shape[-1] == self.input_size[0]:
+                # in case it's channel last, assume single raw data input which requires preprocess:
+                # check for size
+                if inputs.shape[1] != self.input_size[1]:
+                    # resize with opencv
+                    inputs = cv2.resize(np.asarray(inputs), dsize=(self.input_size[1], self.input_size[2]),
+                                        interpolation=cv2.INTER_LANCZOS4)
+                    if self.input_size[0] == 1:
+                        inputs = inputs.mean(axis=-1, keepdims=True)
+                # check for scope
+                if inputs.max() > 1 or inputs.min() < 0:
+                    inputs += inputs.min()
+                    inputs /= inputs.max()
+                if self.input_scope == 'zero_centered':
+                    inputs *= 2
+                    inputs -= 1
+                # make channel first and add batch dimension
+                inputs = torch.as_tensor(inputs).permute(2, 0, 1).unsqueeze(0)
+
+        # create Tensors
         if not isinstance(inputs, torch.Tensor):
             try:
                 inputs = torch.as_tensor(inputs, dtype=self.dtype)
             except ValueError:
                 inputs = torch.stack(inputs).type(self.dtype)
         inputs = inputs.type(self.dtype)
-        # swap H, W, C --> C, H, W
-        if torch.argmin(torch.as_tensor(inputs.size())) != 0 \
-                and self.input_size[0] == inputs.size()[-1]\
-                and len(self.input_size) == len(inputs.size()):
-            inputs = inputs.permute(2, 0, 1)
-
-        # swap B, H, W, C --> B, C, H, W
-        if len(self.input_size) + 1 == len(inputs.size()) and \
-                torch.argmin(torch.as_tensor(inputs.size()[1:])) != 0 \
-                and self.input_size[0] == inputs.size()[-1]:
-            inputs = inputs.permute(0, 3, 1, 2)
 
         # add batch dimension if required
         if len(self.input_size) == len(inputs.size()):

@@ -1,11 +1,11 @@
-output_path: test_line_world_mixed_clean
-number_of_epochs: 4000
+output_path: play_with_params_2
+number_of_epochs: 5000
 number_of_episodes: -1
 save_checkpoint_every_n: 1000
 architecture_config:
   architecture: encoder_decoder_line_world
   initialisation_type: xavier
-  random_seed: 123
+  random_seed: 4
   device: cpu
   weight_decay: default
   dropout: default
@@ -21,7 +21,7 @@ trainer_config:
     - test_line_world_mixed_clean/train_0.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 1
+    batch_size: 2
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
@@ -31,7 +31,7 @@ evaluator_config:
     - test_line_world_mixed_clean/validation_0.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 1
+    batch_size: 2
   criterion: MSELoss
   device: cpu
   store_output_on_tensorboard: true

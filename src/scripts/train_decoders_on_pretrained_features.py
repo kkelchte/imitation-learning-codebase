@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     if arguments.mlp:
         decoder = mlp_creator(sizes=[input_size, 2056, 2056, output_size],
-                              activation=nn.ReLU,
+                              activation=nn.ReLU(),
                               output_activation=None,
                               bias_in_last_layer=False)
     else:
@@ -205,7 +205,7 @@ if __name__ == '__main__':
         os.makedirs(output_dir_val, exist_ok=True)
 
         for run in tqdm(validation_runs[::3]):
-            data = load_data_from_directory(run, size=(3, 256, 256))[1][::20]
+            data = load_data_from_directory(run, size=(3, 256, 256), scope='zero_centered')[1][::20]
             representation = encoder(torch.stack(data))
             with torch.no_grad():
                 if arguments.mlp:

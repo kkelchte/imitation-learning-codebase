@@ -63,28 +63,46 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(torch.sum(check_second_network), torch.sum(check_network))
         self.assertNotEqual(torch.sum(check_third_network), torch.sum(check_network))
 
-    def test_tiny_128_rgb_6c_input_failures(self):
+    def test_tiny_128_rgb_6c_preprocessed_and_raw_input(self):
         base_config['architecture'] = 'tiny_128_rgb_6c'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
-        # try normal usage
-        self.assertEqual(network.forward(generate_random_image(size=(3, 128, 128))).squeeze(0).shape,
+        # test normal batch of data
+        self.assertEqual(network.forward(torch.randint(255, (10, *network.input_size))/255.).shape[1:],
                          network.output_size)
 
-        # try channel last
-        self.assertEqual(network.forward(generate_random_image(size=(128, 128, 3))).squeeze(0).shape,
-                         network.output_size)
-        # try batch normal usage
-        self.assertEqual(network.forward(generate_random_image(size=(10, 3, 128, 128))).shape[1:],
-                         network.output_size)
-        # try batch channel last
-        self.assertEqual(network.forward(generate_random_image(size=(10, 128, 128, 3))).shape[1:],
-                         network.output_size)
+        # test single unprocessed data point
+        processed_inputs = super(type(network), network).forward(torch.randint(255, (network.input_size[1],
+                                                                                     network.input_size[2],
+                                                                                     network.input_size[0])),
+                                                                 train=False)
+        self.assertTrue(processed_inputs.max() <= 1)
+        self.assertTrue(processed_inputs.min() >= 0)
+        self.assertEqual(len(processed_inputs.shape), len(network.input_size) + 1)
+        self.assertEqual(processed_inputs.shape[2], network.input_size[1])
+        self.assertEqual(processed_inputs.shape[3], network.input_size[2])
+
+    def test_tiny_128_rgb_6c_raw_input_zero_centered(self):
+        base_config['architecture'] = 'tiny_128_rgb_6c'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        network.input_scope = 'zero_centered'
+        # test single unprocessed data point
+        processed_inputs = super(type(network), network).forward(torch.randint(255, (network.input_size[1],
+                                                                                     network.input_size[2],
+                                                                                     network.input_size[0])),
+                                                                 train=False)
+        self.assertTrue(processed_inputs.max() <= 1)
+        self.assertTrue(-1 <= processed_inputs.min() < 0)
+        self.assertEqual(len(processed_inputs.shape), len(network.input_size) + 1)
+        self.assertEqual(processed_inputs.shape[2], network.input_size[1])
+        self.assertEqual(processed_inputs.shape[3], network.input_size[2])
 
     def test_mlp_creator(self):
         network = mlp_creator(sizes=[4, 10, 10, 1],
-                              activation=nn.ReLU,
+                              activation=nn.ReLU(),
                               output_activation=None,
                               bias_in_last_layer=False)
         self.assertEqual(len(network), 5)

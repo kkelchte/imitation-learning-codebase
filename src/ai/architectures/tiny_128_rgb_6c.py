@@ -35,8 +35,8 @@ class Net(BaseNet):
             nn.Conv2d(128, 256, 4, stride=2),
         )
         self.decoder = mlp_creator(sizes=[256 * 6 * 6, 128, 128, self.output_size[0]],
-                                   activation=nn.ReLU,
-                                   output_activation=nn.Tanh,
+                                   activation=nn.ReLU(),
+                                   output_activation=nn.Tanh(),
                                    bias_in_last_layer=False)
         self.initialize_architecture()
 
