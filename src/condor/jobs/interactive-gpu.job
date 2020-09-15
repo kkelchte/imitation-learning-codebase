@@ -2,9 +2,9 @@
 # Submit an interactive job
 ###########################
 
-RequestCpus     = 1
+RequestCpus     = 3
 RequestMemory   = 15G
-+RequestWallTime = 60*60
++RequestWallTime = 15*60
 Request_GPUs = 1
 
 # If you want X11 forwarding, uncomment this
