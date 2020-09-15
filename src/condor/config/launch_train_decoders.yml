@@ -5,13 +5,13 @@ job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 3
-    gpus: 0
+    gpus: 1
     cpu_mem_gb: 14
     disk_mem_gb: 52
-    wall_time_s: 15 * 60
-    nice: false
+    wall_time_s: 5 * 60 * 60
+    nice: true
     use_singularity: false
-    check_if_ros_already_in_use: true
+    check_if_ros_already_in_use: false
     save_locally: true
     extra_requirements: ( Has_ssse3 == True )
 number_of_jobs:
