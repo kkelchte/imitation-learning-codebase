@@ -2,14 +2,14 @@ output_path: encoder_decoder/noisy/adam_1e-3
 mode: default
 wait_time_between_jobs_sec: 0
 job_configs:
-  - command: python3.8 src/scripts/train_decoders_on_pretrained_features.py
+  - command: python3.8 src/scripts/experiments.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 4
-    gpus: 1
-    cpu_mem_gb: 15
+    cpus: 3
+    gpus: 0
+    cpu_mem_gb: 14
     disk_mem_gb: 52
-    wall_time_s: 3 * 60 * 60
-    nice: true
+    wall_time_s: 15 * 60
+    nice: false
     use_singularity: false
     check_if_ros_already_in_use: true
     save_locally: false
@@ -17,4 +17,4 @@ job_configs:
 number_of_jobs:
   - 1
 base_config_files: 
-    - ''
+    - src/scripts/config/il_train_line_world.yml

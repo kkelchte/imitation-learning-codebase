@@ -1,5 +1,5 @@
 output_path: encoder_decoder/noisy/adam_1e-3
-number_of_epochs: 10000
+number_of_epochs: 10
 number_of_episodes: -1
 save_checkpoint_every_n: -1
 architecture_config:
@@ -20,7 +20,7 @@ trainer_config:
     - line_world_mixed/hdf5_files/1_64_64/train_0.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 128
+    batch_size: 32
   criterion: MSELoss
   device: cpu
   store_output_on_tensorboard: true
@@ -28,9 +28,8 @@ evaluator_config:
   data_loader_config:
     hdf5_files:
       - line_world_mixed/hdf5_files/1_64_64/validation_0.hdf5
-    random_seed: 123
+    random_seed: 32
     balance_over_actions: false
-    batch_size: 10
   criterion: MSELoss
   device: cpu
   store_output_on_tensorboard: true
