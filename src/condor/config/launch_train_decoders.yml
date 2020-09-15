@@ -12,7 +12,7 @@ job_configs:
     nice: false
     use_singularity: false
     check_if_ros_already_in_use: true
-    save_locally: false
+    save_locally: true
     extra_requirements: ( Has_ssse3 == True )
 number_of_jobs:
   - 1
