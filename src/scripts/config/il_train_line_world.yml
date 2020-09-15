@@ -1,37 +1,36 @@
-output_path: play_with_params_2
-number_of_epochs: 5000
+output_path: encoder_decoder/noisy/adam_1e-3
+number_of_epochs: 10000
 number_of_episodes: -1
-save_checkpoint_every_n: 1000
+save_checkpoint_every_n: -1
 architecture_config:
-  architecture: encoder_decoder_line_world
+  architecture: encoder_decoder_line_world_small
   initialisation_type: xavier
   random_seed: 4
   device: cpu
-  weight_decay: default
   dropout: default
   dtype: default
   log_std: default
 trainer_config:
   optimizer: Adam
-  learning_rate: 0.00001
-  gradient_clip_norm: 3
+  learning_rate: 0.001
   factory_key: BASE
   data_loader_config:
+    loop_over_hdf5_files: true
     hdf5_files:
-    - test_line_world_mixed_clean/train_0.hdf5
+    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_mixed/train_0.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 2
+    batch_size: 128
   criterion: MSELoss
-  device: cuda
+  device: cpu
   store_output_on_tensorboard: true
 evaluator_config:
   data_loader_config:
     hdf5_files:
-    - test_line_world_mixed_clean/validation_0.hdf5
+    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_mixed/noisy_10_big/validation_0.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 2
+    batch_size: 10
   criterion: MSELoss
   device: cpu
   store_output_on_tensorboard: true

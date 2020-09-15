@@ -77,7 +77,7 @@ class Evaluator:
         self.put_model_back_to_original_device()
         if writer is not None:
             writer.write_distribution(error_distribution, 'validation')
-            if self._config.store_output_on_tensorboard:
+            if self._config.store_output_on_tensorboard and self._net.global_step % 1000 == 0:
                 writer.write_output_image(predictions, 'validation/predictions')
                 writer.write_output_image(targets, 'validation/targets')
                 writer.write_output_image(torch.stack(batch.observations), 'validation/inputs')

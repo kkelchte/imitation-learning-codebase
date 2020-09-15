@@ -38,6 +38,14 @@ class DataLoaderConfig(Config):
             self.input_size = []
         if self.hdf5_files is None:
             self.hdf5_files = []
+        if self.data_directories is not None and len(self.data_directories) != 0 \
+                and not self.data_directories[0].startswith('/'):
+            self.data_directories = [os.path.join(get_data_dir(os.environ['HOME']), d) for d in self.data_directories]
+        if self.hdf5_files is not None and len(self.hdf5_files) != 0:
+            self.hdf5_files = [
+                os.path.join(get_data_dir(os.environ['HOME']), hdf5_f) if not hdf5_f.startswith('/') else hdf5_f
+                for hdf5_f in self.hdf5_files
+            ]
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
@@ -45,14 +53,6 @@ class DataLoaderConfig(Config):
                 self.output_path = output_path
             else:  # if output path is provided by ModelConfig, the data should be found in the experiment directory
                 self.output_path = output_path.split('models')[0]
-        if self.data_directories is not None and len(self.data_directories) != 0 \
-                and not self.data_directories[0].startswith('/'):
-            self.data_directories = [os.path.join(get_data_dir(os.environ['HOME']), d) for d in self.data_directories]
-        if self.hdf5_files is not None and len(self.hdf5_files) != 0:
-            self.hdf5_files = [
-                    os.path.join(get_data_dir(os.environ['HOME']), hdf5_f) if not hdf5_f.startswith('/') else hdf5_f
-                    for hdf5_f in self.hdf5_files
-            ]
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 value.iterative_add_output_path(output_path)
@@ -165,6 +165,7 @@ class DataLoader:
         while batch_count < min(len(self._dataset), max_number_of_batches * self._config.batch_size):
             sample_indices = np.random.choice(list(range(len(self._dataset))),
                                               size=self._config.batch_size,
+                                              replace=len(self._dataset) < self._config.batch_size,
                                               p=self._probabilities
                                               if len(self._probabilities) != 0 else None)
             batch = select(self._dataset, sample_indices)

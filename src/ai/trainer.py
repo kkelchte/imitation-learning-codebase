@@ -101,7 +101,7 @@ class Trainer(Evaluator):
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(error_distribution, 'training')
-            if self._config.store_output_on_tensorboard:
+            if self._config.store_output_on_tensorboard and self._net.global_step % 1000 == 0:
                 writer.write_output_image(predictions, 'training/predictions')
                 writer.write_output_image(targets, 'training/targets')
                 writer.write_output_image(torch.stack(batch.observations), 'training/inputs')

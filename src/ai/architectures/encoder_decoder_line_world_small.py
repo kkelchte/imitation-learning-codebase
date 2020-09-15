@@ -24,14 +24,14 @@ class Net(BaseNet):
                                   quiet=False)
         if not quiet:
             cprint(f'Started.', self._logger)
-        self.input_size = (3, 256, 256)
+        self.input_size = (1, 64, 64)
         self.input_scope = 'default'
-        self.output_size = (256, 256)
+        self.output_size = (64, 64)
         self.discrete = False
         self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
         self.h = 128
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 32, 5, stride=2),
+            nn.Conv2d(1, 32, 5, stride=2),
             nn.LeakyReLU(),
             nn.Conv2d(32, 64, 5, stride=2),
             nn.LeakyReLU(),

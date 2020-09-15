@@ -96,7 +96,8 @@ class BaseNet(nn.Module):
             self.train()
         else:
             self.eval()
-
+        if isinstance(inputs, list):
+            inputs = torch.stack(inputs)
         if len(self.input_size) == 3:
             # check if 2D input is correct
             # compare channel first / last for single image:

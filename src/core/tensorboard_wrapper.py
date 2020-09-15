@@ -36,9 +36,9 @@ class TensorboardWrapper(SummaryWriter):
         self._add_scalar(tag, data)
 
     def write_output_image(self, images: torch.Tensor, tag: str = ""):
-        if len(images.shape) == 3:  # if input has 3 dimension add batch dimension
-            images.unsqueeze_(0)
-        if images.shape[1] == 1:  # if channel is 1D
+        if len(images.shape) == 3:  # if input has 3 dimension add channel dimension
+            images.unsqueeze_(1)
+        if images.shape[1] == 1:  # if channel dimension is 1, make it 3 for image
             images = images.squeeze(dim=1)
             images = torch.stack(3*[images], dim=1)
         self.add_images(tag, images, self.step, dataformats='NCHW')

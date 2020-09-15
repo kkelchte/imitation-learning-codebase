@@ -39,7 +39,7 @@ class ExperimentConfig(Config):
     train_every_n_steps: int = -1
     load_checkpoint_dir: Optional[str] = None  # path to checkpoints
     load_checkpoint_found: bool = True
-    save_checkpoint_every_n: int = 10
+    save_checkpoint_every_n: int = -1
     tensorboard: bool = False
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
