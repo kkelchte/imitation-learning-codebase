@@ -64,8 +64,11 @@ class RobotDisplay:
             direction = np.arccos(self._action.value[-1])
 #            origin = (int(image.shape[1] / 2), int(image.shape[0] / 2))
             origin = (50, int(image.shape[0] / 2) if height == -1 else height + 50)
-            steering_point = (int(origin[0] - forward_speed * np.cos(direction)),
-                              int(origin[1] - forward_speed * np.sin(direction)))
+            try:
+                steering_point = (int(origin[0] - forward_speed * np.cos(direction)),
+                                  int(origin[1] - forward_speed * np.sin(direction)))
+            except ValueError:
+                steering_point = (int(origin[0]), int(origin[1]))
             image = cv2.circle(image, origin, radius=20, color=(0, 0, 0, 0.3), thickness=3)
             image = cv2.arrowedLine(image, origin, steering_point, (255, 0, 0), thickness=1)
             msg = '[' + ', '.join(f'{e:.1f}' for e in self._action.value) + ']'

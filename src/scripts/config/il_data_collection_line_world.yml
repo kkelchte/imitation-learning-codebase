@@ -17,6 +17,7 @@ environment_config:
       fsm_config: single_run
       fsm: true
       control_mapping: true
+      robot_display: false
       waypoint_indicator: true
       control_mapping_config: noisy_line_worlds
       world_name: line_worlds/model_000
