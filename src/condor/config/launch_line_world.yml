@@ -1,19 +1,20 @@
-output_path: line_world_mixed
+output_path: line_world_mixed_new
 mode: data_collection_line_world
+wait_time_between_jobs_sec: 5 * 60
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 7
+    cpus: 11
     gpus: 0
     cpu_mem_gb: 7
     disk_mem_gb: 18
-    wall_time_s: 30 * 60
+    wall_time_s: 15 * 60
     nice: true
     use_singularity: true
     check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 1
+  - 50
 base_config_files:
   - src/scripts/config/il_data_collection_line_world.yml
