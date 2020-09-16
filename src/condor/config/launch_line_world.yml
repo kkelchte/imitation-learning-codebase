@@ -1,6 +1,6 @@
 output_path: line_world_mixed_new
 mode: data_collection_line_world
-wait_time_between_jobs_sec: 5 * 60
+wait_time_between_jobs_sec: 60
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
