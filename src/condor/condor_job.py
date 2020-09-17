@@ -192,7 +192,7 @@ class CondorJob:
                           if not original_hdf5_file.startswith('/') else original_hdf5_file
                           for original_hdf5_file in hdf5_files]
             new_hdf5_files = [
-                os.path.join(self.local_output_path, f"{len(original_to_new_location_tuples) + index}.hdf5")
+                os.path.join(self.local_home, f"{len(original_to_new_location_tuples) + index}.hdf5")
                 for index in range(len(hdf5_files))
             ]
             original_to_new_location_tuples.extend(zip(hdf5_files, new_hdf5_files))

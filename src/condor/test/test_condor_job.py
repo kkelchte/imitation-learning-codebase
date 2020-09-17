@@ -302,7 +302,7 @@ class TestCondorJob(unittest.TestCase):
         print(f'hdf5_file_sizes: {hdf5_file_sizes}')
         self.assertEqual(len(hdf5_file_sizes), len(original_sizes))
         for f in hdf5_files:
-            self.assertTrue(f.startswith(condor_job.local_output_path))
+            self.assertTrue(f.startswith(condor_job.local_home))
         for js, rs in zip(hdf5_file_sizes, original_sizes):
             self.assertEqual(js, rs)
 

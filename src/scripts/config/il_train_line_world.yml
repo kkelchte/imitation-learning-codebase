@@ -17,8 +17,8 @@ trainer_config:
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
-    - line_world_mixed/hdf5_files/1_64_64/train_0.hdf5
-    - line_world_mixed/hdf5_files/1_64_64/train_1.hdf5
+    - /gluster/visics/kkelchte/line_world_data/sim/noisy_augmented/1_64_64/train_0.hdf5
+    - /gluster/visics/kkelchte/line_world_data/sim/noisy_augmented/1_64_64/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
     batch_size: 128
@@ -28,7 +28,7 @@ trainer_config:
 evaluator_config:
   data_loader_config:
     hdf5_files:
-    - line_world_mixed/hdf5_files/1_64_64/validation_0.hdf5
+    - /gluster/visics/kkelchte/line_world_data/sim/noisy_augmented/1_64_64/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
   criterion: MSELoss
