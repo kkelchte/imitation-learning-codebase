@@ -1,4 +1,4 @@
-output_path: encoder_decoder/noisy/bs64
+output_path: encoder_decoder/noisy/bs128
 mode: lr_line_world
 wait_time_between_jobs_sec: 10
 job_configs:
