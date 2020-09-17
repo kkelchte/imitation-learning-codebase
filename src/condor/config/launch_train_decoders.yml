@@ -1,11 +1,12 @@
 output_path: encoder_decoder/noisy/adam_1e-3
-mode: default
-wait_time_between_jobs_sec: 0
+mode: lr_bs_line_world
+wait_time_between_jobs_sec: 10
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 3
     gpus: 1
+    gpu_mem_mb: 3900
     cpu_mem_gb: 14
     disk_mem_gb: 52
     wall_time_s: 5 * 60 * 60

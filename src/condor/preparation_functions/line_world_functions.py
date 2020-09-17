@@ -8,6 +8,28 @@ from src.condor.preparation_functions.il_preparation_functions import prepare_de
 from src.core.utils import get_date_time_tag
 
 
+def prepare_lr_bs_line_world(base_config_file: str,
+                             job_config_object: CondorJobConfig,
+                             number_of_jobs: int,
+                             output_path: str) -> List[CondorJob]:
+    learning_rates = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+    batch_sizes = [32, 64, 128, 256]
+    model_paths = [os.path.join(output_path, 'models', f'sd_{bs}_lr_{lr}')
+                   for lr in learning_rates
+                   for bs in batch_sizes]
+    adjustments = {translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'learning_rate']):
+                       [lr for lr in learning_rates for _ in range(len(batch_sizes))],
+                   translate_keys_to_string(['trainer_config', 'data_loader_config', 'batch_size']):
+                       [bs for _ in learning_rates for bs in range(len(batch_sizes))],
+                   }
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
+
+
 def prepare_data_collection_line_world(base_config_file: str,
                                        job_config_object: CondorJobConfig,
                                        number_of_jobs: int,

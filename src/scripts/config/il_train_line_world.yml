@@ -1,4 +1,4 @@
-output_path: encoder_decoder/noisy/adam_1e-3
+output_path: test_encoder_decoder
 number_of_epochs: 1000
 number_of_episodes: -1
 save_checkpoint_every_n: 100
@@ -21,7 +21,7 @@ trainer_config:
     - line_world_mixed/hdf5_files/1_64_64/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 32
+    batch_size: 64
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
