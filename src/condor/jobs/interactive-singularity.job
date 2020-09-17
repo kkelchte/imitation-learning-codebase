@@ -2,7 +2,7 @@
 # Submit an interactive job
 ###########################
 Universe 	= vanilla
-RequestCpus     = 7
+RequestCpus     = 11
 RequestMemory   = 10 G
 RequestDisk	= 50 G
 # max time 4h

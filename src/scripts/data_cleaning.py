@@ -54,6 +54,7 @@ class DataCleaner:
             self._clean(filename_tag, runs)
 
     def _clean(self, filename_tag: str, runs: List[str]) -> None:
+        total_data_points = 0
         filename_index = 0
         hdf5_data = Dataset()
         for run in tqdm(runs):
@@ -86,11 +87,14 @@ class DataCleaner:
                                                                     f'{filename_tag}_{filename_index}.hdf5'),
                                               dataset=hdf5_data)
                 filename_index += 1
+                total_data_points += len(hdf5_data)
                 hdf5_data = Dataset()
         if len(hdf5_data) != 0:
             create_hdf5_file_from_dataset(filename=os.path.join(self._config.output_path,
                                                                 f'{filename_tag}_{filename_index}.hdf5'),
                                           dataset=hdf5_data)
+            total_data_points += len(hdf5_data)
+        print(f'Total data points: {total_data_points}')
 
 
 if __name__ == '__main__':
