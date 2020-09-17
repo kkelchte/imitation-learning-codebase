@@ -269,7 +269,7 @@ class TestCondorJob(unittest.TestCase):
                                          os.path.join(self.output_dir, 'fake_data_1', 'validation.hdf5')
                                  ]
                              }}
-        original_sizes = [int(os.system("stat --format %s "+v))
+        original_sizes = [int(subprocess.getoutput(shlex.split("stat --format %s "+v)))
                           for v in [os.path.join(self.output_dir, 'fake_data_0', 'train.hdf5'),
                                     os.path.join(self.output_dir, 'fake_data_1', 'train.hdf5'),
                                     os.path.join(self.output_dir, 'fake_data_0', 'validation.hdf5'),
