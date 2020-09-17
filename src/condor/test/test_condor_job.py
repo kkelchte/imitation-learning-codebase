@@ -80,7 +80,6 @@ class TestCondorJob(unittest.TestCase):
         error_file_length = get_file_length(job.error_file)
         self.assertEqual(error_file_length, 0)
 
-    @unittest.skip
     def test_translate_keys_to_string(self):
         self.assertEqual('[\"architecture_config\"][\"random_seed\"]',
                          translate_keys_to_string(['architecture_config', 'random_seed']))
@@ -89,21 +88,17 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual('[\"output_path\"]',
                          translate_keys_to_string(['output_path']))
 
-    @unittest.skip
     def test_get_variable_name(self):
         self.assertEqual(get_variable_name('[runner_config][actor_configs][0][file]'), 'file')
 
-    @unittest.skip
     def test_strip_variable(self):
         self.assertEqual(strip_variable('/a/b/c/d.ext'), 'd')
         self.assertEqual(strip_variable(0.001), '1e-03')
 
-    @unittest.skip
     def test_strip_command(self):
         result = strip_command('python src/scripts/dataset_experiment.py --config src/scripts/config/train.yml')
         self.assertEqual(result, 'dataset_experiment')
 
-    @unittest.skip
     def test_config_creation(self):
         config_dict = {'output_path': 'experimental_data/cube_world',
                        'number_of_epochs': 1,
@@ -236,6 +231,7 @@ class TestCondorJob(unittest.TestCase):
             lines = f.readlines()
         self.assertTrue(sum(['hold' in l for l in lines]))
 
+    @unittest.skip
     def test_local_hdf5_file(self):
         # create fake hdf5 files
         info_0 = generate_random_dataset_in_raw_data(
@@ -311,7 +307,7 @@ class TestCondorJob(unittest.TestCase):
             self.assertEqual(js, rs)
 
     def tearDown(self) -> None:
-        #shutil.rmtree(self.output_dir, ignore_errors=True)
+        shutil.rmtree(self.output_dir, ignore_errors=True)
         pass
 
 
