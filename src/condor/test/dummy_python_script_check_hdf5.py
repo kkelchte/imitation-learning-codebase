@@ -18,7 +18,7 @@ def print_hdf5_files_locations(config: dict):
     for key, value in config:
         if key == 'hdf5_files':
             for v in value:
-                print(f'HDF5_FILE {v} {subprocess.getoutput(shlex.split("stat --format %s "+v))}')
+                print(f'HDF5_FILE {v} {subprocess.getoutput("stat --format %s "+v)}')
                 assert os.path.isfile(v)
         if isinstance(value, dict):
             print_hdf5_files_locations(value)
