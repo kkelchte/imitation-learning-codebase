@@ -15,7 +15,7 @@ with open(config_file, 'r') as f:
 
 
 def print_hdf5_files_locations(config: dict):
-    for key, value in config:
+    for key, value in config.items():
         if key == 'hdf5_files':
             for v in value:
                 print(f'HDF5_FILE {v} {subprocess.getoutput("stat --format %s "+v)}')

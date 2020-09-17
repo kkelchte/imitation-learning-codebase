@@ -294,6 +294,7 @@ class TestCondorJob(unittest.TestCase):
         # wait for job to finish...
         while len(glob(os.path.join(condor_job.output_dir, 'FINISHED*'))) == 0:
             time.sleep(1)
+        self.assertTrue(glob(os.path.join(condor_job.output_dir, 'FINISHED*'))[0].endswith('0'))
         # check jobs output file to control hdf5 files were loaded locally
         # compare file sizes to ensure same hdf5 files were copied
         with open(os.path.join(condor_job.output_dir, 'job.output'), 'r') as f:
@@ -303,6 +304,7 @@ class TestCondorJob(unittest.TestCase):
         hdf5_file_sizes = [int(l.split(' ')[2]) for l in output_lines if l.startswith('HDF5_FILE')]
         print(f'hdf5_files: {hdf5_files}')
         print(f'hdf5_file_sizes: {hdf5_file_sizes}')
+        self.assertEqual(len(hdf5_file_sizes), len(original_sizes))
         for f in hdf5_files:
             self.assertTrue(f.startswith(condor_job.local_output_path))
         for js, rs in zip(hdf5_file_sizes, original_sizes):
