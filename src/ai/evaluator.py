@@ -63,7 +63,7 @@ class Evaluator:
     def put_model_back_to_original_device(self):
         self._net.set_device(self._original_model_device)
 
-    def evaluate(self, writer=None) -> Tuple[str, bool]:
+    def evaluate(self, epoch: int = -1, writer=None) -> Tuple[str, bool]:
         self.put_model_on_device()
         total_error = []
 #        for batch in tqdm(self.data_loader.get_data_batch(), ascii=True, desc='evaluate'):
@@ -77,7 +77,7 @@ class Evaluator:
         self.put_model_back_to_original_device()
         if writer is not None:
             writer.write_distribution(error_distribution, 'validation')
-            if self._config.store_output_on_tensorboard and self._net.global_step % 1000 == 0:
+            if self._config.store_output_on_tensorboard and epoch % 30 == 0:
                 writer.write_output_image(predictions, 'validation/predictions')
                 writer.write_output_image(targets, 'validation/targets')
                 writer.write_output_image(torch.stack(batch.observations), 'validation/inputs')

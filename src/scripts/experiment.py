@@ -163,7 +163,7 @@ class Experiment:
                     )
                 msg += self._trainer.train(epoch=self._epoch, writer=self._writer)
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
-                output_msg, best_ckpt = self._evaluator.evaluate(writer=self._writer)
+                output_msg, best_ckpt = self._evaluator.evaluate(epoch=self._epoch, writer=self._writer)
                 msg += output_msg
             if self._config.save_checkpoint_every_n != -1 and \
                     (self._epoch % self._config.save_checkpoint_every_n == 0 or
