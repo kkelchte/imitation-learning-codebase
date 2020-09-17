@@ -21,7 +21,7 @@ trainer_config:
     - line_world_mixed/hdf5_files/1_64_64/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 64
+    batch_size: 128
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
