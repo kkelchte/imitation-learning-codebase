@@ -27,7 +27,7 @@ class CondorJobConfig(Config):
     codebase_dir: str = f'{os.environ["HOME"]}/code/imitation-learning-codebase'
     cpus: int = 2
     gpus: int = 0
-    cpu_mem_gb: int = 17
+    cpu_mem_gb: int = 3
     disk_mem_gb: int = 52
     nice: bool = False
     wall_time_s: int = 15 * 60
@@ -35,7 +35,7 @@ class CondorJobConfig(Config):
     black_list: Optional[List] = None
     green_list: Optional[List] = None
     use_green_list: bool = False
-    use_singularity: bool = True
+    use_singularity: bool = False
     singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1]
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
@@ -63,7 +63,6 @@ class CondorJob:
 
     def __init__(self, config: CondorJobConfig):
         self._config = config
-        
 
         self.output_dir = os.path.basename(config.config_file).split('.')[0] if config.config_file != '' else \
             f'{get_date_time_tag()}_{strip_command(config.command)}'
@@ -185,24 +184,42 @@ class CondorJob:
             self._original_output_path = f'{get_data_dir(os.environ["HOME"])}/{self._original_output_path}'
         config_dict['output_path'] = self.local_output_path
 
-        # TODO: make hacky solution clean, make relative path to hdf5 work
-        # for key in ['trainer_config', 'evaluator_config']:
-        #     if key in config_dict.keys():
-        #         if 'data_loader_config' in config_dict[key]:
-        #             if 'hdf5_file' in config_dict[key]['data_loader_config']:
-        #                 if not config_dict[key]['data_loader_config']['hdf5_file'].startswith('/'):
-        #                     config_dict[key]['data_loader_config']['hdf5_file'] = \
-        #                         os.path.join(self._original_output_path if 'models' not in self._original_output_path
-        #                                      else self._original_output_path.split('models')[0],
-        #                                      config_dict[key]['data_loader_config']['hdf5_file'])
+        # adjust config if hdf5 files are present and store original_to_new_location_tuples
+        original_to_new_location_tuples = []
+
+        def adjust_hdf5_files(hdf5_files: List[str]) -> List[str]:
+            hdf5_files = [os.path.join(get_data_dir(os.environ['HOME']), original_hdf5_file)
+                          if not original_hdf5_file.startswith('/') else original_hdf5_file
+                          for original_hdf5_file in hdf5_files]
+            new_hdf5_files = [
+                os.path.join(self.local_output_path, f"{len(original_to_new_location_tuples) + index}.hdf5")
+                for index in range(len(hdf5_files))
+            ]
+            original_to_new_location_tuples.extend(zip(hdf5_files, new_hdf5_files))
+            return new_hdf5_files
+
+        # Walk through config and search for hdf5_files tag to adjust
+        def search_for_key_and_adjust(config: dict) -> dict:
+            for key, value in config.items():
+                if key == 'hdf5_files':
+                    config[key] = adjust_hdf5_files(value)
+                elif isinstance(value, dict):
+                    config[key] = search_for_key_and_adjust(value)
+            return config
+        config_dict = search_for_key_and_adjust(config_dict)
 
         adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
         # store adjust config file in condor dir and make command point to adjust config file
         with open(adjusted_config_file, 'w') as f:
             yaml.dump(config_dict, f)
         self._config.command = f'{self._config.command.split("--config")[0]} --config {adjusted_config_file}'
-        # add some extra lines to create new output path
-        return f'mkdir -p {self.local_output_path} \n'
+
+        # add some extra lines to create new output path and copy hdf5 files
+        extra_lines = f'mkdir -p {self.local_output_path} \n'
+        for original_hdf5_file, new_hdf5_file in original_to_new_location_tuples:
+            extra_lines += f'echo copying \"{original_hdf5_file}\" \n'
+            extra_lines += f'cp {original_hdf5_file} {new_hdf5_file} \n'
+        return extra_lines
 
     def _add_lines_to_copy_local_data_back(self) -> str:
         lines = f'mkdir -p {self._original_output_path} \n'

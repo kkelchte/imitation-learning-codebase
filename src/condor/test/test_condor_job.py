@@ -8,7 +8,8 @@ from glob import glob
 
 import yaml
 
-from src.core.utils import get_filename_without_extension, read_file_to_output, get_file_length
+from src.ai.utils import generate_random_dataset_in_raw_data
+from src.core.utils import get_filename_without_extension, read_file_to_output, get_file_length, get_data_dir
 from src.condor.condor_job import CondorJob, CondorJobConfig
 from src.condor.helper_functions import create_configs, get_variable_name, strip_variable, strip_command, \
     translate_keys_to_string
@@ -17,7 +18,7 @@ from src.condor.helper_functions import create_configs, get_variable_name, strip
 class TestCondorJob(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["PWD"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
     @unittest.skip
@@ -230,9 +231,81 @@ class TestCondorJob(unittest.TestCase):
             lines = f.readlines()
         self.assertTrue(sum(['hold' in l for l in lines]))
 
-    def tearDown(self) -> None:
-        shutil.rmtree(self.output_dir, ignore_errors=True)
+    def test_local_hdf5_file(self):
+        # create fake hdf5 files
+        info_0 = generate_random_dataset_in_raw_data(
+            os.path.join(self.output_dir, 'fake_data_0'),
+            num_runs=2,
+            store_hdf5=True
+        )
+        info_1 = generate_random_dataset_in_raw_data(
+            os.path.join(self.output_dir, 'fake_data_1'),
+            num_runs=3,
+            store_hdf5=True
+        )
+        # create experiment config using hdf5 files
+        os.makedirs(os.path.join(self.output_dir, 'experiment_output'), exist_ok=True)
+        experiment_config = {'output_path': os.path.join(self.output_dir, 'experiment_output'),
+                             'fake_key_a': [1, 2, 3],
+                             'fake_key_b': {
+                                 'fake_key_b_0': 'ok',
+                                 'fake_key_b_1': {
+                                     'hdf5_files': [
+                                         os.path.join(self.output_dir, 'fake_data_0', 'train.hdf5'),
+                                         os.path.join(self.output_dir, 'fake_data_1', 'train.hdf5')
+                                     ]
+                                 }},
+                             'fake_key_c': {
+                                 'hdf5_files': []
+                             },
+                             'fake_key_d': {
+                                 'hdf5_files': [
+                                         os.path.join(self.output_dir, 'fake_data_0', 'validation.hdf5'),
+                                         os.path.join(self.output_dir, 'fake_data_1', 'validation.hdf5')
+                                 ]
+                             }}
+        original_sizes = [int(os.system("stat --format %s "+v))
+                          for v in [os.path.join(self.output_dir, 'fake_data_0', 'train.hdf5'),
+                                    os.path.join(self.output_dir, 'fake_data_1', 'train.hdf5'),
+                                    os.path.join(self.output_dir, 'fake_data_0', 'validation.hdf5'),
+                                    os.path.join(self.output_dir, 'fake_data_1', 'validation.hdf5')]]
+        print(f'original_sizes: {original_sizes}')
 
+        with open(os.path.join(self.output_dir, 'experiment_config.yml'), 'w') as f:
+            yaml.dump(experiment_config, f)
+
+        # create and submit condor job using hdf5 files but save them locally
+        job_config = {
+            'config_file': os.path.join(self.output_dir, 'experiment_config.yml'),
+            'output_path': self.output_dir,
+            'command': 'python src/condor/test/dummy_python_script_check_hdf5.py',
+            'wall_time_s': 60,
+            'save_locally': True
+        }
+        condor_job = CondorJob(config=CondorJobConfig().create(config_dict=job_config))
+        condor_job.write_job_file()
+        condor_job.write_executable_file()
+        condor_job.submit()
+        # wait for job to finish...
+        while len(glob(os.path.join(condor_job.output_dir, 'FINISHED*'))) == 0:
+            time.sleep(1)
+        # check jobs output file to control hdf5 files were loaded locally
+        # compare file sizes to ensure same hdf5 files were copied
+        with open(os.path.join(condor_job.output_dir, 'job.output'), 'r') as f:
+            output_lines = f.readlines()
+
+        hdf5_files = [l.split(' ')[1] for l in output_lines if l.startswith('HDF5_FILE')]
+        hdf5_file_sizes = [int(l.split(' ')[2]) for l in output_lines if l.startswith('HDF5_FILE')]
+        print(f'hdf5_files: {hdf5_files}')
+        print(f'hdf5_file_sizes: {hdf5_file_sizes}')
+        for f in hdf5_files:
+            self.assertTrue(f.startswith(condor_job.local_output_path))
+        for js, rs in zip(hdf5_file_sizes, original_sizes):
+            self.assertEqual(js, rs)
+
+    def tearDown(self) -> None:
+        #shutil.rmtree(self.output_dir, ignore_errors=True)
+        pass
 
 if __name__ == '__main__':
     unittest.main()
