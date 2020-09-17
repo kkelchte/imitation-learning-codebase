@@ -22,7 +22,7 @@ def prepare_data_collection_line_world(base_config_file: str,
                                                                 'ros_config',
                                                                 'ros_launch_config',
                                                                 'world_name']):
-                                          [f'line_worlds/model_{(150 + i):03d}' for i in range(number_of_jobs)],
+                                          [f'line_worlds/model_{(250 + i):03d}' for i in range(number_of_jobs)],
                                   })
     return create_jobs_from_job_config_files(job_config_files=config_files,
                                              job_config_object=job_config_object)
