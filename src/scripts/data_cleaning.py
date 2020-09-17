@@ -1,5 +1,6 @@
 import os
 import sys
+import random
 
 from tqdm import tqdm
 from dataclasses import dataclass
@@ -46,10 +47,11 @@ class DataCleaner:
         self._split_and_clean()
 
     def _split_and_clean(self):
-        runs = self._config.data_loader_config.data_directories
-        num_training_runs = int(len(runs) * self._config.training_validation_split)
-        training_runs = self._config.data_loader_config.data_directories[:num_training_runs]
-        validation_runs = self._config.data_loader_config.data_directories[num_training_runs:]
+        shuffled_runs = self._config.data_loader_config.data_directories[:]
+        random.shuffle(shuffled_runs)
+        num_training_runs = int(len(shuffled_runs) * self._config.training_validation_split)
+        training_runs = shuffled_runs[:num_training_runs]
+        validation_runs = shuffled_runs[num_training_runs:]
         for filename_tag, runs in zip(['train', 'validation'], [training_runs, validation_runs]):
             self._clean(filename_tag, runs)
 
