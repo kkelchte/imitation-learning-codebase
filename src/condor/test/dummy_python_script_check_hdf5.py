@@ -26,4 +26,3 @@ def print_hdf5_files_locations(config: dict):
 
 print_hdf5_files_locations(config_dict)
 print('well done!')
-sys.exit(2)
