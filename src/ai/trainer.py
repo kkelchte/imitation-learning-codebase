@@ -66,7 +66,7 @@ class Trainer(Evaluator):
         if not super_init:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
-                                      quiet=True)
+                                      quiet=False)
             cprint(f'Started.', self._logger)
             self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
                                                                             lr=self._config.learning_rate,
