@@ -3,7 +3,7 @@ number_of_epochs: 100
 number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
-  architecture: u_net
+  architecture: encoder_decoder_line_world_small
   initialisation_type: xavier
   random_seed: 4
   device: cuda
@@ -24,8 +24,8 @@ trainer_config:
       #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 16
-  criterion: MSELoss
+    batch_size: 128
+  criterion: CrossEntropyLoss
   device: cuda
   store_output_on_tensorboard: true
 evaluator_config:
@@ -36,8 +36,8 @@ evaluator_config:
       #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
-    batch_size: 16
-  criterion: MSELoss
+    batch_size: 128
+  criterion: CrossEntropyLoss
   device: cuda
   store_output_on_tensorboard: true
 tensorboard: true
