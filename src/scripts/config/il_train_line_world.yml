@@ -18,23 +18,23 @@ trainer_config:
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
-      - /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/train_0.hdf5
-      #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_0.hdf5
-      #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_1.hdf5
+      #- /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/train_0.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_0.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 256
+    batch_size: 128
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
 evaluator_config:
   data_loader_config:
     hdf5_files:
-      - /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/validation_0.hdf5
+      #- /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/validation_0.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
-    batch_size: 256
   criterion: MSELoss
-  device: cuda
+  device: cpu
   store_output_on_tensorboard: true
 tensorboard: true
