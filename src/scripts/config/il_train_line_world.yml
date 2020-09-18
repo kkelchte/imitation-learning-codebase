@@ -3,7 +3,7 @@ number_of_epochs: 100
 number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
-  architecture: u_net
+  architecture: encoder_decoder_line_world_small
   initialisation_type: xavier
   random_seed: 4
   device: cpu

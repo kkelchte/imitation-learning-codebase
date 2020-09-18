@@ -57,10 +57,12 @@ class Evaluator:
         self._original_model_device = self._net.get_device()
 
     def put_model_on_device(self, device: str = None):
+        cprint(f'put model on device {self._config.device if device is None else device}', self._logger)
         self._original_model_device = self._net.get_device()
         self._net.set_device(torch.device(self._config.device) if device is None else torch.device(device))
 
     def put_model_back_to_original_device(self):
+        cprint(f'put model back on device {self._original_model_device}', self._logger)
         self._net.set_device(self._original_model_device)
 
     def evaluate(self, epoch: int = -1, writer=None) -> Tuple[str, bool]:
