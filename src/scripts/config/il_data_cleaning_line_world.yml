@@ -1,7 +1,7 @@
-output_path: hdf5_files/line_world/clean/1_64_64
+output_path: hdf5_files/line_world/noisy/1_64_64
 training_validation_split: 0.9
 remove_first_n_timestamps: 30
-augment_background_noise: False
+augment_background_noise: True
 binary_maps_as_target: True
 require_success: True
 max_run_length: 200
