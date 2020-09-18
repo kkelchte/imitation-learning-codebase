@@ -7,8 +7,8 @@ architecture_config:
   initialisation_type: xavier
   random_seed: 4
   device: cpu
-  dropout: default
-  batch_normalisation: true
+  dropout: 0.5
+  batch_normalisation: false
   dtype: default
   log_std: default
 trainer_config:

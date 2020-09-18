@@ -1,4 +1,4 @@
-output_path: encoder_decoder/clean/batch_normalisation
+output_path: encoder_decoder/clean/dropout
 mode: lr_line_world
 wait_time_between_jobs_sec: 1
 job_configs:
