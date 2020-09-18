@@ -7,7 +7,7 @@ architecture_config:
   initialisation_type: xavier
   random_seed: 4
   device: cuda
-  dropout: default
+  dropout: 0.5
   batch_normalisation: false
   dtype: default
   log_std: default

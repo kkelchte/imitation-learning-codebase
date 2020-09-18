@@ -8,7 +8,7 @@ architecture_config:
   random_seed: 4
   device: cuda
   dropout: default
-  batch_normalisation: false
+  batch_normalisation: true
   dtype: default
   log_std: default
 trainer_config:
