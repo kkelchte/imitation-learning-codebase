@@ -1,6 +1,6 @@
-output_path: encoder_decoder/noisy/bs128
+output_path: encoder_decoder/clean/default
 mode: lr_line_world
-wait_time_between_jobs_sec: 10
+wait_time_between_jobs_sec: 1
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
