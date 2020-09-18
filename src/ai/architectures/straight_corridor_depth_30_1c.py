@@ -37,7 +37,7 @@ class Net(BaseNet):
                                           requires_grad=True)
 
         self._critic = mlp_creator(sizes=[self.input_size[0], 64, 64, 1],
-                                   activation=nn.Tanh,
+                                   activation=nn.Tanh(),
                                    output_activation=None)
 
         self.initialize_architecture()

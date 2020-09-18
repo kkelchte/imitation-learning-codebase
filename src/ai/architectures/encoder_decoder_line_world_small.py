@@ -29,6 +29,8 @@ class Net(BaseNet):
         self.output_size = (64, 64)
         self.discrete = False
         self.dropout = nn.Dropout(p=config.dropout) if config.dropout != 'default' else None
+        self._config.batch_normalisation = False if config.batch_normalisation == 'default' \
+            else config.batch_normalisation
         self.h = 128
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 32, 5, stride=2),
@@ -39,6 +41,20 @@ class Net(BaseNet):
             nn.LeakyReLU(),
             nn.Conv2d(128, self.h, 5, stride=2),
             nn.LeakyReLU()
+        ) if not self._config.batch_normalisation else \
+            nn.Sequential(
+                nn.Conv2d(1, 32, 5, stride=2),
+                nn.BatchNorm2d(32),
+                nn.LeakyReLU(),
+                nn.Conv2d(32, 64, 5, stride=2),
+                nn.BatchNorm2d(64),
+                nn.LeakyReLU(),
+                nn.Conv2d(64, 128, 5, stride=2),
+                nn.BatchNorm2d(128),
+                nn.LeakyReLU(),
+                nn.Conv2d(128, self.h, 5, stride=2),
+                nn.BatchNorm2d(self.h),
+                nn.LeakyReLU()
         )
         self.decoder = nn.Sequential(
             nn.ConvTranspose2d(self.h, 128, 5, stride=2, padding=0),
@@ -48,7 +64,19 @@ class Net(BaseNet):
             nn.ConvTranspose2d(64, 32, 6, stride=2, padding=0),
             nn.LeakyReLU(),
             nn.ConvTranspose2d(32, 1, 6, stride=2, padding=0)
-        )
+        ) if not self._config.batch_normalisation else \
+            nn.Sequential(
+                nn.ConvTranspose2d(self.h, 128, 5, stride=2, padding=0),
+                nn.BatchNorm2d(128),
+                nn.LeakyReLU(),
+                nn.ConvTranspose2d(128, 64, 5, stride=2, padding=0),
+                nn.BatchNorm2d(64),
+                nn.LeakyReLU(),
+                nn.ConvTranspose2d(64, 32, 6, stride=2, padding=0),
+                nn.BatchNorm2d(32),
+                nn.LeakyReLU(),
+                nn.ConvTranspose2d(32, 1, 6, stride=2, padding=0)
+            )
         self.initialize_architecture()
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
@@ -61,7 +89,7 @@ class Net(BaseNet):
                 x = self.encoder(inputs)
         else:
             x = self.encoder(inputs)
-        if self.dropout is not None:
+        if self.dropout is not None and train:
             x = self.dropout(x)
         x = self.decoder(x).squeeze(1)
         return x

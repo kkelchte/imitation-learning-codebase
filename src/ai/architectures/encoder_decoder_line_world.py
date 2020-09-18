@@ -61,7 +61,7 @@ class Net(BaseNet):
                 x = self.encoder(inputs)
         else:
             x = self.encoder(inputs)
-        if self.dropout is not None:
+        if self.dropout is not None and train:
             x = self.dropout(x)
         x = self.decoder(x).squeeze(1)
         return x

@@ -8,6 +8,7 @@ architecture_config:
   random_seed: 4
   device: cpu
   dropout: default
+  batch_normalisation: true
   dtype: default
   log_std: default
 trainer_config:
@@ -17,8 +18,9 @@ trainer_config:
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
-    - /gluster/visics/kkelchte/line_world_data/sim/noisy_augmented/1_64_64/train_0.hdf5
-    - /gluster/visics/kkelchte/line_world_data/sim/noisy_augmented/1_64_64/train_1.hdf5
+      - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/test_line_world_mixed/clean_10/train_0.hdf5
+#    - /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_0.hdf5
+#    - /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
     batch_size: 128
@@ -28,7 +30,8 @@ trainer_config:
 evaluator_config:
   data_loader_config:
     hdf5_files:
-    - /gluster/visics/kkelchte/line_world_data/sim/noisy_augmented/1_64_64/validation_0.hdf5
+      - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/test_line_world_mixed/clean_10/validation_0.hdf5
+#    - /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
   criterion: MSELoss

@@ -40,6 +40,7 @@ class ArchitectureConfig(Config):
     finetune: bool = False
     weight_decay: Union[float, str] = 'default'
     dropout: Union[float, str] = 'default'
+    batch_normalisation: Union[bool, str] = 'default'
     dtype: str = 'default'
     log_std: Union[float, str] = 'default'
 
