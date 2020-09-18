@@ -6,7 +6,7 @@ RequestCpus     = 1
 RequestMemory   = 12 G
 RequestDisk	= 5 G
 # max time 4h
-+RequestWallTime = 45*60
++RequestWallTime = 2*60*60
 Request_GPUS    = 0
 Requirements = (machineowner == "Visics") && HasSingularity && ( OpSysAndVer == "Fedora32" ) && ( Mips >= 26000 )
 
