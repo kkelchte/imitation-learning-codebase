@@ -57,12 +57,10 @@ class Evaluator:
         self._original_model_device = self._net.get_device()
 
     def put_model_on_device(self, device: str = None):
-        cprint(f'put model on device {self._config.device if device is None else device}', self._logger)
         self._original_model_device = self._net.get_device()
         self._net.set_device(torch.device(self._config.device) if device is None else torch.device(device))
 
     def put_model_back_to_original_device(self):
-        cprint(f'put model back on device {self._original_model_device}', self._logger)
         self._net.set_device(self._original_model_device)
 
     def evaluate(self, epoch: int = -1, writer=None) -> Tuple[str, bool]:
@@ -70,11 +68,12 @@ class Evaluator:
         total_error = []
 #        for batch in tqdm(self.data_loader.get_data_batch(), ascii=True, desc='evaluate'):
         for batch in self.data_loader.get_data_batch():
-            predictions = self._net.forward(batch.observations, train=False)
-            targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
-            error = self._criterion(predictions,
-                                    targets).mean()
-            total_error.append(error)
+            with torch.no_grad:
+                predictions = self._net.forward(batch.observations, train=False)
+                targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
+                error = self._criterion(predictions,
+                                        targets).mean()
+                total_error.append(error)
         error_distribution = Distribution(total_error)
         self.put_model_back_to_original_device()
         if writer is not None:
