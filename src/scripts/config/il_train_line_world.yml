@@ -34,6 +34,6 @@ evaluator_config:
     random_seed: 32
     balance_over_actions: false
   criterion: MSELoss
-  device: cuda
+  device: cpu
   store_output_on_tensorboard: true
 tensorboard: true
