@@ -82,9 +82,17 @@ class Trainer(Evaluator):
         #        for batch in tqdm(self.data_loader.sample_shuffled_batch(), ascii=True, desc='train'):
         for batch in self.data_loader.sample_shuffled_batch():
             self._optimizer.zero_grad()
-            predictions = self._net.forward(batch.observations, train=True)
             targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
-            loss = self._criterion(predictions, targets).mean()
+            predictions = self._net.forward(batch.observations, train=True)
+            if isinstance(self._criterion, torch.nn.CrossEntropyLoss):
+                # Add ugly method for handling binary output map with cross entropy
+                # should be taken out if cross entropy is not the loss we want for segmentation
+                ce_predictions = torch.stack([predictions]*2, dim=1)
+                ce_predictions[:, 1] *= -1
+                ce_predictions[:, 1] += 1
+                loss = self._criterion(ce_predictions, targets.type(dtype=torch.long)).mean()
+            else:
+                loss = self._criterion(predictions, targets).mean()
             loss.backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
