@@ -231,7 +231,7 @@ class TestCondorJob(unittest.TestCase):
             lines = f.readlines()
         self.assertTrue(sum(['hold' in l for l in lines]))
 
-    @unittest.skip
+    #    @unittest.skip
     def test_local_hdf5_file(self):
         # create fake hdf5 files
         info_0 = generate_random_dataset_in_raw_data(
