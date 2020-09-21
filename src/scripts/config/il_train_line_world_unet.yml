@@ -1,13 +1,13 @@
 output_path: test_encoder_decoder
-number_of_epochs: 500
+number_of_epochs: 1000
 number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
-  architecture: encoder_decoder_line_world_small
+  architecture: u_net_VAE
   initialisation_type: xavier
   random_seed: 4
   device: cuda
-  dropout: 0.5
+  dropout: default
   batch_normalisation: false
   dtype: default
   log_std: default

@@ -15,7 +15,7 @@ trainer_config:
   optimizer: Adam
   learning_rate: 0.001
   factory_key: BASE
-  add_KL_divergence_loss: true
+  add_KL_divergence_loss: true  # !
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
@@ -26,7 +26,7 @@ trainer_config:
     random_seed: 123
     balance_over_actions: false
     batch_size: 128
-  criterion: MSELoss
+  criterion: CrossEntropyLoss
   device: cuda
   store_output_on_tensorboard: true
 evaluator_config:

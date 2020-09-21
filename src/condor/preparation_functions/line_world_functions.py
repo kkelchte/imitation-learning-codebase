@@ -9,10 +9,10 @@ from src.core.utils import get_date_time_tag
 
 
 def prepare_lr_line_world(base_config_file: str,
-                             job_config_object: CondorJobConfig,
-                             number_of_jobs: int,
-                             output_path: str) -> List[CondorJob]:
-    learning_rates = [0.1, 0.01, 0.001, 0.0001]
+                          job_config_object: CondorJobConfig,
+                          number_of_jobs: int,
+                          output_path: str) -> List[CondorJob]:
+    learning_rates = [0.01, 0.001, 0.0001, 0.00001]
     model_paths = [os.path.join(output_path, 'models', f'lr_{lr}')
                    for lr in learning_rates]
     adjustments = {translate_keys_to_string(['output_path']): model_paths,

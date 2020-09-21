@@ -1,4 +1,4 @@
-output_path: encoder_decoder/clean/batch_normalisation_long
+output_path: encoder_decoder/clean/vae_batch_normalisation_long
 mode: lr_line_world
 wait_time_between_jobs_sec: 1
 job_configs:
@@ -9,7 +9,7 @@ job_configs:
     gpu_mem_mb: 1900
     cpu_mem_gb: 10
     disk_mem_gb: 52
-    wall_time_s: 15 * 60 * 60
+    wall_time_s: 25 * 60 * 60
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false

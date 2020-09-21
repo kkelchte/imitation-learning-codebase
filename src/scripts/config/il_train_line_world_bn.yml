@@ -1,9 +1,9 @@
 output_path: test_encoder_decoder
-number_of_epochs: 500
+number_of_epochs: 1000
 number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
-  architecture: encoder_decoder_line_world_small
+  architecture: encoder_decoder_line_world_small_VAE
   initialisation_type: xavier
   random_seed: 4
   device: cuda
@@ -15,6 +15,7 @@ trainer_config:
   optimizer: Adam
   learning_rate: 0.01
   factory_key: BASE
+  add_KL_divergence_loss: true
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:

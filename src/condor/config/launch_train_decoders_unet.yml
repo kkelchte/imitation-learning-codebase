@@ -1,4 +1,4 @@
-output_path: encoder_decoder/clean/dropout_long
+output_path: encoder_decoder/clean/vae_unet_long
 mode: lr_line_world
 wait_time_between_jobs_sec: 1
 job_configs:
@@ -6,10 +6,10 @@ job_configs:
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 3
     gpus: 1
-    gpu_mem_mb: 1900
+    gpu_mem_mb: 3900
     cpu_mem_gb: 10
     disk_mem_gb: 52
-    wall_time_s: 15 * 60 * 60
+    wall_time_s: 25 * 60 * 60
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false
@@ -18,4 +18,4 @@ job_configs:
 number_of_jobs:
   - 1
 base_config_files: 
-    - src/scripts/config/il_train_line_world_do.yml
+    - src/scripts/config/il_train_line_world_unet.yml

@@ -49,6 +49,7 @@ class TrainerConfig(EvaluatorConfig):
     kl_target: Union[str, float] = "default"
     max_actor_training_iterations: Union[str, int] = "default"
     max_critic_training_iterations: Union[str, int] = "default"
+    add_KL_divergence_loss: bool = False
 
     def __post_init__(self):
         # add options in post_init so they are easy to find
@@ -83,16 +84,23 @@ class Trainer(Evaluator):
         for batch in self.data_loader.sample_shuffled_batch():
             self._optimizer.zero_grad()
             targets = data_to_tensor(batch.actions).type(self._net.dtype).to(self._device)
-            predictions = self._net.forward(batch.observations, train=True)
+            if self._config.add_KL_divergence_loss:
+                predictions, mean, std = self._net.forward_with_distribution(batch.observations, train=True)
+            else:
+                predictions = self._net.forward(batch.observations, train=True)
             if isinstance(self._criterion, torch.nn.CrossEntropyLoss):
                 # Add ugly method for handling binary output map with cross entropy
                 # should be taken out if cross entropy is not the loss we want for segmentation
                 ce_predictions = torch.stack([predictions]*2, dim=1)
-                ce_predictions[:, 1] *= -1
-                ce_predictions[:, 1] += 1
-                loss = self._criterion(ce_predictions, targets.type(dtype=torch.long)).mean()
+                loss = torch.nn.CrossEntropyLoss(weight=torch.as_tensor([0, 1], dtype=torch.float), reduction='mean')\
+                    (ce_predictions, targets.type(dtype=torch.long))
             else:
                 loss = self._criterion(predictions, targets).mean()
+            if self._config.add_KL_divergence_loss:
+                # https://arxiv.org/pdf/1312.6114.pdf
+                KL_loss = -0.5 * torch.sum(1 + std.pow(2).log() - mean.pow(2) - std.pow(2))
+                loss += KL_loss
+
             loss.backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
@@ -109,6 +117,8 @@ class Trainer(Evaluator):
         if writer is not None:
             writer.set_step(self._net.global_step)
             writer.write_distribution(error_distribution, 'training')
+            if self._config.add_KL_divergence_loss:
+                writer.write_scalar(KL_loss, 'KL_divergence')
             if self._config.store_output_on_tensorboard and epoch % 30 == 0:
                 writer.write_output_image(predictions, 'training/predictions')
                 writer.write_output_image(targets, 'training/targets')
