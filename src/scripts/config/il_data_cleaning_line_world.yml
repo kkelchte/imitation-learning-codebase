@@ -1,7 +1,11 @@
 output_path: hdf5_files/line_world/clean/1_64_64
-training_validation_split: 0.9
+#output_path: test_data_augmentation_textured
+training_validation_split: 1.0
 remove_first_n_timestamps: 30
 augment_background_noise: False
+augment_background_textured: true
+#texture_directory: /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/textured_dataset
+texture_directory: textured_dataset
 binary_maps_as_target: True
 require_success: True
 max_run_length: 200
@@ -9,7 +13,12 @@ max_hdf5_size: 5000000000
 data_loader_config:
   subsample: 1
   input_size: [1, 64, 64]
+#  input_size: [3, 200, 200]
   data_directories:
+#    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_mixed/raw_data/20-09-10_14-02-58_runner_490
+#    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_mixed/raw_data/20-09-10_14-48-23_runner_487
+    - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-29-32_runner_133
+    - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-29-38_runner_142
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_10-29-18_runner_0
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_10-38-03_runner_0
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_10-44-54_runner_7
@@ -58,8 +67,6 @@ data_loader_config:
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-27-39_runner_79
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-27-58_runner_87
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-29-15_runner_127
-    - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-29-32_runner_133
-    - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-29-38_runner_142
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-34-51_runner_148
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-34-52_runner_149
     - /esat/opal/kkelchte/experimental_data/line_world_mixed/raw_data/20-09-10_11-34-52_runner_151

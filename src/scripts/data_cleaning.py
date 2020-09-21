@@ -11,7 +11,8 @@ from dataclasses_json import dataclass_json
 from src.core.config_loader import Parser, Config
 from src.core.data_types import Dataset
 from src.data.data_loader import DataLoaderConfig, DataLoader
-from src.data.utils import create_hdf5_file_from_dataset, set_binary_maps_as_target, augment_background_noise
+from src.data.utils import create_hdf5_file_from_dataset, set_binary_maps_as_target, augment_background_noise, \
+    augment_background_textured
 
 """
 Data cleaner script loads raw data with a data loader, cleans it and stores the data in hdf5 files.
@@ -26,6 +27,8 @@ class DataCleaningConfig(Config):
     training_validation_split: float = 1.0
     remove_first_n_timestamps: Optional[int] = 0
     augment_background_noise: bool = False
+    augment_background_textured: bool = False
+    texture_directory: str = ""
     binary_maps_as_target: bool = False
     require_success: bool = False
     max_hdf5_size: int = 10**9
@@ -33,6 +36,7 @@ class DataCleaningConfig(Config):
 
     def __post_init__(self):
         assert 0 <= self.training_validation_split <= 1
+        assert not (self.augment_background_noise and self.augment_background_textured)
 
 
 class DataCleaner:
@@ -81,6 +85,8 @@ class DataCleaner:
                 run_dataset = set_binary_maps_as_target(run_dataset)
             if self._config.augment_background_noise:
                 run_dataset = augment_background_noise(run_dataset)
+            if self._config.augment_background_textured:
+                run_dataset = augment_background_textured(run_dataset, texture_directory=self._config.texture_directory)
             # store dhf5 file once max dataset size is reached
             hdf5_data.extend(run_dataset)
             self._data_loader.empty_dataset()
