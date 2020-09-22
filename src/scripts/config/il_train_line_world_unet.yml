@@ -24,7 +24,7 @@ trainer_config:
       #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 128
+    batch_size: 16
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
@@ -36,7 +36,7 @@ evaluator_config:
       #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
-    batch_size: 128
+    batch_size: 16
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
