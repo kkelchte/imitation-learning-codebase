@@ -1,9 +1,9 @@
 output_path: test_encoder_decoder
 number_of_epochs: 100
 number_of_episodes: -1
-save_checkpoint_every_n: 99
+save_checkpoint_every_n: 10
 architecture_config:
-  architecture: auto_encoder_shallow
+  architecture: auto_encoder_conv1
   initialisation_type: xavier
   random_seed: 4
   device: cuda
@@ -13,9 +13,8 @@ architecture_config:
   log_std: default
 trainer_config:
   optimizer: Adam
-  learning_rate: 0.001
+  learning_rate: 0.01
   factory_key: BASE
-  add_KL_divergence_loss: false
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
