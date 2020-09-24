@@ -1,4 +1,4 @@
-output_path: encoder_decoder/clean/shallow
+output_path: encoder_decoder/clean/shallow_2
 mode: lr_line_world
 wait_time_between_jobs_sec: 1
 job_configs:

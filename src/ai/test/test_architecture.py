@@ -100,6 +100,22 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(processed_inputs.shape[2], network.input_size[1])
         self.assertEqual(processed_inputs.shape[3], network.input_size[2])
 
+    def test_auto_encoder_shallow(self):
+        base_config['architecture'] = 'auto_encoder_shallow'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        # test single unprocessed data point
+        batch_size = 15
+        outputs = network.forward(torch.randint(255, (batch_size,
+                                                      network.input_size[0],
+                                                      network.input_size[1],
+                                                      network.input_size[2])), train=False)
+        self.assertEqual(outputs.shape[0], batch_size)
+        for i, v in enumerate(network.output_size):
+            print(f'observed output size {outputs.shape[1+i]} is equal to expected {v}')
+            self.assertEqual(outputs.shape[1+i], v)
+
     def test_mlp_creator(self):
         network = mlp_creator(sizes=[4, 10, 10, 1],
                               activation=nn.ReLU(),

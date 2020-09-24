@@ -34,26 +34,26 @@ class Net(BaseNet):
             else config.batch_normalisation
         self.h = 128
         self.encoder = nn.Sequential(
-            nn.Conv2d(1, 32, 5, stride=2),
+            nn.Conv2d(1, 32, 3, stride=1),
             nn.LeakyReLU(),
-            nn.Conv2d(32, 64, 5, stride=2),
+            nn.Conv2d(32, 64, 3, stride=1),
         ) if not self._config.batch_normalisation else \
             nn.Sequential(
-                nn.Conv2d(1, 32, 5, stride=2),
+                nn.Conv2d(1, 32, 3, stride=1),
                 nn.BatchNorm2d(32),
                 nn.LeakyReLU(),
-                nn.Conv2d(32, 64, 5, stride=2),
+                nn.Conv2d(32, 64, 3, stride=1),
         )
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(64, 32, 6, stride=2, padding=0),
+            nn.ConvTranspose2d(64, 32, 3, stride=1, padding=0),
             nn.LeakyReLU(),
-            nn.ConvTranspose2d(32, 1, 6, stride=2, padding=0)
+            nn.ConvTranspose2d(32, 1, 3, stride=1, padding=0)
         ) if not self._config.batch_normalisation else \
             nn.Sequential(
-                nn.ConvTranspose2d(64, 32, 6, stride=2, padding=0),
+                nn.ConvTranspose2d(64, 32, 3, stride=1, padding=0),
                 nn.BatchNorm2d(32),
                 nn.LeakyReLU(),
-                nn.ConvTranspose2d(32, 1, 6, stride=2, padding=0)
+                nn.ConvTranspose2d(32, 1, 3, stride=1, padding=0)
             )
         self.initialize_architecture()
 
