@@ -1,7 +1,7 @@
 output_path: test_encoder_decoder
 number_of_epochs: 100
 number_of_episodes: -1
-save_checkpoint_every_n: 10
+save_checkpoint_every_n: 99
 architecture_config:
   architecture: auto_encoder_conv1
   initialisation_type: xavier
@@ -18,8 +18,8 @@ trainer_config:
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
-      - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/test_line_world_mixed/clean_10/train_0.hdf5
-      #- /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/train_0.hdf5
+      #- /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/test_line_world_mixed/clean_10/train_0.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/train_0.hdf5
       #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_0.hdf5
       #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/train_1.hdf5
     random_seed: 123
@@ -31,8 +31,8 @@ trainer_config:
 evaluator_config:
   data_loader_config:
     hdf5_files:
-      - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/test_line_world_mixed/clean_10/validation_0.hdf5
-      #- /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/validation_0.hdf5
+      #- /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/test_line_world_mixed/clean_10/validation_0.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/clean/1_64_64/validation_0.hdf5
       #- /gluster/visics/kkelchte/line_world_data/sim/noisy/1_64_64/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
