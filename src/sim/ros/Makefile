@@ -14,6 +14,7 @@ install_python3_ros_ws: python3_ros_ws/src
 	cd python3_ros_ws && \
 	git clone https://github.com/kkelchte/bebop_autonomy.git src/bebop_autonomy && \
 	git clone https://github.com/kkelchte/vision_opencv.git -b origin/melodic src/vision_opencv && \
+	git clone --single-branch -b melodic-devel https://github.com/ros-planning/navigation.git && \
 	catkin_make -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
 	-DPYTHON_LIBRARY=/usr/lib/python3.8 && \
 	catkin_make -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
