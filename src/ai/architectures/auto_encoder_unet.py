@@ -32,10 +32,10 @@ class Net(BaseAENet):
             self.down4 = Down(8 * self.h, (8 if not self.vae else 16) * self.h)
 
             self.out_conv = OutConv(self.h, 1)
-            self.up4 = Up(2 * self.h, self.h, bilinear=True)
-            self.up3 = Up(4 * self.h, self.h, bilinear=True)
-            self.up2 = Up(8 * self.h, 2 * self.h, bilinear=True)
-            self.up1 = Up(16 * self.h, 4 * self.h, bilinear=True)
+            self.up1 = Up(2 * self.h, self.h, bilinear=True)
+            self.up2 = Up(4 * self.h, self.h, bilinear=True)
+            self.up3 = Up(8 * self.h, 2 * self.h, bilinear=True)
+            self.up4 = Up(16 * self.h, 4 * self.h, bilinear=True)
 
             self.initialize_architecture()
             cprint(f'Started.', self._logger)
@@ -44,42 +44,43 @@ class Net(BaseAENet):
         """
         return network outputs and latent distribution
         """
-        outputs = self._encode(inputs, train)
-        last_key = list(outputs.keys())[-1]
-        mean = outputs[last_key][:, :8 * self.h]
-        std = torch.exp(outputs[last_key][:, 8 * self.h:]/2)
-        outputs[last_key] = mean + std * torch.rand_like(std)
-        x = self._decode(outputs)
-        return x, mean, std
-
-    def _decode(self, inputs: dict) -> torch.Tensor:
-        x = self.up1(inputs['down4'], inputs['down3'])
-        x = self.up2(x, inputs['down2'])
-        x = self.up3(x, inputs['down1'])
-        x = self.up4(x, inputs['in_conv'])
-        return self.out_conv(x).squeeze(dim=1)
-
-    def _encode(self, inputs, train: bool = False) -> dict:
         inputs = self.process_inputs(inputs=inputs, train=train)
-
-        def _extract(x: torch.Tensor) -> dict:
-            outputs = {'in_conv': self.in_conv(x)}
-            outputs['down1'] = self.down1(outputs['in_conv'])
-            outputs['down2'] = self.down2(outputs['down1'])
-            outputs['down3'] = self.down3(outputs['down2'])
-            outputs['down4'] = self.down4(outputs['down3'])
-            return outputs
-
         if self._config.finetune:
             with torch.no_grad():
-                outputs = _extract(inputs)
+                x1 = self.in_conv(inputs)
+                x2 = self.down1(x1)
+                x3 = self.down2(x2)
+                x4 = self.down3(x3)
+                x5 = self.down4(x4)
         else:
-            outputs = _extract(inputs)
+            x1 = self.in_conv(inputs)
+            x2 = self.down1(x1)
+            x3 = self.down2(x2)
+            x4 = self.down3(x3)
+            x5 = self.down4(x4)
 
         if self.dropout is not None and train:
-            last_key = list(outputs.keys())[-1]
-            outputs[last_key] = self.dropout(outputs[last_key])
-        return outputs
+            x5 = self.dropout(x5)
+
+        if self.vae:
+            mean = x5[:, :8 * self.h]
+            std = torch.exp(x5[:, 8 * self.h:]/2)
+            x5 = mean + std * torch.rand_like(std)
+        else:
+            mean = None
+            std = None
+
+        x = self.up4(x5, x4)
+        x = self.up3(x, x3)
+        x = self.up2(x, x2)
+        x = self.up1(x, x1)
+        x = self.out_conv(x).squeeze(dim=1)
+
+        return x, mean, std
+
+    def forward(self, inputs, train: bool = False) -> torch.Tensor:
+        x, _, _ = self.forward_with_distribution(inputs, train)
+        return x
 
 
 class DoubleConv(nn.Module):
