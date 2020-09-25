@@ -430,12 +430,9 @@ def augment_background_textured(dataset: Dataset, texture_directory: str) -> Dat
     for image in tqdm(binary_images):
         new_shape = (*image.shape, num_channels)
         bg_image = np.random.choice(texture_paths)
-        bg = load_and_preprocess_file(bg_image, size=(3, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
+        bg = load_and_preprocess_file(bg_image, size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
         fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
         three_channel_mask = np.stack([image] * num_channels, axis=-1)
         new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg))
-        plt.imshow(new_img)
-        plt.show()
         augmented_dataset.observations.append(new_img.permute(2, 0, 1))
-        break
     return augmented_dataset

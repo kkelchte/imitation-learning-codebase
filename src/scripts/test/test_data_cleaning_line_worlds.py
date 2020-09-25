@@ -128,8 +128,8 @@ class DatacleaningTest(unittest.TestCase):
         self.assertEqual(2*len(info['episode_lengths']),
                          len(data_loader.get_dataset()))
 
-    @unittest.skip
-    def test_line_world_preprocessing(self):
+    #@unittest.skip
+    def test_line_world_noise_augmentation(self):
         line_image = np.ones((100, 100, 3))
         line_image[40:43, :, 0:2] = 0
         info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
@@ -143,6 +143,7 @@ class DatacleaningTest(unittest.TestCase):
             'output_path': self.output_dir,
             'data_loader_config': {
                 'data_directories': info['episode_directories'],
+                'input_size': (1, 64, 64)
             },
             'training_validation_split': 0.7,
             'remove_first_n_timestamps': 5,
@@ -157,7 +158,43 @@ class DatacleaningTest(unittest.TestCase):
         }))
         data_loader.load_dataset()
         import matplotlib.pyplot as plt
-        plt.imshow(data_loader.get_dataset().observations[0].permute(1, 2, 0))
+        plt.imshow(data_loader.get_dataset().observations[0].permute(1, 2, 0).squeeze())
+        plt.show()
+        plt.imshow(data_loader.get_dataset().actions[0])
+        plt.show()
+
+    @unittest.skip
+    def test_line_world_texture_augmentation(self):
+        line_image = np.ones((100, 100, 3))
+        line_image[40:43, :, 0:2] = 0
+        info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
+                                                   num_runs=20,
+                                                   input_size=(100, 100, 3),
+                                                   output_size=(1,),
+                                                   continuous=True,
+                                                   fixed_input_value=line_image,
+                                                   store_hdf5=False)
+        cleaner_config_dict = {
+            'output_path': self.output_dir,
+            'data_loader_config': {
+                'data_directories': info['episode_directories'],
+                'input_size': (1, 64, 64)
+            },
+            'training_validation_split': 0.7,
+            'remove_first_n_timestamps': 5,
+            'binary_maps_as_target': True,
+            'augment_background_textured': True,
+            'texture_directory': 'textured_dataset'
+        }
+        data_cleaner = DataCleaner(config=DataCleaningConfig().create(config_dict=cleaner_config_dict))
+        data_cleaner.clean()
+        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict={
+            'output_path': self.output_dir,
+            'hdf5_files': glob(f'{self.output_dir}/train*.hdf5')
+        }))
+        data_loader.load_dataset()
+        import matplotlib.pyplot as plt
+        plt.imshow(data_loader.get_dataset().observations[0].squeeze())
         plt.show()
         plt.imshow(data_loader.get_dataset().actions[0])
         plt.show()
