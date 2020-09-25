@@ -63,6 +63,10 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(torch.sum(check_second_network), torch.sum(check_network))
         self.assertNotEqual(torch.sum(check_third_network), torch.sum(check_network))
 
+        network.remove()
+        second_network.remove()
+        third_network.remove()
+
     def test_tiny_128_rgb_6c_preprocessed_and_raw_input(self):
         base_config['architecture'] = 'tiny_128_rgb_6c'
         network = eval(base_config['architecture']).Net(
@@ -73,15 +77,16 @@ class ArchitectureTest(unittest.TestCase):
                          network.output_size)
 
         # test single unprocessed data point
-        processed_inputs = super(type(network), network).forward(torch.randint(255, (network.input_size[1],
-                                                                                     network.input_size[2],
-                                                                                     network.input_size[0])),
-                                                                 train=False)
+        processed_inputs = network.process_inputs(torch.randint(255, (network.input_size[1],
+                                                                      network.input_size[2],
+                                                                      network.input_size[0])),
+                                                  train=False)
         self.assertTrue(processed_inputs.max() <= 1)
         self.assertTrue(processed_inputs.min() >= 0)
         self.assertEqual(len(processed_inputs.shape), len(network.input_size) + 1)
         self.assertEqual(processed_inputs.shape[2], network.input_size[1])
         self.assertEqual(processed_inputs.shape[3], network.input_size[2])
+        network.remove()
 
     def test_tiny_128_rgb_6c_raw_input_zero_centered(self):
         base_config['architecture'] = 'tiny_128_rgb_6c'
@@ -90,31 +95,64 @@ class ArchitectureTest(unittest.TestCase):
         )
         network.input_scope = 'zero_centered'
         # test single unprocessed data point
-        processed_inputs = super(type(network), network).forward(torch.randint(255, (network.input_size[1],
-                                                                                     network.input_size[2],
-                                                                                     network.input_size[0])),
-                                                                 train=False)
+        processed_inputs = network.process_inputs(torch.randint(255, (network.input_size[1],
+                                                                      network.input_size[2],
+                                                                      network.input_size[0])),
+                                                  train=False)
         self.assertTrue(processed_inputs.max() <= 1)
         self.assertTrue(-1 <= processed_inputs.min() < 0)
         self.assertEqual(len(processed_inputs.shape), len(network.input_size) + 1)
         self.assertEqual(processed_inputs.shape[2], network.input_size[1])
         self.assertEqual(processed_inputs.shape[3], network.input_size[2])
+        network.remove()
 
-    def test_auto_encoder_shallow(self):
-        base_config['architecture'] = 'auto_encoder_shallow'
+    def test_input_output_architectures(self):
+        for vae in [False, True]:
+            for architecture in ['auto_encoder_conv1', 'auto_encoder_conv3', 'auto_encoder_conv3_deep',
+                                 'auto_encoder_unet']:
+                base_config['architecture'] = architecture
+                base_config['vae'] = vae
+                network = eval(base_config['architecture']).Net(
+                    config=ArchitectureConfig().create(config_dict=base_config)
+                )
+                # test single unprocessed data point
+                batch_size = 15
+                outputs = network.forward(torch.randint(255, (batch_size,
+                                                              network.input_size[0],
+                                                              network.input_size[1],
+                                                              network.input_size[2])), train=False)
+                self.assertEqual(outputs.shape[0], batch_size)
+                for i, v in enumerate(network.output_size):
+                    print(f'observed output size {outputs.shape[1+i]} is equal to expected {v}')
+                    self.assertEqual(outputs.shape[1+i], v)
+                network.remove()
+
+    def test_training_through_vae(self):
+        base_config['architecture'] = 'auto_encoder_unet'
+        base_config['vae'] = False
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
         # test single unprocessed data point
         batch_size = 15
-        outputs = network.forward(torch.randint(255, (batch_size,
-                                                      network.input_size[0],
-                                                      network.input_size[1],
-                                                      network.input_size[2])), train=False)
-        self.assertEqual(outputs.shape[0], batch_size)
-        for i, v in enumerate(network.output_size):
-            print(f'observed output size {outputs.shape[1+i]} is equal to expected {v}')
-            self.assertEqual(outputs.shape[1+i], v)
+        for p in network.parameters():
+            initial_weight = p.data.sum().item()
+            break
+        optimizer = torch.optim.Adam(network.parameters(), 0.1)
+        for _ in range(20):
+            optimizer.zero_grad()
+            outputs = network.forward(torch.zeros((batch_size,
+                                                  network.input_size[0],
+                                                  network.input_size[1],
+                                                  network.input_size[2])), train=True).sum()
+            outputs.backward()
+            optimizer.step()
+        for p in network.parameters():
+            final_weight = p.data.sum().item()
+            break
+        print(f'initial {initial_weight} -> final: {final_weight}')
+        self.assertNotEqual(initial_weight, final_weight)
+        network.remove()
 
     def test_mlp_creator(self):
         network = mlp_creator(sizes=[4, 10, 10, 1],
@@ -140,6 +178,7 @@ class ArchitectureTest(unittest.TestCase):
             else:
                 self.assertEqual(torch.min(p), 0.03)
                 self.assertEqual(torch.max(p), 0.03)
+        network.remove()
 
     def test_sidetuned_network(self):
         base_config['architecture'] = 'dronet_sidetuned'
@@ -157,6 +196,7 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(fixed_weight_checksum, network.conv2d_1.weight.data.sum().item())
         self.assertNotEqual(variable_weight_checksum, network.sidetune_conv2d_1.weight.data.sum().item())
         self.assertNotEqual(alpha_value, network.alpha.item())
+        network.remove()
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

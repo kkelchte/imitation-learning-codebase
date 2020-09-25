@@ -62,7 +62,7 @@ class Net(BaseNet):
         return self._critic.parameters()
 
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Categorical:
-        inputs = super().forward(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs, train=train)
         logits = self._actor(inputs)
         return Categorical(logits=logits)
 
@@ -77,9 +77,9 @@ class Net(BaseNet):
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
         actions = [self.discrete_action_mapper.tensor_to_index(a) for a in actions]
-        actions = super().forward(inputs=actions, train=train)
+        actions = self.process_inputs(inputs=actions, train=train)
         return self._policy_distribution(inputs, train=train).log_prob(actions)
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = super().forward(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs, train=train)
         return self._critic(inputs)

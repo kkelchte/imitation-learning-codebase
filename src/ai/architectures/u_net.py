@@ -119,7 +119,7 @@ class Net(BaseNet):
         self.initialize_architecture()
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = super().forward(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs, train=train)
 
         x1 = self.inc(inputs)
         x2 = self.down1(x1)

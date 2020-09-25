@@ -52,7 +52,7 @@ class Net(BaseNet):
         return self._critic.parameters()
 
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Normal:
-        inputs = super().forward(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs, train=train)
         logits = self.action_max * self._actor(inputs)
         return Normal(logits, torch.exp(self.log_std))
 
@@ -67,10 +67,10 @@ class Net(BaseNet):
                       value=output)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        inputs = super().forward(inputs=inputs, train=train)
-        actions = super().forward(inputs=actions, train=train)  # preprocess list of Actions
+        inputs = self.process_inputs(inputs=inputs, train=train)
+        actions = self.process_inputs(inputs=actions, train=train)  # preprocess list of Actions
         return self._policy_distribution(inputs).log_prob(actions).sum(dim=-1)
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = super().forward(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs, train=train)
         return self._critic(inputs)

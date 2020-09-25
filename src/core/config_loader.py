@@ -51,7 +51,8 @@ class Config:
         if not instant.output_path.startswith('/'):
             instant.output_path = f'{get_data_dir(os.environ["HOME"])}/{instant.output_path}'
         instant.iterative_add_output_path(output_path=instant.output_path)
-        instant.commit = os.popen('git rev-parse HEAD').read().strip()
+        with os.popen('git rev-parse HEAD') as git_commit:
+            instant.commit = git_commit.read().strip()
         instant.post_init()
         instant.iterative_check_for_none()
         if store:

@@ -37,6 +37,8 @@ class ArchitectureConfig(Config):
     initialisation_type: str = 'xavier'
     random_seed: int = 0
     device: str = 'cpu'
+    latent_dim: Union[int, str] = 'default'
+    vae: Union[bool, str] = 'default'
     finetune: bool = False
     weight_decay: Union[float, str] = 'default'
     dropout: Union[float, str] = 'default'
@@ -91,7 +93,7 @@ class BaseNet(nn.Module):
             self._device = torch.device('cpu')
             self.to(self._device)
 
-    def forward(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float], train: bool) -> torch.Tensor:
+    def process_inputs(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float], train: bool) -> torch.Tensor:
         # adjust gradient saving
         if train:
             self.train()
