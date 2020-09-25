@@ -13,7 +13,8 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001, 0.00001]
-    architectures = ['auto_encoder_conv1', 'auto_encoder_conv3', 'auto_encoder_conv3_deep', 'auto_encoder_unet']
+    #architectures = ['auto_encoder_conv1', 'auto_encoder_conv3', 'auto_encoder_conv3_deep']
+    architectures = ['auto_encoder_unet']
     model_paths = [os.path.join(output_path, 'models', arch if not vae else f'vae_{arch}', f'lr_{lr}')
                    for vae in [False, True]
                    for arch in architectures

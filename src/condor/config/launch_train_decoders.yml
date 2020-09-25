@@ -1,4 +1,4 @@
-output_path: encoder_decoder/clean
+output_path: encoder_decoder/textured
 mode: lr_architecture_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:
@@ -6,10 +6,10 @@ job_configs:
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 3
     gpus: 1
-    gpu_mem_mb: 1900
+    gpu_mem_mb: 5900
     cpu_mem_gb: 10
     disk_mem_gb: 52
-    wall_time_s: 2 * 60 * 60
+    wall_time_s: 25 * 60 * 60
     nice: false
     use_singularity: false
     check_if_ros_already_in_use: false
