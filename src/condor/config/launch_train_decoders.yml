@@ -1,6 +1,6 @@
-output_path: encoder_decoder/clean/shallow_2
-mode: lr_line_world
-wait_time_between_jobs_sec: 1
+output_path: encoder_decoder/clean
+mode: lr_architecture_line_world
+wait_time_between_jobs_sec: 0.1
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase

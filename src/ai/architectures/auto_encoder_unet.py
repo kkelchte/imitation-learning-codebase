@@ -27,15 +27,15 @@ class Net(BaseAENet):
             self.h = 64
             self.in_conv = DoubleConv(1, self.h)
             self.down1 = Down(self.h, 2 * self.h)
-            self.down2 = Down(2 * self.h, 4 * self.h)
-            self.down3 = Down(4 * self.h, 8 * self.h)
-            self.down4 = Down(8 * self.h, (8 if not self.vae else 16) * self.h)
+            self.down2 = Down(2 * self.h, (2 if not self.vae else 4) * self.h)
+#            self.down3 = Down(4 * self.h, 8 * self.h)
+#            self.down4 = Down(8 * self.h, (8 if not self.vae else 16) * self.h)
 
             self.out_conv = OutConv(self.h, 1)
             self.up1 = Up(2 * self.h, self.h, bilinear=True)
             self.up2 = Up(4 * self.h, self.h, bilinear=True)
-            self.up3 = Up(8 * self.h, 2 * self.h, bilinear=True)
-            self.up4 = Up(16 * self.h, 4 * self.h, bilinear=True)
+            # self.up3 = Up(8 * self.h, 2 * self.h, bilinear=True)
+            # self.up4 = Up(16 * self.h, 4 * self.h, bilinear=True)
 
             self.initialize_architecture()
             cprint(f'Started.', self._logger)
@@ -50,29 +50,29 @@ class Net(BaseAENet):
                 x1 = self.in_conv(inputs)
                 x2 = self.down1(x1)
                 x3 = self.down2(x2)
-                x4 = self.down3(x3)
-                x5 = self.down4(x4)
+#                x4 = self.down3(x3)
+#                x5 = self.down4(x4)
         else:
             x1 = self.in_conv(inputs)
             x2 = self.down1(x1)
             x3 = self.down2(x2)
-            x4 = self.down3(x3)
-            x5 = self.down4(x4)
+#            x4 = self.down3(x3)
+#            x5 = self.down4(x4)
 
         if self.dropout is not None and train:
-            x5 = self.dropout(x5)
+            x3 = self.dropout(x3)
 
         if self.vae:
-            mean = x5[:, :8 * self.h]
-            std = torch.exp(x5[:, 8 * self.h:]/2)
-            x5 = mean + std * torch.rand_like(std)
+            mean = x3[:, :2 * self.h]  # 8
+            std = torch.exp(x3[:, 2 * self.h:]/2)  # 8
+            x3 = mean + std * torch.rand_like(std)
         else:
             mean = None
             std = None
 
-        x = self.up4(x5, x4)
-        x = self.up3(x, x3)
-        x = self.up2(x, x2)
+        #x = self.up4(x5, x4)
+        #x = self.up3(x, x3)
+        x = self.up2(x3, x2)
         x = self.up1(x, x1)
         x = self.out_conv(x).squeeze(dim=1)
 
