@@ -2,9 +2,8 @@ output_path: hdf5_files/line_world/noisy/1_64_64
 #output_path: test_data_augmentation_textured
 training_validation_split: 0.9
 remove_first_n_timestamps: 30
-augment_background_noise: true
-augment_background_textured: false
-#texture_directory: /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/textured_dataset
+augment_background_noise: False
+augment_background_textured: true
 texture_directory: textured_dataset
 binary_maps_as_target: True
 require_success: True
