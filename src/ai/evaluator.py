@@ -14,7 +14,7 @@ from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
 from src.core.tensorboard_wrapper import TensorboardWrapper
-from src.core.utils import get_filename_without_extension, save_output_plots, create_output_video
+from src.core.utils import get_filename_without_extension, create_output_video_segmentation_network
 from src.data.data_loader import DataLoaderConfig, DataLoader
 
 """Given model, config, data_loader, evaluates a model and logs relevant training information
@@ -97,19 +97,23 @@ class Evaluator:
         :return: None
         """
         self.put_model_on_device('cpu')
+        self.data_loader.get_dataset().subsample(10)
         dataset = self.data_loader.get_dataset()
         predictions = self._net.forward(dataset.observations, train=False).detach().cpu()
-        error = predictions - torch.stack(dataset.actions)
+        #error = predictions - torch.stack(dataset.actions)
         self.put_model_back_to_original_device()
 
-        save_output_plots(output_dir=self._config.output_path,
-                          data={'expert': np.stack(dataset.actions),
-                                'network': predictions.numpy(),
-                                'difference': error.numpy()})
-        create_output_video(output_dir=self._config.output_path,
-                            observations=dataset.observations,
-                            actions={'expert': np.stack(dataset.actions),
-                                     'network': predictions.numpy()})
+        # save_output_plots(output_dir=self._config.output_path,
+        #                   data={'expert': np.stack(dataset.actions),
+        #                         'network': predictions.numpy(),
+        #                         'difference': error.numpy()})
+        # create_output_video(output_dir=self._config.output_path,
+        #                     observations=dataset.observations,
+        #                     actions={'expert': np.stack(dataset.actions),
+        #                              'network': predictions.numpy()})
+        create_output_video_segmentation_network(output_dir=self._config.output_path,
+                                                 observations=torch.stack(dataset.observations).numpy(),
+                                                 predictions=predictions.numpy())
 
     def remove(self):
         self.data_loader.remove()

@@ -12,22 +12,17 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        job_config_object: CondorJobConfig,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
-    learning_rates = [0.01, 0.001, 0.0001, 0.00001]
-    #architectures = ['auto_encoder_conv1', 'auto_encoder_conv3', 'auto_encoder_conv3_deep']
-    architectures = ['auto_encoder_unet']
-    model_paths = [os.path.join(output_path, 'models', 'default' if not vae else f'vae', arch, f'lr_{lr}')
-                   for vae in [False, True]
+    learning_rates = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+    architectures = ['auto_encoder_conv1_200', 'auto_encoder_conv3_200', 'auto_encoder_conv3_deep_200',
+                     'auto_encoder_conv5_200', 'auto_encoder_conv5_deep_200']
+    model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}')
                    for arch in architectures
                    for lr in learning_rates]
     adjustments = {translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
-                   [lr for vae in [False, True] for arch in architectures for lr in learning_rates],
+                   [lr for arch in architectures for lr in learning_rates],
                    translate_keys_to_string(['architecture_config', 'architecture']):
-                   [arch for vae in [False, True] for arch in architectures for lr in learning_rates],
-                   translate_keys_to_string(['architecture_config', 'vae']):
-                   [vae for vae in [False, True] for arch in architectures for lr in learning_rates],
-                   translate_keys_to_string(['trainer_config', 'add_KL_divergence_loss']):
-                   [vae for vae in [False, True] for arch in architectures for lr in learning_rates]}
+                   [arch for arch in architectures for lr in learning_rates]}
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)

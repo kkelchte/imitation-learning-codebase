@@ -172,3 +172,41 @@ def create_output_video(output_dir: str, observations: list, actions: dict) -> N
     for file_name in glob.glob("*.jpg"):
         os.remove(file_name)
     os.chdir(original_directory)
+
+
+def create_output_video_segmentation_network(output_dir: str, observations: np.ndarray, predictions: np.ndarray,
+                                             targets: np.ndarray = None) -> None:
+    """
+    Overlay observations with segmentation predictions.
+    :param output_dir: file path where video is stored
+    :param observations: numpy array or list of images in (CHANNEL, WIDTH, HEIGHT) format
+    :param predictions: numpy array or list of images in (CHANNEL, WIDTH, HEIGHT) format
+    :param targets: optional parameters with desired output to be visualized next to observations (TODO)
+    :return: None
+    """
+    folder = os.path.join(output_dir, 'video')
+    os.makedirs(folder, exist_ok=True)
+
+    for image_index in tqdm(range(len(observations)), ascii=True, desc='video'):
+        plt.figure()
+
+        observation = observations[image_index].squeeze()
+        prediction = predictions[image_index].squeeze()
+        image = np.concatenate([observation, prediction], axis=1)
+
+        plt.tight_layout()
+        plt.axis('off')
+        plt.imshow(image)
+        plt.savefig(folder + "/file%02d.jpg" % image_index)
+        plt.close()
+        plt.cla()
+
+    original_directory = os.getcwd()
+    os.chdir(folder)
+    subprocess.call([
+        'ffmpeg', '-framerate', '8', '-i', 'file%02d.jpg', '-r', '30', '-pix_fmt', 'yuv420p',
+        '../video.mp4'
+    ])
+    # for file_name in glob.glob("*.jpg"):
+    #     os.remove(file_name)
+    os.chdir(original_directory)

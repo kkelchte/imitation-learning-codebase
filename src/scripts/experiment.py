@@ -15,7 +15,7 @@ from src.ai.evaluator import EvaluatorConfig, Evaluator
 from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
-from src.core.utils import get_filename_without_extension, get_data_dir
+from src.core.utils import get_filename_without_extension, get_data_dir, get_date_time_tag
 from src.core.data_types import TerminationType, Distribution
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
@@ -152,7 +152,7 @@ class Experiment:
     def run(self):
         for self._epoch in range(self._config.number_of_epochs):
             best_ckpt = False
-            msg = f'epoch: {self._epoch + 1} / {self._config.number_of_epochs}'
+            msg = f'{get_date_time_tag()} epoch: {self._epoch + 1} / {self._config.number_of_epochs}'
             if self._environment is not None:
                 output_msg, best_ckpt = self._run_episodes()
                 msg += output_msg

@@ -109,7 +109,9 @@ class ArchitectureTest(unittest.TestCase):
     def test_input_output_architectures(self):
         for vae in [False, True]:
             for architecture in ['auto_encoder_conv1', 'auto_encoder_conv3', 'auto_encoder_conv3_deep',
-                                 'auto_encoder_unet']:
+                                 'auto_encoder_unet', 'auto_encoder_conv1_200', 'auto_encoder_conv3_200',
+                                 'auto_encoder_conv3_deep_200', 'auto_encoder_conv5_200',
+                                 'auto_encoder_conv5_deep_200']:
                 base_config['architecture'] = architecture
                 base_config['vae'] = vae
                 network = eval(base_config['architecture']).Net(

@@ -1,0 +1,36 @@
+output_path: hdf5_files/line_world/real/3_200_200
+#output_path: test_data_augmentation_textured
+training_validation_split: 0.
+remove_first_n_timestamps: 0
+augment_background_noise: False
+augment_background_textured: False
+texture_directory: textured_dataset
+binary_maps_as_target: True
+require_success: False
+max_run_length: 20000
+max_hdf5_size: 5000000000
+data_loader_config:
+  subsample: 1
+  input_size: [3, 200, 200]
+  data_directories:
+      - line_world_data/real/raw_data/concrete_bluecable/raw_data/20-07-24_11-22-29_joystick
+      - line_world_data/real/raw_data/concrete_bluecable/raw_data/20-07-24_11-25-09_joystick
+      - line_world_data/real/raw_data/concrete_bluecable/raw_data/20-07-24_11-27-07_joystick
+      - line_world_data/real/raw_data/concrete_bluecable/raw_data/20-07-24_11-27-38_joystick
+      - line_world_data/real/raw_data/concrete_orangecable/raw_data/20-07-24_11-34-26_joystick
+      - line_world_data/real/raw_data/concrete_orangecable/raw_data/20-07-24_12-03-48_joystick
+      - line_world_data/real/raw_data/concrete_orangecable/raw_data/20-07-24_12-06-10_joystick
+      - line_world_data/real/raw_data/concrete_whitecable/raw_data/20-07-24_11-16-03_joystick
+      - line_world_data/real/raw_data/concrete_whitecable/raw_data/20-07-24_11-17-13_joystick
+      - line_world_data/real/raw_data/concrete_whitecable/raw_data/20-07-24_11-17-54_joystick
+      - line_world_data/real/raw_data/concrete_whitecable/raw_data/20-07-24_11-19-16_joystick
+      - line_world_data/real/raw_data/concrete_whitecable/raw_data/20-07-24_11-19-52_joystick
+      - line_world_data/real/raw_data/grass_bluecable/raw_data/20-07-24_11-29-05_joystick
+      - line_world_data/real/raw_data/grass_bluecable/raw_data/20-07-24_11-29-46_joystick
+      - line_world_data/real/raw_data/grass_bluecable/raw_data/20-07-24_11-30-21_joystick
+      - line_world_data/real/raw_data/grass_bluecable/raw_data/20-07-24_11-30-59_joystick
+      - line_world_data/real/raw_data/grass_orangecable/raw_data/20-07-24_12-07-09_joystick
+      - line_world_data/real/raw_data/grass_orangecable/raw_data/20-07-24_12-09-19_joystick
+      - line_world_data/real/raw_data/grass_orangecable/raw_data/20-07-24_12-09-59_joystick
+      - line_world_data/real/raw_data/grass_orangecable/raw_data/20-07-24_12-10-46_joystick
+      - line_world_data/real/raw_data/grass_orangecable/raw_data/20-07-24_12-11-20_joystick

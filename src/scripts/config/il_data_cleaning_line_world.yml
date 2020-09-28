@@ -1,6 +1,6 @@
-output_path: hdf5_files/line_world/noisy/1_64_64
+output_path: hdf5_files/line_world/textured/3_200_200
 #output_path: test_data_augmentation_textured
-training_validation_split: 0.9
+training_validation_split: 1.0
 remove_first_n_timestamps: 30
 augment_background_noise: False
 augment_background_textured: true
@@ -11,8 +11,8 @@ max_run_length: 200
 max_hdf5_size: 5000000000
 data_loader_config:
   subsample: 1
-  input_size: [1, 64, 64]
-#  input_size: [3, 200, 200]
+#  input_size: [1, 64, 64]
+  input_size: [3, 200, 200]
   data_directories:
 #    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_mixed/raw_data/20-09-10_14-02-58_runner_490
 #    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_mixed/raw_data/20-09-10_14-48-23_runner_487
