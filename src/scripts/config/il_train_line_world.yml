@@ -63,11 +63,13 @@ trainer_config:
 evaluator_config:
   data_loader_config:
     hdf5_files:
-      -  /gluster/visics/kkelchte/line_world_data/sim/real/3_200_200/validation_0.hdf5
+      -  /gluster/visics/kkelchte/line_world_data/real/3_200_200/validation_0.hdf5
+      -  /gluster/visics/kkelchte/line_world_data/real/3_200_200/validation_1.hdf5
     random_seed: 32
     balance_over_actions: false
     batch_size: 32
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
+  evaluate_extensive: true
 tensorboard: true
