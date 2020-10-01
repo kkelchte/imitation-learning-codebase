@@ -195,3 +195,12 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
             del self.actions[index]
             del self.rewards[index]
             del self.done[index]
+
+    def shuffle(self):
+        """shuffles data"""
+        indices = list(range(len(self)))
+        np.random.shuffle(indices)
+        self.observations = [self.observations[i] for i in indices]
+        self.actions = [self.actions[i] for i in indices]
+        self.rewards = [self.rewards[i] for i in indices]
+        self.done = [self.done[i] for i in indices]

@@ -41,6 +41,22 @@ class TestDatatypes(unittest.TestCase):
             self.assertTrue(dataset.observations[exp_index].item() % subsample == 0
                             or dataset.done[exp_index].item() == 1)
 
+    def test_dataset_shuffle(self):
+        run_length = 10
+        dataset = Dataset()
+        for run_index in range(3):
+            for step_index in range(run_length + run_index):
+                dataset.append(Experience(
+                    observation=torch.as_tensor((len(dataset),)),
+                    action=torch.as_tensor((len(dataset),)),
+                    reward=torch.as_tensor((0,)),
+                    done=torch.as_tensor((0,)) if step_index != run_length + run_index - 1 else torch.as_tensor((1,))
+                ))
+        self.assertEqual(dataset.observations[0].item(), 0)
+        dataset.shuffle()
+        self.assertEqual(dataset.observations[0], dataset.actions[0])
+        self.assertNotEqual(dataset.observations[0].item(), 0)
+
     def test_dataset_size(self):
         dataset = Dataset()
         dataset.append(Experience(observation=torch.as_tensor([0]*10),
