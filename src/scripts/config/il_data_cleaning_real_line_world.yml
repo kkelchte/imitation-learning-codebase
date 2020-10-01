@@ -1,5 +1,0 @@
-output_path: line_world_real
-training_validation_split: 0.7
-data_loader_config:
-  subsample: 4
-  input_size: [1, 200, 200]
