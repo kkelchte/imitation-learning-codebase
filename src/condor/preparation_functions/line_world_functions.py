@@ -13,7 +13,7 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
     learning_rates = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-    architectures = ['auto_encoder_deep_supervision', 'auto_encoder_deep_supervision_2layered']
+    architectures = ['auto_encoder_deeply_supervised', 'auto_encoder_deeply_supervised_2layered']
     batch_norm = [False, True]
     loss = ['WeightedBinaryCrossEntropyLoss', 'MSE_loss']
     model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
