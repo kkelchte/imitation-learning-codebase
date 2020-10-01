@@ -40,8 +40,7 @@ class DeepSupervision(Trainer):
             loss = self._criterion(probabilities[-1], targets).mean()
             for index, prob in enumerate(probabilities[:-1]):
                 loss += self._criterion(prob, targets).mean()
-            with torch.autograd.set_detect_anomaly(True):
-                loss.sum().backward()
+            loss.sum().backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
                                          self._config.gradient_clip_norm)

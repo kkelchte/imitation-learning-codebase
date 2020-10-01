@@ -220,7 +220,7 @@ class ArchitectureTest(unittest.TestCase):
         network.remove()
 
     def test_auto_encoder_deeply_supervised(self):
-        base_config['architecture'] = 'auto_encoder_deeply_supervised'
+        base_config['architecture'] = 'auto_encoder_deeply_supervised_2layered'
         base_config['initialisation_type'] = 'xavier'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
@@ -248,6 +248,7 @@ class ArchitectureTest(unittest.TestCase):
         trainer.train()
         for k, p in network.named_parameters():
             print(f'{k}: {initial_parameters[k].sum().item()} <-> {p.sum().item()}')
+            self.assertNotEqual(initial_parameters[k].sum().item(), p.sum().item())
         network.remove()
 
     def tearDown(self) -> None:
