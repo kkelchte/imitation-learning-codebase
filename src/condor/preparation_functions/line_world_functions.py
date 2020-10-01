@@ -45,7 +45,7 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                    for bn in batch_norm
                    for ls in loss],
                    translate_keys_to_string(['trainer_config', 'criterion_args_str']):
-                   ['' if ls == 'MSE_loss' else 'beta=0.9' for arch in architectures
+                   ['' if ls == 'MSELoss' else 'beta=0.9' for arch in architectures
                    for lr in learning_rates
                    for bn in batch_norm
                    for ls in loss]}
