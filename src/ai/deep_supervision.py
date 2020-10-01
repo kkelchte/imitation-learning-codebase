@@ -28,6 +28,9 @@ class DeepSupervision(Trainer):
         self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
                                                                         lr=self._config.learning_rate,
                                                                         weight_decay=self._config.weight_decay)
+        lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+        self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
+            if self._config.scheduler_config is not None else None
         cprint(f'Started.', self._logger)
 
     def train(self, epoch: int = -1, writer=None) -> str:
