@@ -28,6 +28,9 @@ def strip_command(command: str) -> str:
 def strip_variable(value) -> str:
     if not isinstance(value, float) and '.' in str(value):
         value = value.split('.')[-2]
+    if isinstance(value, str):
+        if '=' in value:
+            value = value.replace('=', '')
     if isinstance(value, float):
         value = f'{value:.0e}'
     value = str(value)
