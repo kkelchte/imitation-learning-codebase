@@ -15,7 +15,9 @@ def prepare_lr_architecture_line_world(base_config_file: str,
     learning_rates = [0.1, 0.01, 0.001, 0.0001, 0.00001]
     architectures = ['auto_encoder_deeply_supervised', 'auto_encoder_deeply_supervised_2layered']
     batch_norm = [False, True]
-    loss = ['WeightedBinaryCrossEntropyLoss', 'MSE_loss']
+    # loss = ['WeightedBinaryCrossEntropyLoss', 'MSE_loss']
+    loss = ['WeightedBinaryCrossEntropyLoss'    ]
+
     model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
                    for arch in architectures
                    for lr in learning_rates
