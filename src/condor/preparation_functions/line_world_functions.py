@@ -13,16 +13,40 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
     learning_rates = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-    architectures = ['auto_encoder_conv1_200', 'auto_encoder_conv3_200', 'auto_encoder_conv3_deep_200',
-                     'auto_encoder_conv5_200', 'auto_encoder_conv5_deep_200']
-    model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}')
+    architectures = ['auto_encoder_deep_supervision', 'auto_encoder_deep_supervision_2layered']
+    batch_norm = [False, True]
+    loss = ['WeightedBinaryCrossEntropyLoss', 'MSE_loss']
+    model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
                    for arch in architectures
-                   for lr in learning_rates]
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss]
     adjustments = {translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
-                   [lr for arch in architectures for lr in learning_rates],
+                   [lr for arch in architectures
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss],
                    translate_keys_to_string(['architecture_config', 'architecture']):
-                   [arch for arch in architectures for lr in learning_rates]}
+                   [arch for arch in architectures
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss],
+                   translate_keys_to_string(['architecture_config', 'batch_normalisation']):
+                   [bn for arch in architectures
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss],
+                   translate_keys_to_string(['trainer_config', 'criterion']):
+                   [ls for arch in architectures
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss],
+                   translate_keys_to_string(['trainer_config', 'criterion_args_str']):
+                   ['' if ls == 'MSE_loss' else 'beta=0.9' for arch in architectures
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss]}
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)
