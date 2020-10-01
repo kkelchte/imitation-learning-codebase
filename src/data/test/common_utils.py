@@ -1,7 +1,7 @@
 import numpy as np
 
 from src.data.data_saver import DataSaver
-from src.core.data_types import Experience, TerminationType
+from src.core.data_types import Experience, TerminationType, Dataset
 
 
 def experience_generator(input_size: tuple = (3, 100, 100),
@@ -68,3 +68,19 @@ def generate_dummy_dataset(data_saver: DataSaver,
         'episode_lengths': episode_lengths,
         'episode_directories': episode_dirs
     }
+
+
+def generate_dataset(input_size: tuple = (100, 100, 3),
+                     output_size: tuple = (1,),
+                     continuous: bool = True,
+                     fixed_input_value: float = None,
+                     fixed_output_value: float = None) -> Dataset:
+    dataset = Dataset()
+    for count, experience in enumerate(experience_generator(input_size=input_size,
+                                                            output_size=output_size,
+                                                            continuous=continuous,
+                                                            fixed_input_value=fixed_input_value,
+                                                            fixed_output_value=fixed_output_value)):
+        if experience.done != TerminationType.Unknown:
+            dataset.append(experience)
+    return dataset

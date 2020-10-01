@@ -12,9 +12,9 @@ from src.data.test.common_utils import generate_dummy_dataset
 
 def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
     for p in weights.parameters():
-        if len(p.shape) <= 1:
+        if len(p.shape) == 1:
             p.data.zero_()
-        else:
+        elif len(p.shape) > 1:
             if initialisation_type == 'xavier':
                 nn.init.xavier_uniform_(p.data)
             elif initialisation_type == 'constant':

@@ -60,11 +60,11 @@ class TrainerConfig(EvaluatorConfig):
 
 class Trainer(Evaluator):
 
-    def __init__(self, config: TrainerConfig, network: BaseNet, super_init: bool = False):
+    def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
         # use super if this called from sub class.
         super().__init__(config, network, quiet=True)
 
-        if not super_init:
+        if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
                                       quiet=False)
@@ -88,14 +88,8 @@ class Trainer(Evaluator):
                 predictions, mean, std = self._net.forward_with_distribution(batch.observations, train=True)
             else:
                 predictions = self._net.forward(batch.observations, train=True)
-            if isinstance(self._criterion, torch.nn.CrossEntropyLoss):
-                # Add ugly method for handling binary output map with cross entropy
-                # should be taken out if cross entropy is not the loss we want for segmentation
-                ce_predictions = torch.stack([predictions]*2, dim=1)
-                loss = torch.nn.CrossEntropyLoss(weight=torch.as_tensor([0, 1], dtype=torch.float), reduction='mean')\
-                    (ce_predictions, targets.type(dtype=torch.long))
-            else:
-                loss = self._criterion(predictions, targets).mean()
+
+            loss = self._criterion(predictions, targets).mean()
             if self._config.add_KL_divergence_loss:
                 # https://arxiv.org/pdf/1312.6114.pdf
                 KL_loss = -0.5 * torch.sum(1 + std.pow(2).log() - mean.pow(2) - std.pow(2))

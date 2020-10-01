@@ -1,4 +1,4 @@
-output_path: hdf5_files/line_world/real/3_200_200
+output_path: hdf5_files/line_world/real/1_200_200
 #output_path: test_data_augmentation_textured
 training_validation_split: 0.
 remove_first_n_timestamps: 0
@@ -6,12 +6,13 @@ augment_background_noise: False
 augment_background_textured: False
 texture_directory: textured_dataset
 binary_maps_as_target: True
+shuffle: True
 require_success: False
 max_run_length: 20000
 max_hdf5_size: 5000000000
 data_loader_config:
   subsample: 1
-  input_size: [3, 200, 200]
+  input_size: [1, 200, 200]
   data_directories:
       - line_world_data/real/raw_data/concrete_bluecable/raw_data/20-07-24_11-22-29_joystick
       - line_world_data/real/raw_data/concrete_bluecable/raw_data/20-07-24_11-25-09_joystick

@@ -3,7 +3,7 @@ number_of_epochs: 100
 number_of_episodes: -1
 save_checkpoint_every_n: 99
 architecture_config:
-  architecture: auto_encoder_conv5_deep_200
+  architecture: auto_encoder_deeply_supervised
   initialisation_type: xavier
   random_seed: 4
   device: cuda
@@ -15,56 +15,37 @@ architecture_config:
 trainer_config:
   optimizer: Adam
   learning_rate: 0.001
-  factory_key: BASE
+  factory_key: DeepSupervision
   add_KL_divergence_loss: false
   data_loader_config:
     loop_over_hdf5_files: true
     hdf5_files:
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_0.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_10.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_11.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_12.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_13.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_14.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_15.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_16.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_17.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_18.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_19.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_1.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_20.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_21.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_22.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_23.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_24.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_25.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_26.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_27.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_28.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_29.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_2.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_30.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_31.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_32.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_33.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_3.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_4.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_5.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_6.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_7.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_8.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/textured/3_200_200/train_9.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_0.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_10.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_11.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_12.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_13.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_14.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_1.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_2.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_3.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_4.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_5.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_6.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_7.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_8.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/textured/1_200_200/train_9.hdf5
     random_seed: 123
     balance_over_actions: false
     batch_size: 32
-  criterion: MSELoss
+  criterion: WeightedBinaryCrossEntropyLoss
+  criterion_args_str: 'beta=0.9'
   device: cuda
   store_output_on_tensorboard: true
 evaluator_config:
   data_loader_config:
     hdf5_files:
-      -  /gluster/visics/kkelchte/line_world_data/real/3_200_200/validation_0.hdf5
-      -  /gluster/visics/kkelchte/line_world_data/real/3_200_200/validation_1.hdf5
+      -  /gluster/visics/kkelchte/line_world_data/real/1_200_200/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
     batch_size: 32

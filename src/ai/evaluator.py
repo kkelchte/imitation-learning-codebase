@@ -1,15 +1,16 @@
 #!/usr/bin/python3
-from typing import Tuple
+from typing import Tuple, Optional
 
 from dataclasses import dataclass
 import torch
-from torch import nn
+from torch.nn import *
 import numpy as np
 from dataclasses_json import dataclass_json
 from tqdm import tqdm
 
 from src.ai.base_net import BaseNet
 from src.ai.utils import data_to_tensor
+from src.ai.losses import *
 from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
@@ -28,6 +29,7 @@ Depends on ai/architectures, data/data_loader, core/logger
 class EvaluatorConfig(Config):
     data_loader_config: DataLoaderConfig = None
     criterion: str = 'MSELoss'
+    criterion_args_str: str = ''
     device: str = 'cpu'
     evaluate_extensive: bool = False
     store_output_on_tensorboard: bool = False
@@ -49,12 +51,13 @@ class Evaluator:
         self._device = torch.device(
             "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
         )
-        self._criterion = eval(f'nn.{self._config.criterion}(reduction=\'none\').to(self._device)')
+        self._criterion = eval(f'{self._config.criterion}(reduction=\'none\', {self._config.criterion_args_str})')
+        self._criterion.to(self._device)
         self._lowest_validation_loss = None
         self.data_loader.load_dataset()
 
         self._minimum_error = float(10**6)
-        self._original_model_device = self._net.get_device()
+        self._original_model_device = self._net.get_device() if self._net is not None else None
 
     def put_model_on_device(self, device: str = None):
         self._original_model_device = self._net.get_device()

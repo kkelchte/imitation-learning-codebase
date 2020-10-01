@@ -1,16 +1,19 @@
 import os
 import shutil
 import unittest
-from copy import deepcopy
+from copy import deepcopy, copy
 
 import torch
 import torch.nn as nn
 import numpy as np
 
 from src.ai.base_net import ArchitectureConfig, BaseNet
+from src.ai.trainer import TrainerConfig
+from src.ai.trainer_factory import TrainerFactory
 from src.ai.utils import mlp_creator, generate_random_dataset_in_raw_data
 from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
 from src.ai.architectures import *  # Do not remove
+from src.data.test.common_utils import generate_dataset
 
 base_config = {
     "architecture": "",
@@ -214,6 +217,37 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(fixed_weight_checksum, network.conv2d_1.weight.data.sum().item())
         self.assertNotEqual(variable_weight_checksum, network.sidetune_conv2d_1.weight.data.sum().item())
         self.assertNotEqual(alpha_value, network.alpha.item())
+        network.remove()
+
+    def test_auto_encoder_deeply_supervised(self):
+        base_config['architecture'] = 'auto_encoder_deeply_supervised'
+        base_config['initialisation_type'] = 'xavier'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+
+        # test single unprocessed data point
+        network.forward(torch.randn((10, *network.input_size)), train=True)
+
+        initial_parameters = deepcopy(dict(network.named_parameters()))
+
+        # test trainer
+        trainer_config = {
+            'output_path': self.output_dir,
+            'optimizer': 'Adam',
+            'learning_rate': 0.01,
+            'factory_key': 'DeepSupervision',
+            'data_loader_config': {},
+            'criterion': 'WeightedBinaryCrossEntropyLoss',
+            "criterion_args_str": 'beta=0.9',
+        }
+        trainer = TrainerFactory().create(config=TrainerConfig().create(config_dict=trainer_config), network=network)
+        dataset = generate_dataset(input_size=network.input_size,
+                                   output_size=network.output_size)
+        trainer.data_loader.set_dataset(dataset)
+        trainer.train()
+        for k, p in network.named_parameters():
+            print(f'{k}: {initial_parameters[k].sum().item()} <-> {p.sum().item()}')
         network.remove()
 
     def tearDown(self) -> None:

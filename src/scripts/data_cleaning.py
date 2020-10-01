@@ -28,9 +28,10 @@ class DataCleaningConfig(Config):
     remove_first_n_timestamps: Optional[int] = 0
     augment_background_noise: bool = False
     augment_background_textured: bool = False
-    texture_directory: str = ""
-    binary_maps_as_target: bool = False
-    require_success: bool = False
+    texture_directory: str = ""  # directory in to fill background with
+    binary_maps_as_target: bool = False  # extract binary maps from inputs and store in action field in hdf5
+    require_success: bool = False  # skip runs without a SUCCESS tag in their raw data run directory
+    shuffle: bool = False  # shuffle dataset before exporting it as hdf5, used for validation images
     max_hdf5_size: int = 10**9
     max_run_length: int = -1
 
@@ -91,6 +92,8 @@ class DataCleaner:
             hdf5_data.extend(run_dataset)
             self._data_loader.empty_dataset()
             if hdf5_data.get_memory_size() > self._config.max_hdf5_size:
+                if self._config.shuffle:
+                    hdf5_data.shuffle()
                 create_hdf5_file_from_dataset(filename=os.path.join(self._config.output_path,
                                                                     f'{filename_tag}_{filename_index}.hdf5'),
                                               dataset=hdf5_data)
@@ -98,6 +101,8 @@ class DataCleaner:
                 total_data_points += len(hdf5_data)
                 hdf5_data = Dataset()
         if len(hdf5_data) != 0:
+            if self._config.shuffle:
+                hdf5_data.shuffle()
             create_hdf5_file_from_dataset(filename=os.path.join(self._config.output_path,
                                                                 f'{filename_tag}_{filename_index}.hdf5'),
                                           dataset=hdf5_data)
