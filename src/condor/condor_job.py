@@ -39,6 +39,7 @@ class CondorJobConfig(Config):
     singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1] if len(sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))) != 0 else ''
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
+    save_before_wall_time: bool = False
     extra_requirements: Optional[str] = None
 
     def __post_init__(self):
@@ -229,9 +230,24 @@ class CondorJob:
         lines += f'rm -r {self.local_output_path} \n'
         return lines
 
+    def _add_lines_check_wall_time(self) -> str:
+        """lines checking the start time with the wall time
+        and potentially kill command so local saving is done before end
+        """
+        lines = "echo 'starting to wait for command to finish'"
+        lines += "CHECKPID=0 \n"
+        lines += f"while [ $CHECKPID -eq 0 " \
+                 f"-a $(date +%s) -lt $((STARTTIME + {self._config.wall_time_s} - 5 * 60)) ] ; do " \
+                 f"sleep 60; kill -0 $PROCESSID 2&>1 >> /dev/null; CHECKPID=$?; done\n"
+        lines += "if [ $CHECKPID -eq 0 ] ; do " \
+                 "kill -9 $PROCESSID; echo 'kill process before end of walltime'; " \
+                 "done \n"
+        lines += "fake-call-to-raise-error \n"
+
     def write_executable_file(self):
         with open(self.executable_file, 'w') as executable:
             executable.write('#!/bin/bash\n')
+            executable.write("STARTTIME=$(date +%s)\n")
             if self._config.check_if_ros_already_in_use and self._config.use_singularity:
                 executable.write(self._add_check_for_ros_lines())
             if self._config.save_locally:
@@ -241,14 +257,17 @@ class CondorJob:
                     f"/usr/bin/singularity exec --nv {self._config.singularity_file} "
                     f"{os.path.join(self._config.codebase_dir, 'rosenvironment', 'entrypoint.sh')} "
                     f"{self._config.command} "
-                    f">> {os.path.join(self.output_dir, 'singularity.output')} 2>&1 \n")
+                    f">> {os.path.join(self.output_dir, 'singularity.output')} 2>&1 &\n")
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
                 if 'DATADIR' in os.environ.keys():
                     executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
                 executable.write(f'export HOME={os.environ["HOME"]}\n')
-                executable.write(f'{self._config.command}\n')
+                executable.write(f'{self._config.command} &\n')
+            executable.write("PROCESSID=$! \n")
+            if self._config.save_before_wall_time and self._config.save_locally:
+                executable.write(self._add_lines_check_wall_time())
             executable.write("retVal=$? \n")
             executable.write("echo \"got exit code $retVal\" \n")
             executable.write(f"touch {self.output_dir}/FINISHED_$retVal \n")

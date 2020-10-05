@@ -231,7 +231,7 @@ class TestCondorJob(unittest.TestCase):
             lines = f.readlines()
         self.assertTrue(sum(['hold' in l for l in lines]))
 
-    #    @unittest.skip
+    @unittest.skip
     def test_local_hdf5_file(self):
         # create fake hdf5 files
         info_0 = generate_random_dataset_in_raw_data(
@@ -305,6 +305,37 @@ class TestCondorJob(unittest.TestCase):
             self.assertTrue(f.startswith(condor_job.local_home))
         for js, rs in zip(hdf5_file_sizes, original_sizes):
             self.assertEqual(js, rs)
+
+    #@unittest.skip
+    def test_stop_before_wall_time(self):
+        config_dict = {
+            'output_path': self.output_dir,
+            'command': 'python src/condor/test/dummy_python_script.py',
+            'use_singularity': True,
+            'save_locally': True,
+            'save_before_wall_time': True,
+            'wall_time_s': 60,
+        }
+        config = CondorJobConfig().create(config_dict=config_dict)
+        job = CondorJob(config=config)
+        condor_dir = sorted(os.listdir(os.path.join(self.output_dir, 'condor')))[-1]
+        self.assertTrue(os.path.isdir(os.path.join(self.output_dir, 'condor', condor_dir)))
+        job.write_job_file()
+        job.write_executable_file()
+        for file_path in [job.job_file, job.executable_file]:
+            self.assertTrue(os.path.isfile(file_path))
+            read_file_to_output(file_path)
+
+        self.assertEqual(job.submit(), 0)
+
+        subprocess.call('condor_q')
+        while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
+            time.sleep(1)  # Assuming this is only condor job
+
+        a = 100
+        for file_path in [job.output_file, job.error_file, job.log_file]:
+            self.assertTrue(os.path.isfile(file_path))
+        self.assertTrue(os.path.join(self.output_dir, 'condor', condor_dir, 'FINISHED_127'))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

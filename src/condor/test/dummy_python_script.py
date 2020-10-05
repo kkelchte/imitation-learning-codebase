@@ -1,5 +1,6 @@
 #!/usr/python
 import shlex
+import time
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ if config_file is not None:
             except:
                 msg = 'failed to read _CONDOR_JOB_AD'
             f.write(msg)
+        time.sleep(60)
     nested_path = os.path.join(config.output_path, 'nested_dir_1', 'nested_dir_2')
     os.makedirs(nested_path, exist_ok=True)
     with open(os.path.join(nested_path, 'already_existing_file'), 'w') as f:
