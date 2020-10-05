@@ -306,7 +306,7 @@ class TestCondorJob(unittest.TestCase):
         for js, rs in zip(hdf5_file_sizes, original_sizes):
             self.assertEqual(js, rs)
 
-    #@unittest.skip
+    @unittest.skip
     def test_stop_before_wall_time(self):
         config_dict = {
             'output_path': self.output_dir,
