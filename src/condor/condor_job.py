@@ -243,6 +243,7 @@ class CondorJob:
                  "kill -9 $PROCESSID; echo 'kill process before end of walltime'; " \
                  "done \n"
         lines += "fake-call-to-raise-error \n"
+        return lines
 
     def write_executable_file(self):
         with open(self.executable_file, 'w') as executable:
