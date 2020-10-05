@@ -234,12 +234,12 @@ class CondorJob:
         """lines checking the start time with the wall time
         and potentially kill command so local saving is done before end
         """
-        lines = "echo 'starting to wait for command to finish'"
+        lines = "echo 'starting to wait for command to finish' \n"
         lines += "CHECKPID=0 \n"
         lines += f"while [ $CHECKPID -eq 0 " \
                  f"-a $(date +%s) -lt $((STARTTIME + {self._config.wall_time_s} - 5 * 60)) ] ; do " \
                  f"sleep 60; kill -0 $PROCESSID 2&>1 >> /dev/null; CHECKPID=$?; done\n"
-        lines += "if [ $CHECKPID -eq 0 ] ; then \n" \
+        lines += "if [ $CHECKPID == 0 ] ; then \n" \
                  "kill -9 $PROCESSID \n echo 'kill process before end of walltime' \n " \
                  "fake-call-to-raise-error \n" \
                  "fi \n"
