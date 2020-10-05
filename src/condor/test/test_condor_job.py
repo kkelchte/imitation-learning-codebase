@@ -332,10 +332,9 @@ class TestCondorJob(unittest.TestCase):
         while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
             time.sleep(1)  # Assuming this is only condor job
 
-        import pdb; pdb.set_trace()
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))
-        self.assertTrue(os.path.join(self.output_dir, 'condor', condor_dir, 'FINISHED_127'))
+        self.assertTrue(os.path.isfile(os.path.join(self.output_dir, 'condor', condor_dir, 'FINISHED_127')))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
