@@ -163,9 +163,9 @@ def main():
     }))
 #    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate,
 #                                 weight_decay=5e-4)
-    optimizer = torch.optim.SGD(model.parameters(), args.lr,
+    optimizer = torch.optim.SGD(model.parameters(), args.learning_rate,
                                 momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+                                weight_decay=5e-4)
     if args.checkpoint != "":
         try:
             checkpoint = torch.load(args.checkpoint, map_location=device)
