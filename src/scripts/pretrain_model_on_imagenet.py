@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
                     default="/esat/visicsrodata/datasets/ilsvrc2012",
                     help='path to dataset, test dir: /esat/opal/kkelchte/experimental_data/datasets/dummy_ilsvrc')
-parser.add_argument('-bs', '--batch_size', default=32)
+parser.add_argument('-bs', '--batch_size', default=128)
 parser.add_argument('-lr', '--learning_rate', default=0.01)
 parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
                     help='number of total epochs to run')
@@ -178,8 +178,8 @@ def main():
                 normalize,
             ]))
     train_loader = torch.utils.data.DataLoader(
-            train_dataset, batch_size=args.batch_size, shuffle=True,
-            num_workers=4, pin_memory=True)
+            train_dataset, batch_size=args.batch_size//4, shuffle=True,
+            num_workers=args.batch_size, pin_memory=True)
 
     criterion = nn.CrossEntropyLoss().cuda()
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate,
