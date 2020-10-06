@@ -49,12 +49,14 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
 
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
+        images = images.to(device)
+        target = target.to(device)
         # measure data loading time
         data_time.update(time.time() - end)
 
         # compute output
-        output = model(images.to(device))
-        loss = criterion(output, target.to(device))
+        output = model(images)
+        loss = criterion(output, target)
 
         # measure accuracy and record loss
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
