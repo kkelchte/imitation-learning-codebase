@@ -44,9 +44,6 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
         [batch_time, data_time, losses, top1, top5],
         prefix="Epoch: [{}]".format(epoch))
 
-    # switch to train mode
-    model.train()
-
     end = time.time()
     for i, (images, target) in enumerate(train_loader):
         images = images.to(device)
@@ -55,7 +52,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
         data_time.update(time.time() - end)
 
         # compute output
-        output = model(images)
+        output = model.forward(images, train=True)
         loss = criterion(output, target)
 
         # measure accuracy and record loss
