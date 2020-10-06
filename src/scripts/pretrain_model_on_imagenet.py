@@ -20,8 +20,8 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
                     default="/esat/visicsrodata/datasets/ilsvrc2012",
                     help='path to dataset, test dir: /esat/opal/kkelchte/experimental_data/datasets/dummy_ilsvrc')
-parser.add_argument('-bs', '--batch_size', default=256)
-parser.add_argument('-lr', '--learning_rate', default=0.001)
+parser.add_argument('-bs', '--batch_size', default=12, type=int)
+parser.add_argument('-lr', '--learning_rate', default=0.001, type=float)
 parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('-a', '--architecture',
