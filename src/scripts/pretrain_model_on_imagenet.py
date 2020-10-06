@@ -20,8 +20,8 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
                     default="/esat/visicsrodata/datasets/ilsvrc2012",
                     help='path to dataset, test dir: /esat/opal/kkelchte/experimental_data/datasets/dummy_ilsvrc')
-parser.add_argument('-bs', '--batch_size', default=32)
-parser.add_argument('-lr', '--learning_rate', default=0.01)
+parser.add_argument('-bs', '--batch_size', default=128)
+parser.add_argument('-lr', '--learning_rate', default=0.001)
 parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('-a', '--architecture',
@@ -73,7 +73,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % 10 == 0:
+        if i % 1000 == 0:
             progress.display(i)
     return acc1
 
@@ -187,9 +187,8 @@ def main():
             num_workers=args.batch_size, pin_memory=True)
 
     criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.SGD(model.parameters(), args.learning_rate,
-                                momentum=0.9,
-                                weight_decay=5e-4)
+    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate,
+                                 weight_decay=5e-4)
     for epoch in range(args.epochs):
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, device)
