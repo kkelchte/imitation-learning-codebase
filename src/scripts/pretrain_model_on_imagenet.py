@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
                     default="/esat/visicsrodata/datasets/ilsvrc2012",
                     help='path to dataset, test dir: /esat/opal/kkelchte/experimental_data/datasets/dummy_ilsvrc')
-parser.add_argument('-bs', '--batch_size', default=128)
+parser.add_argument('-bs', '--batch_size', default=256)
 parser.add_argument('-lr', '--learning_rate', default=0.001)
 parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
                     help='number of total epochs to run')
@@ -30,7 +30,8 @@ parser.add_argument('-a', '--architecture',
 parser.add_argument('-o', '--output_path',
                     default="pretrained_models/auto_encoder_deeply_supervised")
 parser.add_argument('-d', '--device', default='cuda', help="cuda or cpu")
-parser.add_argument("-rm", action='store_true', help="remove current output dir before start")
+parser.add_argument('-rm', action='store_true', help="remove current output dir before start")
+parser.add_argument('-c', '--checkpoint', default='', help="point to checkpoint file to initialize network with.")
 
 
 def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
@@ -147,8 +148,9 @@ def main():
 
     if args.rm:
         shutil.rmtree(args.output_path, ignore_errors=True)
-    os.makedirs(os.path.join(args.output_path, 'torch_checkpoints'))
-    #  model = models.__dict__['resnet18']()
+
+    os.makedirs(os.path.join(args.output_path, 'torch_checkpoints'), exist_ok=True)
+    os.makedirs(os.path.join(args.output_path, 'imagenet_checkpoints'), exist_ok=True)
 
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     model = eval(args.architecture).ImageNet(ArchitectureConfig().create(config_dict={
@@ -157,12 +159,12 @@ def main():
         'output_path': args.output_path,
         'device': args.device if torch.cuda.is_available() else "cpu"
     }))
-    model.to(device)
-    target_model = eval(args.architecture).Net(ArchitectureConfig().create(config_dict={
-        'architecture': '',
-        'batch_normalisation': True,
-        'output_path': args.output_path
-    }))
+    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate,
+                                 weight_decay=5e-4)
+    if args.checkpoint != "":
+        checkpoint = torch.load(args.checkpoint, map_location=device)
+        model.load_checkpoint(checkpoint['net_ckpt'])
+        optimizer.load_state_dict(checkpoint['optim_state'])
 
     traindir = os.path.join(args.data, 'ILSVRC2012_img_train')
 #    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -184,14 +186,27 @@ def main():
             num_workers=args.batch_size, pin_memory=True)
 
     criterion = nn.CrossEntropyLoss().to(device)
-    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate,
-                                 weight_decay=5e-4)
+
     for epoch in range(args.epochs):
+        print(f'{time.strftime("%H:%M:%S")}: start epoch {epoch}.')
         # train for one epoch
         train(train_loader, model, criterion, optimizer, epoch, device)
+        torch.save({
+            'net_ckpt': {
+                'global_step': epoch,
+                'model_state': model.state_dict()},
+            'optim_state': optimizer.state_dict()
+        }, os.path.join(args.output_path, 'imagenet_checkpoints', f'checkpoint_latest.ckpt'))
 
     model.to(torch.device('cpu'))
+
     # copy pretrained weights to target network
+    target_model = eval(args.architecture).Net(ArchitectureConfig().create(config_dict={
+        'architecture': '',
+        'batch_normalisation': True,
+        'output_path': args.output_path
+    }))
+
     for (n1, v1), (n2, v2) in zip(model.named_parameters(), target_model.named_parameters()):
         # zip ignores last output parameters that are not shared.
         v2.data = v1.data.clone()
