@@ -40,7 +40,6 @@ class ArchitectureConfig(Config):
     latent_dim: Union[int, str] = 'default'
     vae: Union[bool, str] = 'default'
     finetune: bool = False
-    weight_decay: Union[float, str] = 'default'
     dropout: Union[float, str] = 'default'
     batch_normalisation: Union[bool, str] = 'default'
     dtype: str = 'default'

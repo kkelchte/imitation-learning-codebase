@@ -113,3 +113,20 @@ class Net(BaseNet):
 
     def get_action(self, inputs, train: bool = False) -> Action:
         raise NotImplementedError
+
+
+class ImageNet(Net):
+
+    def __init__(self, config: ArchitectureConfig, quiet: bool = False):
+        super().__init__(config=config, quiet=False)
+        self._imagenet_output = torch.nn.Linear(32*25*25, 1000)
+
+    def forward(self, inputs, train: bool = False) -> torch.Tensor:
+        processed_inputs = self.process_inputs(inputs, train)
+        x1 = self.residual_1(processed_inputs)
+        x2 = self.residual_2(x1)
+        x3 = self.residual_3(x2)
+        x4 = self.residual_4(x3)
+        return self._imagenet_output(x4)
+
+
