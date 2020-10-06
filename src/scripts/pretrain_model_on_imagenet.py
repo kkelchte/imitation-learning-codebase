@@ -20,9 +20,11 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
                     default="/esat/visicsrodata/datasets/ilsvrc2012",
                     help='path to dataset, test dir: /esat/opal/kkelchte/experimental_data/datasets/dummy_ilsvrc')
-parser.add_argument('-bs', '--batch_size', default=12, type=int)
-parser.add_argument('-lr', '--learning_rate', default=0.001, type=float)
-parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
+parser.add_argument('-bs', '--batch_size', default=128, type=int)
+parser.add_argument('-lr', '--learning_rate', default=0.1, type=float)
+parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
+                    help='momentum')
+parser.add_argument('-n', '--epochs', default=1, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('-a', '--architecture',
                     default="auto_encoder_deeply_supervised",
@@ -159,13 +161,20 @@ def main():
         'output_path': args.output_path,
         'device': args.device if torch.cuda.is_available() else "cpu"
     }))
-    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate,
-                                 weight_decay=5e-4)
+#    optimizer = torch.optim.Adam(model.parameters(), args.learning_rate,
+#                                 weight_decay=5e-4)
+    optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay)
     if args.checkpoint != "":
-        checkpoint = torch.load(args.checkpoint, map_location=device)
-        model.load_checkpoint(checkpoint['net_ckpt'])
-        optimizer.load_state_dict(checkpoint['optim_state'])
-        print(f'loaded checkpoint from {args.checkpoint}')
+        try:
+            checkpoint = torch.load(args.checkpoint, map_location=device)
+            model.load_checkpoint(checkpoint['net_ckpt'])
+            optimizer.load_state_dict(checkpoint['optim_state'])
+        except Exception as e:
+            print(e)
+        else:
+            print(f'loaded checkpoint from {args.checkpoint}')
 
     model.to(device)
 
