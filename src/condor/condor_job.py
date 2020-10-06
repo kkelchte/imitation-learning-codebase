@@ -258,16 +258,17 @@ class CondorJob:
                     f"/usr/bin/singularity exec --nv {self._config.singularity_file} "
                     f"{os.path.join(self._config.codebase_dir, 'rosenvironment', 'entrypoint.sh')} "
                     f"{self._config.command} "
-                    f">> {os.path.join(self.output_dir, 'singularity.output')} 2>&1 &\n")
+                    f">> {os.path.join(self.output_dir, 'singularity.output')} 2>&1 "
+                    f"{'&' if self._config.save_before_wall_time else ''}\n")
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
                 if 'DATADIR' in os.environ.keys():
                     executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
                 executable.write(f'export HOME={os.environ["HOME"]}\n')
-                executable.write(f'{self._config.command} &\n')
+                executable.write(f'{self._config.command} {"&" if self._config.save_before_wall_time else ""}\n')
             executable.write("PROCESSID=$! \n")
-            if self._config.save_before_wall_time and self._config.save_locally:
+            if self._config.save_before_wall_time:
                 executable.write(self._add_lines_check_wall_time())
             executable.write("retVal=$? \n")
             executable.write("echo \"got exit code $retVal\" \n")
