@@ -82,6 +82,7 @@ class LoadCheckpointTest(unittest.TestCase):
 
     def test_load_imagenet_pretrained_checkpoint(self):
         base_config['architecture'] = 'auto_encoder_deeply_supervised'
+        base_config['batch_normalisation'] = True
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config),
         )
