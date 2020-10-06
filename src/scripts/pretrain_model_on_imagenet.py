@@ -210,8 +210,9 @@ def main():
             'optim_state': optimizer.state_dict()
         }, os.path.join(args.output_path, 'imagenet_checkpoints', f'checkpoint_latest.ckpt'))
 
-    model.to(torch.device('cpu'))
+    print(f'{time.strftime("%H:%M:%S")}: training finished.')
 
+    model.to(torch.device('cpu'))
     # copy pretrained weights to target network
     target_model = eval(args.architecture).Net(ArchitectureConfig().create(config_dict={
         'architecture': '',
