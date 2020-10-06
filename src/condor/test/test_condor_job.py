@@ -37,9 +37,9 @@ class TestCondorJob(unittest.TestCase):
         for file_path in [job.job_file, job.executable_file]:
             self.assertTrue(os.path.isfile(file_path))
             read_file_to_output(file_path)
-        #output_executable = subprocess.call(shlex.split(f'{os.path.join(self.output_dir, "condor", condor_dir)}/'
-        #                                                f'job.executable'))
-        #self.assertEqual(output_executable, 2)  # TODO
+        output_executable = subprocess.call(shlex.split(f'{os.path.join(self.output_dir, "condor", condor_dir)}/'
+                                                        f'job.executable'))
+        self.assertEqual(output_executable, 2)
         self.assertEqual(job.submit(), 0)
         self.assertTrue(len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10)
         subprocess.call('condor_q')
@@ -49,7 +49,6 @@ class TestCondorJob(unittest.TestCase):
             self.assertTrue(os.path.isfile(file_path))
         error_file_length = len(open(job.error_file, 'r').readlines())
         self.assertEqual(0, error_file_length)
-        import pdb; pdb.set_trace() # TODO
 
     @unittest.skip
     def test_singularity_job(self):
