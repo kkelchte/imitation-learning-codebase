@@ -157,7 +157,8 @@ def main():
     model = eval(args.architecture).ImageNet(ArchitectureConfig().create(config_dict={
         'architecture': '',
         'batch_normalisation': True,
-        'output_path': args.output_path
+        'output_path': args.output_path,
+        'device': args.device if torch.cuda.is_available() else "cpu"
     }))
     model.to(device)
     target_model = eval(args.architecture).Net(ArchitectureConfig().create(config_dict={
