@@ -144,7 +144,7 @@ def main():
     args = parser.parse_args()
     print(args)
     if not args.output_path.startswith('/'):
-        f'{get_data_dir(os.environ["HOME"])}/{args.output_path}'
+        args.output_path = f'{get_data_dir(os.environ["HOME"])}/{args.output_path}'
 
     if args.rm:
         shutil.rmtree(args.output_path, ignore_errors=True)
