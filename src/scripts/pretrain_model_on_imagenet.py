@@ -183,7 +183,7 @@ def main():
             ]))
     train_loader = torch.utils.data.DataLoader(
             train_dataset, batch_size=args.batch_size, shuffle=True,
-            num_workers=args.batch_size//4, pin_memory=True)
+            num_workers=min([12, args.batch_size//4]), pin_memory=True)
 
     criterion = nn.CrossEntropyLoss().to(device)
 
