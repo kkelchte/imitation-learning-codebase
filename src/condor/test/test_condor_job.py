@@ -39,7 +39,9 @@ class TestCondorJob(unittest.TestCase):
             read_file_to_output(file_path)
         output_executable = subprocess.call(shlex.split(f'{os.path.join(self.output_dir, "condor", condor_dir)}/'
                                                         f'job.executable'))
+        import pdb; pdb.set_trace()
         self.assertEqual(output_executable, 2)
+
         self.assertEqual(job.submit(), 0)
         self.assertTrue(len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10)
         subprocess.call('condor_q')

@@ -268,8 +268,8 @@ class CondorJob:
                     executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
                 executable.write(f'export HOME={os.environ["HOME"]}\n')
                 executable.write(f'{self._config.command} {"&" if self._config.save_before_wall_time else ""}\n')
-            executable.write("PROCESSID=$! \n")
             if self._config.save_before_wall_time:
+                executable.write("PROCESSID=$! \n")
                 executable.write(self._add_lines_check_wall_time())
             executable.write("retVal=$? \n")
             executable.write("echo \"got exit code $retVal\" \n")
