@@ -165,6 +165,7 @@ def main():
         checkpoint = torch.load(args.checkpoint, map_location=device)
         model.load_checkpoint(checkpoint['net_ckpt'])
         optimizer.load_state_dict(checkpoint['optim_state'])
+        print(f'loaded checkpoint from {args.checkpoint}')
 
     model.to(device)
 
