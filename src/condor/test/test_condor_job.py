@@ -37,8 +37,8 @@ class TestCondorJob(unittest.TestCase):
         for file_path in [job.job_file, job.executable_file]:
             self.assertTrue(os.path.isfile(file_path))
             read_file_to_output(file_path)
-        output_executable = subprocess.call(shlex.split(f'{os.path.join(self.output_dir, "condor", condor_dir)}/'
-                                                        f'job.executable'))
+        #output_executable = subprocess.call(shlex.split(f'{os.path.join(self.output_dir, "condor", condor_dir)}/'
+        #                                                f'job.executable'))
         #self.assertEqual(output_executable, 2)  # TODO
         self.assertEqual(job.submit(), 0)
         self.assertTrue(len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10)
