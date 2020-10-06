@@ -54,6 +54,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
 
         # compute output
         print(device)
+        import pdb; pdb.set_trace()
         output = model(images.to(device))
         loss = criterion(output, target.to(device))
 
