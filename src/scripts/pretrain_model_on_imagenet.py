@@ -2,6 +2,7 @@
 import os
 import shutil
 import argparse
+import sys
 
 import torch
 import time
@@ -16,12 +17,12 @@ from src.ai.base_net import ArchitectureConfig
 from src.core.utils import get_data_dir
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-parser.add_argument('data', metavar='DIR',
+parser.add_argument('--data', metavar='DIR',
                     default="/esat/visicsrodata/datasets/ilsvrc2012",
                     help='path to dataset, test dir: /esat/opal/kkelchte/experimental_data/datasets/dummy_ilsvrc')
 parser.add_argument('-bs', '--batch_size', default=32)
 parser.add_argument('-lr', '--learning_rate', default=0.01)
-parser.add_argument('-n', '--epochs', default=10, type=int, metavar='N',
+parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('-a', '--architecture',
                     default="auto_encoder_deeply_supervised",
@@ -142,6 +143,9 @@ def accuracy(output, target, topk=(1,)):
 def main():
     best_acc1 = 0
     args = parser.parse_args()
+    print(args)
+    sys.exit(0)
+
     if not args.output_path.startswith('/'):
         f'{get_data_dir(os.environ["HOME"])}/{args.output_path}'
 
