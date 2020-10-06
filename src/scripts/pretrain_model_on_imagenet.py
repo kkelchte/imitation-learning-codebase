@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
                     default="/esat/visicsrodata/datasets/ilsvrc2012",
                     help='path to dataset, test dir: /esat/opal/kkelchte/experimental_data/datasets/dummy_ilsvrc')
-parser.add_argument('-bs', '--batch_size', default=128)
+parser.add_argument('-bs', '--batch_size', default=32)
 parser.add_argument('-lr', '--learning_rate', default=0.01)
 parser.add_argument('-n', '--epochs', default=100, type=int, metavar='N',
                     help='number of total epochs to run')
@@ -53,6 +53,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
         data_time.update(time.time() - end)
 
         # compute output
+        print(device)
         output = model(images.to(device))
         loss = criterion(output, target.to(device))
 
