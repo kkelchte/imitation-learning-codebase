@@ -13,6 +13,7 @@ import torchvision.transforms as transforms
 
 from src.ai.architectures import *  # Do not remove
 from src.ai.base_net import ArchitectureConfig
+from src.core.utils import get_data_dir
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('data', metavar='DIR',
@@ -25,6 +26,9 @@ parser.add_argument('-n', '--epochs', default=10, type=int, metavar='N',
 parser.add_argument('-a', '--architecture',
                     default="auto_encoder_deeply_supervised",
                     help='architecture to train, make sure that architecture contains ImageNet besides the normal Net.')
+parser.add_argument('-o', '--output_path',
+                    default="test_imagenet_pretrain")
+parser.add_argument("-rm", action='store_true', help="remove current output dir before start")
 
 
 def train(train_loader, model, criterion, optimizer, epoch) -> float:
@@ -68,12 +72,6 @@ def train(train_loader, model, criterion, optimizer, epoch) -> float:
         if i % 10 == 0:
             progress.display(i)
     return acc1
-
-
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
-    torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
 
 
 class AverageMeter(object):
@@ -144,6 +142,11 @@ def accuracy(output, target, topk=(1,)):
 def main():
     best_acc1 = 0
     args = parser.parse_args()
+    if not args.output_path.startswith('/'):
+        f'{get_data_dir(os.environ["HOME"])}/{args.output_path}'
+
+    if args.rm:
+        shutil.rmtree(args.output_path, ignore_errors=True)
 
     #  model = models.__dict__['resnet18']()
 
@@ -180,13 +183,16 @@ def main():
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
 
-        save_checkpoint({
+        torch.save({
             'epoch': epoch + 1,
             'arch': args.architecture,
             'state_dict': model.state_dict(),
             'best_acc1': best_acc1,
             'optimizer': optimizer.state_dict(),
-        }, is_best)
+        }, os.path.join(args.output_path, 'torch_checkpoints', f'model_{epoch}.ckpt'))
+        if is_best:
+            shutil.copyfile(os.path.join(args.output_path, 'torch_checkpoints', f'model_{epoch}.ckpt'),
+                            os.path.join(args.output_path, 'torch_checkpoints', f'model_best.ckpt'))
 
 
 if __name__ == "__main__":
