@@ -148,7 +148,7 @@ def main():
 
     if args.rm:
         shutil.rmtree(args.output_path, ignore_errors=True)
-
+    os.makedirs(os.path.join(args.output_path, 'torch_checkpoints'), exist_ok=True)
     #  model = models.__dict__['resnet18']()
 
     model = eval(args.architecture).ImageNet(ArchitectureConfig().create(config_dict={
