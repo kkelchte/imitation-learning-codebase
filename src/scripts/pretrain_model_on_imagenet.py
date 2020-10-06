@@ -198,7 +198,7 @@ def main():
             'net_ckpt': {
                 'global_step': 0,
                 'model_state': target_model.state_dict()},
-    }, os.path.join(args.output_path, 'torch_checkpoints', f'model_latest.ckpt'))
+    }, os.path.join(args.output_path, 'torch_checkpoints', f'checkpoint_latest.ckpt'))
 
 
 if __name__ == "__main__":
