@@ -28,7 +28,7 @@ parser.add_argument('-a', '--architecture',
                     default="auto_encoder_deeply_supervised",
                     help='architecture to train, make sure that architecture contains ImageNet besides the normal Net.')
 parser.add_argument('-o', '--output_path',
-                    default="test_imagenet_pretrain")
+                    default="pretrained_models/auto_encoder_deeply_supervised")
 parser.add_argument("-rm", action='store_true', help="remove current output dir before start")
 
 
@@ -148,10 +148,15 @@ def main():
 
     if args.rm:
         shutil.rmtree(args.output_path, ignore_errors=True)
-    os.makedirs(os.path.join(args.output_path, 'torch_checkpoints'), exist_ok=True)
+    os.makedirs(os.path.join(args.output_path, 'torch_checkpoints'))
     #  model = models.__dict__['resnet18']()
 
     model = eval(args.architecture).ImageNet(ArchitectureConfig().create(config_dict={
+        'architecture': '',
+        'batch_normalisation': True,
+        'output_path': args.output_path
+    }))
+    target_model = eval(args.architecture).Net(ArchitectureConfig().create(config_dict={
         'architecture': '',
         'batch_normalisation': True,
         'output_path': args.output_path
@@ -180,25 +185,20 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate,
                                 momentum=0.9,
                                 weight_decay=5e-4)
-    best_acc1 = 0
     for epoch in range(args.epochs):
         # train for one epoch
-        acc1 = train(train_loader, model, criterion, optimizer, epoch)
+        train(train_loader, model, criterion, optimizer, epoch)
 
-        # remember best acc@1 and save checkpoint
-        is_best = acc1 > best_acc1
-        best_acc1 = max(acc1, best_acc1)
+    # copy pretrained weights to target network
+    for (n1, v1), (n2, v2) in zip(model.named_parameters(), target_model.named_parameters()):
+        # zip ignores last output parameters that are not shared.
+        v2.data = v1.data.clone()
 
-        torch.save({
-            'epoch': epoch + 1,
-            'arch': args.architecture,
-            'state_dict': model.state_dict(),
-            'best_acc1': best_acc1,
-            'optimizer': optimizer.state_dict(),
-        }, os.path.join(args.output_path, 'torch_checkpoints', f'model_{epoch}.ckpt'))
-        if is_best:
-            shutil.copyfile(os.path.join(args.output_path, 'torch_checkpoints', f'model_{epoch}.ckpt'),
-                            os.path.join(args.output_path, 'torch_checkpoints', f'model_best.ckpt'))
+    torch.save({
+            'net_ckpt': {
+                'global_step': 0,
+                'model_state': target_model.state_dict()},
+    }, os.path.join(args.output_path, 'torch_checkpoints', f'model_latest.ckpt'))
 
 
 if __name__ == "__main__":

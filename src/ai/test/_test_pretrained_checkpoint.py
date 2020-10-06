@@ -9,7 +9,7 @@ import numpy as np
 
 from src.ai.base_net import ArchitectureConfig, BaseNet
 from src.ai.utils import mlp_creator, generate_random_dataset_in_raw_data
-from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
+from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image, get_data_dir
 from src.ai.architectures import *  # Do not remove
 
 base_config = {
@@ -55,13 +55,13 @@ class LoadCheckpointTest(unittest.TestCase):
         print(network)
         print(network(torch.randn(network.input_size)))
 
-    def test_load_checkpoint(self):
+    def test_load_dronet_checkpoint(self):
         base_config['architecture'] = 'dronet'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config),
         )
-        checkpoint = torch.load(os.path.join(os.environ['PWD'], 'experimental_data', 'dronet', 'torch_checkpoints',
-                                             'checkpoint_latest.ckpt'))
+        checkpoint = torch.load(os.path.join(os.environ['PWD'], 'experimental_data', 'pretrained_models', 'dronet',
+                                             'torch_checkpoints', 'checkpoint_latest.ckpt'))
         network.load_checkpoint(checkpoint['net_ckpt'])
         self.assertLess(network.conv2d_1.weight.sum().item() - conv2d, 0.001)
         self.assertLess(network.batch_normalization_1.weight.sum().item() - batch_normalization, 0.001)
@@ -79,6 +79,16 @@ class LoadCheckpointTest(unittest.TestCase):
         self.assertLess(network.batch_normalization_6.weight.sum().item() - batch_normalization_5, 0.001)
         self.assertLess(network.conv2d_10.weight.sum().item() - conv2d_9, 0.001)
         self.assertLess(network.conv2d_9.weight.sum().item() - conv2d_8, 0.001)
+
+    def test_load_imagenet_pretrained_checkpoint(self):
+        base_config['architecture'] = 'auto_encoder_deeply_supervised'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config),
+        )
+        checkpoint = torch.load(os.path.join(get_data_dir(os.environ['PWD']), 'experimental_data', 'pretrained_models',
+                                             'auto_encoder_deeply_supervised', 'torch_checkpoints',
+                                             'checkpoint_latest.ckpt'))
+        network.load_checkpoint(checkpoint['net_ckpt'])
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
