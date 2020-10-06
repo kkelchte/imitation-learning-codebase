@@ -154,6 +154,7 @@ def main():
     model = eval(args.architecture).ImageNet(ArchitectureConfig().create(config_dict={
         'architecture': '',
         'batch_normalisation': True,
+        'output_path': args.output_path
     }))
 
     traindir = os.path.join(args.data, 'ILSVRC2012_img_train')
