@@ -127,6 +127,6 @@ class ImageNet(Net):
         x2 = self.residual_2(x1)
         x3 = self.residual_3(x2)
         x4 = self.residual_4(x3)
-        return self._imagenet_output(x4)
+        return self._imagenet_output(x4.view(-1, 1, 32*25*25))
 
 
