@@ -141,11 +141,8 @@ def accuracy(output, target, topk=(1,)):
 
 
 def main():
-    best_acc1 = 0
     args = parser.parse_args()
     print(args)
-    sys.exit(0)
-
     if not args.output_path.startswith('/'):
         f'{get_data_dir(os.environ["HOME"])}/{args.output_path}'
 
@@ -178,7 +175,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), args.learning_rate,
                                 momentum=0.9,
                                 weight_decay=5e-4)
-
+    best_acc1 = 0
     for epoch in range(args.epochs):
         # train for one epoch
         acc1 = train(train_loader, model, criterion, optimizer, epoch)
