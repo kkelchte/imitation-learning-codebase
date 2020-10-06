@@ -166,6 +166,8 @@ def main():
         model.load_checkpoint(checkpoint['net_ckpt'])
         optimizer.load_state_dict(checkpoint['optim_state'])
 
+    model.to(device)
+
     traindir = os.path.join(args.data, 'ILSVRC2012_img_train')
 #    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
 #                                     std=[0.229, 0.224, 0.225])
