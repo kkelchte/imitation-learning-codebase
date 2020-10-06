@@ -21,7 +21,7 @@ class TestCondorJob(unittest.TestCase):
         self.output_dir = f'{get_data_dir(os.environ["PWD"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
-    @unittest.skip
+    #@unittest.skip
     def test_virtualenv_job(self):
         config_dict = {
             'output_path': self.output_dir,
@@ -49,6 +49,7 @@ class TestCondorJob(unittest.TestCase):
             self.assertTrue(os.path.isfile(file_path))
         error_file_length = len(open(job.error_file, 'r').readlines())
         self.assertEqual(0, error_file_length)
+        import pdb; pdb.set_trace() # TODO
 
     @unittest.skip
     def test_singularity_job(self):

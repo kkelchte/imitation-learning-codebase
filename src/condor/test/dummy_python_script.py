@@ -38,6 +38,6 @@ if config_file is not None:
 
 subprocess.call(shlex.split("printenv"))
 
-
+time.sleep(3600)  # TODO
 print('well done!')
 sys.exit(2)
