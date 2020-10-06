@@ -166,7 +166,7 @@ def main():
     train_dataset = datasets.ImageFolder(
             traindir,
             transforms.Compose([
-                transforms.RandomResizedCrop(224),
+                transforms.RandomResizedCrop(200),
                 transforms.RandomHorizontalFlip(),
                 transforms.Grayscale(num_output_channels=1),
                 transforms.ToTensor(),
