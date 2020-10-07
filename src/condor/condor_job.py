@@ -57,7 +57,7 @@ class CondorJobConfig(Config):
 
     def post_init(self):  # add default options
         if not self.output_path.startswith('/'):
-            self.output_path = os.path.join(self.codebase_dir, self.output_path)
+            self.output_path = os.path.join(get_data_dir(self.codebase_dir), self.output_path)
 
 
 class CondorJob:

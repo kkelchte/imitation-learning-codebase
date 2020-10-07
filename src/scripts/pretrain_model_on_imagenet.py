@@ -15,6 +15,7 @@ import torchvision.transforms as transforms
 from src.ai.architectures import *  # Do not remove
 from src.ai.base_net import ArchitectureConfig
 from src.core.utils import get_data_dir
+from src.core.tensorboard_wrapper import TensorboardWrapper
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
@@ -153,7 +154,7 @@ def main():
 
     os.makedirs(os.path.join(args.output_path, 'torch_checkpoints'), exist_ok=True)
     os.makedirs(os.path.join(args.output_path, 'imagenet_checkpoints'), exist_ok=True)
-
+    writer = TensorboardWrapper(log_dir=args.output_path)
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     model = eval(args.architecture).ImageNet(ArchitectureConfig().create(config_dict={
         'architecture': '',
@@ -202,7 +203,9 @@ def main():
     for epoch in range(args.epochs):
         print(f'{time.strftime("%H:%M:%S")}: start epoch {epoch}.')
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, device)
+        acc = train(train_loader, model, criterion, optimizer, epoch, device)
+        writer.set_step(epoch)
+        writer.write_scalar(acc, 'training accuracy')
         torch.save({
             'net_ckpt': {
                 'global_step': epoch,
