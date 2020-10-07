@@ -164,9 +164,15 @@ virtualenvironment/venv
 test_dir/
 
 /src/sim/ros/python3_ros_ws/src/bebop_autonomy
+/src/sim/ros/python3_ros_ws/src/dso_ros
+/src/sim/ros/python3_ros_ws/src/navigation
+/src/sim/ros/python3_ros_ws/src/openslam_gmapping
+/src/sim/ros/python3_ros_ws/src/ros_course_part2
+/src/sim/ros/python3_ros_ws/src/slam_gmapping
+/src/sim/ros/python3_ros_ws/src/turtlebot3
+/src/sim/ros/python3_ros_ws/src/vision_opencv
 /src/sim/ros/python2_ros_ws/src/hector_localization
 /src/sim/ros/python2_ros_ws/src/hector_quadrotor
-/src/sim/ros/python3_ros_ws/src/vision_opencv
 *CMakeLists.txt*
 
 /experimental_data
@@ -179,5 +185,4 @@ test_dir/
 /.cmake/packages/Pangolin/6df06e0afbd219d36ab58a9a27fe6ea6
 /src/sim/ros/dso/
 /src/sim/ros/Pangolin/
-/src/sim/ros/python3_ros_ws/src/dso_ros/
 /.keras/
