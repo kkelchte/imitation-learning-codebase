@@ -11,8 +11,19 @@ http://wiki.ros.org/navigation/Tutorials/Navigation%20Tuning%20Guide
 http://wiki.ros.org/navigation/Tutorials/Writing%20A%20Global%20Path%20Planner%20As%20Plugin%20in%20ROS
 
 Demo turtlebot gazebo:
-roslaunch turtlebot3_gazebo turtlebot3_house.launch
-roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=$HOME/src/sim/ros/python3_ros_ws/src/ros_course_part2/tb3_house_map/tb3_house_map.yaml
+0) start simulator
+$ roslaunch turtlebot3_gazebo turtlebot3_house.launch
+
+1) create map
+$ roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch 
+$ roslaunch turtlebot3_slam turtlebot3_slam.launch slam_methods:=gmapping
+# if you have turtlebot 3 also locally installed:
+$ roslaunch $HOME/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_teleop/launch/turtlebot3_teleop_key.launch
+$ roslaunch $HOME/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch slam_methods:=gmapping
+
+
+2) drive in map
+$ roslaunch $HOME/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_navigation/launch/turtlebot3_navigation.launch map_file:=$HOME/src/sim/ros/python3_ros_ws/src/ros_course_part2/tb3_house_map/tb3_house_map.yaml
 
 - Set estimated start location
 - Set goal location
