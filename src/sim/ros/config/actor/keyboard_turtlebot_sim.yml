@@ -62,7 +62,7 @@ specs:
     - 0
     - 0
     - 1
-    m:
+    ':':
     - -1
     - 0
     - 0
@@ -70,5 +70,5 @@ specs:
     - 0
     - -1
   topicBindings:
-    g: '/fsm/go_topic'
-    f: '/fsm/overtake_topic'
+    g: '/fsm/go'
+    f: '/fsm/overtake'

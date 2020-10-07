@@ -26,7 +26,8 @@ class TestControlMapper(unittest.TestCase):
             'fsm': False,
             'control_mapping': True,
             'control_mapping_config': control_mapper_config,
-            'output_path': self.output_dir
+            'output_path': self.output_dir,
+            'waypoint_indicator': False
         }
 
         # spinoff roslaunch
@@ -70,8 +71,7 @@ class TestControlMapper(unittest.TestCase):
         # for each fsm state
         for fsm_state in [FsmState.Running,
                           FsmState.DriveBack,
-                          FsmState.TakenOver,
-                          FsmState.TakeOff]:
+                          FsmState.TakenOver]:
             print(f'FSM STATE: {fsm_state}')
             #   publish fsm state
             self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
@@ -96,6 +96,7 @@ class TestControlMapper(unittest.TestCase):
                 received_control = self.ros_topic.topic_values[self.supervision_topic]
                 self.assertEqual(received_control.linear.x, solution[original_topic])
 
+    #@unittest.skip
     def test_control_mapper_noisy(self):
         self.start(control_mapper_config='test_noisy')
         # for each fsm state

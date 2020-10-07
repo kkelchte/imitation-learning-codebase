@@ -82,7 +82,10 @@ apt-get update && apt-get install -yq\
     ros-melodic-gazebo-ros \
     libignition-math2-dev \
     ros-melodic-teleop-twist-keyboard \
-    rviz \
+    ros-melodic-rviz \
+    ros-melodic-common-msgs \
+    ros-melodic-geometry2 \
+    python-catkin-tools \
     libglew-dev \
     libsuitesparse-dev libeigen3-dev libboost-all-dev \
     ros-melodic-rqt \
