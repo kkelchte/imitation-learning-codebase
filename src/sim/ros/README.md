@@ -121,4 +121,4 @@ source ./src/sim/ros/entrypoint.sh
 # Troubleshoot
 
 bebop_driver failed to start as libarcommands not found:
-cp /opt/ros/melodic/lib/parrot_arsdk/* src/sim/ros/python3_ws/devel/lib
+cp -r /opt/ros/melodic/lib/parrot_arsdk/* src/sim/ros/python3_ros_ws/devel/lib
