@@ -220,8 +220,8 @@ class ArchitectureTest(unittest.TestCase):
         network.remove()
 
     def test_auto_encoder_deeply_supervised(self):
-         for arch in ['auto_encoder_deeply_supervised_2layered', 'auto_encoder_deeply_supervised',
-                      'auto_encoder_deeply_supervised_maxpool']:
+        for arch in ['auto_encoder_deeply_supervised_share_weights', 'auto_encoder_deeply_supervised_2layered',
+                     'auto_encoder_deeply_supervised', 'auto_encoder_deeply_supervised_maxpool']:
             base_config['architecture'] = arch
             base_config['initialisation_type'] = 'xavier'
             network = eval(base_config['architecture']).Net(
@@ -243,6 +243,7 @@ class ArchitectureTest(unittest.TestCase):
                 'criterion': 'WeightedBinaryCrossEntropyLoss',
                 "criterion_args_str": 'beta=0.9',
             }
+            torch.autograd.set_detect_anomaly(True)
             trainer = TrainerFactory().create(config=TrainerConfig().create(config_dict=trainer_config), network=network)
             dataset = generate_dataset(input_size=network.input_size,
                                        output_size=network.output_size)
