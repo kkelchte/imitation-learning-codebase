@@ -220,9 +220,8 @@ class ArchitectureTest(unittest.TestCase):
         network.remove()
 
     def test_auto_encoder_deeply_supervised(self):
-        # for arch in ['auto_encoder_deeply_supervised_2layered', 'auto_encoder_deeply_supervised',
-        #              'auto_encoder_deeply_supervised_maxpool']:
-        for arch in ['auto_encoder_deeply_supervised_maxpool']:
+         for arch in ['auto_encoder_deeply_supervised_2layered', 'auto_encoder_deeply_supervised',
+                      'auto_encoder_deeply_supervised_maxpool']:
             base_config['architecture'] = arch
             base_config['initialisation_type'] = 'xavier'
             network = eval(base_config['architecture']).Net(
@@ -240,6 +239,39 @@ class ArchitectureTest(unittest.TestCase):
                 'optimizer': 'Adam',
                 'learning_rate': 0.01,
                 'factory_key': 'DeepSupervision',
+                'data_loader_config': {},
+                'criterion': 'WeightedBinaryCrossEntropyLoss',
+                "criterion_args_str": 'beta=0.9',
+            }
+            trainer = TrainerFactory().create(config=TrainerConfig().create(config_dict=trainer_config), network=network)
+            dataset = generate_dataset(input_size=network.input_size,
+                                       output_size=network.output_size)
+            trainer.data_loader.set_dataset(dataset)
+            trainer.train()
+            for k, p in network.named_parameters():
+                print(f'{k}: {initial_parameters[k].sum().item()} <-> {p.sum().item()}')
+                self.assertNotEqual(initial_parameters[k].sum().item(), p.sum().item())
+            network.remove()
+
+    def test_auto_encoder_deeply_supervised_with_confidence(self):
+        for arch in ['auto_encoder_deeply_supervised_confidence']:
+            base_config['architecture'] = arch
+            base_config['initialisation_type'] = 'xavier'
+            network = eval(base_config['architecture']).Net(
+                config=ArchitectureConfig().create(config_dict=base_config)
+            )
+
+            # test single unprocessed data point
+            network.forward(torch.randn((10, *network.input_size)), train=True)
+
+            initial_parameters = deepcopy(dict(network.named_parameters()))
+
+            # test trainer
+            trainer_config = {
+                'output_path': self.output_dir,
+                'optimizer': 'Adam',
+                'learning_rate': 0.01,
+                'factory_key': 'DeepSupervisionConfidence',
                 'data_loader_config': {},
                 'criterion': 'WeightedBinaryCrossEntropyLoss',
                 "criterion_args_str": 'beta=0.9',
