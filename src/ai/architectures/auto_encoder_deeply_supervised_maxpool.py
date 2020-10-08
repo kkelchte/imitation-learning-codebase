@@ -39,6 +39,7 @@ class Net(BaseNet):
                                             output_channels=32,
                                             batch_norm=self._config.batch_normalisation,
                                             activation=torch.nn.ReLU(),
+                                            pool=None,
                                             strides=(1, 1),
                                             padding=(1, 1),
                                             kernel_sizes=(3, 3))
@@ -49,7 +50,9 @@ class Net(BaseNet):
                                             output_channels=32,
                                             batch_norm=self._config.batch_normalisation,
                                             activation=torch.nn.ReLU(),
-                                            strides=(2, 1),
+                                            pool=torch.nn.MaxPool2d(kernel_size=2,
+                                                                    stride=2),
+                                            strides=(1, 1),
                                             padding=(1, 1),
                                             kernel_sizes=(3, 3))
             self.side_logit_2 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
@@ -60,7 +63,9 @@ class Net(BaseNet):
                                             output_channels=32,
                                             batch_norm=self._config.batch_normalisation,
                                             activation=torch.nn.ReLU(),
-                                            strides=(2, 1),
+                                            pool=torch.nn.MaxPool2d(kernel_size=2,
+                                                                    stride=2),
+                                            strides=(1, 1),
                                             padding=(1, 1),
                                             kernel_sizes=(3, 3))
             self.side_logit_3 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
@@ -71,7 +76,9 @@ class Net(BaseNet):
                                             output_channels=32,
                                             batch_norm=self._config.batch_normalisation,
                                             activation=torch.nn.ReLU(),
-                                            strides=(2, 1),
+                                            pool=torch.nn.MaxPool2d(kernel_size=2,
+                                                                    stride=2),
+                                            strides=(1, 1),
                                             padding=(1, 1),
                                             kernel_sizes=(3, 3))
             self.side_logit_4 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)

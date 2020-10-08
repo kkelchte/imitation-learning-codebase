@@ -38,7 +38,7 @@ class Net(BaseNet):
             self.residual_1 = ResidualBlock(input_channels=1,
                                             output_channels=32,
                                             batch_norm=self._config.batch_normalisation,
-                                            activation=torch.nn.ReLU,
+                                            activation=torch.nn.ReLU(),
                                             strides=(1, 1),
                                             padding=(1, 1),
                                             kernel_sizes=(3, 3))
@@ -48,7 +48,7 @@ class Net(BaseNet):
             self.residual_2 = ResidualBlock(input_channels=32,
                                             output_channels=32,
                                             batch_norm=self._config.batch_normalisation,
-                                            activation=torch.nn.ReLU,
+                                            activation=torch.nn.ReLU(),
                                             strides=(2, 1),
                                             padding=(1, 1),
                                             kernel_sizes=(3, 3))
