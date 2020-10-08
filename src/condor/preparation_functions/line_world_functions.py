@@ -18,7 +18,8 @@ def prepare_lr_pretrain_imagenet(base_config_file: str,
     for rate in learning_rates:
         job_config = copy.deepcopy(job_config_object)
         job_config.output_path = output_path
-        job_config.command += f' -o {output_path}/models/{rate} --learning_rate {rate}'
+        job_config.command += f' -o {output_path}/models/{rate} --learning_rate {rate} ' \
+                              f'-c {output_path}/models/{rate}/imagenet_checkpoints/checkpoint_latest.ckpt'
         condor_job = CondorJob(config=job_config)
         condor_job.write_job_file()
         condor_job.write_executable_file()

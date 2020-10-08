@@ -3,6 +3,7 @@ import os
 import shutil
 import argparse
 import sys
+from typing import Tuple
 
 import torch
 import time
@@ -37,7 +38,7 @@ parser.add_argument('-rm', action='store_true', help="remove current output dir 
 parser.add_argument('-c', '--checkpoint', default='', help="point to checkpoint file to initialize network with.")
 
 
-def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
+def train(train_loader, model, criterion, optimizer, epoch, device) -> Tuple[float, float]:
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -76,7 +77,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
 
         if i % 1000 == 0:
             progress.display(i)
-    return acc1
+    return acc1, loss.item()
 
 
 class AverageMeter(object):
@@ -203,9 +204,10 @@ def main():
     for epoch in range(args.epochs):
         print(f'{time.strftime("%H:%M:%S")}: start epoch {epoch}.')
         # train for one epoch
-        acc = train(train_loader, model, criterion, optimizer, epoch, device)
+        acc, loss = train(train_loader, model, criterion, optimizer, epoch, device)
         writer.set_step(epoch)
         writer.write_scalar(acc, 'training accuracy')
+        writer.write_scalar(loss, 'training loss')
         torch.save({
             'net_ckpt': {
                 'global_step': epoch,
