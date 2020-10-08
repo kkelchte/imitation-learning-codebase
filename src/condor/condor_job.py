@@ -238,7 +238,7 @@ class CondorJob:
         lines += "CHECKPID=0 \n"
         lines += f"while [ $CHECKPID -eq 0 " \
                  f"-a $(date +%s) -lt $((STARTTIME + {self._config.wall_time_s} - 5 * 60)) ] ; do " \
-                 f"echo $((STARTTIME + {self._config.wall_time_s} - 5 * 60 - (date +%s))) seconds to live \n "\
+                 f"echo $((STARTTIME + {self._config.wall_time_s} - 5 * 60 - $(date +%s))) seconds to live \n "\
                  f"sleep 100 \n kill -0 $PROCESSID 2&>1 >> /dev/null\n CHECKPID=$?\n done\n"
         lines += "if [ $CHECKPID == 0 ] ; then \n" \
                  "kill -9 $PROCESSID \n echo 'kill process before end of walltime' \n " \
