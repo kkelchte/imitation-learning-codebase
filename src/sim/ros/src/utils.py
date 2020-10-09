@@ -12,7 +12,7 @@ from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32MultiArray
 
 from src.core.data_types import Action
-from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
+from cv_bridge import CvBridge
 
 bridge = CvBridge()
 

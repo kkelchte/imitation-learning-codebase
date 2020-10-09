@@ -35,6 +35,8 @@ export DSO_PATH=${HOME}/src/sim/ros/dso
 export TURTLEBOT3_MODEL='burger'
 cd "${HOME}" || exit 1
 
-alias turtle='export ROS_MASTER_URI=http://10.42.0.177:11311 && export ROS_HOSTNAME=10.42.0.177'
+#IPADDRESS="$(ip addr show wlp2s0 | grep inet | head -1 | cut -d '/' -f 1 | cut -d ' ' -f 6)"
+#alias turtle='export ROS_MASTER_URI=http://${IPADDRESS}:11311 && export ROS_HOSTNAME={IPADDRESS}'
+alias turtle='export ROS_MASTER_URI=http://192.168.0.149:11311 && export ROS_HOSTNAME=192.168.0.149'
 # potentially remove .singularity.d/libs from LD_LIBRARY_PATH
 "$@"

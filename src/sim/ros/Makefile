@@ -17,6 +17,7 @@ install_python3_ros_ws: python3_ros_ws/src
 	git clone https://github.com/ROBOTIS-GIT/turtlebot3.git -b origin/melodic-devel src/turtlebot3 && \
 	git clone https://github.com/ros-perception/openslam_gmapping.git -b origin/melodic-devel src/openslam_gmapping && \
 	git clone https://github.com/ros-perception/slam_gmapping.git -b origin/melodic-devel src/slam_gmapping && \
+	git clone -b melodic https://github.com/ros-perception/image_pipeline.git
 	git clone git@github.com:kkelchte/ros_course_part2.git src/ros_course_part2 && \
 	git clone https://github.com/kkelchte/dso_ros.git -b origin/master src/dso_ros && \
 	git clone https://github.com/ros-planning/navigation.git -b melodic-devel src/navigation&& \

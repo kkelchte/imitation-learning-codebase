@@ -29,7 +29,10 @@ from typing import Tuple
 
 import numpy as np
 from PIL import Image
+
 from numpy.linalg import inv
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.lines as mlines
@@ -162,6 +165,7 @@ class RobotMapper:
             self._frame_points.append(points_image_frame)
 
     def _write_image(self):
+        cprint("writing image away...")
         fig, ax = plt.subplots()
         ax.imshow(self._background_image)
         for _frame in self._frame_points:
@@ -194,7 +198,7 @@ class RobotMapper:
         self._frame_points = []
 
     def run(self):
-        cprint(f'started with rate {self._rate}', self._logger)
+        cprint(f'started', self._logger)
         while not rospy.is_shutdown():
             self._rate.sleep()
 

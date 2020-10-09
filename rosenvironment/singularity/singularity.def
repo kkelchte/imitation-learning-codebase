@@ -75,6 +75,9 @@ apt-get update && apt-get install -yq\
     ros-melodic-controller-interface \
     ros-melodic-gazebo-ros-control \
     ros-melodic-rosbridge-suite \
+    ros-melodic-vision-opencv \
+    ros-melodic-compressed-image-transport \
+    ros-melodic-image-pipeline \
     ros-melodic-rosauth \
     ros-melodic-turtlebot3 \
     ros-melodic-turtlebot3-gazebo \
