@@ -1,4 +1,4 @@
-output_path: line_world_real2/concorete_orangecable
+output_path: test_joystick_flight
 number_of_epochs: 1
 number_of_episodes: 20
 environment_config:

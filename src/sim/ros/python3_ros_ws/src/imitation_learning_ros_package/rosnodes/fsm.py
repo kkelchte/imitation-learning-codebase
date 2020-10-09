@@ -14,7 +14,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import String
 
 from imitation_learning_ros_package.msg import RosReward
-from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
+from cv_bridge import CvBridge
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import TerminationType
