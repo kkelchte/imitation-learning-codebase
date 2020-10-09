@@ -32,10 +32,10 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001]
-#    architectures = ['auto_encoder_deeply_supervised_maxpool', 'auto_encoder_deeply_supervised_share_weights',
-#                     'auto_encoder_deeply_supervised_confidence']
+    architectures = ['auto_encoder_deeply_supervised_maxpool', 'auto_encoder_deeply_supervised_share_weights',
+                     'auto_encoder_deeply_supervised_confidence']
 
-    architectures = ['auto_encoder_deeply_supervised', 'auto_encoder_deeply_supervised_2layered']
+    #architectures = ['auto_encoder_deeply_supervised', 'auto_encoder_deeply_supervised_2layered']
     batch_norm = [False]  # [False, True]
     loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
 
