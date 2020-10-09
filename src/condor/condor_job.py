@@ -236,10 +236,17 @@ class CondorJob:
         """
         lines = "echo 'starting to wait for command to finish' \n"
         lines += "CHECKPID=0 \n"
+        lines += "COUNT=0 \n" \
+                 f"mkdir -p {self._original_output_path} \n"
         lines += f"while [ $CHECKPID -eq 0 " \
                  f"-a $(date +%s) -lt $((STARTTIME + {self._config.wall_time_s} - 5 * 60)) ] ; do " \
                  f"echo $((STARTTIME + {self._config.wall_time_s} - 5 * 60 - $(date +%s))) seconds to live \n "\
-                 f"sleep 100 \n kill -0 $PROCESSID >> /dev/null\n CHECKPID=$?\n done\n"
+                 f"sleep 60 \n kill -0 $PROCESSID >> /dev/null\n CHECKPID=$?\n COUNT=$((COUNT+1))\n " \
+                 f"if [ $((COUNT % 60)) = 59 ] ; then \n " \
+                 f"echo \'copying data back \' \n" \
+                 f"cp -r {self.local_output_path}/* {self._original_output_path} \n" \
+                 f"fi \n" \
+                 f"done\n"
         lines += "if [ $CHECKPID == 0 ] ; then \n" \
                  "kill -9 $PROCESSID \n echo 'kill process before end of walltime' \n " \
                  "fake-call-to-raise-error \n" \
