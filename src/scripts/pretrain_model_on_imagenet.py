@@ -3,6 +3,7 @@ import os
 import shutil
 import argparse
 import sys
+from typing import Tuple
 
 import torch
 import time
@@ -15,6 +16,7 @@ import torchvision.transforms as transforms
 from src.ai.architectures import *  # Do not remove
 from src.ai.base_net import ArchitectureConfig
 from src.core.utils import get_data_dir
+from src.core.tensorboard_wrapper import TensorboardWrapper
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
 parser.add_argument('--data', metavar='DIR',
@@ -36,7 +38,7 @@ parser.add_argument('-rm', action='store_true', help="remove current output dir 
 parser.add_argument('-c', '--checkpoint', default='', help="point to checkpoint file to initialize network with.")
 
 
-def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
+def train(train_loader, model, criterion, optimizer, epoch, device) -> Tuple[float, float]:
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
@@ -75,7 +77,7 @@ def train(train_loader, model, criterion, optimizer, epoch, device) -> float:
 
         if i % 1000 == 0:
             progress.display(i)
-    return acc1
+    return acc1, loss.item()
 
 
 class AverageMeter(object):
@@ -153,7 +155,7 @@ def main():
 
     os.makedirs(os.path.join(args.output_path, 'torch_checkpoints'), exist_ok=True)
     os.makedirs(os.path.join(args.output_path, 'imagenet_checkpoints'), exist_ok=True)
-
+    writer = TensorboardWrapper(log_dir=args.output_path)
     device = torch.device(args.device if torch.cuda.is_available() else "cpu")
     model = eval(args.architecture).ImageNet(ArchitectureConfig().create(config_dict={
         'architecture': '',
@@ -202,7 +204,10 @@ def main():
     for epoch in range(args.epochs):
         print(f'{time.strftime("%H:%M:%S")}: start epoch {epoch}.')
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, device)
+        acc, loss = train(train_loader, model, criterion, optimizer, epoch, device)
+        writer.set_step(epoch)
+        writer.write_scalar(acc, 'training accuracy')
+        writer.write_scalar(loss, 'training loss')
         torch.save({
             'net_ckpt': {
                 'global_step': epoch,
