@@ -217,8 +217,7 @@ class CondorJob:
 
         # add some extra lines to create new output path and copy hdf5 files
         extra_lines = f'mkdir -p {self.local_output_path} \n'
-        if os.path.isdir(f'{self._original_output_path}/torch_checkpoints'):
-            extra_lines += f'cp -r {self._original_output_path}/torch_checkpoints {self.local_output_path} \n'
+        extra_lines += f'cp -r {self._original_output_path}/* {self.local_output_path}'
         for original_hdf5_file, new_hdf5_file in original_to_new_location_tuples:
             extra_lines += f'echo copying \"{original_hdf5_file}\" \n'
             extra_lines += f'cp {original_hdf5_file} {new_hdf5_file} \n'
