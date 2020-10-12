@@ -32,11 +32,9 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001]
-    architectures = ['auto_encoder_deeply_supervised_maxpool', 'auto_encoder_deeply_supervised_share_weights',
-                     'auto_encoder_deeply_supervised_confidence']
-
-    #architectures = ['auto_encoder_deeply_supervised', 'auto_encoder_deeply_supervised_2layered']
-    batch_norm = [False]  # [False, True]
+    architectures = ['auto_encoder_deeply_supervised_share_weights',
+                     'auto_encoder_deeply_supervised_share_weights_confidence']
+    batch_norm = [False, True]
     loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
 
     model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
@@ -71,7 +69,7 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                    for bn in batch_norm
                    for ls in loss],
                    translate_keys_to_string(['trainer_config', 'factory_key']):
-                       ['DeepSupervisionConfidence' if arch == 'auto_encoder_deeply_supervised_confidence'
+                       ['DeepSupervisionConfidence' if 'confidence' in arch
                         else 'DeepSupervision'
                         for arch in architectures
                         for lr in learning_rates
