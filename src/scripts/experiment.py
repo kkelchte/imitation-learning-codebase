@@ -88,14 +88,14 @@ class Experiment:
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
-        if self._config.load_checkpoint_dir is not None:
+        if self._config.load_checkpoint_found \
+                and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
+            self.load_checkpoint(f'{self._config.output_path}/torch_checkpoints')
+        elif self._config.load_checkpoint_dir is not None:
             if not self._config.load_checkpoint_dir.startswith('/'):
                 self._config.load_checkpoint_dir = f'{get_data_dir(self._config.output_path)}/' \
                                                    f'{self._config.load_checkpoint_dir}'
             self.load_checkpoint(self._config.load_checkpoint_dir)
-        elif self._config.load_checkpoint_found \
-                and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
-            self.load_checkpoint(f'{self._config.output_path}/torch_checkpoints')
 
         cprint(f'Initiated.', self._logger)
 

@@ -30,6 +30,9 @@ class DataCleaningConfig(Config):
     augment_background_textured: bool = False
     texture_directory: str = ""  # directory in to fill background with
     binary_maps_as_target: bool = False  # extract binary maps from inputs and store in action field in hdf5
+    # binary maps are extracted according to a threshold, in line_world bg is white (high), line is blue (low)
+    # so data is best inverted to predict line high and bg low
+    invert_binary_maps: bool = False
     require_success: bool = False  # skip runs without a SUCCESS tag in their raw data run directory
     shuffle: bool = False  # shuffle dataset before exporting it as hdf5, used for validation images
     max_hdf5_size: int = 10**9
@@ -83,7 +86,7 @@ class DataCleaner:
                 assert len(run_dataset) <= self._config.max_run_length
             # augment with background noise and change target to binary map
             if self._config.binary_maps_as_target:
-                run_dataset = set_binary_maps_as_target(run_dataset)
+                run_dataset = set_binary_maps_as_target(run_dataset, invert=self._config.invert_binary_maps)
             if self._config.augment_background_noise:
                 run_dataset = augment_background_noise(run_dataset)
             if self._config.augment_background_textured:

@@ -373,21 +373,23 @@ def select(data: Union[list, torch.Tensor, np.ndarray, Dataset], indices: List[i
 ###################################################################
 
 
-def parse_binary_maps(observations: List[torch.Tensor]) -> List[np.ndarray]:
+def parse_binary_maps(observations: List[torch.Tensor], invert: bool = False) -> List[np.ndarray]:
     '''
     create binary maps from observations based on R-channel which is 1 on background and 0 at blue line.
     :param observations: [channels (RGB) x height x width ]
+    :param invert: bool switch high - low binary values
     :return: binary maps : [1 x height x width ]
     '''
     observations = [o.numpy() for o in observations]
     binary_images = [
-        cv2.threshold(o.mean(axis=0), 0.5, 1, cv2.THRESH_BINARY)[1] for o in observations
+        cv2.threshold(o.mean(axis=0), 0.5, 1, cv2.THRESH_BINARY if not invert else cv2.THRESH_BINARY_INV)[1]
+        for o in observations
     ]
     return binary_images
 
 
-def set_binary_maps_as_target(dataset: Dataset) -> Dataset:
-    binary_maps = parse_binary_maps(copy.deepcopy(dataset.observations))
+def set_binary_maps_as_target(dataset: Dataset, invert: bool = False) -> Dataset:
+    binary_maps = parse_binary_maps(copy.deepcopy(dataset.observations), invert=invert)
     dataset.actions = [torch.as_tensor(b) for b in binary_maps]
     return dataset
 

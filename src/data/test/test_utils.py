@@ -3,6 +3,9 @@ import unittest
 import os
 from copy import deepcopy
 
+#import matplotlib
+#matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
@@ -28,12 +31,16 @@ class TestUtil(unittest.TestCase):
         self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
                                            continuous=False)
 
-    #@unittest.skip
     def test_parse_binary_map(self):
         line_image = torch.ones((3, 100, 100))
         line_image[0:2, 40:43, :] = 0
         result = parse_binary_maps([line_image])
-        import matplotlib.pyplot as plt
+        plt.imshow(result[0])
+        plt.show()
+
+        line_image = torch.ones((3, 100, 100))
+        line_image[0:2, 40:43, :] = 0
+        result = parse_binary_maps([line_image], invert=True)
         plt.imshow(result[0])
         plt.show()
 
