@@ -217,7 +217,8 @@ class CondorJob:
 
         # add some extra lines to create new output path and copy hdf5 files
         extra_lines = f'mkdir -p {self.local_output_path} \n'
-        extra_lines += f'cp -r {self._original_output_path}/* {self.local_output_path}'
+        extra_lines += f'cp -r {self._original_output_path}/* {self.local_output_path} 2>&1 >> /dev/null ' \
+                       f'| echo \'no original data\' \n'
         for original_hdf5_file, new_hdf5_file in original_to_new_location_tuples:
             extra_lines += f'echo copying \"{original_hdf5_file}\" \n'
             extra_lines += f'cp {original_hdf5_file} {new_hdf5_file} \n'
