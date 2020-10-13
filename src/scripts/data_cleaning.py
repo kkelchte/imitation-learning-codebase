@@ -12,7 +12,7 @@ from src.core.config_loader import Parser, Config
 from src.core.data_types import Dataset
 from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.data.utils import create_hdf5_file_from_dataset, set_binary_maps_as_target, augment_background_noise, \
-    augment_background_textured
+    augment_background_textured, augment_empty_images
 
 """
 Data cleaner script loads raw data with a data loader, cleans it and stores the data in hdf5 files.
@@ -26,8 +26,9 @@ class DataCleaningConfig(Config):
     data_loader_config: DataLoaderConfig = None
     training_validation_split: float = 1.0
     remove_first_n_timestamps: Optional[int] = 0
-    augment_background_noise: bool = False
-    augment_background_textured: bool = False
+    augment_background_noise: float = 0.
+    augment_background_textured: float = 0.
+    augment_empty_images: float = 0.
     texture_directory: str = ""  # directory in to fill background with
     binary_maps_as_target: bool = False  # extract binary maps from inputs and store in action field in hdf5
     # binary maps are extracted according to a threshold, in line_world bg is white (high), line is blue (low)
@@ -87,10 +88,13 @@ class DataCleaner:
             # augment with background noise and change target to binary map
             if self._config.binary_maps_as_target:
                 run_dataset = set_binary_maps_as_target(run_dataset, invert=self._config.invert_binary_maps)
-            if self._config.augment_background_noise:
-                run_dataset = augment_background_noise(run_dataset)
-            if self._config.augment_background_textured:
-                run_dataset = augment_background_textured(run_dataset, texture_directory=self._config.texture_directory)
+            if self._config.augment_background_noise != 0:
+                run_dataset = augment_background_noise(run_dataset, p=self._config.augment_background_noise)
+            if self._config.augment_background_textured != 0:
+                run_dataset = augment_background_textured(run_dataset,
+                                                          texture_directory=self._config.texture_directory,
+                                                          p=self._config.augment_background_textured,
+                                                          p2=self._config.augment_empty_images)
             # store dhf5 file once max dataset size is reached
             hdf5_data.extend(run_dataset)
             self._data_loader.empty_dataset()

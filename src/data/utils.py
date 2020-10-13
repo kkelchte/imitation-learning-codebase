@@ -394,29 +394,41 @@ def set_binary_maps_as_target(dataset: Dataset, invert: bool = False) -> Dataset
     return dataset
 
 
-def augment_background_noise(dataset: Dataset) -> Dataset:
+def augment_background_noise(dataset: Dataset, p: float = 0.0) -> Dataset:
+    """
+    parse background and fore ground. Give fore ground random color and background noise.
+    :param p: probability for each image to be augmented with background
+    :param dataset: augmented dataset in which observations are adjusted with new back- and foregrounds
+    :return: augmented dataset
+    """
     binary_images = parse_binary_maps(copy.deepcopy(dataset.observations))
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
     num_channels = dataset.observations[0].shape[0]
-    for image in tqdm(binary_images):
-        new_shape = (*image.shape, num_channels)
-        bg = np.random.uniform(-1, 1, size=new_shape)
-        fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
-        three_channel_mask = np.stack([image] * num_channels, axis=-1)
-        new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg))
-        augmented_dataset.observations.append(new_img.permute(2, 0, 1))
+    for index, image in tqdm(enumerate(binary_images)):
+        if np.random.binomial(1, p):
+            new_shape = (*image.shape, num_channels)
+            bg = np.random.uniform(-1, 1, size=new_shape)
+            fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
+            three_channel_mask = np.stack([image] * num_channels, axis=-1)
+            new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg)).permute(2, 0, 1)
+        else:
+            new_img = dataset.observations[index]
+        augmented_dataset.observations.append(new_img)
     return augmented_dataset
 
 
-def augment_background_textured(dataset: Dataset, texture_directory: str) -> Dataset:
+def augment_background_textured(dataset: Dataset, texture_directory: str,
+                                p: float = 0.0, p_empty: float = 0.0) -> Dataset:
     """
     parse background and fore ground. Give fore ground random color and background a crop of a textured image.
+    :param p_empty: in case of augmentation with texture, potentially augment without any foreground and empty action map (hacky!)
+    :param p: probability for each image to be augmented with background
     :param dataset: augmented dataset in which observations are adjusted with new back- and foregrounds
     :param texture_directory: directory with sub-directories for each texture
     :return: augmented dataset
     """
-    # 1. load texture images and keep in RAM
+    # 1. load texture image paths and keep in RAM
     if not texture_directory.startswith('/'):
         texture_directory = os.path.join(get_data_dir(os.environ['HOME']), texture_directory)
     texture_paths = [os.path.join(texture_directory, sub_directory, image)
@@ -429,12 +441,19 @@ def augment_background_textured(dataset: Dataset, texture_directory: str) -> Dat
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
     num_channels = dataset.observations[0].shape[0]
-    for image in tqdm(binary_images):
-        new_shape = (*image.shape, num_channels)
-        bg_image = np.random.choice(texture_paths)
-        bg = load_and_preprocess_file(bg_image, size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
-        fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
-        three_channel_mask = np.stack([image] * num_channels, axis=-1)
-        new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg))
-        augmented_dataset.observations.append(new_img.permute(2, 0, 1))
+    for index, image in tqdm(enumerate(binary_images)):
+        if np.random.binomial(1, p):
+            new_shape = (*image.shape, num_channels)
+            bg_image = np.random.choice(texture_paths)
+            bg = load_and_preprocess_file(bg_image,
+                                          size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
+            if np.random.binomial(1, p_empty):
+                fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
+                three_channel_mask = np.stack([image] * num_channels, axis=-1)
+                new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg)).permute(2, 0, 1)
+            else:
+                new_img = bg.permute(2, 0, 1)
+                augmented_dataset.observations.append(new_img)
+        else:
+            augmented_dataset.observations.append(dataset.observations[index])
     return augmented_dataset
