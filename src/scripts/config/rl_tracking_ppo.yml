@@ -26,8 +26,8 @@ trainer_config:
     step_size: 10
     gamma: 0.9
   criterion: MSELoss
-  critic_learning_rate: 0.001
-  actor_learning_rate: 0.001
+  critic_learning_rate: 0.0001
+  actor_learning_rate: 0.00001
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:

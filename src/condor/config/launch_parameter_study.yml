@@ -6,12 +6,12 @@ base_config_files:
   - src/scripts/config/rl_tracking_ppo.yml
 job_configs:
   - command: python3.8 src/scripts/experiment.py
-    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
+    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase-dummy-tracking-env
     cpus: 7
     gpus: 1
-    cpu_mem_gb: 25
+    cpu_mem_gb: 11
     disk_mem_gb: 52
-    wall_time_s: 6 * 60 * 60
+    wall_time_s: 2 * 60 * 60
     nice: true
     gpu_mem_mb: 1900
     use_singularity: false
