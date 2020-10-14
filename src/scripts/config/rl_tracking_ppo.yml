@@ -2,7 +2,7 @@ architecture_config:
   architecture: tracking_actor_critic
   device: cuda
   log_std: 0.01
-  initialisation_seed: 123
+  random_seed: 123
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
@@ -19,12 +19,12 @@ environment_config:
 number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 1000
 output_path: test_tracking
+save_checkpoint_every_n: 100
 tb_render_every_n_epochs: 10
 tensorboard: true
 trainer_config:
   scheduler_config:
-    step_size: 10
-    gamma: 0.9
+    number_of_epochs: 1000
   criterion: MSELoss
   critic_learning_rate: 0.0001
   actor_learning_rate: 0.00001
@@ -32,14 +32,13 @@ trainer_config:
   optimizer: Adam
   data_loader_config:
     batch_size: 100
-    data_sampling_seed: 123
+    random_seed: 123
   device: cuda
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.01
-  save_checkpoint_every_n: 100
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2

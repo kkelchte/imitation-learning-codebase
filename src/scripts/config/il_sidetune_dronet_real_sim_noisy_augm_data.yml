@@ -8,7 +8,6 @@ architecture_config:
   initialisation_type: xavier
   random_seed: 123
   device: cpu
-  weight_decay: default
   dropout: default
   dtype: default
   log_std: default
