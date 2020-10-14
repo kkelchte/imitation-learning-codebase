@@ -15,9 +15,9 @@ environment_config:
     random_seed: 123
     render: false
     world_name: tracking-v0
-  max_number_of_steps: 100  # let number of steps depend on environment
+  max_number_of_steps: 200  # let number of steps depend on environment
 number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
-number_of_epochs: 100
+number_of_epochs: 1000
 output_path: test_tracking
 tb_render_every_n_epochs: 10
 tensorboard: true
@@ -26,8 +26,8 @@ trainer_config:
     step_size: 10
     gamma: 0.9
   criterion: MSELoss
-  critic_learning_rate: 0.01
-  actor_learning_rate: 0.01
+  critic_learning_rate: 0.001
+  actor_learning_rate: 0.001
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
