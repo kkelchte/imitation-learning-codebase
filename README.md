@@ -27,4 +27,4 @@ python3.8 src/scripts/experiment.py --config src/scripts/config/il_evaluate_inte
 
 __Module Not Found__
 1. make sure each python scripts is called from the main (this) directory
-2. make sure the correct python3.7 interpreter is used
+2. make sure the correct python3.8 interpreter is used

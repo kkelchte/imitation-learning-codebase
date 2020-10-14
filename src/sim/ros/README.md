@@ -22,12 +22,12 @@ Run test_ros_environment_integrated
 
 # Structure:
 
-_catkin_ws_
-All ROS nodes and launch files are stored in the catkin_ws/src/imitation_learning_ros_package,
- as well as other ROS dependencies which are not installed system wide.
-The nodes are written in python2.7 and serve as backend.
-Corresponding tests are found in catkin_ws/src/imitation_learning_ros_package/test and should be run with python2.7 
-in a singularity - ros environment.
+_python2_ros_ws_
+catkin ws with ros packages which require python2.7.
+
+_python3_ros_ws_
+catkin ws with ros packages compiled with python3.8.
+Among one package named imitation-learning-ros-packages containing nodes to interact with ros robots.
 
 _config_
 The config directory contains all ros-node-specific configurations which are loaded as ros params at roslaunch.
@@ -59,6 +59,23 @@ If catkin_packages are not build, it should make it automatically.
 ```shell script
 source entrypoint.sh
 ```
+
+## install SLAM: DSO
+Required singularity image version 0.1.3 or higher.
+Install Pangolin:
+```shell script
+cd $HOME/code/imitation-learning-codebase/src/sim/ros
+git clone https://github.com/kkelchte/Pangolin.git
+# follow instruction Pangolin to build package
+git clone https://github.com/kkelchte/dso.git
+# follow instruction dso to build package
+cd python3_ws/src
+git clone -b catkin https://github.com/kkelchte/dso_ros.git
+cd ../..
+catkin_make
+```
+If dso_ros does not want to build, it is probably due to not finding Pangolin or DSO.
+Link CMAKE_PATH_PREFIX to the pangolin directory.
 
 # Pycharm:
 You can add pycharm sourcing scripts to interactively code and debug in pycharm 
@@ -100,3 +117,8 @@ source ./entrypoint.sh
 source ./src/sim/ros/entrypoint.sh
 /bin/sh /users/visics/kkelchte/applications/pycharm-community-2019.3.1/bin/pycharm.sh
 ```
+
+# Troubleshoot
+
+bebop_driver failed to start as libarcommands not found:
+cp /opt/ros/melodic/lib/parrot_arsdk/* src/sim/ros/python3_ws/devel/lib

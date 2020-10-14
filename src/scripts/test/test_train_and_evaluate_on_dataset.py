@@ -14,32 +14,29 @@ from src.scripts.experiment import Experiment, ExperimentConfig
 class DatasetExperimentsTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.experiment_config = {
-            "output_path": "/tmp",
-            "number_of_epochs": 4,
-            "architecture_config": {
-                "architecture": "tiny_128_rgb_6c",
-                "load_checkpoint_dir": None,
-                "initialisation_type": 'xavier',
-                "initialisation_seed": 0,
-                "device": 'cpu'},
-            "trainer_config": {
-                "factory_key": "BASE",
-                "save_checkpoint_every_n": 2,
-                "data_loader_config": {"batch_size": 5,
-                                       "hdf5_file": "train.hdf5"},
-                "criterion": "MSELoss",
-                "device": "cpu"},
-            "evaluator_config": {
-                "data_loader_config": {"batch_size": 1,
-                                       "hdf5_file": "validation.hdf5"},
-                "criterion": "MSELoss",
-                "device": "cpu"},
-        }
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
-        self.experiment_config['output_path'] = self.output_dir
-        self.experiment_config['architecture_config']['output_path'] = self.output_dir
+        self.experiment_config = {"output_path": self.output_dir,
+                                  "number_of_epochs": 4,
+                                  "architecture_config": {
+                                    "output_path": self.output_dir,
+                                    "architecture": "tiny_128_rgb_6c",
+                                    "initialisation_type": 'xavier',
+                                    "random_seed": 0,
+                                    "device": 'cpu'},
+                                  "save_checkpoint_every_n": 2,
+                                  "trainer_config": {
+                                    "factory_key": "BASE",
+                                    "data_loader_config": {"batch_size": 5,
+                                                           "hdf5_files": [os.path.join(self.output_dir, "train.hdf5")]},
+                                    "criterion": "MSELoss",
+                                    "device": "cpu"},
+                                  "evaluator_config": {
+                                    "data_loader_config": {"batch_size": 1,
+                                                           "hdf5_files": [os.path.join(self.output_dir,
+                                                                                       "validation.hdf5")]},
+                                    "criterion": "MSELoss",
+                                    "device": "cpu"}}
 
     def test_train_model_on_generated_dataset(self):
         network = eval(self.experiment_config['architecture_config']['architecture']).Net(
@@ -54,9 +51,9 @@ class DatasetExperimentsTest(unittest.TestCase):
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
         experiment.run()
 
-        # check if 5 + 2 checkpoints were stored in torch_checkpoints
+        # check if checkpoints were stored in torch_checkpoints
         self.assertEqual(len([f for f in os.listdir(os.path.join(self.output_dir, 'torch_checkpoints'))
-                              if f.endswith('ckpt')]), 4)
+                              if f.endswith('ckpt')]), 3)
 
     def test_train_model_on_generated_dataset_with_tensorboard(self):
         network = eval(self.experiment_config['architecture_config']['architecture']).Net(
@@ -88,10 +85,10 @@ class DatasetExperimentsTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(external_dataset, 'train.hdf5')))
         self.assertTrue(os.path.isfile(os.path.join(external_dataset, 'validation.hdf5')))
 
-        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_file"] = os.path.join(external_dataset,
-                                                                                              'train.hdf5')
-        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_file"] = os.path.join(external_dataset,
-                                                                                                'validation.hdf5')
+        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_files"] = [os.path.join(external_dataset,
+                                                                                                     'train.hdf5')]
+        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_files"] = [os.path.join(external_dataset,
+                                                                                                       'validation.hdf5')]
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
         experiment.run()
 
@@ -117,8 +114,8 @@ class DatasetExperimentsTest(unittest.TestCase):
             os.path.join(external_dataset, 'raw_data', d)
             for d in os.listdir(os.path.join(external_dataset, 'raw_data'))
         ]
-        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_file"] = ""
-        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_file"] = ""
+        self.experiment_config["trainer_config"]["data_loader_config"]["hdf5_files"] = []
+        self.experiment_config["evaluator_config"]["data_loader_config"]["hdf5_files"] = []
         self.experiment_config["trainer_config"]["data_loader_config"]["data_directories"] = raw_data_directories[:-2]
         self.experiment_config["evaluator_config"]["data_loader_config"]["data_directories"] = raw_data_directories[-2:]
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))

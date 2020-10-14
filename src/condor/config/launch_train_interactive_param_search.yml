@@ -1,7 +1,7 @@
-output_path: straight_corridor/entropy
+output_path: straight_corridor/learning_rate
 base_config_files:
   - src/scripts/config/rl_train_interactive_straight_corridor.yml
-mode: entropy_study
+mode: learning_rate_study
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
@@ -9,7 +9,7 @@ job_configs:
     gpus: 1
     cpu_mem_gb: 25
     disk_mem_gb: 52
-    wall_time_s: 8 * 60 * 60
+    wall_time_s: 18 * 60 * 60
     nice: true
     gpu_mem_mb: 1900
     use_singularity: true

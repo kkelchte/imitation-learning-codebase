@@ -18,10 +18,10 @@ from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 from imitation_learning_ros_package.msg import RosReward
 from src.core.logger import cprint, MessageType
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge import CvBridge
 from src.core.utils import camelcase_to_snake_format
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 from src.core.data_types import Action, Experience, TerminationType, ProcessState
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
@@ -43,6 +43,13 @@ class RosEnvironment(Environment):
                 if config.ros_config.ros_launch_config.robot_name == 'turtlebot_sim' else False
             roslaunch_arguments['drone_sim'] = True \
                 if config.ros_config.ros_launch_config.robot_name == 'drone_sim' else False
+        else:
+            roslaunch_arguments['bebop_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'bebop_real' else False
+            roslaunch_arguments['ardrone_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'ardrone_real' else False
+            roslaunch_arguments['turtlebot_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'turtlebot_real' else False
 
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:
@@ -61,6 +68,7 @@ class RosEnvironment(Environment):
 
         # Fields
         self._step = 0
+        self._return = 0
         self._current_experience = None
         self._previous_observation = None
         self._info = {}
@@ -295,7 +303,9 @@ class RosEnvironment(Environment):
         self._action = None
         self._reward = None
         self._terminal_state = None
-        self._info = {k: None for k in self._info.keys() if k != 'unfiltered_reward'}
+        self._info = {k: None for k in self._info.keys() if k != 'unfiltered_reward' and k != 'return'}
+        if 'return' in self._info.keys():
+            del self._info['return']
 
     def _update_current_experience(self) -> bool:
         """
@@ -322,7 +332,10 @@ class RosEnvironment(Environment):
             return False
         self._observation = self._filter_observation(self._observation)
         self._info['unfiltered_reward'] = deepcopy(self._reward)
+        self._return += self._reward
         self._reward = self._filter_reward(self._reward)
+        if self._terminal_state in [TerminationType.Done, TerminationType.Success, TerminationType.Failure]:
+            self._info['return'] = self._return
 
         self._current_experience = Experience(
             done=deepcopy(self._terminal_state),
@@ -374,6 +387,7 @@ class RosEnvironment(Environment):
         cprint(f'resetting', self._logger)
         self._reset_filters()
         self._step = 0
+        self._return = 0
         self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
@@ -387,6 +401,7 @@ class RosEnvironment(Environment):
             done=deepcopy(self._terminal_state),
             observation=deepcopy(self._observation),
             time_stamp=int(rospy.get_time() * 10 ** 3),
+            info={}
         )
         self._previous_observation = deepcopy(self._observation)
         return self._current_experience, deepcopy(self._observation)

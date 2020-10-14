@@ -14,9 +14,8 @@ from src.ai.architectures import *  # Do not remove
 
 base_config = {
     "architecture": "",
-    "load_checkpoint_dir": None,
     "initialisation_type": 'xavier',
-    "initialisation_seed": 0,
+    "random_seed": 0,
     "device": 'cpu',
 }
 
@@ -28,23 +27,17 @@ class ArchitectureTest(unittest.TestCase):
         os.makedirs(self.output_dir, exist_ok=True)
         base_config['output_path'] = self.output_dir
 
-    def test_base_net(self):
-        network = BaseNet(config=ArchitectureConfig().create(config_dict=base_config), quiet=False)
-        msg = 'this test rocks.'
-        network.save_to_checkpoint(extra_info={'msg': msg})
-        network.load_from_checkpoint(os.path.join(self.output_dir, 'torch_checkpoints'))
-        self.assertEqual(network.extra_checkpoint_info['msg'], msg)
-
     def test_tiny_128_rgb_6c_initialisation_store_load(self):
         # Test initialisation of different seeds
         base_config['architecture'] = 'tiny_128_rgb_6c'
+        base_config['initialisation_type'] = 'xavier'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config),
         )
         for p in network.parameters():
             check_network = p.data
             break
-        base_config['initialisation_seed'] = 2
+        base_config['random_seed'] = 2
         second_network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
@@ -52,7 +45,7 @@ class ArchitectureTest(unittest.TestCase):
             check_second_network = p.data
             break
         self.assertNotEqual(torch.sum(check_second_network), torch.sum(check_network))
-        base_config['initialisation_seed'] = 0
+        base_config['random_seed'] = 0
         third_network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
@@ -60,9 +53,10 @@ class ArchitectureTest(unittest.TestCase):
             check_third_network = p.data
             break
         self.assertEqual(torch.sum(check_third_network), torch.sum(check_network))
+
         # test storing and reloading
-        second_network.save_to_checkpoint()
-        network.load_from_checkpoint(os.path.join(self.output_dir, 'torch_checkpoints'))
+        checkpoint = second_network.get_checkpoint()
+        network.load_checkpoint(checkpoint)
         for p in network.parameters():
             check_network = p.data
             break
@@ -91,7 +85,8 @@ class ArchitectureTest(unittest.TestCase):
     def test_mlp_creator(self):
         network = mlp_creator(sizes=[4, 10, 10, 1],
                               activation=nn.ReLU,
-                              output_activation=None)
+                              output_activation=None,
+                              bias_in_last_layer=False)
         self.assertEqual(len(network), 5)
         count = 0
         for p in network.parameters():
@@ -104,16 +99,30 @@ class ArchitectureTest(unittest.TestCase):
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
-        for p in network.parameters():
-            self.assertEqual(torch.min(p), torch.max(p))
-            self.assertEqual(torch.min(p), 0.03)
+        for p in network._actor[0].parameters():
+            if len(p.shape) == 1:
+                self.assertEqual(torch.min(p), 0)
+                self.assertEqual(torch.max(p), 0)
+            else:
+                self.assertEqual(torch.min(p), 0.03)
+                self.assertEqual(torch.max(p), 0.03)
 
-        base_config['initialisation_type'] = 'orthogonal'
+    def test_sidetuned_network(self):
+        base_config['architecture'] = 'dronet_sidetuned'
         network = eval(base_config['architecture']).Net(
             config=ArchitectureConfig().create(config_dict=base_config)
         )
-        weights = list(network.parameters())[0].detach()
-        self.assertNotEqual(np.average(weights), 0.03)
+        fixed_weight_checksum = network.conv2d_1.weight.data.sum().item()
+        variable_weight_checksum = network.sidetune_conv2d_1.weight.data.sum().item()
+        alpha_value = network.alpha.item()
+        optimizer = torch.optim.Adam(network.parameters())
+        for i in range(10):
+            optimizer.zero_grad()
+            network.forward(torch.randn(network.input_size)).mean().backward()
+            optimizer.step()
+        self.assertEqual(fixed_weight_checksum, network.conv2d_1.weight.data.sum().item())
+        self.assertNotEqual(variable_weight_checksum, network.sidetune_conv2d_1.weight.data.sum().item())
+        self.assertNotEqual(alpha_value, network.alpha.item())
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

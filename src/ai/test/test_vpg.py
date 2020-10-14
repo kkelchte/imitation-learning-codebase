@@ -19,9 +19,8 @@ trainer_base_config = {
 
 architecture_base_config = {
     "architecture": "cart_pole_4_2d_stochastic",
-    "load_checkpoint_dir": None,
     "initialisation_type": 'xavier',
-    "initialisation_seed": 0,
+    "random_seed": 0,
     "device": 'cpu',
 }
 
@@ -99,7 +98,7 @@ class VPGTest(unittest.TestCase):
         trainer = VanillaPolicyGradient(config=TrainerConfig().create(config_dict=trainer_base_config),
                                         network=network)
         batch = trainer.data_loader.get_dataset()
-        phi_weights = trainer._calculate_phi(batch)
+        phi_weights = trainer._calculate_phi(batch, values=trainer._net.critic(batch.observations))
         trainer._train_actor(batch, phi_weights)
         self.assertNotEqual(get_checksum_network_parameters(network.get_actor_parameters()), before_check_actor)
         self.assertEqual(get_checksum_network_parameters(network.get_critic_parameters()), before_check_critic)

@@ -154,10 +154,6 @@ virtualenvironment/venv
 # ros variables
 .catkin*
 .ros
-./src/sim/ros/catkin_ws/devel
-./src/sim/ros/catkin_ws/build
-./src/sim/ros/extra_ros_ws/devel
-./src/sim/ros/extra_ros_ws/build
 /.python_history
 /.bash_history
 /.gitconfig
@@ -180,5 +176,8 @@ test_dir/
 
 # mac
 *.DS_Store
-
-/rosenvironment/singularity/writable_image_p37/
+/.cmake/packages/Pangolin/6df06e0afbd219d36ab58a9a27fe6ea6
+/src/sim/ros/dso/
+/src/sim/ros/Pangolin/
+/src/sim/ros/python3_ros_ws/src/dso_ros/
+/.keras/

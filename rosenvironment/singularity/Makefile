@@ -10,7 +10,7 @@ create-sif-linux:
 	sudo singularity build image-${version}.sif singularity.def
 
 shell-writable-image-linux:
-	sudo singularity shell --bind ../..:/mnt --writable writable_image
+	singularity shell --bind ../..:/mnt --bind /tmp/.X11-unix:/tmp/.X11-unix --writable writable_image
 
 create-writable-image-linux:
 	sudo singularity build --sandbox writable_image image-${version}.sif
@@ -19,8 +19,8 @@ build-writable-to-sif-linux:
 	sudo singularity build image-${version}.sif writable_image
 
 push-sif-image-linux-to-esat:
-	#singularity push -U image-${version}.sif library://kkelchte/default/ros-gazebo-cuda:${version}
-	scp image-${version}.sif kkelchte@ssh.esat.kuleuven.be:/users/visics/kkelchte/code/imitation-learning-codebase/rosenvironment/singularity/ros-gazebo-cuda:${version}
+	scp image-${version}.sif kkelchte@ssh.esat.kuleuven.be:/users/visics/kkelchte/code/imitation-learning-codebase/rosenvironment/singularity && \
+	echo '! dont forget to copy from /users/visics to /gluster/visics'
 
 
 shell-writable-mac:

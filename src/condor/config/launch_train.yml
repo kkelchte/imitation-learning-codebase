@@ -1,19 +1,21 @@
-output_path: cube_world
+output_path: line_world/dronet_sidetuned_extra_train_ctr/adam_lr000001_e2e
+#output_path: line_world/dronet_finetuned/sgd_lr00001
 mode: train
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 8
+    cpus: 4
     gpus: 1
     cpu_mem_gb: 10
     disk_mem_gb: 52
-    wall_time_s: 60 * 60 * 2
+    wall_time_s: 60 * 60
     nice: true
     gpu_mem_mb: 1900
     use_singularity: false
     check_if_ros_already_in_use: false
     save_locally: true
 number_of_jobs:
-  - 3
+  - 1
 base_config_files:
-  - src/scripts/config/il_train_cube_world.yml
+  - src/scripts/config/il_sidetune_dronet_real_sim_noisy_augm_data.yml
+    #  - src/scripts/config/il_finetune_dronet_real_sim_noisy_augm_data.yml

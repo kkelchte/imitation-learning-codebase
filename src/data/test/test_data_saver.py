@@ -73,13 +73,15 @@ class TestDataSaver(unittest.TestCase):
         self.data_saver.create_train_validation_hdf5_files()
 
         config = DataLoaderConfig().create(config_dict={'output_path': self.output_dir,
-                                                        'hdf5_file': 'train.hdf5'})
+                                                        'hdf5_files': [os.path.join(self.output_dir,
+                                                                                    'train.hdf5')]})
         training_data_loader = DataLoader(config=config)
         training_data_loader.load_dataset()
         training_data = training_data_loader.get_dataset()
 
         config = DataLoaderConfig().create(config_dict={'output_path': self.output_dir,
-                                                        'hdf5_file': 'validation.hdf5'})
+                                                        'hdf5_files': [os.path.join(self.output_dir,
+                                                                                    'validation.hdf5')]})
         validation_data_loader = DataLoader(config=config)
         validation_data_loader.load_dataset()
         validation_data = validation_data_loader.get_dataset()
@@ -103,7 +105,7 @@ class TestDataSaver(unittest.TestCase):
         self.data_saver.create_train_validation_hdf5_files()
 
         config = DataLoaderConfig().create(config_dict={'output_path': self.output_dir,
-                                                        'hdf5_file': 'train.hdf5'})
+                                                        'hdf5_files': [os.path.join(self.output_dir, 'train.hdf5')]})
         training_data_loader = DataLoader(config=config)
         training_data_loader.load_dataset()
         training_data = training_data_loader.get_dataset()

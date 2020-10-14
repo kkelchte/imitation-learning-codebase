@@ -7,7 +7,7 @@ import yaml
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json, Undefined
 
-from src.core.utils import camelcase_to_snake_format, get_date_time_tag
+from src.core.utils import camelcase_to_snake_format, get_date_time_tag, get_data_dir
 
 
 def iterative_add_output_path(dictionary: dict, output_path: str) -> dict:
@@ -34,7 +34,8 @@ class Config:
     def create(self,
                config_dict: dict = None,
                config_file: str = '',
-               store: bool = True):
+               store: bool = True,
+               seed: float = -1):
         assert not (config_file != '' and config_dict is not None)
         assert (config_file != '' or config_dict is not None)
 
@@ -44,9 +45,11 @@ class Config:
             with open(config_file, 'r') as f:
                 config_dict = yaml.load(f, Loader=yaml.FullLoader)
         instant = self.from_dict(config_dict)
+        if seed != -1:
+            instant.adjust_seed_in_nested_configs(seed)
+            instant.output_path = f'{instant.output_path}_{seed}'
         if not instant.output_path.startswith('/'):
-            instant.output_path = f'{os.environ["DATADIR"]}/{instant.output_path}' if "DATADIR" in os.environ.keys() \
-                else f'{os.environ["HOME"]}/{instant.output_path}'
+            instant.output_path = f'{get_data_dir(os.environ["HOME"])}/{instant.output_path}'
         instant.iterative_add_output_path(output_path=instant.output_path)
         instant.commit = os.popen('git rev-parse HEAD').read().strip()
         instant.post_init()
@@ -89,6 +92,8 @@ class Config:
 
     def yaml_approved_dict(self) -> dict:
         output_dict = {}
+        if self.commit == '':
+            del self.commit
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 output_dict[key] = value.yaml_approved_dict()
@@ -98,6 +103,17 @@ class Config:
                 else:
                     output_dict[key] = value
         return output_dict
+
+    def adjust_seed_in_nested_configs(self, seed: float) -> None:
+        if 'random_seed' in self.__dict__.keys():
+            self.random_seed = seed
+        for key, value in self.__dict__.items():
+            if isinstance(value, Config):
+                value.adjust_seed_in_nested_configs(seed)
+            if isinstance(value, list):
+                for element in value:
+                    if isinstance(element, Config):
+                        element.adjust_seed_in_nested_configs(seed)
 
     def post_init(self):
         for key, value in self.__dict__.items():
@@ -115,4 +131,5 @@ class Parser(argparse.ArgumentParser):
     def __init__(self):
         super().__init__()
         self.add_argument("--config", type=str, default=None)
+        self.add_argument("--seed", type=int, default=-1)
         self.add_argument("--rm", action='store_true', help="remove current output dir before start")

@@ -14,8 +14,8 @@ from sensor_msgs.msg import LaserScan  # Do not remove!
 
 from imitation_learning_ros_package.msg import RosReward
 
-from src.core.utils import get_filename_without_extension
-from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.core.utils import get_filename_without_extension, get_data_dir
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.core.data_types import TerminationType
 from src.sim.ros.src.process_wrappers import RosWrapper
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
@@ -35,8 +35,7 @@ class TestFsm(unittest.TestCase):
             'control_mapping': False,
             'waypoint_indicator': False,
         }
-        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
-                          f'/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         self.config['output_path'] = self.output_dir
 

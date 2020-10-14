@@ -1,7 +1,6 @@
 architecture_config:
   architecture: cart_pole_4_2d_stochastic
   device: cpu
-  load_checkpoint_dir: cart_pole_vpg
 data_saver_config:
   clear_buffer_before_episode: false
   store_on_ram_only: false
@@ -16,3 +15,4 @@ number_of_episodes: 10
 number_of_epochs: 1
 output_path: cart_pole_vpg
 tensorboard: true
+load_checkpoint_dir: cart_pole_vpg

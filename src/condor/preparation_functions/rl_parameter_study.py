@@ -13,7 +13,7 @@ def prepare_batch_size_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_bs_{bs}') for bs in batch_sizes for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(batch_sizes),
+                                            'random_seed']): seeds * len(batch_sizes),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'data_loader_config', 'batch_size']):
                        [bs for bs in batch_sizes for _ in range(len(seeds))]}
@@ -29,18 +29,18 @@ def prepare_learning_rate_study(base_config_file: str,
                                 number_of_jobs: int,
                                 output_path: str) -> List[CondorJob]:
     #learning_rates = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-    learning_rates = [0.01, 0.001, 0.0001, 0.00001]
+    learning_rates = [0.1, 0.01, 0.001, 0.0001, 0.00001]
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_lr_{lr}') for lr in learning_rates for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(learning_rates),
+                                            'random_seed']): seeds * len(learning_rates),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
                        [bs for bs in learning_rates for _ in range(len(seeds))],
                    translate_keys_to_string(['trainer_config', 'actor_learning_rate']):
                        [bs for bs in learning_rates for _ in range(len(seeds))],
-                   translate_keys_to_string(['trainer_config', 'critic_learning_rate']):
-                       [bs for bs in learning_rates for _ in range(len(seeds))]
+#                   translate_keys_to_string(['trainer_config', 'critic_learning_rate']):
+#                       [bs for bs in learning_rates for _ in range(len(seeds))]
                    }
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
@@ -57,7 +57,7 @@ def prepare_optimiser_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_opt_{opt}') for opt in optimizers for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(optimizers),
+                                            'random_seed']): seeds * len(optimizers),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'optimizer']):
                        [bs for bs in optimizers for _ in range(len(seeds))]}
@@ -76,7 +76,7 @@ def prepare_loss_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_loss_{loss}') for loss in losses for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(losses),
+                                            'random_seed']): seeds * len(losses),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'criterion']):
                        [bs for bs in losses for _ in range(len(seeds))]}
@@ -95,7 +95,7 @@ def prepare_phi_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_phi_{x}') for x in phi_keys for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(phi_keys),
+                                            'random_seed']): seeds * len(phi_keys),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'phi_key']):
                        [x for x in phi_keys for _ in range(len(seeds))]}
@@ -114,7 +114,7 @@ def prepare_ppo_epsilon_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_eps_{x}') for x in ppo_epsilon for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(ppo_epsilon),
+                                            'random_seed']): seeds * len(ppo_epsilon),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'ppo_epsilon']):
                        [x for x in ppo_epsilon for _ in range(len(seeds))],
@@ -135,7 +135,7 @@ def prepare_ppo_kl_target_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_kl_{x}') for x in kl_targets for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(kl_targets),
+                                            'random_seed']): seeds * len(kl_targets),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'kl_target']):
                        [x for x in kl_targets for _ in range(len(seeds))],
@@ -159,7 +159,7 @@ def prepare_ppo_max_train_steps_study(base_config_file: str,
                    for y in max_value_training_iterations
                    for x in max_actor_training_iterations
                    for seed in seeds]
-    adjustments = {translate_keys_to_string(['architecture_config', 'initialisation_seed']):
+    adjustments = {translate_keys_to_string(['architecture_config', 'random_seed']):
                    seeds * len(max_actor_training_iterations) * len(max_value_training_iterations),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'max_actor_training_iterations']):
@@ -188,7 +188,7 @@ def prepare_entropy_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_entr_{x}') for x in entropy_vals for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'initialisation_seed']): seeds * len(entropy_vals),
+                                            'random_seed']): seeds * len(entropy_vals),
                    translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'entropy_coefficient']):
                        [x for x in entropy_vals for _ in range(len(seeds))]}

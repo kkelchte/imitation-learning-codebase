@@ -1,0 +1,19 @@
+architecture_config:
+  architecture: humanoid_376_17c
+  device: cpu
+environment_config:
+  normalize_observations: true
+  normalize_rewards: true
+  observation_clipping: 10
+  reward_clipping: 10
+  factory_key: GYM
+  gym_config:
+    random_seed: 123
+    render: true
+    world_name: Humanoid-v2
+  max_number_of_steps: -1
+number_of_episodes: 10
+number_of_epochs: 1
+output_path: humanoid-v2/evaluated
+tensorboard: false
+load_checkpoint_dir: /Users/kelchtermans/experimental_data/humanoid-v2/implmatters_505

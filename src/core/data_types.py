@@ -15,8 +15,15 @@ class Distribution:
 
     def __init__(self, data: Iterator):
         if isinstance(data, list):
-            if isinstance(data[0], torch.Tensor):
-                data = torch.stack(data)
+            try:
+                if isinstance(data[0], torch.Tensor):
+                    data = torch.stack(data)
+            except IndexError:
+                self.mean = 0
+                self.std = 0
+                self.min = 0
+                self.max = 0
+                return
         if isinstance(data, torch.Tensor):
             if not isinstance(data, torch.FloatTensor):
                 data = data.type(torch.float32)
@@ -31,7 +38,7 @@ class Distribution:
             self.std = np.std(data).item()
             self.min = np.min(data)
             self.max = np.max(data)
-        assert not np.isnan(self.mean)
+        #assert not np.isnan(self.mean)
 
 
 class ProcessState(IntEnum):
@@ -112,7 +119,14 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
         while len(self) > self.max_size != -1:
             self.pop()
 
-    def extend(self, experiences: Union[List[Experience], h5py.Group]):
+    def extend(self, experiences: Union[List[Experience], h5py.Group, "Dataset"]):
+        """
+        Extend the dataset with multiple experiences rather than appending one.
+        Experiences can be a loaded H5py group, a list of experiences or a dataset.
+        The dataset type is defined as a string so the typing is only interpreted after compilation.
+        See:
+        https://stackoverflow.com/questions/44798635/how-can-i-set-the-same-type-as-class-in-methods-parameter-following-pep484
+        """
         if isinstance(experiences, h5py.Group):
             for tag, field in zip(['observations', 'actions', 'rewards', 'done'],
                                   [self.observations, self.actions, self.rewards, self.done]):
@@ -120,6 +134,14 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
                     field.extend([torch.as_tensor(v, dtype=torch.float32) for v in experiences[tag]])
                 else:
                     field.extend([torch.zeros(0) for _ in experiences['observations']])
+            self._check_length()
+        elif isinstance(experiences, Dataset):
+            for data, field in zip([experiences.observations, experiences.actions, experiences.rewards, experiences.done],
+                                  [self.observations, self.actions, self.rewards, self.done]):
+                if len(data) != 0:
+                    field.extend(data)
+                else:
+                    field.extend([torch.zeros(0) for _ in range(len(experiences))])
             self._check_length()
         else:
             for exp in experiences:

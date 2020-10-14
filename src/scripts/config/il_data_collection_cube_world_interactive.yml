@@ -1,0 +1,33 @@
+output_path: cube_world
+number_of_epochs: 1
+number_of_episodes: 3
+environment_config:
+  factory_key: ROS
+  max_number_of_steps: -1
+  ros_config:
+    observation: forward_camera
+    store_action: true
+    visible_xterm: true
+    step_rate_fps: 30
+    ros_launch_config:
+      random_seed: 123
+      robot_name: turtlebot_sim
+      fsm_config: takeover_run
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: true
+      control_mapping_config: keyboard
+      world_name: cube_world
+      robot_display: true
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 0.0
+      yaw_or: 1.57
+      gazebo: true
+    actor_configs:
+      - name: keyboard
+        file: src/sim/ros/config/actor/keyboard_turtlebot_sim.yml
+data_saver_config:
+  store_hdf5: false
+  separate_raw_data_runs: true
+  saving_directory_tag: keyboard
