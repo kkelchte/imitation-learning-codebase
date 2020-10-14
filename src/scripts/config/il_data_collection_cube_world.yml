@@ -1,6 +1,6 @@
 output_path: cube_world
 number_of_epochs: 1
-number_of_episodes: 10
+number_of_episodes: 3
 environment_config:
   factory_key: ROS
   max_number_of_steps: 1000

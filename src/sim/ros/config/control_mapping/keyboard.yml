@@ -1,9 +1,13 @@
 supervision_topic: '/control_mapper/supervision'
 rate_fps: 60
 mapping:
-  Unknown: {}
-  Terminated: {}
+  Unknown:
+    command: '/actor/keyboard/cmd_vel'
+  Terminated:
+    command: '/actor/keyboard/cmd_vel'
   Running:
     command: '/actor/keyboard/cmd_vel'
-  TakenOver: {}
-  DriveBack: {}
+  TakenOver:
+    command: '/actor/keyboard/cmd_vel'
+  DriveBack:
+    command: '/actor/keyboard/cmd_vel'

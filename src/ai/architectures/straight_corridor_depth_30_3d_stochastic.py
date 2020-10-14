@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch.distributions.categorical import Categorical
 
 from src.ai.base_net import BaseNet, ArchitectureConfig
-from src.ai.utils import mlp_creator, DiscreteActionMapper
+from src.ai.utils import mlp_creator, DiscreteActionMapper, initialize_weights
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -31,19 +31,29 @@ class Net(BaseNet):
         self.input_size = (30,)
         self.output_size = (3,)
         self.discrete = True
-        self._actor = mlp_creator(sizes=[self.input_size[0], 20, 20, 20, self.output_size[0]],
+        self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
                                   activation=nn.Tanh,
-                                  output_activation=nn.ReLU)
+                                  output_activation=None)
 
-        self._critic = mlp_creator(sizes=[self.input_size[0], 20, 20, 20, 1],
+        self._critic = mlp_creator(sizes=[self.input_size[0], 64, 64, 1],
                                    activation=nn.Tanh,
-                                   output_activation=nn.ReLU)
-        self.load_network_weights()
+                                   output_activation=None)
+        self.initialize_architecture()
         self.discrete_action_mapper = DiscreteActionMapper([
             torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, -0.2]),
             torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, 0.0]),
-            torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, -0.2]),
+            torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, 0.2]),
         ])
+
+    def initialize_architecture(self):
+        torch.manual_seed(self._config.random_seed)
+        torch.set_num_threads(1)
+        for layer in self._actor[:-1]:
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
+        initialize_weights(self._actor[-1], initialisation_type=self._config.initialisation_type, scale=1.)
+        for layer in self._critic[:-1]:
+            initialize_weights(layer, initialisation_type=self._config.initialisation_type, scale=2**0.5)
+        initialize_weights(self._critic[-1], initialisation_type=self._config.initialisation_type, scale=1.)
 
     def get_actor_parameters(self) -> Iterator:
         return self._actor.parameters()

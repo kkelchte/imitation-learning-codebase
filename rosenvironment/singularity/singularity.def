@@ -62,7 +62,9 @@ apt-get update && apt-get install -q -y \
 apt-get update && apt-get install -yq\
     python3-yaml \
     python3-rospkg-modules \
+    ros-melodic-joystick-drivers \
     ros-melodic-roslint \
+    ros-melodic-parrot-arsdk \
     ros-melodic-hector-sensors-gazebo \
     ros-melodic-hector-gazebo \
     ros-melodic-hector-gazebo-worlds \
@@ -79,10 +81,10 @@ apt-get update && apt-get install -yq\
     ros-melodic-hector-gazebo \
     ros-melodic-gazebo-ros \
     libignition-math2-dev \
-    ros-melodic-parrot-arsdk \
-    ros-melodic-parrot-arsdk-dbgsym \
     ros-melodic-teleop-twist-keyboard \
     rviz \
+    libglew-dev \
+    libsuitesparse-dev libeigen3-dev libboost-all-dev \
     ros-melodic-rqt \
     ros-melodic-rqt-common-plugins \
     && rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,13 @@
+supervision_topic: '/control_mapper/supervision'
+rate_fps: 60
+mapping:
+  Unknown:
+    command: '/actor/joystick/cmd_vel'
+  Terminated:
+    command: '/actor/joystick/cmd_vel'
+  Running:
+    command: '/ros_python_interface/cmd_vel'
+    supervision: '/actor/joystick/cmd_vel'
+  TakenOver:
+    command: '/actor/joystick/cmd_vel'
+  DriveBack: {}

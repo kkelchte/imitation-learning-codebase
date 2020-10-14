@@ -1,0 +1,38 @@
+output_path: straight_corridor/evaluate
+number_of_epochs: 1
+number_of_episodes: 2
+architecture_config:
+  architecture: straight_corridor_depth_30_1c
+  device: cpu
+environment_config:
+  normalize_observations: true
+  normalize_rewards: true
+  observation_clipping: 10
+  reward_clipping: 10
+  factory_key: ROS
+  max_number_of_steps: -1
+  ros_config:
+    info:
+      -sensor/odometry
+    observation: depth_scan
+    store_action: true
+    store_reward: true
+    visible_xterm: false
+    step_rate_fps: 100
+    actor_configs: {}
+    ros_launch_config:
+      random_seed: 123
+      robot_name: turtlebot_sim
+      fsm_config: single_run
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: true
+      control_mapping_config: evaluation
+      world_name: straight_corridor
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 0.0
+      yaw_or: 1.57
+      gazebo: True
+tensorboard: false
+load_checkpoint_dir: /home/klaas/code/imitation-learning-codebase/experimental_data/straight_corridor/default

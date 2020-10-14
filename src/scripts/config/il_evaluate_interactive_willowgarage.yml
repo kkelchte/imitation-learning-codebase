@@ -1,0 +1,36 @@
+output_path: willowgarage
+number_of_epochs: 1
+number_of_episodes: 1
+load_checkpoint_dir: dronenet
+architecture_config:
+  architecture: dronenet
+  device: cpu
+environment_config:
+  factory_key: ROS
+  max_number_of_steps: -1
+  ros_config:
+    observation: forward_camera
+    visible_xterm: true
+    step_rate_fps: 100
+    ros_launch_config:
+      random_seed: 123
+      robot_name: drone_sim
+      fsm_config: takeover_run
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: true
+      control_mapping_config: evaluation
+      world_name: willowgarage_office
+      robot_display: true
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 1.0
+      yaw_or: 1.57
+      gazebo: True
+    actor_configs:
+      - name: joystick
+        file: src/sim/ros/config/actor/joystick.yml
+data_saver_config:
+  store_hdf5: false
+  separate_raw_data_runs: true
+  saving_directory_tag: evaluate

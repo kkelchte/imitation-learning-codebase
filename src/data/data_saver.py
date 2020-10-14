@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 from dataclasses import dataclass
@@ -131,14 +131,17 @@ class DataSaver:
         self._check_dataset_size_on_file_system()
 
     def _store_frame(self, data: np.ndarray, dst: str, time_stamp: int) -> None:
-        if len(data.shape) in [2, 3]:
-            if not os.path.isdir(os.path.join(self._config.saving_directory, dst)):
-                os.makedirs(os.path.join(self._config.saving_directory, dst), exist_ok=True)
-            store_image(data=data, file_name=os.path.join(self._config.saving_directory, dst,
-                                                          timestamp_to_filename(time_stamp)) + '.jpg')
-        elif len(data.shape) in [0, 1]:
-            store_array_to_file(data=data, file_name=os.path.join(self._config.saving_directory, dst + '.data'),
-                                time_stamp=time_stamp)
+        try:
+            if len(data.shape) in [2, 3]:
+                if not os.path.isdir(os.path.join(self._config.saving_directory, dst)):
+                    os.makedirs(os.path.join(self._config.saving_directory, dst), exist_ok=True)
+                store_image(data=data, file_name=os.path.join(self._config.saving_directory, dst,
+                                                              timestamp_to_filename(time_stamp)) + '.jpg')
+            elif len(data.shape) in [0, 1]:
+                store_array_to_file(data=data, file_name=os.path.join(self._config.saving_directory, dst + '.data'),
+                                    time_stamp=time_stamp)
+        except Exception as e:
+            cprint(f'Failed to store frame: {e}', self._logger, msg_type=MessageType.error)
 
     def _check_dataset_size_on_file_system(self):
         self._frame_counter += 1
@@ -155,12 +158,20 @@ class DataSaver:
                        f"Avoid this by setting data_saver_config.separate_raw_data_runs to True.",
                        msg_type=MessageType.warning, logger=self._logger)
 
-    def create_train_validation_hdf5_files(self) -> None:
+    def _get_runs(self) -> list:
+        """
+        parse the parent directory of the saving directory for all raw_data runs.
+        Return a list of the absolute paths to these runs.
+        """
         raw_data_dir = os.path.dirname(self._config.saving_directory)
-        all_runs = [
+        return [
             os.path.join(raw_data_dir, run)
             for run in sorted(os.listdir(raw_data_dir))
         ]
+
+    def create_train_validation_hdf5_files(self, runs: List[str] = None, input_size: List[int] = None) -> None:
+        all_runs = runs if runs is not None else self._get_runs()
+
         number_of_training_runs = int(self._config.training_validation_split*len(all_runs))
         train_runs = all_runs[0:number_of_training_runs]
         validation_runs = all_runs[number_of_training_runs:]
@@ -169,7 +180,8 @@ class DataSaver:
             config = DataLoaderConfig().create(config_dict={
                 'data_directories': runs,
                 'output_path': self._config.output_path,
-                'subsample': self._config.subsample_hdf5
+                'subsample': self._config.subsample_hdf5,
+                'input_size': input_size
             })
             data_loader = DataLoader(config=config)
             data_loader.load_dataset(arrange_according_to_timestamp=False)

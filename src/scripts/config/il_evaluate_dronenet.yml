@@ -1,0 +1,38 @@
+output_path: line_world_evaluate
+number_of_epochs: 1
+number_of_episodes: 1
+architecture_config:
+  architecture: dronenet
+  device: cpu
+load_checkpoint_dir: /home/klaas/code/imitation-learning-codebase/experimental_data/drone_net
+evaluator_config:
+  data_loader_config:
+    data_directories:
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_bluecable/raw_data/20-07-24_11-22-29_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_bluecable/raw_data/20-07-24_11-25-09_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_bluecable/raw_data/20-07-24_11-27-07_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_bluecable/raw_data/20-07-24_11-27-38_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_orangecable/raw_data/20-07-24_11-34-26_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_orangecable/raw_data/20-07-24_12-03-48_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_orangecable/raw_data/20-07-24_12-06-10_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_whitecable/raw_data/20-07-24_11-16-03_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_whitecable/raw_data/20-07-24_11-17-13_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_whitecable/raw_data/20-07-24_11-17-54_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_whitecable/raw_data/20-07-24_11-19-16_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/concrete_whitecable/raw_data/20-07-24_11-19-52_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_bluecable/raw_data/20-07-24_11-29-05_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_bluecable/raw_data/20-07-24_11-29-46_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_bluecable/raw_data/20-07-24_11-30-21_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_bluecable/raw_data/20-07-24_11-30-59_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_orangecable/raw_data/20-07-24_12-07-09_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_orangecable/raw_data/20-07-24_12-09-19_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_orangecable/raw_data/20-07-24_12-09-59_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_orangecable/raw_data/20-07-24_12-10-46_joystick
+      - /home/klaas/code/imitation-learning-codebase/experimental_data/line_world_real2/grass_orangecable/raw_data/20-07-24_12-11-20_joystick
+    random_seed: 123
+    balance_over_actions: false
+    batch_size: 64
+    input_size: [1, 200, 200]
+  criterion: MSELoss
+  device: cpu
+tensorboard: true

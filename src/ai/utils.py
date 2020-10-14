@@ -10,6 +10,21 @@ from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 
 
+def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
+    for p in weights.parameters():
+        if len(p.shape) <= 1:
+            p.data.zero_()
+        else:
+            if initialisation_type == 'xavier':
+                nn.init.xavier_uniform_(p.data)
+            elif initialisation_type == 'constant':
+                nn.init.constant_(p.data, 0.03)
+            elif initialisation_type == 'orthogonal':
+                nn.init.orthogonal_(p.data, scale)
+            else:
+                raise NotImplementedError
+
+
 class DiscreteActionMapper:
 
     def __init__(self, action_values: List[torch.Tensor]):
@@ -34,13 +49,13 @@ def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
     return data
 
 
-def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.Module = None):
+def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.Module = None,
+                bias_in_last_layer: bool = True):
     """Create Multi-Layer Perceptron"""
     layers = []
     for j in range(len(sizes)-1):
         is_not_last_layer = j < len(sizes)-2
-        layers += [nn.Linear(sizes[j], sizes[j+1], bias=is_not_last_layer)]
-#        layers += [nn.Linear(sizes[j], sizes[j+1], bias=True)]
+        layers += [nn.Linear(sizes[j], sizes[j+1], bias=True if bias_in_last_layer else is_not_last_layer)]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act]
@@ -83,13 +98,11 @@ def get_checksum_network_parameters(parameters: Union[List[torch.Tensor],
 
 def get_generalized_advantage_estimate(batch_rewards: List[torch.Tensor],
                                        batch_done: List[torch.Tensor],
-                                       batch_values: List[torch.Tensor],
+                                       batch_values: torch.Tensor,
                                        discount: float,
                                        gae_lambda: float) -> torch.Tensor:
-    try:
-        batch_not_done = [torch.as_tensor(1) if d.data == 0 else torch.as_tensor(0) for d in batch_done]
-    except:
-        batch_not_done = [torch.as_tensor(1) if not d else torch.as_tensor(0) for d in batch_done]
+    batch_done = torch.stack(batch_done) if isinstance(batch_done, list) else batch_done
+    batch_not_done = -1 * batch_done.bool() + 1
     advantages = [torch.as_tensor(0)] * len(batch_rewards)
     #  not_done array: if value is done future advantage should not influence.
     # the last advantage = last reward + gamma * V_bs * not_done_boolean - last value

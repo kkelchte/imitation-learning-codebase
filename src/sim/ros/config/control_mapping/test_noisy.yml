@@ -1,5 +1,5 @@
 supervision_topic: '/control_mapper/supervision'
-rate_fps: 60
+rate_fps: 30
 noise:
   name: OUNoise
   args:

@@ -9,12 +9,14 @@ from src.condor.preparation_functions.il_preparation_functions import *  # Do no
 from src.condor.preparation_functions.rl_parameter_study import *  # Do not remove
 from src.condor.preparation_functions.line_world_functions import *  # Do not remove
 from src.core.config_loader import Parser, Config
+from src.core.utils import get_data_dir
 
 
 @dataclass_json
 @dataclass
 class CondorLauncherConfig(Config):
     mode: str = None
+    wait_time_between_jobs_sec: int = 0
     number_of_jobs: List[int] = 1
     base_config_files: List[str] = None
     job_configs: List[CondorJobConfig] = None
@@ -35,6 +37,7 @@ class CondorLauncher:
         else:
             for job in self._jobs:
                 job.submit()
+                time.sleep(self._config.wait_time_between_jobs_sec)
 
     def prepare_factory(self):
         if 'dag' not in self._config.mode:
@@ -56,8 +59,7 @@ if __name__ == '__main__':
         with open(config_file, 'r') as f:
             configuration = yaml.load(f, Loader=yaml.FullLoader)
         if not configuration['output_path'].startswith('/'):
-            configuration['output_path'] = os.path.join(os.environ['DATADIR'], configuration['output_path']) \
-                if 'DATADIR' in os.environ.keys() else os.path.join(os.environ['HOME'], configuration['output_path'])
+            configuration['output_path'] = os.path.join(get_data_dir(os.environ['HOME']), configuration['output_path'])
         shutil.rmtree(configuration['output_path'], ignore_errors=True)
 
     launcher_config = CondorLauncherConfig().create(config_file=config_file)

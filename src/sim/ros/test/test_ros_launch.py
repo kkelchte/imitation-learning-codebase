@@ -6,7 +6,7 @@ import time
 
 import rospy
 
-from src.core.utils import count_grep_name
+from src.core.utils import count_grep_name, get_data_dir
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import ProcessState
 from src.sim.ros.src.process_wrappers import RosWrapper
@@ -15,8 +15,7 @@ from src.sim.ros.src.process_wrappers import RosWrapper
 class TestRos(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["DATADIR"] if "DATADIR" in os.environ.keys() else os.environ["HOME"]}' \
-                          f'/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
     @unittest.skip

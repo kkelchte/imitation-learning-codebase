@@ -25,13 +25,14 @@ config_dict = {
         "max_update_wait_period_s": 10,
         "store_action": True,
         "store_reward": True,
-        "visible_xterm": False,
+        "visible_xterm": True,
         "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "drone_sim",
           "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
           "fsm": True,
+          "robot_display": True,
           "control_mapping": True,
           "waypoint_indicator": True,
           "control_mapping_config": "debug",
@@ -44,7 +45,7 @@ config_dict = {
         },
         "actor_configs": [{
               "name": "ros_expert",
-              "file": "src/sim/ros/config/actor/ros_expert.yml"
+              "file": "src/sim/ros/config/actor/ros_expert_wp.yml"
             }],
     }
 }

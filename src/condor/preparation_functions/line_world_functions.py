@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List
 
 from src.condor.condor_job import CondorJobConfig, CondorJob, create_jobs_from_job_config_files
@@ -48,7 +49,7 @@ def prepare_evaluate_interactive_line_world(base_config_file: str,
                                       '[\"data_saver_config\"][\"saving_directory_tag\"]':
                                           [f'{os.path.basename(d)}_{i}' for i in range(900, 900 + number_of_jobs)
                                            for d in model_directories],
-                                      '[\"architecture_config\"][\"load_checkpoint_dir\"]':
+                                      '[\"load_checkpoint_dir\"]':
                                           model_directories * number_of_jobs,
                                       translate_keys_to_string(['environment_config',
                                                                 'ros_config',
@@ -79,7 +80,7 @@ def prepare_dag_data_collection_train_evaluate_line_world(base_config_files: Lis
     config_files = create_configs(base_config=base_config_files[2],
                                   output_path=output_path,
                                   adjustments={
-                                      '[\"architecture_config\"][\"initialisation_seed\"]': seeds,
+                                      '[\"architecture_config\"][\"random_seed\"]': seeds,
                                       '[\"output_path\"]': model_paths,
                                   })
     jobs.extend(create_jobs_from_job_config_files(job_config_files=config_files,
@@ -132,3 +133,49 @@ def prepare_dag_data_collection_train_evaluate_line_world(base_config_files: Lis
     # Create DAG object
     return Dag(lines_dag_file=dag_lines,
                dag_directory=os.path.join(output_path, 'dag', get_date_time_tag()))
+
+
+def prepare_train_task_decoders(base_config_file: str,
+                                job_config_object: CondorJobConfig,
+                                number_of_jobs: int,
+                                output_path: str) -> List[CondorJob]:
+    job_config = job_config_object
+    os.makedirs(output_path if output_path.startswith('/') else os.path.join(os.environ['DATADIR'], output_path), 
+                exist_ok=True)
+
+    jobs = []
+    # tasks = ['autoencoding', 'depth_euclidean', 'jigsaw', 'reshading', 'colorization', 'edge_occlusion', 'keypoints2d',
+    #          'room_layout', 'curvature', 'edge_texture', 'keypoints3d', 'segment_unsup2d',
+    #          'class_object', 'egomotion', 'nonfixated_pose', 'segment_unsup25d', 'class_scene', 'fixated_pose',
+    #          'normal', 'segment_semantic', 'denoising', 'inpainting', 'point_matching', 'vanishing_point']
+    
+    tasks = ['keypoints3d']
+    dataset = 'vanilla'  # 'noisy_augmented'
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
+
+    not_working_models = ['colorization', 'reshading']
+    batch_size = 64
+    training_epochs = 150
+
+    for i in range(number_of_jobs):
+        for mode in ['default', 'end_to_end', 'side_tuning']:
+            for task in tasks:
+                if task in not_working_models:
+                    continue
+                for learning_rate in learning_rates:
+                    job_output_path = f'{output_path}/{mode}/{task}/{learning_rate}' if i == 0 \
+                        else f'{output_path}/{task}/{learning_rate}_{i}'
+                    job_config.command = f'python3.8 src/scripts/train_decoders_on_pretrained_features.py ' \
+                                         f'--output_path {job_output_path} ' \
+                                         f'--learning_rate {learning_rate} ' \
+                                         f'--task {task} ' \
+                                         f'--dataset {dataset} ' \
+                                         f'--datadir /gluster/visics/kkelchte ' \
+                                         f'--batch_size {batch_size} --training_epochs {training_epochs}'
+                    if mode != 'default':
+                        job_config.command += f' --{mode}'
+                    condor_job = CondorJob(config=job_config)
+                    condor_job.write_job_file()
+                    condor_job.write_executable_file()
+                    jobs.append(condor_job)
+    return jobs

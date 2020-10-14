@@ -15,7 +15,7 @@ import yaml
 from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
-from src.core.utils import get_date_time_tag
+from src.core.utils import get_date_time_tag, get_data_dir
 from src.condor.helper_functions import strip_command
 
 
@@ -36,7 +36,8 @@ class CondorJobConfig(Config):
     green_list: Optional[List] = None
     use_green_list: bool = False
     use_singularity: bool = True
-    singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1]
+    singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1] if len(
+        sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))) != 0 else ''
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
     extra_requirements: Optional[str] = None
@@ -63,9 +64,16 @@ class CondorJob:
 
     def __init__(self, config: CondorJobConfig):
         self._config = config
+        
+
         self.output_dir = os.path.basename(config.config_file).split('.')[0] if config.config_file != '' else \
             f'{get_date_time_tag()}_{strip_command(config.command)}'
         self.output_dir = os.path.join(config.output_path, 'condor', self.output_dir)
+
+        i = 0
+        while os.path.isdir(self.output_dir):
+            self.output_dir = f'{self.output_dir}_{i}' if i == 0 else '_'.join(self.output_dir.split('_')[:-1]) + '_' + str(i)
+            i += 1
 
         os.makedirs(self.output_dir)
 
@@ -175,8 +183,7 @@ class CondorJob:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         self._original_output_path = config_dict['output_path']
         if not self._original_output_path.startswith('/'):
-            self._original_output_path = f'{os.environ["DATADIR"]}/{self._original_output_path}' \
-                if "DATADIR" in os.environ.keys() else f'{os.environ["HOME"]}/{self._original_output_path}'
+            self._original_output_path = f'{get_data_dir(os.environ["HOME"])}/{self._original_output_path}'
         config_dict['output_path'] = self.local_output_path
 
         # TODO: make hacky solution clean, make relative path to hdf5 work
@@ -221,7 +228,8 @@ class CondorJob:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
                 if 'DATADIR' in os.environ.keys():
-                    executable.write(f'export DATADIR=${os.environ["DATADIR"]}\n')
+                    executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
+                executable.write(f'export HOME={os.environ["HOME"]}\n')
                 executable.write(f'{self._config.command}\n')
             executable.write("retVal=$? \n")
             executable.write("echo \"got exit code $retVal\" \n")

@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from src.core.config_loader import Config
 from src.core.logger import cprint, get_logger, MessageType
-from src.core.utils import get_filename_without_extension
+from src.core.utils import get_filename_without_extension, get_data_dir
 from src.core.data_types import Dataset
 from src.data.utils import load_run, load_dataset_from_hdf5, balance_weights_over_actions, select
 from src.core.data_types import Experience
@@ -21,18 +21,21 @@ from src.core.data_types import Experience
 @dataclass
 class DataLoaderConfig(Config):
     data_directories: Optional[List[str]] = None
-    hdf5_file: str = ''
-    data_sampling_seed: int = 123
+    hdf5_files: Optional[List[str]] = None
+    random_seed: int = 123
     balance_over_actions: bool = False
     batch_size: int = 64
-    observation_clipping: int = -1
-    reward_clipping: int = -1
     subsample: int = 1
+    input_size: Optional[List[int]] = None
 
     def post_init(self):  # add default options
         if self.data_directories is None:
             self.data_directories = []
         assert self.subsample >= 1
+        if self.input_size is None:
+            self.input_size = []
+        if self.hdf5_files is None:
+            self.hdf5_files = []
 
     def iterative_add_output_path(self, output_path: str) -> None:
         if self.output_path is None:
@@ -42,9 +45,12 @@ class DataLoaderConfig(Config):
                 self.output_path = output_path.split('models')[0]
         if self.data_directories is not None and len(self.data_directories) != 0 \
                 and not self.data_directories[0].startswith('/'):
-            self.data_directories = [os.path.join(self.output_path, d) for d in self.data_directories]
-        if len(self.hdf5_file) != 0 and not self.hdf5_file.startswith('/'):
-            self.hdf5_file = os.path.join(self.output_path, self.hdf5_file)
+            self.data_directories = [os.path.join(get_data_dir(os.environ['HOME']), d) for d in self.data_directories]
+        if self.hdf5_files is not None and len(self.hdf5_files) != 0:
+            self.hdf5_files = [
+                    os.path.join(get_data_dir(os.environ['HOME']), hdf5_f) if not hdf5_f.startswith('/') else hdf5_f
+                    for hdf5_f in self.hdf5_files
+            ]
         for key, value in self.__dict__.items():
             if isinstance(value, Config):
                 value.iterative_add_output_path(output_path)
@@ -58,10 +64,13 @@ class DataLoader:
                                   output_path=config.output_path,
                                   quiet=False)
         cprint(f'Started.', self._logger)
-        np.random.seed(self._config.data_sampling_seed)
         self._dataset = Dataset()
         self._num_runs = 0
         self._probabilities: List = []
+        self.seed()
+
+    def seed(self, seed: int = None):
+        np.random.seed(self._config.random_seed) if seed is None else np.random.seed(seed)
 
     def update_data_directories_with_raw_data(self):
         if self._config.data_directories is None:
@@ -71,15 +80,18 @@ class DataLoader:
         self._config.data_directories = list(set(self._config.data_directories))
 
     def load_dataset(self, arrange_according_to_timestamp: bool = False):
-        if self._config.hdf5_file != '':
-            self._dataset = load_dataset_from_hdf5(self._config.hdf5_file)
-            cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_file}', self._logger,
+        if len(self._config.hdf5_files) != 0:
+            for hdf5_file in self._config.hdf5_files:
+                self._dataset = load_dataset_from_hdf5(hdf5_file,
+                                                       input_size=self._config.input_size,
+                                                       dataset=self._dataset)
+            cprint(f'Loaded {len(self._dataset.observations)} from {self._config.hdf5_files}', self._logger,
                    msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)
         else:
             directory_generator = tqdm(self._config.data_directories, ascii=True, desc=__name__) \
                 if len(self._config.data_directories) > 10 else self._config.data_directories
             for directory in directory_generator:
-                run = load_run(directory, arrange_according_to_timestamp)
+                run = load_run(directory, arrange_according_to_timestamp, input_size=self._config.input_size)
                 if len(run) != 0:
                     self._dataset.extend(experiences=run)
             cprint(f'Loaded {len(self._dataset)} data points from {len(self._config.data_directories)} directories',
@@ -98,15 +110,6 @@ class DataLoader:
             self._dataset = Dataset()
             self.update_data_directories_with_raw_data()
             self.load_dataset()
-        self._clip_dataset()
-
-    def _clip_dataset(self):
-        if self._config.observation_clipping != -1:
-            for o in self._dataset.observations:
-                o.clamp_(-self._config.observation_clipping, self._config.observation_clipping)
-        if self._config.reward_clipping != -1:
-            for r in self._dataset.rewards:
-                r.clamp_(-self._config.reward_clipping, self._config.reward_clipping)
 
     def get_dataset(self) -> Dataset:
         return self._dataset
@@ -149,6 +152,21 @@ class DataLoader:
             batch_count += len(batch)
             yield batch
         return
+
+    def split_data(self, indices: np.ndarray, *args) -> Generator[tuple, None, None]:
+        """
+        Split the indices in batches of configs batch_size and select the data in args.
+        :param indices: possible indices to be selected. If all indices can be selected, provide empty array.
+        :param args: lists or tensors from which the corresponding data according to the indices is selected.
+        :return: provides a tuple in the same order as the args with the selected data.
+        """
+        if len(indices) == 0:
+            indices = np.arange(len(self._dataset))
+        np.random.shuffle(indices)
+        splits = np.array_split(indices, max(1, int(len(self._dataset) / self._config.batch_size)))
+        for selected_indices in splits:
+            return_tuple = (select(data, selected_indices) for data in args)
+            yield return_tuple
 
     def remove(self):
         [h.close() for h in self._logger.handlers]
