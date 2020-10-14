@@ -14,6 +14,7 @@ dataclasses
 torch
 torchvision
 tensorboard
+moviepy
 frozendict
 gym
 atari-py

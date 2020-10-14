@@ -7,6 +7,7 @@ from src.sim.ros.catkin_ws.src.imitation_learning_ros_package.rosnodes.actors im
 from src.core.data_types import ProcessState, TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.gym.gym_environment import GymEnvironment
+import dummy_tracking_gym  # do not remove
 
 
 class TestGymEnvironment(unittest.TestCase):

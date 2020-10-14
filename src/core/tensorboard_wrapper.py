@@ -1,6 +1,9 @@
 import os
+from typing import List
 
+import torch
 from torch.utils.tensorboard import SummaryWriter
+import numpy as np
 
 from src.core.data_types import Distribution
 
@@ -31,3 +34,11 @@ class TensorboardWrapper(SummaryWriter):
 
     def write_scalar(self, data: float, tag: str):
         self._add_scalar(tag, data)
+
+    def write_gif(self, frames: List[np.ndarray] = None) -> None:
+        if frames is None:
+            return
+        video_tensor = torch.stack([torch.as_tensor(f, dtype=torch.uint8) for f in frames]).unsqueeze(dim=0)
+        if len(video_tensor.shape) == 4:  # add channel dimension in case of grayscale images
+            video_tensor.unsqueeze_(dim=2)
+        self.add_video(tag='game play', vid_tensor=video_tensor)

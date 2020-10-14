@@ -1,9 +1,9 @@
-output_path: parameter_study/ppo_kl_target
-mode: ppo_kl_target_study
+output_path: dummy-tracking-env/rl_study
+mode: learning_rate_study
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:
-  - src/scripts/config/rl_cart_pole_ppo.yml
+  - src/scripts/config/rl_tracking_ppo.yml
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase

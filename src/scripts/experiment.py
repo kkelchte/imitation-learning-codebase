@@ -46,6 +46,7 @@ class ExperimentConfig(Config):
     trainer_config: Optional[TrainerConfig] = None
     evaluator_config: Optional[EvaluatorConfig] = None
     tensorboard: bool = False
+    tb_render_every_n_epochs: int = -1
 
     def __post_init__(self):
         # Avoid None value error by deleting irrelevant fields
@@ -65,6 +66,7 @@ class Experiment:
 
     def __init__(self, config: ExperimentConfig):
         np.random.seed(123)
+        self._epoch = 0
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
@@ -100,6 +102,9 @@ class Experiment:
         if self._data_saver is not None:
             if self._config.data_saver_config.clear_buffer_before_episode:
                 self._data_saver.clear_buffer()
+        frames = [] if self._config.tb_render_every_n_epochs != -1 and \
+            self._epoch % self._config.tb_render_every_n_epochs == 0 and \
+            self._writer is not None else None
         count_episodes = 0
         count_success = 0
         episode_returns = []
@@ -114,6 +119,8 @@ class Experiment:
                 experience, next_observation = self._environment.step(action)
                 episode_return += experience.info['unfiltered_reward'] \
                     if 'unfiltered_reward' in experience.info.keys() else experience.reward
+                if frames is not None and 'frame' in experience.info.keys():
+                    frames.append(experience.info['frame'])
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
@@ -133,6 +140,7 @@ class Experiment:
         msg += f" with smoothed return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
             self._writer.write_distribution(return_distribution, "episode return")
+            self._writer.write_gif(frames)
         return msg
 
     def run(self):
