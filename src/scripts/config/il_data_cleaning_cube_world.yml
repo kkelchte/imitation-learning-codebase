@@ -2,4 +2,4 @@ output_path: cube_world
 training_validation_split: 0.7
 data_loader_config:
   data_directories: cube_world
-  subsample_hdf5: 4
+  subsample: 4

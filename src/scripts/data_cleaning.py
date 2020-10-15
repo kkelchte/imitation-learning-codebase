@@ -41,7 +41,6 @@ class DataCleaningConfig(Config):
 
     def __post_init__(self):
         assert 0 <= self.training_validation_split <= 1
-        assert not (self.augment_background_noise and self.augment_background_textured)
 
 
 class DataCleaner:
