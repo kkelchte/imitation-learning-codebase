@@ -70,17 +70,21 @@ def generate_dummy_dataset(data_saver: DataSaver,
     }
 
 
-def generate_dataset(input_size: tuple = (100, 100, 3),
-                     output_size: tuple = (1,),
-                     continuous: bool = True,
-                     fixed_input_value: float = None,
-                     fixed_output_value: float = None) -> Dataset:
+def generate_dataset_by_length(length: int,
+                               input_size: tuple = (3, 100, 100),
+                               output_size: tuple = (1,),
+                               continuous: bool = True,
+                               fixed_input_value: float = None,
+                               fixed_output_value: float = None) -> Dataset:
     dataset = Dataset()
-    for count, experience in enumerate(experience_generator(input_size=input_size,
-                                                            output_size=output_size,
-                                                            continuous=continuous,
-                                                            fixed_input_value=fixed_input_value,
-                                                            fixed_output_value=fixed_output_value)):
-        if experience.done != TerminationType.Unknown:
-            dataset.append(experience)
+    while len(dataset) < length:
+        for count, experience in enumerate(experience_generator(input_size=input_size,
+                                                                output_size=output_size,
+                                                                continuous=continuous,
+                                                                fixed_input_value=fixed_input_value,
+                                                                fixed_output_value=fixed_output_value)):
+            if experience.done != TerminationType.Unknown:
+                dataset.append(experience)
+            if len(dataset) >= length:
+                break
     return dataset

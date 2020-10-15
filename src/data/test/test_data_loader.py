@@ -25,10 +25,10 @@ class TestDataLoader(unittest.TestCase):
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         self.data_saver = DataSaver(config=config)
-        self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
-                                           continuous=False)
 
     def test_data_loading(self):
+        self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
+                                           continuous=False)
         config_dict = {
             'data_directories': self.info['episode_directories'],
             'output_path': self.output_dir,
@@ -73,6 +73,8 @@ class TestDataLoader(unittest.TestCase):
         self.assertEqual(result['b'], backup_run['b'][:-1])
 
     def test_data_loader_with_relative_paths(self):
+        self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
+                                           continuous=False)
         config_dict = {
             'data_directories': [f'{self.output_dir}/raw_data/' + os.path.basename(p)
                                  for p in self.info['episode_directories']],
@@ -87,6 +89,8 @@ class TestDataLoader(unittest.TestCase):
             self.assertTrue(os.path.isdir(d))
 
     def test_data_batch(self):
+        self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
+                                           continuous=False)
         config_dict = {
             'data_directories': self.info['episode_directories'],
             'output_path': self.output_dir,
@@ -101,6 +105,8 @@ class TestDataLoader(unittest.TestCase):
             break
 
     def test_sample_batch(self):
+        self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
+                                           continuous=False)
         max_num_batches = 2
         config_dict = {
             'data_directories': self.info['episode_directories'],
@@ -160,6 +166,8 @@ class TestDataLoader(unittest.TestCase):
         self.assertTrue(weights[30] - 0.57157 < 0.1)
 
     def test_data_subsample(self):
+        self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
+                                           continuous=False)
         subsample = 4
         config_dict = {
             'data_directories': self.info['episode_directories'],
@@ -203,7 +211,7 @@ class TestDataLoader(unittest.TestCase):
             }
             config = DataSaverConfig().create(config_dict=config_dict)
             self.data_saver = DataSaver(config=config)
-            infos.append(generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(3, 10, 10),
+            infos.append(generate_dummy_dataset(self.data_saver, num_runs=2, input_size=(3, 10, 10),
                                                 fixed_input_value=(0.3 * index) * np.ones((3, 10, 10)), store_hdf5=True))
             self.assertTrue(os.path.isfile(os.path.join(output_path, 'train.hdf5')))
             hdf5_files.append(os.path.join(output_path, 'train.hdf5'))
@@ -230,7 +238,6 @@ class TestDataLoader(unittest.TestCase):
             self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0.6, 2)
         for batch in loader.sample_shuffled_batch():
             self.assertAlmostEqual(batch.observations[0][0, 0, 0].item(), 0, 2)
-
 
     # def test_data_balancing(self): TODO
     #     # average action variance in batch with action balancing

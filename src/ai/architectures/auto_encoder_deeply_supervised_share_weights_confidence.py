@@ -15,12 +15,14 @@ from src.core.utils import get_filename_without_extension
 """
 Four encoding and four decoding layers with dropout.
 Expects 3x200x200 inputs and outputs 200x200
+
 """
 
 
 class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
+        raise NotImplementedError('According to test, conf2 and conf3 are not being trained. Not sure why...')
         super().__init__(config=config, quiet=True)
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
@@ -127,8 +129,7 @@ class Net(BaseNet):
         x1 = self.conv1_1(x0).relu()
         x1 = x0 + self.conv1_2(x1).relu()
         # extract primary output for deep supervision
-        out1 = self.side_logit_1(x1)
-        prob1 = self.sigmoid(out1).squeeze(dim=1)
+        prob1 = self.sigmoid(self.side_logit_1(x1)).squeeze(dim=1)
         conf1 = self.sigmoid(self.side_conf_1(x1)).squeeze(dim=1)
 
         # downscale with max pool and reuse conv1 and conv2
@@ -137,8 +138,7 @@ class Net(BaseNet):
         x2 = self.conv2_1(x1).relu()
         x2 = x1 + self.conv2_2(x2).relu()
         # extract secondary output for deep supervision
-        out2 = self.side_logit_2(x2)
-        prob2 = self.upsample_2(self.sigmoid(out2)).squeeze(dim=1)
+        prob2 = self.upsample_2(self.sigmoid(self.side_logit_2(x2))).squeeze(dim=1)
         conf2 = self.upsample_2(self.sigmoid(self.side_conf_2(x2))).squeeze(dim=1)
 
         # downscale with max pool and reuse conv1 and conv2
@@ -147,8 +147,7 @@ class Net(BaseNet):
         x3 = self.conv3_1(x2).relu()
         x3 = x2 + self.conv3_2(x3).relu()
         # extract secondary output for deep supervision
-        out3 = self.side_logit_3(x3)
-        prob3 = self.upsample_3(self.sigmoid(out3)).squeeze(dim=1)
+        prob3 = self.upsample_3(self.sigmoid(self.side_logit_3(x3))).squeeze(dim=1)
         conf3 = self.upsample_3(self.sigmoid(self.side_conf_3(x3))).squeeze(dim=1)
 
         # downscale with max pool and reuse conv1 and conv2
@@ -157,8 +156,7 @@ class Net(BaseNet):
         x4 = self.conv4_1(x3).relu()
         x4 = x3 + self.conv4_2(x4).relu()
         # extract secondary output for deep supervision
-        out4 = self.side_logit_4(x4)
-        prob4 = self.upsample_4(self.sigmoid(out4)).squeeze(dim=1)
+        prob4 = self.upsample_4(self.sigmoid(self.side_logit_4(x4))).squeeze(dim=1)
         conf4 = self.upsample_4(self.sigmoid(self.side_conf_4(x4))).squeeze(dim=1)
 
         final_logit = self.weight_1 * prob1 * conf1 + \

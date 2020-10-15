@@ -128,7 +128,7 @@ class DatacleaningTest(unittest.TestCase):
         self.assertEqual(2*len(info['episode_lengths']),
                          len(data_loader.get_dataset()))
 
-    #@unittest.skip
+    @unittest.skip
     def test_line_world_noise_augmentation(self):
         line_image = np.ones((100, 100, 3))
         line_image[40:43, :, 0:2] = 0

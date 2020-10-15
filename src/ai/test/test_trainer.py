@@ -51,7 +51,7 @@ class TrainerTest(unittest.TestCase):
             'batch_size': 5
         }
         trainer = Trainer(config=TrainerConfig().create(config_dict=trainer_base_config),
-                          network=network, super_init=False)
+                          network=network, quiet=False)
         # train
         loss_message = trainer.train()
         # train long
@@ -78,7 +78,7 @@ class TrainerTest(unittest.TestCase):
             'batch_size': 5
         }
         trainer = Trainer(config=TrainerConfig().create(config_dict=trainer_base_config),
-                          network=network, super_init=False)
+                          network=network, quiet=False)
         encoder_checksum = get_checksum_network_parameters(network.encoder.parameters())
         decoder_checksum = get_checksum_network_parameters(network.decoder.parameters())
         # train

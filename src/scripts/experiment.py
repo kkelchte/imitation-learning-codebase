@@ -125,6 +125,7 @@ class Experiment:
             self._writer is not None else None
         count_episodes = 0
         count_success = 0
+        episode_return = 0
         episode_returns = []
         while not self._enough_episodes_check(count_episodes):
             if self._data_saver is not None and self._config.data_saver_config.separate_raw_data_runs:
@@ -141,8 +142,7 @@ class Experiment:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
-            if 'return' in experience.info.keys():
-                episode_returns.append(experience.info['return'])
+            episode_returns.append(experience.info['return'] if 'return' in experience.info.keys() else episode_return)
         if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
             self._data_saver.create_train_validation_hdf5_files()
         msg = f" {count_episodes} episodes"

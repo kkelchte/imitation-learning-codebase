@@ -12,7 +12,7 @@ from src.core.config_loader import Parser, Config
 from src.core.data_types import Dataset
 from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.data.utils import create_hdf5_file_from_dataset, set_binary_maps_as_target, augment_background_noise, \
-    augment_background_textured, augment_empty_images
+    augment_background_textured
 
 """
 Data cleaner script loads raw data with a data loader, cleans it and stores the data in hdf5 files.

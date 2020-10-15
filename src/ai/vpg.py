@@ -20,7 +20,7 @@ Allows combination of outputs as weighted sum in one big backward pass.
 class VanillaPolicyGradient(Trainer):
 
     def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
-        super().__init__(config, network, super_init=True)
+        super().__init__(config, network, quiet=True)
         # Set default config params
         self._config.phi_key = 'gae' if self._config.phi_key == 'default' else self._config.phi_key
         self._config.discount = 0.95 if self._config.discount == 'default' else self._config.discount

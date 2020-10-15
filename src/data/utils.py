@@ -68,7 +68,8 @@ def load_and_preprocess_file(file_name: str, size: tuple = None, scope: str = 'd
         data = cv2.resize(np.asarray(data), dsize=(size[1], size[2]), interpolation=cv2.INTER_LANCZOS4)
         if size[0] == 1:
             data = data.mean(axis=-1, keepdims=True)
-    data = np.array(data).astype(np.float32)  # uint8 -> float32
+    # Image PIL loads data in uint8 ==> divide by 255 to get float 0:1
+    data = np.array(data).astype(np.float32)/255.  # uint8 -> float32
 
     if np.amin(data) < 0:
         data -= np.amin(data)
@@ -294,6 +295,7 @@ def create_hdf5_file_from_dataset(filename: str, dataset: Dataset) -> None:
                          [dataset.observations, dataset.actions, dataset.rewards, dataset.done]):
         if None not in data:
             h5py_dataset[tag] = np.asarray([o.numpy() for o in data])
+    h5py_file.close()
 
 
 def load_dataset_from_hdf5(filename: str, input_size: List[int] = None) -> h5py.Group:
