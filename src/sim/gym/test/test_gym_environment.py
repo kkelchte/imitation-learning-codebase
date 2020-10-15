@@ -6,6 +6,7 @@ from src.core.utils import get_filename_without_extension
 from src.core.data_types import ProcessState, TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.gym.gym_environment import GymEnvironment
+import dummy_tracking_gym  # do not remove
 
 
 class TestGymEnvironment(unittest.TestCase):

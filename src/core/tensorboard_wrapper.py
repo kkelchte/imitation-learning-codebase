@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Union, List
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -42,3 +42,13 @@ class TensorboardWrapper(SummaryWriter):
             images = images.squeeze(dim=1)
             images = torch.stack(3*[images], dim=1)
         self.add_images(tag, images, self.step, dataformats='NCHW')
+
+    def write_gif(self, frames: List[np.ndarray] = None) -> None:
+        if frames is None:
+            return
+        # map uint8 to int16 due to pytorch bug https://github.com/facebookresearch/InferSent/issues/99
+        video_tensor = torch.stack([torch.as_tensor(f.astype(np.int16), dtype=torch.uint8) for f in frames[::10]])
+        video_tensor.unsqueeze_(dim=0)  # add batch dimension
+        if len(video_tensor.shape) == 4:  # add channel dimension in case of grayscale images
+            video_tensor.unsqueeze_(dim=2)
+        self.add_video(tag='game play', vid_tensor=video_tensor, global_step=self.step, fps=20)

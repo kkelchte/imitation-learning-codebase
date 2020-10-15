@@ -7,6 +7,7 @@ from typing import Optional, Tuple
 
 import torch
 import yaml
+import numpy as np
 from dataclasses import dataclass
 from dataclasses_json import dataclass_json
 
@@ -41,6 +42,7 @@ class ExperimentConfig(Config):
     load_checkpoint_found: bool = True
     save_checkpoint_every_n: int = -1
     tensorboard: bool = False
+    tb_render_every_n_epochs: int = -1
     environment_config: Optional[EnvironmentConfig] = None
     data_saver_config: Optional[DataSaverConfig] = None
     architecture_config: Optional[ArchitectureConfig] = None
@@ -68,6 +70,7 @@ class ExperimentConfig(Config):
 class Experiment:
 
     def __init__(self, config: ExperimentConfig):
+        np.random.seed(123)
         self._epoch = 0
         self._max_mean_return = None
         self._config = config
@@ -111,11 +114,15 @@ class Experiment:
 
     def _run_episodes(self) -> Tuple[str, bool]:
         """
-        Run episodes interactively with environment up until enough data is gathered.
-        :return: output message for epoch string, whether current model is the best so far.
-        """
+                Run episodes interactively with environment up until enough data is gathered.
+                :return: output message for epoch string, whether current model is the best so far.
+                """
         if self._data_saver is not None and self._config.data_saver_config.clear_buffer_before_episode:
             self._data_saver.clear_buffer()
+
+        frames = [] if self._config.tb_render_every_n_epochs != -1 and \
+            self._epoch % self._config.tb_render_every_n_epochs == 0 and \
+            self._writer is not None else None
         count_episodes = 0
         count_success = 0
         episode_returns = []
@@ -126,6 +133,10 @@ class Experiment:
             while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
                 action = self._net.get_action(next_observation) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
+                episode_return += experience.info['unfiltered_reward'] \
+                    if 'unfiltered_reward' in experience.info.keys() else experience.reward
+                if frames is not None and 'frame' in experience.info.keys():
+                    frames.append(experience.info['frame'])
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
@@ -143,6 +154,7 @@ class Experiment:
         msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
             self._writer.write_distribution(return_distribution, "episode return")
+            self._writer.write_gif(frames)
         best_checkpoint = False
         if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:
             self._max_mean_return = return_distribution.mean

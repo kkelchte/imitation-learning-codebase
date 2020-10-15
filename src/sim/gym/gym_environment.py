@@ -2,6 +2,8 @@ from typing import Tuple
 
 import gym
 import numpy as np
+from copy import deepcopy
+import dummy_tracking_gym
 
 from src.core.logger import cprint
 from src.core.data_types import Experience, TerminationType, Action, ProcessState

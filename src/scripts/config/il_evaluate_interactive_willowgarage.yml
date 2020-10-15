@@ -29,7 +29,7 @@ environment_config:
       gazebo: True
     actor_configs:
       - name: joystick
-        file: src/sim/ros/config/actor/joystick.yml
+        file: src/sim/ros/config/actor/joystick_drone_sim.yml
 data_saver_config:
   store_hdf5: false
   separate_raw_data_runs: true
