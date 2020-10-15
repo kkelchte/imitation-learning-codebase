@@ -29,6 +29,7 @@ class CondorJobConfig(Config):
     gpus: int = 0
     cpu_mem_gb: int = 3
     disk_mem_gb: int = 52
+    priority: int = 0
     nice: bool = False
     wall_time_s: int = 15 * 60
     gpu_mem_mb: int = 1900
@@ -81,6 +82,7 @@ class CondorJob:
 
         # job & machine specs
         self.specs = {
+            'priority': self._config.priority,
             'RequestCpus': self._config.cpus,
             'Request_GPUs': self._config.gpus,
             'RequestMemory': f'{self._config.cpu_mem_gb} G',
