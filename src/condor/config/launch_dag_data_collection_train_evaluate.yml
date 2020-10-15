@@ -10,6 +10,7 @@ job_configs:
     wall_time_s: 60 * 60
     nice: true
     use_singularity: true
+    priority: -10
     check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
@@ -22,6 +23,7 @@ job_configs:
     wall_time_s: 10 * 60
     nice: true
     use_singularity: False
+    priority: -10
     check_if_ros_already_in_use: False
     save_locally: False
   - command: python3.8 src/scripts/experiment.py
@@ -34,6 +36,7 @@ job_configs:
     nice: true
     gpu_mem_mb: 1900
     use_singularity: false
+    priority: -10
     check_if_ros_already_in_use: false
     save_locally: true
   - command: python3.8 src/scripts/experiment.py
@@ -46,6 +49,7 @@ job_configs:
     nice: true
     gpu_mem_mb: 1900
     use_singularity: true
+    priority: -10
     check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
