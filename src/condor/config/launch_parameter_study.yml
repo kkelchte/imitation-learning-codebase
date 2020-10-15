@@ -1,5 +1,5 @@
 output_path: dummy-tracking-env/rl_study
-mode: learning_rate_study
+mode: param_study
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:
@@ -7,11 +7,11 @@ base_config_files:
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase-dummy-tracking-env
-    cpus: 7
+    cpus: 2
     gpus: 1
-    cpu_mem_gb: 11
+    cpu_mem_gb: 5
     disk_mem_gb: 52
-    wall_time_s: 2 * 60 * 60
+    wall_time_s: 1 * 60 * 60
     nice: true
     gpu_mem_mb: 1900
     use_singularity: false
