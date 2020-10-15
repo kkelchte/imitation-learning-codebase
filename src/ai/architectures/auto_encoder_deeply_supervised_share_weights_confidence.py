@@ -1,4 +1,5 @@
 #!/bin/python3.8
+import warnings
 from collections import OrderedDict
 from typing import Tuple
 
@@ -22,7 +23,7 @@ Expects 3x200x200 inputs and outputs 200x200
 class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
-        raise NotImplementedError('According to test, conf2 and conf3 are not being trained. Not sure why...')
+        warnings.warn('According to test, conf2 and conf3 are not being trained. Not sure why...')
         super().__init__(config=config, quiet=True)
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,

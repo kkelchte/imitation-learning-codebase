@@ -229,7 +229,7 @@ class ArchitectureTest(unittest.TestCase):
             network.remove()
 
     def test_all_architectures(self):
-        skip_architecture_files = ['auto_encoder_deeply_supervised_share_weights_confidence.py',]
+        skip_architecture_files = []
         for arch in os.listdir(os.path.join('src', 'ai', 'architectures')):
             if '__' in arch or arch in skip_architecture_files:
                 continue
