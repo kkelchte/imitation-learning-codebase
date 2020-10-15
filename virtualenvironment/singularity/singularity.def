@@ -18,6 +18,7 @@ yum -y update
 # required for atari-py
 yum -y install cmake qt-devel
 yum -y install swig
+yum -y install git
 
 # required for opencv
 yum -y install libXrender
