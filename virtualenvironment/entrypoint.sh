@@ -2,3 +2,4 @@
 
 export HOME="${PWD}"
 export PYTHONPATH=${PWD}:${PWD}/../dummy-tracking-gym
+"$@"
