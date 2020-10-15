@@ -186,3 +186,5 @@ test_dir/
 /src/sim/ros/dso/
 /src/sim/ros/Pangolin/
 /.keras/
+
+*.sif
