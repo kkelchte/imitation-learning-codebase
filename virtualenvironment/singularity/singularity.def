@@ -14,10 +14,19 @@ Version 0.0.1
 %post
 yum clean all
 yum -y update
+
+# required for atari-py
+yum -y install cmake qt-devel
+yum -y install swig
+
+# required for opencv
+yum -y install libXrender
+yum -y install mesa-libGL
+
 yum -y install python-pip
-# yum -y install cmake zlib-dev
 python3.8 -m pip install --user --upgrade pip
 python3.8 -m pip install -r /requirements
+
 
 # ---- CUDA ----
 %files
