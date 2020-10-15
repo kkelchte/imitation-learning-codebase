@@ -9,7 +9,7 @@ import torch
 import torch.nn as nn
 
 from src.ai.base_net import BaseNet, ArchitectureConfig
-from src.ai.architectural_components import Down, DoubleConv, Up
+from src.ai.architectural_components import Down, DoubleConv, Up, OutConv
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -51,8 +51,7 @@ class Net(BaseNet):
         """
         Outputs steering action only
         """
-        inputs = super().forward(inputs=inputs, train=train)
-
+        inputs = self.process_inputs(inputs=inputs, train=train)
         x1 = self.inc(inputs)
         x2 = self.down1(x1)
         x3 = self.down2(x2)

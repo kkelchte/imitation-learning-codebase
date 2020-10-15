@@ -67,7 +67,8 @@ class Net(BaseNet):
         mean, std = self._policy_distribution(inputs, train=False)
         return (mean + torch.randn_like(mean) * std).detach()
 
-    def get_action(self, inputs) -> Action:
+    def get_action(self, inputs, train: bool = False) -> Action:
+        inputs = self.process_inputs(inputs, train=train)  # added line 15/10/2020
         output = self.sample(inputs)
         # output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),

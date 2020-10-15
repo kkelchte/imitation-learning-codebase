@@ -61,7 +61,7 @@ class Net(BaseNet):
         return x
 
     def get_action(self, inputs, train: bool = False) -> Action:
-        output = self.forward(inputs, train=train)
+        output = self.process_inputs(inputs=inputs, train=train)
         return Action(actor_name=get_filename_without_extension(__file__),
                       value=output.data)
 

@@ -46,7 +46,7 @@ class Net(BaseNet):
         self._critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
                                    activation=nn.Tanh(),
                                    output_activation=None)
-        self.load_network_weights()
+        self.initialize_architecture()
 
     def get_actor_parameters(self) -> Iterator:
         return self._actor.parameters()
@@ -55,7 +55,7 @@ class Net(BaseNet):
         return self._critic.parameters()
 
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Normal:
-        inputs = super().forward(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs, train=train)
         logits = self._actor(inputs)
         return Normal(logits, torch.exp(self.log_std))
 
@@ -70,9 +70,9 @@ class Net(BaseNet):
         return distribution.entropy().sum(dim=1)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        actions = super().forward(inputs=actions, train=train)
+        actions = self.process_inputs(inputs=actions, train=train)
         return self._policy_distribution(inputs, train=train).log_prob(actions[:, :2]).sum(-1)
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = super().forward(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs, train=train)
         return self._critic(inputs)

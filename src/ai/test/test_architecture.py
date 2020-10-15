@@ -228,6 +228,23 @@ class ArchitectureTest(unittest.TestCase):
                 #self.assertNotEqual(initial_parameters[k].sum().item(), p.sum().item())
             network.remove()
 
+    def test_all_architectures(self):
+        skip_architecture_files = ['auto_encoder_deeply_supervised_share_weights_confidence.py',]
+        for arch in os.listdir(os.path.join('src', 'ai', 'architectures')):
+            if '__' in arch or arch in skip_architecture_files:
+                continue
+            base_config['architecture'] = arch[:-3]
+            base_config['initialisation_type'] = 'xavier'
+            network = eval(base_config['architecture']).Net(
+                config=ArchitectureConfig().create(config_dict=base_config)
+            )
+
+            # test single unprocessed data point
+            try:
+                network.forward(torch.randn((10, *network.input_size)), train=True)
+            except:
+                network.get_action(torch.randn((1, *network.input_size)), train=True)
+
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

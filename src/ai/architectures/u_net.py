@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from src.ai.base_net import BaseNet, ArchitectureConfig
-from src.ai.architectural_components import Down, DoubleConv, Up
+from src.ai.architectural_components import Down, DoubleConv, Up, OutConv
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -43,7 +43,7 @@ class Net(BaseNet):
         self.up3 = Up(256, 128 // factor, bilinear=True)
         self.up4 = Up(128, 64, bilinear=True)
         self.outc = OutConv(64, 1)
-        self.initialize_architect()
+        self.initialize_architecture()
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
         inputs = self.process_inputs(inputs=inputs, train=train)
