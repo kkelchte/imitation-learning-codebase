@@ -3,6 +3,7 @@
 """
 import os
 from dataclasses import dataclass
+from glob import glob
 from typing import List, Generator, Optional
 
 import numpy as np
@@ -38,9 +39,18 @@ class DataLoaderConfig(Config):
             self.input_size = []
         if self.hdf5_files is None:
             self.hdf5_files = []
-        if self.data_directories is not None and len(self.data_directories) != 0 \
-                and not self.data_directories[0].startswith('/'):
-            self.data_directories = [os.path.join(get_data_dir(os.environ['HOME']), d) for d in self.data_directories]
+        if self.data_directories is not None and len(self.data_directories) != 0:
+            self.data_directories = [
+                os.path.join(get_data_dir(os.environ['HOME']), d) if not d.startswith('/') else d
+                for d in self.data_directories]
+            # check if raw_data is a subdirectory of d and fill in raw_data runs if this is the case.
+            data_directories = []
+            for d in self.data_directories:
+                if os.path.isdir(os.path.join(d, 'raw_data')):
+                    data_directories.extend(glob(f'{d}/raw_data/*'))
+                else:
+                    data_directories.append(d)
+            self.data_directories = data_directories
         if self.hdf5_files is not None and len(self.hdf5_files) != 0:
             self.hdf5_files = [
                 os.path.join(get_data_dir(os.environ['HOME']), hdf5_f) if not hdf5_f.startswith('/') else hdf5_f

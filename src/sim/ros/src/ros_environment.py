@@ -19,7 +19,7 @@ from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 from imitation_learning_ros_package.msg import RosReward
 from src.core.logger import cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from cv_bridge import CvBridge
+from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge.core import CvBridge
 from src.core.utils import camelcase_to_snake_format
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 from src.core.data_types import Action, Experience, TerminationType, ProcessState
@@ -230,7 +230,7 @@ class RosEnvironment(Environment):
             self._info[info_object_name] = self._sensor_processors[info_object_name](msg, extra_args)
         elif isinstance(extra_args, ActorConfig):
             self._info[extra_args.name] = Action(actor_name=extra_args.name,
-                                                 value=adapt_twist_to_action(msg).value)
+                                                 value=adapt_twist_to_action(msg).value).value
         else:
             self._info[info_object_name] = np.asarray(msg.data)
         cprint(f'set info {info_object_name}', self._logger, msg_type=MessageType.debug)
