@@ -37,7 +37,8 @@ class CondorJobConfig(Config):
     green_list: Optional[List] = None
     use_green_list: bool = False
     use_singularity: bool = False
-    singularity_file: str = sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))[-1] if len(sorted(glob.glob(f'{os.environ["PWD"]}/rosenvironment/singularity/*.sif'))) != 0 else ''
+    singularity_dir: str = 'ubuntu'
+    singularity_file: str = ''
     check_if_ros_already_in_use: bool = False
     save_locally: bool = False
     save_before_wall_time: bool = False
@@ -59,6 +60,19 @@ class CondorJobConfig(Config):
     def post_init(self):  # add default options
         if not self.output_path.startswith('/'):
             self.output_path = os.path.join(get_data_dir(self.codebase_dir), self.output_path)
+        if self.use_singularity:  # set singularity directory to gluster or opal
+            if not self.singularity_dir.startswith('/'):
+                if os.path.isdir('/gluster/visics/kkelchte/singularity_images'):
+                    self.singularity_dir = os.path.join('/gluster/visics/kkelchte/singularity_images',
+                                                        self.singularity_dir)
+                else:
+                    self.singularity_dir = os.path.join('/esat/opal/kkelchte/singularity_images',
+                                                        self.singularity_dir)
+            if self.singularity_file == '':
+                self.singularity_file = sorted(glob.glob(f'{self.singularity_dir}/*'))[-1]
+            elif not self.singularity_file.startswith('/'):
+                self.singularity_file = os.path.join(self.singularity_dir, self.singularity_file)
+            assert os.path.isfile(self.singularity_file)
 
 
 class CondorJob:
@@ -264,12 +278,14 @@ class CondorJob:
             if self._config.save_locally:
                 executable.write(self._adjust_commands_config_to_save_locally())
             if self._config.use_singularity:
-                executable.write(
-                    f"/usr/bin/singularity exec --nv {self._config.singularity_file} "
-                    f"{os.path.join(self._config.codebase_dir, 'rosenvironment', 'entrypoint.sh')} "
-                    f"{self._config.command} "
-                    f">> {os.path.join(self.output_dir, 'singularity.output')} 2>&1 "
-                    f"{'&' if self._config.save_before_wall_time else ''}\n")
+                command = f"/usr/bin/singularity exec --nv {self._config.singularity_file} "
+                command += os.path.join(self._config.codebase_dir,
+                                        'rosenvironment' if os.path.basename(self._config.singularity_dir) == 'ubuntu'
+                                        else 'virtualenvironment',
+                                        'entrypoint.sh')
+                command += f" {self._config.command} >> {os.path.join(self.output_dir, 'singularity.output')} 2>&1 " \
+                           f"{'&' if self._config.save_before_wall_time else ''}\n"
+                executable.write(command)
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
