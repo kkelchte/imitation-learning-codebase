@@ -8,13 +8,12 @@ job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase-dummy-tracking-env
     cpus: 2
-    gpus: 1
+    gpus: 0
     cpu_mem_gb: 5
     disk_mem_gb: 52
-    wall_time_s: 1 * 60 * 60
+    wall_time_s: 2 * 60 * 60
     nice: true
     gpu_mem_mb: 1900
-    use_singularity: true
-    singularity_dir: fedora
+    use_singularity: false
     check_if_ros_already_in_use: false
     save_locally: true
