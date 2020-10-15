@@ -1,6 +1,6 @@
 architecture_config:
   architecture: tracking_actor_critic
-  device: cuda
+  device: cpu
   log_std: 0.01
   random_seed: 123
   initialisation_type: orthogonal
@@ -33,7 +33,7 @@ trainer_config:
   data_loader_config:
     batch_size: 100
     random_seed: 123
-  device: cuda
+  device: cpu
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
