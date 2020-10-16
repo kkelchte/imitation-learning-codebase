@@ -12,10 +12,6 @@ def prepare_param_study(base_config_file: str,
     jobs = []
     jobs.extend(prepare_batch_size_study(base_config_file, job_config_object, number_of_jobs, output_path))
     jobs.extend(prepare_learning_rate_study(base_config_file, job_config_object, number_of_jobs, output_path))
-    jobs.extend(prepare_optimiser_study(base_config_file, job_config_object, number_of_jobs, output_path))
-    jobs.extend(prepare_phi_study(base_config_file, job_config_object, number_of_jobs, output_path))
-    jobs.extend(prepare_ppo_epsilon_study(base_config_file, job_config_object, number_of_jobs, output_path))
-    jobs.extend(prepare_ppo_max_train_steps_study(base_config_file, job_config_object, number_of_jobs, output_path))
     return jobs
 
 
