@@ -1,4 +1,4 @@
-output_path: dummy-tracking-env/rl_study_with_kl
+output_path: dummy-fleeing-env/rl_study_with_kl
 mode: param_study
 wait_time_between_jobs_sec: 30
 number_of_jobs:  # indicates number of seeds per parameter value
