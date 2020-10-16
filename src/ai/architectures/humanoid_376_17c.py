@@ -83,7 +83,7 @@ class Net(BaseNet):
                       value=output)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        actions = self.process_inputs(inputs=actions, train=train)  # preprocess list of Actions
+        actions = self.process_inputs(inputs=actions, train=train).squeeze(dim=1)  # preprocess list of Actions
         try:
             mean, std = self._policy_distribution(inputs, train)
             log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
