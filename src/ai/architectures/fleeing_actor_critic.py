@@ -59,11 +59,16 @@ class Net(BaseNet):
         logits = self._actor(inputs)
         return Normal(logits, torch.exp(self.log_std))
 
+    def get_slow_hunt(self, state: torch.Tensor) -> torch.Tensor:
+        agent_blue = state[:2]
+        agent_red = state[2:]
+        return 0.3 * (agent_blue - agent_red).sign()
+
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._policy_distribution(inputs, train).sample()
         output = output.clamp(min=self.action_min, max=self.action_max)
-        #  TODO x, y = slow_hunt(inputs)
-        actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0], axis=-1)
+        actions = np.stack([*output.data.cpu().numpy().squeeze(),
+                            *self.get_slow_hunt(inputs.squeeze())], axis=-1)
         return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
                       value=actions)
 
