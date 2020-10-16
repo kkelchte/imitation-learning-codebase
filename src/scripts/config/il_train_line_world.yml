@@ -24,8 +24,6 @@ trainer_config:
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_10.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_11.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_12.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_13.hdf5
-      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_14.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_1.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_2.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_3.hdf5
