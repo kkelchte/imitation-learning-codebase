@@ -62,7 +62,7 @@ class Net(BaseNet):
     def get_slow_hunt(self, state: torch.Tensor) -> torch.Tensor:
         agent_blue = state[:2]
         agent_red = state[2:]
-        return 0.3 * (agent_blue - agent_red).sign()
+        return 0.3 * np.sign(agent_blue - agent_red)
 
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._policy_distribution(inputs, train).sample()

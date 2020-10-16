@@ -127,10 +127,12 @@ class Experiment:
         count_success = 0
         episode_return = 0
         episode_returns = []
+        episode_lengths = []
         while not self._enough_episodes_check(count_episodes):
             if self._data_saver is not None and self._config.data_saver_config.separate_raw_data_runs:
                 self._data_saver.update_saving_directory()
             experience, next_observation = self._environment.reset()
+            count_steps = 0
             while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
                 action = self._net.get_action(next_observation) if self._net is not None else None
                 experience, next_observation = self._environment.step(action)
@@ -140,6 +142,8 @@ class Experiment:
                     frames.append(experience.info['frame'])
                 if self._data_saver is not None:
                     self._data_saver.save(experience=experience)
+                count_steps += 1
+            episode_lengths.append(count_steps)
             count_success += 1 if experience.done.name == TerminationType.Success.name else 0
             count_episodes += 1
             episode_returns.append(experience.info['return'] if 'return' in experience.info.keys() else episode_return)
@@ -153,7 +157,8 @@ class Experiment:
         return_distribution = Distribution(episode_returns)
         msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
-            self._writer.write_distribution(return_distribution, "episode return")
+            self._writer.write_scalar(np.mean(episode_lengths).item(), 'episode_lengths')
+            self._writer.write_distribution(return_distribution, "episode_return")
             self._writer.write_gif(frames)
         best_checkpoint = False
         if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:

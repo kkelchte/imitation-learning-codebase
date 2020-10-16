@@ -15,10 +15,10 @@ environment_config:
     random_seed: 5346
     render: false
     world_name: tracking-v0
-  max_number_of_steps: 200  # let number of steps depend on environment
+  max_number_of_steps: 1000  # let number of steps depend on environment
 number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 1000
-output_path: test_tracking
+output_path: test_fleeing
 save_checkpoint_every_n: 100
 tb_render_every_n_epochs: 10
 tensorboard: true
@@ -43,4 +43,4 @@ trainer_config:
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2
   kl_target: 0.01
-  use_kl_stop: true
+  use_kl_stop: false

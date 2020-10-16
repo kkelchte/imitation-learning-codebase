@@ -43,4 +43,4 @@ trainer_config:
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2
   kl_target: 0.01
-  use_kl_stop: true
+  use_kl_stop: false
