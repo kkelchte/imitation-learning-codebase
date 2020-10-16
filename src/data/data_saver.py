@@ -124,7 +124,7 @@ class DataSaver:
                                   dst=dst, time_stamp=experience.time_stamp)
 
         for key, value in experience.info.items():
-            self._store_frame(data=np.asarray(value), dst=key, time_stamp=experience.time_stamp)
+            self._store_frame(data=np.asarray(value), dst=f'info_{key}', time_stamp=experience.time_stamp)
 
         if experience.done in [TerminationType.Success, TerminationType.Failure]:
             os.system(f'touch {os.path.join(self._config.saving_directory, experience.done.name)}')

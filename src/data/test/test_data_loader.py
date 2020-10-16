@@ -72,12 +72,11 @@ class TestDataLoader(unittest.TestCase):
         self.assertEqual(result['a'], backup_run['a'][1:])
         self.assertEqual(result['b'], backup_run['b'][:-1])
 
-    def test_data_loader_with_relative_paths(self):
+    def test_data_loader_from_raw_path_dirs(self):
         self.info = generate_dummy_dataset(self.data_saver, num_runs=20, input_size=(100, 100, 3), output_size=(3,),
                                            continuous=False)
         config_dict = {
-            'data_directories': [f'{self.output_dir}/raw_data/' + os.path.basename(p)
-                                 for p in self.info['episode_directories']],
+            'data_directories': [self.output_dir],
             'output_path': self.output_dir,
         }
         config = DataLoaderConfig().create(config_dict=config_dict)
