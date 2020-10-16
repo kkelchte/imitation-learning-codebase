@@ -4,7 +4,7 @@ number_of_episodes: 3
 load_checkpoint_dir: cube_world
 architecture_config:
   architecture: tiny_128_rgb_6c
-  device: cuda
+  device: cpu
 environment_config:
   factory_key: ROS
   max_number_of_steps: 1000

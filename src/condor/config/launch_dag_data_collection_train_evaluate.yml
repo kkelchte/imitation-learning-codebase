@@ -29,7 +29,7 @@ job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 8
-    gpus: 1
+    gpus: 0
     cpu_mem_gb: 10
     disk_mem_gb: 52
     wall_time_s: 60 * 60 * 2

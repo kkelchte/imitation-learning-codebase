@@ -21,7 +21,7 @@ trainer_config:
     balance_over_actions: false
     batch_size: 64
   criterion: MSELoss
-  device: cuda
+  device: cpu
 evaluator_config:
   data_loader_config:
     hdf5_files: [cube_world/validation_0.hdf5]
