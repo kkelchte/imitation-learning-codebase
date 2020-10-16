@@ -1,0 +1,21 @@
+output_path: encoder_decoder/mixed_deeply_supervised
+mode: lr_architecture_line_world
+wait_time_between_jobs_sec: 0.1
+job_configs:
+  - command: python3.8 src/scripts/experiment.py
+    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
+    cpus: 3
+    gpus: 0
+    cpu_mem_gb: 15
+    disk_mem_gb: 52
+    wall_time_s: 10 * 20 * 60 * 60
+    nice: true
+    use_singularity: false
+    check_if_ros_already_in_use: false
+    save_locally: true
+    save_before_wall_time: true
+    extra_requirements: ( Has_ssse3 == True )
+number_of_jobs:
+  - 1
+base_config_files: 
+    - src/scripts/config/il_train_line_world_cpu.yml

@@ -1,12 +1,12 @@
 output_path: test_encoder_decoder
 number_of_epochs: 100
 number_of_episodes: -1
-save_checkpoint_every_n: 99
+save_checkpoint_every_n: 10
 architecture_config:
   architecture: auto_encoder_deeply_supervised
   initialisation_type: xavier
   random_seed: 4
-  device: cuda
+  device: cpu
   dropout: default
   batch_normalisation: default
   vae: false
@@ -40,7 +40,7 @@ trainer_config:
     batch_size: 32
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
-  device: cuda
+  device: cpu
   store_output_on_tensorboard: true
 evaluator_config:
   data_loader_config:
@@ -50,7 +50,7 @@ evaluator_config:
     balance_over_actions: false
     batch_size: 32
   criterion: MSELoss
-  device: cuda
+  device: cpu
   store_output_on_tensorboard: true
   evaluate_extensive: true
 tensorboard: true
