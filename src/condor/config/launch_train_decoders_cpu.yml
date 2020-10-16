@@ -8,7 +8,7 @@ job_configs:
     gpus: 0
     cpu_mem_gb: 15
     disk_mem_gb: 52
-    wall_time_s: 10 * 20 * 60 * 60
+    wall_time_s: 5 * 24 * 60 * 60
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false
