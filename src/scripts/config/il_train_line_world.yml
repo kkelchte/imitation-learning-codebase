@@ -3,7 +3,7 @@ number_of_epochs: 100
 number_of_episodes: -1
 save_checkpoint_every_n: 99
 architecture_config:
-  architecture: auto_encoder_deeply_supervised
+  architecture: auto_encoder_deeply_supervised_confidence
   initialisation_type: xavier
   random_seed: 4
   device: cuda

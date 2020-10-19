@@ -4,12 +4,12 @@ wait_time_between_jobs_sec: 0.1
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 3
+    cpus: 2
     gpus: 1
     gpu_mem_mb: 3900
-    cpu_mem_gb: 15
+    cpu_mem_gb: 17
     disk_mem_gb: 52
-    wall_time_s: 20 * 60 * 60
+    wall_time_s: 10 * 60 * 60
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false
