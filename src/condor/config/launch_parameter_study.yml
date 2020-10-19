@@ -10,7 +10,7 @@ job_configs:
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase-dummy-tracking-env
     cpus: 2
     gpus: 1
-    gpu_mem_gb: 2
+    gpu_mem_mb: 1900
     cpu_mem_gb: 7
     disk_mem_gb: 52
     wall_time_s: (4 * 5000) + 3600
