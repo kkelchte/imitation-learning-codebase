@@ -11,6 +11,8 @@ def prepare_param_study(base_config_file: str,
                         output_path: str) -> List[CondorJob]:
     jobs = []
     jobs.extend(prepare_learning_rate_study(base_config_file, job_config_object, number_of_jobs, output_path))
+    jobs.extend(prepare_entropy_study(base_config_file, job_config_object, number_of_jobs, output_path))
+    jobs.extend(prepare_ppo_epsilon_study(base_config_file, job_config_object, number_of_jobs, output_path))
     return jobs
 
 
