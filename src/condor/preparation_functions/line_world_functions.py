@@ -34,8 +34,8 @@ def prepare_lr_architecture_line_world(base_config_file: str,
     learning_rates = [0.01, 0.001, 0.0001]
     architectures = ['auto_encoder_deeply_supervised',
                      'auto_encoder_deeply_supervised_confidence',
-                     'auto_encoder_deeply_supervised_share_weights',
-                     'auto_encoder_deeply_supervised_share_weights_confidence']
+                     'auto_encoder_deeply_supervised_share_weights']
+    # 'auto_encoder_deeply_supervised_share_weights_confidence'
     batch_norm = [False, True]
     loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
 
