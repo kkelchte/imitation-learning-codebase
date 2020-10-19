@@ -36,7 +36,7 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                      'auto_encoder_deeply_supervised_confidence',
                      'auto_encoder_deeply_supervised_share_weights']
     # 'auto_encoder_deeply_supervised_share_weights_confidence'
-    batch_norm = [False, True]
+    batch_norm = [False]
     loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
 
     model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
