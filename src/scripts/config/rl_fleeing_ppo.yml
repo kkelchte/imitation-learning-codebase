@@ -1,6 +1,6 @@
 architecture_config:
   architecture: fleeing_actor_critic
-  device: cpu
+  device: cuda
   log_std: 1
   random_seed: 5346
   initialisation_type: orthogonal
@@ -24,7 +24,7 @@ tb_render_every_n_epochs: 10
 tensorboard: true
 trainer_config:
   scheduler_config:
-    number_of_epochs: 1000
+    number_of_epochs: 5000
   criterion: MSELoss
   critic_learning_rate: 0.0001
   actor_learning_rate: 0.00001
@@ -33,7 +33,7 @@ trainer_config:
   data_loader_config:
     batch_size: 50
     random_seed: 5346
-  device: cpu
+  device: cuda
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95

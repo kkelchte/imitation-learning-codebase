@@ -1,5 +1,5 @@
 #!/bin/python3.8
-from typing import Iterator
+from typing import Iterator, Union
 
 import torch
 import torch.nn as nn
@@ -47,6 +47,7 @@ class Net(BaseNet):
                                    activation=nn.Tanh(),
                                    output_activation=None)
         self.initialize_architecture()
+        self.set_device(self._device)
 
     def get_actor_parameters(self) -> Iterator:
         return self._actor.parameters()
@@ -83,3 +84,16 @@ class Net(BaseNet):
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
         inputs = self.process_inputs(inputs=inputs, train=train)
         return self._critic(inputs)
+
+    def set_device(self, device: Union[str, torch.device]):
+        self._device = torch.device(
+            "cuda" if device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
+        ) if isinstance(device, str) else device
+        try:
+            self.to(self._device)
+            self._actor.to(self._device)
+            self._critic.to(self._device)
+        except AssertionError:
+            cprint(f'failed to work on {self._device} so working on cpu', self._logger, msg_type=MessageType.warning)
+            self._device = torch.device('cpu')
+            self.to(self._device)

@@ -133,7 +133,6 @@ class BaseNet(nn.Module):
         # add batch dimension if required
         if len(self.input_size) == len(inputs.size()):
             inputs = inputs.unsqueeze(0)
-
         # put inputs on device
         inputs = inputs.to(self._device)
 
