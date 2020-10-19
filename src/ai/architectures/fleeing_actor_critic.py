@@ -36,7 +36,7 @@ class Net(BaseNet):
         self.action_max = 1
 
         log_std = self._config.log_std if self._config.log_std != 'default' else 0.1
-        self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * 2), requires_grad=True)
+        self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * 2, dtype=torch.float), requires_grad=True)
 
         self.discrete = False
         self._actor = mlp_creator(sizes=[self.input_size[0], 10, 2],
