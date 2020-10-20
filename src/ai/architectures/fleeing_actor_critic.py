@@ -68,8 +68,9 @@ class Net(BaseNet):
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._policy_distribution(inputs, train).sample()
         output = output.clamp(min=self.action_min, max=self.action_max)
-        actions = np.stack([*output.data.cpu().numpy().squeeze(),
-                            *self.get_slow_hunt(inputs.squeeze())], axis=-1)
+        actions = np.stack([*self.get_slow_hunt(inputs.squeeze()),
+                            *output.data.cpu().numpy().squeeze()], axis=-1)
+
         return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
                       value=actions)
 
