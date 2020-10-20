@@ -2,6 +2,7 @@
 
 """
 import os
+from warnings import warn
 from dataclasses import dataclass
 from glob import glob
 from typing import List, Generator, Optional
@@ -103,6 +104,8 @@ class DataLoader:
                         self._dataset.extend(load_dataset_from_hdf5(self._config.hdf5_files[self._hdf5_file_index],
                                                                     input_size=self._config.input_size))
                     except OSError:
+                        cprint(f'Failed to load {self._config.hdf5_files[self._hdf5_file_index]}', self._logger,
+                               msg_type=MessageType.warning)
                         del self._config.hdf5_files[self._hdf5_file_index]
                         self._hdf5_file_index %= len(self._config.hdf5_files)
                 cprint(f'Loaded {len(self._dataset)} datapoints from {self._config.hdf5_files[self._hdf5_file_index]}',
