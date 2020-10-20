@@ -1,6 +1,6 @@
 architecture_config:
   architecture: fleeing_actor_critic
-  device: cuda
+  device: cpu
   log_std: 1
   random_seed: 5346
   initialisation_type: orthogonal
@@ -18,7 +18,7 @@ environment_config:
     world_name: tracking-v0
     args: 'random_location=False'
   max_number_of_steps: 1000  # let number of steps depend on environment
-number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
+train_every_n_steps: 1000
 number_of_epochs: 5000
 output_path: test_fleeing
 save_checkpoint_every_n: 100
@@ -33,9 +33,9 @@ trainer_config:
   gradient_clip_norm: -1
   optimizer: RMSprop
   data_loader_config:
-    batch_size: 50
+    batch_size: 100
     random_seed: 5346
-  device: cuda
+  device: cpu
   discount: 0.99
   factory_key: PPO
   gae_lambda: 0.95
