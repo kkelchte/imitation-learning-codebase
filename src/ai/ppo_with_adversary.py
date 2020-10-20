@@ -162,7 +162,8 @@ class AdversarialProximatePolicyGradient(ProximatePolicyGradient):
             self._actor_scheduler.step()
             self._critic_scheduler.step()
 
-        # train adversarial agent
+        # train adversarial agent and train with inverted reward r = -r
+        batch.rewards = [-r for r in batch.rewards]
         values = self._net.adversarial_critic(inputs=batch.observations, train=False).squeeze().detach()
         phi_weights = self._calculate_phi(batch, values).to(self._device).squeeze(-1).detach()
         critic_targets = get_reward_to_go(batch).to(self._device) if self._config.phi_key != 'gae' else \

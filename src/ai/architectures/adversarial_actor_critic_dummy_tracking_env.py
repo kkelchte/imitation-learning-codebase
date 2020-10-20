@@ -1,5 +1,5 @@
 #!/bin/python3.8
-from typing import Iterator
+from typing import Iterator, Union
 
 import torch
 import torch.nn as nn
@@ -10,7 +10,7 @@ from torch.distributions.categorical import Categorical
 from src.ai.base_net import BaseNet, ArchitectureConfig
 from src.ai.utils import mlp_creator
 from src.core.data_types import Action
-from src.core.logger import get_logger, cprint
+from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 
 """
@@ -112,3 +112,17 @@ class Net(BaseNet):
     def get_adversarial_critic_parameters(self) -> Iterator:
         return self._adversarial_critic.parameters()
 
+    def set_device(self, device: Union[str, torch.device]):
+        self._device = torch.device(
+            "cuda" if device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
+        ) if isinstance(device, str) else device
+        try:
+            self.to(self._device)
+            self._actor.to(self._device)
+            self._critic.to(self._device)
+            self._adversarial_actor.to(self._device)
+            self._adversarial_critic.to(self._device)
+        except AssertionError:
+            cprint(f'failed to work on {self._device} so working on cpu', self._logger, msg_type=MessageType.warning)
+            self._device = torch.device('cpu')
+            self.to(self._device)

@@ -1,6 +1,6 @@
-output_path: dummy-fleeing-env/rl_study_timesteps_reward
+output_path: dummy-tracking-env/single-fleeing-agent-fixed-location
 mode: param_study
-wait_time_between_jobs_sec: 1
+wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:
@@ -15,7 +15,7 @@ job_configs:
     gpu_mem_mb: 1900
     cpu_mem_gb: 7
     disk_mem_gb: 52
-    wall_time_s: (4 * 5000) + 3600
+    wall_time_s: 10 * 3600
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false

@@ -9,13 +9,14 @@ data_saver_config:
   store_on_ram_only: true
 environment_config:
   normalize_observations: false
-  normalize_rewards: true
+  normalize_rewards: false
+  invert_reward: false
   factory_key: GYM
   gym_config:
     random_seed: 5346
     render: false
     world_name: tracking-v0
-    args: 'random_location=True'
+    args: 'random_location=False'
   max_number_of_steps: 1000  # let number of steps depend on environment
 number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 5000

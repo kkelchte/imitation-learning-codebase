@@ -1,5 +1,5 @@
 #!/bin/python3.8
-from typing import Iterator
+from typing import Iterator, Union
 
 import torch
 import torch.nn as nn
@@ -10,7 +10,7 @@ from torch.distributions.categorical import Categorical
 from src.ai.base_net import BaseNet, ArchitectureConfig
 from src.ai.utils import mlp_creator
 from src.core.data_types import Action
-from src.core.logger import get_logger, cprint
+from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 
 """
@@ -36,7 +36,7 @@ class Net(BaseNet):
         self.action_max = 1
 
         log_std = self._config.log_std if self._config.log_std != 'default' else 0.1
-        self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * 2), requires_grad=True)
+        self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * 2, dtype=torch.float), requires_grad=True)
 
         self.discrete = False
         self._actor = mlp_creator(sizes=[self.input_size[0], 10, 2],
@@ -63,7 +63,7 @@ class Net(BaseNet):
         output = self._policy_distribution(inputs, train).sample()
         output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
-                      value=np.stack([0, 0, *output.data.cpu().numpy().squeeze()], axis=-1))
+                      value=np.stack([*output.data.cpu().numpy().squeeze(), 0, 0], axis=-1))
 
     def get_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:
         distribution = self._policy_distribution(inputs=inputs, train=train)
@@ -76,3 +76,16 @@ class Net(BaseNet):
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
         inputs = self.process_inputs(inputs=inputs, train=train)
         return self._critic(inputs)
+
+    def set_device(self, device: Union[str, torch.device]):
+        self._device = torch.device(
+            "cuda" if device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
+        ) if isinstance(device, str) else device
+        try:
+            self.to(self._device)
+            self._actor.to(self._device)
+            self._critic.to(self._device)
+        except AssertionError:
+            cprint(f'failed to work on {self._device} so working on cpu', self._logger, msg_type=MessageType.warning)
+            self._device = torch.device('cpu')
+            self.to(self._device)

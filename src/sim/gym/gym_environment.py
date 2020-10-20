@@ -19,7 +19,9 @@ class GymEnvironment(Environment):
 
     def __init__(self, config: EnvironmentConfig):
         super(GymEnvironment, self).__init__(config=config)
-        self._gym = gym.make(config.gym_config.world_name)
+        self._gym = gym.make(config.gym_config.world_name) if config.gym_config.args == "" \
+            else eval(f'gym.make(config.gym_config.world_name, {config.gym_config.args})')
+
         self._gym.seed(config.gym_config.random_seed)
         self.discrete = isinstance(self._gym.action_space, gym.spaces.Discrete)
         self.previous_observation = None

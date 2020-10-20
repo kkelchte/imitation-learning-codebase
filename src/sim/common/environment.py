@@ -25,6 +25,7 @@ class GymConfig(Config):
     random_seed: int = 123
     world_name: str = None
     render: bool = False
+    args: str = ""
 
 
 @dataclass_json
@@ -95,6 +96,7 @@ class EnvironmentConfig(Config):
     normalize_rewards: bool = False
     observation_clipping: int = -1
     reward_clipping: int = -1
+    invert_reward: bool = False
 
     def __post_init__(self):
         if self.gym_config is None:
@@ -134,7 +136,8 @@ class Environment:
         return self._observation_filter(observation) if self._config.normalize_observations else observation
 
     def _filter_reward(self, reward: float) -> float:
-        return self._reward_filter(reward) if self._config.normalize_rewards else reward
+        reward = self._reward_filter(reward) if self._config.normalize_rewards else reward
+        return reward if not self._config.invert_reward else -reward
 
     def _reset_filters(self) -> None:
         if self._config.normalize_observations:
