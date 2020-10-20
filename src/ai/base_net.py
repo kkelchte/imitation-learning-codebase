@@ -157,6 +157,7 @@ class BaseNet(nn.Module):
         """
         :return: a dictionary with global_step and model_state of neural network.
         """
+        cprint(f'checksum: {self.get_checksum()}', self._logger)
         return {
             'global_step': self.global_step,
             'model_state': self.state_dict()

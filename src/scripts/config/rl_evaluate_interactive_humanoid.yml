@@ -12,7 +12,7 @@ environment_config:
     render: true
     world_name: Humanoid-v2
   max_number_of_steps: -1
-number_of_episodes: 10
+number_of_episodes: 100
 number_of_epochs: 1
 output_path: humanoid-v2/evaluated
 tensorboard: false
