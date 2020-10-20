@@ -171,7 +171,6 @@ class CondorJob:
                  '| cut -d \'@\' -f 2 | cut -d \'.\' -f 1) \n'
         lines += 'Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d \'/\' -f 8) \n'
 
-        #lines += f'if [ -e {self.local_home}/* ] ; then'
         lines += 'while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n'
         lines += '\t echo found other ros job, so leaving machine $RemoteHost \n'
         lines += '\t ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n'
@@ -223,7 +222,9 @@ class CondorJob:
                 elif isinstance(value, dict):
                     config[key] = search_for_key_and_adjust(value)
             return config
-        config_dict = search_for_key_and_adjust(config_dict)
+        # Do not copy hdf5 files as you assume they are on gluster
+        # copying seemed to end uncompleted resulting in corrupted files.
+        # config_dict = search_for_key_and_adjust(config_dict)
 
         adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
         # store adjust config file in condor dir and make command point to adjust config file
