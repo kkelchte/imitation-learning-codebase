@@ -2,11 +2,12 @@
 # Submit an interactive job
 ###########################
 
-RequestCpus     = 3
-RequestMemory   = 15G
+RequestCpus     = 2
+RequestMemory   = 17G
+RequestDisk 	 = 52 G
 +RequestWallTime = 15*60
 Request_GPUs = 1
 
 # If you want X11 forwarding, uncomment this
-Requirements = ( OpSysAndVer == "Fedora32" ) && (Has_ssse3 == true) && (CUDACapability >= 3.7)
+Requirements = ( OpSysAndVer == "Fedora32" ) && (Has_ssse3 == true) && (CUDACapability >= 3.7) && (CUDAGlobalMemoryMb >= 3900)
 Queue
