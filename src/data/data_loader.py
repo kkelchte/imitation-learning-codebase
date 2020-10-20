@@ -95,11 +95,16 @@ class DataLoader:
     def load_dataset(self):
         if len(self._config.hdf5_files) != 0:
             if self._config.loop_over_hdf5_files:
+                self._dataset = Dataset()
                 self._hdf5_file_index += 1
                 self._hdf5_file_index %= len(self._config.hdf5_files)
-                self._dataset = Dataset()
-                self._dataset.extend(load_dataset_from_hdf5(self._config.hdf5_files[self._hdf5_file_index],
-                                                            input_size=self._config.input_size))
+                while len(self._dataset) == 0:
+                    try:
+                        self._dataset.extend(load_dataset_from_hdf5(self._config.hdf5_files[self._hdf5_file_index],
+                                                                    input_size=self._config.input_size))
+                    except OSError:
+                        del self._config.hdf5_files[self._hdf5_file_index]
+                        self._hdf5_file_index %= len(self._config.hdf5_files)
                 cprint(f'Loaded {len(self._dataset)} datapoints from {self._config.hdf5_files[self._hdf5_file_index]}',
                        self._logger,
                        msg_type=MessageType.warning if len(self._dataset.observations) == 0 else MessageType.info)

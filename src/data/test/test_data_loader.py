@@ -214,6 +214,7 @@ class TestDataLoader(unittest.TestCase):
                                                 fixed_input_value=(0.3 * index) * np.ones((3, 10, 10)), store_hdf5=True))
             self.assertTrue(os.path.isfile(os.path.join(output_path, 'train.hdf5')))
             hdf5_files.append(os.path.join(output_path, 'train.hdf5'))
+            hdf5_files.append(os.path.join(output_path, 'wrong.hdf5'))
 
         # create data loader with big data tag and three hdf5 training sets
         conf = {'output_path': self.output_dir,
