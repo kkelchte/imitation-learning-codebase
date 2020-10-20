@@ -58,6 +58,7 @@ class Net(BaseNet):
                                                output_activation=None)
 
         self.initialize_architecture()
+        self.set_device(self._device)
 
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._policy_distribution(inputs, train).sample()

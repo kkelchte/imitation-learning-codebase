@@ -20,7 +20,7 @@ environment_config:
   max_number_of_steps: 1000  # let number of steps depend on environment
 number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 5000
-output_path: test_fleeing
+output_path: test_tracking
 save_checkpoint_every_n: 100
 tb_render_every_n_epochs: 10
 tensorboard: true

@@ -47,6 +47,7 @@ class Net(BaseNet):
                                    activation=nn.Tanh(),
                                    output_activation=None)
         self.initialize_architecture()
+        self.set_device(self._device)
 
     def get_actor_parameters(self) -> Iterator:
         return self._actor.parameters()
