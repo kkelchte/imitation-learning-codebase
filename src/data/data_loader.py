@@ -146,8 +146,8 @@ class DataLoader:
             self._dataset = ds
         else:
             self._dataset = Dataset()
-            self.update_data_directories_with_raw_data()
-            self.load_dataset()
+#            self.update_data_directories_with_raw_data()
+#            self.load_dataset()
 
     def get_dataset(self) -> Dataset:
         return self._dataset
