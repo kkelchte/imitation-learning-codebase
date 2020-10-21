@@ -1,5 +1,5 @@
 output_path: test_encoder_decoder
-number_of_epochs: 0
+number_of_epochs: 100
 number_of_episodes: -1
 save_checkpoint_every_n: 99
 architecture_config:
@@ -15,8 +15,9 @@ architecture_config:
 trainer_config:
   optimizer: Adam
   learning_rate: 0.001
-  factory_key: DeepSupervision
+  factory_key: DeepSupervisionConfidence
   add_KL_divergence_loss: false
+  weight_decay: 0.01
   data_loader_config:
     loop_over_hdf5_files: true
     hdf5_files:
