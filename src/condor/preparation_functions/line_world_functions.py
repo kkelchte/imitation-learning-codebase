@@ -8,6 +8,57 @@ from src.condor.helper_functions import create_configs, Dag, translate_keys_to_s
 from src.condor.preparation_functions.il_preparation_functions import prepare_default
 from src.core.utils import get_date_time_tag
 
+def prepare_wd_confidence_line_world(base_config_file: str,
+                                       job_config_object: CondorJobConfig,
+                                       number_of_jobs: int,
+                                       output_path: str) -> List[CondorJob]:
+    learning_rates = [0.01, 0.001, 0.0001]
+    weight_decays = [0.01, 0.001, 0.0001]
+    architectures = ['auto_encoder_deeply_supervised_confidence']
+
+#    architectures = ['auto_encoder_deeply_supervised',
+#                     'auto_encoder_deeply_supervised_confidence',
+#                     'auto_encoder_deeply_supervised_share_weights']
+    # 'auto_encoder_deeply_supervised_share_weights_confidence'
+    #batch_norm = [False]
+    #loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
+
+    model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}', f'wd_{wd}')
+                   for arch in architectures
+                   for lr in learning_rates
+                   for wd in weight_decays]
+    adjustments = {translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'learning_rate']):
+                   [lr for arch in architectures
+                   for lr in learning_rates
+                   for wd in weight_decays],
+                   translate_keys_to_string(['architecture_config', 'architecture']):
+                   [arch for arch in architectures
+                   for lr in learning_rates
+                   for wd in weight_decays],
+                   translate_keys_to_string(['trainer_config', 'criterion']):
+                   [ls for arch in architectures
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss],
+                   translate_keys_to_string(['trainer_config', 'criterion_args_str']):
+                   ['' if ls == 'MSELoss' else 'beta=0.9' for arch in architectures
+                   for lr in learning_rates
+                   for bn in batch_norm
+                   for ls in loss],
+                   translate_keys_to_string(['trainer_config', 'factory_key']):
+                       ['DeepSupervisionConfidence' if 'confidence' in arch
+                        else 'DeepSupervision'
+                        for arch in architectures
+                        for lr in learning_rates
+                        for bn in batch_norm
+                        for ls in loss]
+                   }
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
 
 def prepare_lr_pretrain_imagenet(base_config_file: str,
                                  job_config_object: CondorJobConfig,
@@ -32,12 +83,15 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001]
-    architectures = ['auto_encoder_deeply_supervised',
-                     'auto_encoder_deeply_supervised_confidence',
-                     'auto_encoder_deeply_supervised_share_weights']
+    architectures = ['auto_encoder_deeply_supervised_confidence']
+
+#    architectures = ['auto_encoder_deeply_supervised',
+#                     'auto_encoder_deeply_supervised_confidence',
+#                     'auto_encoder_deeply_supervised_share_weights']
     # 'auto_encoder_deeply_supervised_share_weights_confidence'
     batch_norm = [False]
     loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
+    wd = [0.01, 0.001, 0.0001]
 
     model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
                    for arch in architectures

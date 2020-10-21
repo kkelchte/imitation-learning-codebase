@@ -90,8 +90,7 @@ class Experiment:
             if self._config.trainer_config is not None else None
         self._evaluator = Evaluator(config=self._config.evaluator_config, network=self._net) \
             if self._config.evaluator_config is not None else None
-        self._tester = Evaluator(config=self._config.tester_config, network=self._net) \
-            if self._config.tester_config is not None else None
+        self._tester = None
         self._writer = None
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -193,6 +192,9 @@ class Experiment:
             self._trainer.data_loader.set_dataset()
         if self._evaluator is not None and self._config.evaluator_config.evaluate_extensive:
             self._evaluator.evaluate_extensive()
+
+        self._tester = Evaluator(config=self._config.tester_config, network=self._net) \
+            if self._config.tester_config is not None else None
         if self._tester is not None:
             output_msg, _ = self._tester.evaluate(epoch=self._epoch, writer=self._writer, tag='test')
             cprint(f'Testing: {output_msg}', self._logger)
