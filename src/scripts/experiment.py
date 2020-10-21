@@ -192,7 +192,7 @@ class Experiment:
         if self._evaluator is not None and self._config.evaluator_config.evaluate_extensive:
             self._evaluator.evaluate_extensive()
         if self._tester is not None:
-            output_msg, _ = self._tester.evaluate(epoch=self._epoch, writer=self._writer)
+            output_msg, _ = self._tester.evaluate(epoch=self._epoch, writer=self._writer, tag='test')
             cprint(output_msg, self._logger)
         cprint(f'Finished.', self._logger)
 

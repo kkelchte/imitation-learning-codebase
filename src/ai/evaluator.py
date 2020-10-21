@@ -66,7 +66,7 @@ class Evaluator:
     def put_model_back_to_original_device(self):
         self._net.set_device(self._original_model_device)
 
-    def evaluate(self, epoch: int = -1, writer=None) -> Tuple[str, bool]:
+    def evaluate(self, epoch: int = -1, writer=None, tag: str = 'validation') -> Tuple[str, bool]:
         self.put_model_on_device()
         total_error = []
 #        for batch in tqdm(self.data_loader.get_data_batch(), ascii=True, desc='evaluate'):
@@ -80,13 +80,13 @@ class Evaluator:
         error_distribution = Distribution(total_error)
         self.put_model_back_to_original_device()
         if writer is not None:
-            writer.write_distribution(error_distribution, 'validation')
-            if self._config.store_output_on_tensorboard and epoch % 30 == 0:
-                writer.write_output_image(predictions, 'validation/predictions')
-                writer.write_output_image(targets, 'validation/targets')
-                writer.write_output_image(torch.stack(batch.observations), 'validation/inputs')
+            writer.write_distribution(error_distribution, tag)
+            if self._config.store_output_on_tensorboard and (epoch % 30 == 0 or tag == 'test'):
+                writer.write_output_image(predictions, f'{tag}/predictions')
+                writer.write_output_image(targets, f'{tag}/targets')
+                writer.write_output_image(torch.stack(batch.observations), f'{tag}/inputs')
 
-        msg = f' validation {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
+        msg = f' {tag} {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
 
         best_checkpoint = False
         if self._lowest_validation_loss is None or error_distribution.mean < self._lowest_validation_loss:
