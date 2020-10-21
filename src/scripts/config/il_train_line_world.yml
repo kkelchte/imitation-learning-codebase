@@ -1,5 +1,5 @@
 output_path: test_encoder_decoder
-number_of_epochs: 1
+number_of_epochs: 0
 number_of_episodes: -1
 save_checkpoint_every_n: 99
 architecture_config:
