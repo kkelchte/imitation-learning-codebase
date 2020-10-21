@@ -7,7 +7,7 @@ job_configs:
     cpus: 2
     gpus: 1
     gpu_mem_mb: 3900
-    cpu_mem_gb: 17
+    cpu_mem_gb: 29
     disk_mem_gb: 52
     wall_time_s: 10 * 60 * 60
     nice: true
