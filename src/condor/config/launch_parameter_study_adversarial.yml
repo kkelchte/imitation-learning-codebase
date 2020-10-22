@@ -1,4 +1,4 @@
-output_path: dummy-tracking-env/single-fleeing-agent-fixed-location
+output_path: dummy-tracking-env/adversarial-agent-mixed-location
 mode: param_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
