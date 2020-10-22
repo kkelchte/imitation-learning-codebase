@@ -16,13 +16,13 @@ environment_config:
     random_seed: 5346
     render: false
     world_name: tracking-v0
-    args: 'random_location=False'
-  max_number_of_steps: 1000  # let number of steps depend on environment
+    args: 'random_location=True'
+  max_number_of_steps: 300  # let number of steps depend on environment
 train_every_n_steps: 1000
-number_of_epochs: 5000
+number_of_epochs: 10000
 output_path: test_fleeing
 save_checkpoint_every_n: 100
-tb_render_every_n_epochs: 10
+tb_render_every_n_epochs: 100
 tensorboard: true
 trainer_config:
   scheduler_config:
@@ -33,7 +33,7 @@ trainer_config:
   gradient_clip_norm: -1
   optimizer: RMSprop
   data_loader_config:
-    batch_size: 100
+    batch_size: 200
     random_seed: 5346
   device: cpu
   discount: 0.99
