@@ -14,7 +14,7 @@ def prepare_wd_confidence_line_world(base_config_file: str,
                                      number_of_jobs: int,
                                      output_path: str) -> List[CondorJob]:
     learning_rates = [0.1, 0.01, 0.001, 0.0001]
-    weight_decays = [0.01, 0.001, 0.0001, ]
+    weight_decays = [0.0, 0.01, 0.001, 0.0001, ]
     architectures = ['auto_encoder_deeply_supervised_confidence']
 
     model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}', f'wd_{wd}')
