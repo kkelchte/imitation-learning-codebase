@@ -1,6 +1,6 @@
 output_path: encoder_decoder/mixed_deeply_supervised
-#mode: wd_confidence_line_world
-mode: lr_architecture_line_world
+mode: wd_confidence_line_world
+#mode: lr_architecture_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:
   - command: python3.8 src/scripts/experiment.py
