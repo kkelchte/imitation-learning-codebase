@@ -45,9 +45,9 @@ class DeepSupervisionConfidence(Trainer):
             loss = self._criterion(final_probability, targets).mean()
             for index, prob in enumerate(probabilities):
                 loss += (confidences[index] * (prob - targets)**2).mean()
-                loss += self._config.weight_decay * confidences[index].norm()
+                loss += self._config.confidence_weight * (1 - confidences[index]).mean()
 
-            loss.sum().backward()
+            loss.mean().backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
                                          self._config.gradient_clip_norm)

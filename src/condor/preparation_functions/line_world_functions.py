@@ -13,8 +13,8 @@ def prepare_wd_confidence_line_world(base_config_file: str,
                                      job_config_object: CondorJobConfig,
                                      number_of_jobs: int,
                                      output_path: str) -> List[CondorJob]:
-    learning_rates = [0.01, 0.001, 0.0001]
-    weight_decays = [0.01, 0.001, 0.0001]
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
+    weight_decays = [0.01, 0.001, 0.0001, ]
     architectures = ['auto_encoder_deeply_supervised_confidence']
 
     model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}', f'wd_{wd}')
@@ -36,12 +36,10 @@ def prepare_wd_confidence_line_world(base_config_file: str,
                         for arch in architectures
                         for lr in learning_rates
                         for wd in weight_decays],
-                   translate_keys_to_string(['trainer_config', 'weight_decay']):
+                   translate_keys_to_string(['trainer_config', 'confidence_weight']):
                        [wd for arch in architectures
                         for lr in learning_rates
-                        for wd in weight_decays]
-
-                   }
+                        for wd in weight_decays]}
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)
@@ -71,16 +69,14 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        job_config_object: CondorJobConfig,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
-    learning_rates = [0.01, 0.001, 0.0001]
-    architectures = ['auto_encoder_deeply_supervised_confidence']
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
+    #architectures = ['auto_encoder_deeply_supervised_confidence']
 
-#    architectures = ['auto_encoder_deeply_supervised',
-#                     'auto_encoder_deeply_supervised_confidence',
-#                     'auto_encoder_deeply_supervised_share_weights']
+    architectures = ['auto_encoder_deeply_supervised',
+                     'auto_encoder_deeply_supervised_share_weights']
     # 'auto_encoder_deeply_supervised_share_weights_confidence'
     batch_norm = [False]
     loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
-    wd = [0.01, 0.001, 0.0001]
 
     model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
                    for arch in architectures
@@ -119,7 +115,7 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                         for arch in architectures
                         for lr in learning_rates
                         for bn in batch_norm
-                        for ls in loss]
+                        for ls in loss],
                    }
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,

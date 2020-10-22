@@ -39,6 +39,7 @@ class TrainerConfig(EvaluatorConfig):
     scheduler_config: Optional[SchedulerConfig] = None
     entropy_coefficient: float = 0
     weight_decay: float = 0
+    confidence_weight: float = 0
     gradient_clip_norm: float = -1
     factory_key: str = "BASE"
     phi_key: str = "default"
