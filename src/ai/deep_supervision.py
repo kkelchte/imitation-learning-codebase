@@ -20,18 +20,19 @@ Allows combination of outputs as weighted sum in one big backward pass.
 
 class DeepSupervision(Trainer):
 
-    def __init__(self, config: TrainerConfig, network: BaseNet):
+    def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
         super().__init__(config, network, quiet=True)
-        self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                  output_path=config.output_path,
-                                  quiet=True)
-        self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
-                                                                        lr=self._config.learning_rate,
-                                                                        weight_decay=self._config.weight_decay)
-        lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
-        self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
-            if self._config.scheduler_config is not None else None
-        cprint(f'Started.', self._logger)
+        if not quiet:
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quiet=True)
+            self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
+                                                                            lr=self._config.learning_rate,
+                                                                            weight_decay=self._config.weight_decay)
+            lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+            self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
+                if self._config.scheduler_config is not None else None
+            cprint(f'Started.', self._logger)
 
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()

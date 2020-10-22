@@ -21,9 +21,6 @@ class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
-        self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                  output_path=config.output_path,
-                                  quiet=False)
 
         self.input_size = (1, 200, 200)
         self.input_scope = 'default'
@@ -34,6 +31,9 @@ class Net(BaseNet):
             else False
 
         if not quiet:
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quiet=False)
             self.sigmoid = nn.Sigmoid()
             self.residual_1 = ResidualBlock(input_channels=1,
                                             output_channels=32,
