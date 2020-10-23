@@ -1,12 +1,16 @@
 import os
 import shutil
 import unittest
+import warnings
 
 from src.core.utils import get_filename_without_extension
 from src.core.data_types import ProcessState, TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.gym.gym_environment import GymEnvironment
-import dummy_tracking_gym  # do not remove
+try:
+    import dummy_tracking_gym
+except ModuleNotFoundError:
+    warnings.warn('dummy_tracking_gym not found')
 
 
 class TestGymEnvironment(unittest.TestCase):
@@ -30,15 +34,21 @@ class TestGymEnvironment(unittest.TestCase):
 
         environment = GymEnvironment(EnvironmentConfig().create(config_dict=config))
         experience, _ = environment.reset()
+        #import matplotlib.pyplot as plt
         while experience.done != TerminationType.Done:
+            #print(experience)
             experience, _ = environment.step(environment.get_random_action())
+        #    plt.imshow(experience.info['frame'])
+        #    plt.show()
         return environment.remove() == ProcessState.Terminated
 
     def test_environments(self):
+        #self.assertTrue(True, self._test_environment_by_name('tracking-v0'))
         self.assertTrue(True, self._test_environment_by_name('CartPole-v0'))
         self.assertTrue(True, self._test_environment_by_name('Pendulum-v0'))
         self.assertTrue(True, self._test_environment_by_name('MountainCarContinuous-v0'))
         self.assertTrue(True, self._test_environment_by_name('Pong-v0'))
+
 
     def tearDown(self):
         shutil.rmtree(self.output_dir, ignore_errors=True)

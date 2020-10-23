@@ -35,7 +35,7 @@ class Net(BaseNet):
         self.action_min = -1
         self.action_max = 1
 
-        log_std = self._config.log_std if self._config.log_std != 'default' else 0.1
+        log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
         self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * 2, dtype=torch.float), requires_grad=True)
 
         self.discrete = False
@@ -58,7 +58,7 @@ class Net(BaseNet):
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Normal:
         inputs = self.process_inputs(inputs=inputs, train=train)
         logits = self._actor(inputs)
-        return Normal(logits, torch.exp(self.log_std))
+        return Normal(logits, torch.exp(self.log_std) + 1e-6)
 
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._policy_distribution(inputs, train).sample()

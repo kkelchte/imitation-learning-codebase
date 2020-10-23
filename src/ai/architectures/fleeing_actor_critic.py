@@ -35,7 +35,7 @@ class Net(BaseNet):
         self.action_min = -1
         self.action_max = 1
 
-        log_std = self._config.log_std if self._config.log_std != 'default' else 0.1
+        log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
         self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * 2, dtype=torch.float), requires_grad=True)
 
         self.discrete = False
@@ -58,19 +58,18 @@ class Net(BaseNet):
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Normal:
         inputs = self.process_inputs(inputs=inputs, train=train)
         logits = self._actor(inputs)
-        return Normal(logits, torch.exp(self.log_std))
+        return Normal(logits, torch.exp(self.log_std) + 1e-6)
 
     def get_slow_hunt(self, state: torch.Tensor) -> torch.Tensor:
-        agent_blue = state[:2]
-        agent_red = state[2:]
-        return 0.3 * np.sign(agent_blue - agent_red)
+        agent_zero = state[:2]
+        agent_one = state[2:]
+        return 0.3 * np.sign(agent_one - agent_zero)
 
     def get_action(self, inputs, train: bool = False) -> Action:
         output = self._policy_distribution(inputs, train).sample()
         output = output.clamp(min=self.action_min, max=self.action_max)
         actions = np.stack([*self.get_slow_hunt(inputs.squeeze()),
                             *output.data.cpu().numpy().squeeze()], axis=-1)
-
         return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
                       value=actions)
 
@@ -80,7 +79,7 @@ class Net(BaseNet):
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
         actions = self.process_inputs(inputs=actions, train=train)
-        return self._policy_distribution(inputs, train=train).log_prob(actions[:, :2]).sum(-1)
+        return self._policy_distribution(inputs, train=train).log_prob(actions[:, 2:]).sum(-1)
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
         inputs = self.process_inputs(inputs=inputs, train=train)

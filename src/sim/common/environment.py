@@ -137,7 +137,7 @@ class Environment:
 
     def _filter_reward(self, reward: float) -> float:
         reward = self._reward_filter(reward) if self._config.normalize_rewards else reward
-        return reward if not self._config.invert_reward else -reward
+        return -reward if self._config.invert_reward else reward
 
     def _reset_filters(self) -> None:
         if self._config.normalize_observations:
