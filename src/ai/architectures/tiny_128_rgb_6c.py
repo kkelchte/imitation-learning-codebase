@@ -48,7 +48,8 @@ class Net(BaseNet):
         """
         Outputs steering action only
         """
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        self.set_mode(train)
+        inputs = self.process_inputs(inputs=inputs)
         if self._config.finetune:
             with torch.no_grad():
                 x = self.encoder(inputs)
@@ -61,7 +62,7 @@ class Net(BaseNet):
         return x
 
     def get_action(self, inputs, train: bool = False) -> Action:
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs)
         output = self.forward(inputs)
         return Action(actor_name=get_filename_without_extension(__file__),
                       value=output.data)

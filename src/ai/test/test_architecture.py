@@ -82,8 +82,7 @@ class ArchitectureTest(unittest.TestCase):
         # test single unprocessed data point
         processed_inputs = network.process_inputs(torch.randint(255, (network.input_size[1],
                                                                       network.input_size[2],
-                                                                      network.input_size[0])),
-                                                  train=False)
+                                                                      network.input_size[0])))
         self.assertTrue(processed_inputs.max() <= 1)
         self.assertTrue(processed_inputs.min() >= 0)
         self.assertEqual(len(processed_inputs.shape), len(network.input_size) + 1)
@@ -100,8 +99,7 @@ class ArchitectureTest(unittest.TestCase):
         # test single unprocessed data point
         processed_inputs = network.process_inputs(torch.randint(255, (network.input_size[1],
                                                                       network.input_size[2],
-                                                                      network.input_size[0])),
-                                                  train=False)
+                                                                      network.input_size[0])))
         self.assertTrue(processed_inputs.max() <= 1)
         self.assertTrue(-1 <= processed_inputs.min() < 0)
         self.assertEqual(len(processed_inputs.shape), len(network.input_size) + 1)
@@ -229,9 +227,9 @@ class ArchitectureTest(unittest.TestCase):
             network.remove()
 
     def test_all_architectures(self):
-        skip_architecture_files = []
+        skip_architecture_files = ['straight_corridor_depth_30_1c.py', 'straight_corridor_depth_30_3d_stochastic.py']
         for arch in os.listdir(os.path.join('src', 'ai', 'architectures')):
-            if '__' in arch or arch in skip_architecture_files:
+            if '__' in arch or arch in skip_architecture_files or 'bc' in arch:
                 continue
             base_config['architecture'] = arch[:-3]
             base_config['initialisation_type'] = 'xavier'

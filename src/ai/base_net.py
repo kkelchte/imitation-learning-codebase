@@ -58,24 +58,14 @@ class BaseNet(nn.Module):
         self.discrete = None
         self._config = config
         self.dtype = torch.float32 if config.dtype == 'default' else eval(f"torch.{config.dtype}")
-
-        if not quiet:
-            self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                      output_path=config.output_path,
-                                      quiet=True)
-            cprint(f'Started.', self._logger)
-        self._checkpoint_output_directory = os.path.join(self._config.output_path, 'torch_checkpoints')
-        os.makedirs(self._checkpoint_output_directory, exist_ok=True)
-
-        self.extra_checkpoint_info = None
         self._device = torch.device(
             "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
         )
-
         self.global_step = torch.as_tensor(0, dtype=torch.int32)
 
     def initialize_architecture(self):
         torch.manual_seed(self._config.random_seed)
+        torch.set_num_threads(1)
         for layer in self.modules():
             initialize_weights(layer, initialisation_type=self._config.initialisation_type)
 

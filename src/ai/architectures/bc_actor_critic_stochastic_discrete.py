@@ -12,8 +12,7 @@ from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
 """
-CartPole-v0	action space: discrete 2	observation space: Box(4,)
-Pendulum-v0	action space: continuous 1[-2.0 : 2.0]	observation space: Box(3,)
+Base Class used by discrete stochastic actor-critic networks.
 """
 
 
@@ -21,16 +20,7 @@ class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
-        self.input_size = None
-        self.output_size = None
         self.discrete = True
-        self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
-                                  activation=nn.Tanh(),
-                                  output_activation=None)
-
-        self._critic = mlp_creator(sizes=[self.input_size[0], 64, 64, 1],
-                                   activation=nn.Tanh(),
-                                   output_activation=None)
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
