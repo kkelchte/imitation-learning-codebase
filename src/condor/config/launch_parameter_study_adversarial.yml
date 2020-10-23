@@ -1,10 +1,10 @@
-output_path: dummy-tracking-env/adversarial-agent-mixed-location
+output_path: dummy-tracking-env/adversarial-agent-moving
 mode: param_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
   - 3
 base_config_files:
-  - src/scripts/config/dummy_tracking_ppo.yml
+  - src/scripts/config/dummy_adversarial_ppo.yml
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase-dummy-tracking-env
@@ -17,3 +17,4 @@ job_configs:
     use_singularity: false
     check_if_ros_already_in_use: false
     save_locally: true
+      save_before_wall_time: true
