@@ -50,7 +50,7 @@ def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
 
 
 def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.Module = None,
-                bias_in_last_layer: bool = True):
+                bias_in_last_layer: bool = True) -> nn.Module:
     """Create Multi-Layer Perceptron"""
     layers = []
     for j in range(len(sizes)-1):

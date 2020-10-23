@@ -48,6 +48,7 @@ class ExperimentConfig(Config):
     architecture_config: Optional[ArchitectureConfig] = None
     trainer_config: Optional[TrainerConfig] = None
     evaluator_config: Optional[EvaluatorConfig] = None
+    tester_config: Optional[EvaluatorConfig] = None
 
     def __post_init__(self):
         assert not (self.number_of_episodes != -1 and self.train_every_n_steps != -1), \
@@ -63,6 +64,8 @@ class ExperimentConfig(Config):
             del self.trainer_config
         if self.evaluator_config is None:
             del self.evaluator_config
+        if self.tester_config is None:
+            del self.tester_config
         if self.load_checkpoint_dir is None:
             del self.load_checkpoint_dir
 
@@ -87,6 +90,7 @@ class Experiment:
             if self._config.trainer_config is not None else None
         self._evaluator = Evaluator(config=self._config.evaluator_config, network=self._net) \
             if self._config.evaluator_config is not None else None
+        self._tester = None
         self._writer = None
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -189,8 +193,16 @@ class Experiment:
             if best_ckpt and self._config.save_checkpoint_every_n != -1:
                 self.save_checkpoint(tag='best')
             cprint(msg, self._logger)
+        if self._trainer is not None:
+            self._trainer.data_loader.set_dataset()
         if self._evaluator is not None and self._config.evaluator_config.evaluate_extensive:
             self._evaluator.evaluate_extensive()
+
+        self._tester = Evaluator(config=self._config.tester_config, network=self._net) \
+            if self._config.tester_config is not None else None
+        if self._tester is not None:
+            output_msg, _ = self._tester.evaluate(epoch=self._epoch, writer=self._writer, tag='test')
+            cprint(f'Testing: {output_msg}', self._logger)
         cprint(f'Finished.', self._logger)
 
     def save_checkpoint(self, tag: str = ''):

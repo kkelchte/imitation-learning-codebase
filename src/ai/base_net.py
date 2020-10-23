@@ -50,31 +50,22 @@ class BaseNet(nn.Module):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = True):
         super().__init__()
-        self.input_size = None
         # input range from 0 -> 1 is expected, for range -1 -> 1 this field should state 'zero_centered'
         self.input_scope = 'default'
+
+        self.input_size = None
         self.output_size = None
         self.discrete = None
         self._config = config
         self.dtype = torch.float32 if config.dtype == 'default' else eval(f"torch.{config.dtype}")
-
-        if not quiet:
-            self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                      output_path=config.output_path,
-                                      quiet=True)
-            cprint(f'Started.', self._logger)
-        self._checkpoint_output_directory = os.path.join(self._config.output_path, 'torch_checkpoints')
-        os.makedirs(self._checkpoint_output_directory, exist_ok=True)
-
-        self.extra_checkpoint_info = None
         self._device = torch.device(
             "cuda" if self._config.device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
         )
-
         self.global_step = torch.as_tensor(0, dtype=torch.int32)
 
     def initialize_architecture(self):
         torch.manual_seed(self._config.random_seed)
+        torch.set_num_threads(1)
         for layer in self.modules():
             initialize_weights(layer, initialisation_type=self._config.initialisation_type)
 
@@ -86,18 +77,20 @@ class BaseNet(nn.Module):
             "cuda" if device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
         ) if isinstance(device, str) else device
         try:
-            self.to(self._device)
+            for layer in self.modules():
+                layer.to(self._device)
         except AssertionError:
             cprint(f'failed to work on {self._device} so working on cpu', self._logger, msg_type=MessageType.warning)
             self._device = torch.device('cpu')
             self.to(self._device)
 
-    def process_inputs(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float], train: bool) -> torch.Tensor:
-        # adjust gradient saving
+    def set_mode(self, train: bool = False):
         if train:
             self.train()
         else:
             self.eval()
+
+    def process_inputs(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float]) -> torch.Tensor:
         if isinstance(inputs, list):
             inputs = torch.stack(inputs)
         if len(self.input_size) == 3:
