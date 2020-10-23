@@ -3,8 +3,6 @@ import torch.nn as nn
 
 from src.ai.architectures.bc_variational_auto_encoder import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator
-from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 

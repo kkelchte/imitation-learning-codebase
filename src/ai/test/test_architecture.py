@@ -107,9 +107,9 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(processed_inputs.shape[3], network.input_size[2])
         network.remove()
 
-    def test_input_output_architectures(self):
-        for vae in [False, True]:
-            for architecture in ['auto_encoder_conv1']:
+    def test_input_output_vae_architectures(self):
+        for vae in [True]:
+            for architecture in ['auto_encoder_conv1', 'u_net']:
                 base_config['architecture'] = architecture
                 base_config['vae'] = vae
                 network = eval(base_config['architecture']).Net(
@@ -223,7 +223,7 @@ class ArchitectureTest(unittest.TestCase):
             trainer.train()
             for k, p in network.named_parameters():
                 print(f'{k}: {initial_parameters[k].sum().item()} <-> {p.sum().item()}')
-                #self.assertNotEqual(initial_parameters[k].sum().item(), p.sum().item())
+                self.assertNotEqual(initial_parameters[k].sum().item(), p.sum().item())
             network.remove()
 
     def test_all_architectures(self):

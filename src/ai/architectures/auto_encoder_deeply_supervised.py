@@ -6,7 +6,6 @@ import torch.nn as nn
 
 from src.ai.architectural_components import ResidualBlock
 from src.ai.base_net import BaseNet, ArchitectureConfig
-from src.ai.utils import mlp_creator
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
