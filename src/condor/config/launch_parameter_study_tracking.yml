@@ -1,4 +1,4 @@
-output_path: dummy-tracking-env/single-tracking-agent-moving
+output_path: dummy-tracking-env-2/single-tracking-agent-moving
 mode: param_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value

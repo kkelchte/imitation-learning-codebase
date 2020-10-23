@@ -26,7 +26,7 @@ class Net(BaseNet):
         self.action_min = -1
         self.action_max = 1
 
-        self._actor = mlp_creator(sizes=[self.input_size[0], 10, 2],
+        self._actor = mlp_creator(sizes=[self.input_size[0], 10, self.output_size[0]],
                                   activation=nn.Tanh(),
                                   output_activation=None)
 
@@ -52,3 +52,14 @@ class Net(BaseNet):
         output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
                       value=np.stack([*output.data.cpu().numpy().squeeze(), 0, 0], axis=-1))
+
+    def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
+        actions = self.process_inputs(inputs=[a[:2] for a in actions])  # preprocess list of Actions
+        try:
+            mean, std = self._policy_distribution(inputs, train)
+            log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
+                                  0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
+                                  + self.log_std.sum(-1))
+            return log_probabilities
+        except Exception as e:
+            raise ValueError(f"Numerical error: {e}")

@@ -1,13 +1,13 @@
 #!/bin/python3.8
-from typing import Iterator, Union
+from typing import Iterator, Union, Tuple
 
 import torch
 import torch.nn as nn
 import numpy as np
 from torch.distributions import Normal
-from torch.distributions.categorical import Categorical
 
-from src.ai.base_net import BaseNet, ArchitectureConfig
+from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
+from src.ai.base_net import ArchitectureConfig
 from src.ai.utils import mlp_creator
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
@@ -21,10 +21,42 @@ The second two action values move the red or adversary agent who flees from the 
 """
 
 
+def get_slow_hunt(state: torch.Tensor) -> torch.Tensor:
+    agent_zero = state[:2]
+    agent_one = state[2:]
+    return 0.3 * np.sign(agent_one - agent_zero)
+
+
 class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
+        self.input_size = (4,)
+        self.output_size = (4,)
+        self.action_min = -1
+        self.action_max = 1
+
+        self._actor = mlp_creator(sizes=[self.input_size[0], 10, self.output_size[0]//2],
+                                  activation=nn.Tanh(),
+                                  output_activation=None)
+        log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
+        self.log_std = torch.nn.Parameter(torch.ones((self.output_size[0]//2,), dtype=torch.float32) * log_std,
+                                          requires_grad=True)
+
+        self._critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
+                                   activation=nn.Tanh(),
+                                   output_activation=None)
+
+        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 10, self.output_size[0]//2],
+                                              activation=nn.Tanh(),
+                                              output_activation=None)
+        self.adversarial_log_std = torch.nn.Parameter(torch.ones((self.output_size[0]//2,),
+                                                                 dtype=torch.float32) * log_std, requires_grad=True)
+
+        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
+                                               activation=nn.Tanh(),
+                                               output_activation=None)
+
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
@@ -32,98 +64,55 @@ class Net(BaseNet):
 
             cprint(f'Started.', self._logger)
 
-        self.input_size = (4,)
-        self.output_size = (4,)
-        self.action_min = -1
-        self.action_max = 1
-
-        log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
-        self.log_std = torch.nn.Parameter(torch.as_tensor([log_std] * 2, dtype=torch.float), requires_grad=True)
-
-        self.discrete = False
-        self._actor = mlp_creator(sizes=[self.input_size[0], 10, 2],
-                                  activation=nn.Tanh(),
-                                  output_activation=None)
-
-        self._critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
-                                   activation=nn.Tanh(),
-                                   output_activation=None)
-
-        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 10, 2],
-                                              activation=nn.Tanh(),
-                                              output_activation=None)
-
-        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
-                                               activation=nn.Tanh(),
-                                               output_activation=None)
-
-        self.initialize_architecture()
-        self.set_device(self._device)
+            self.initialize_architecture()
 
     def get_action(self, inputs, train: bool = False) -> Action:
-        output = self._policy_distribution(inputs, train).sample()
-        output = output.clamp(min=self.action_min, max=self.action_max)
-        adversarial_output = self._adversarial_policy_distribution(inputs, train).sample()
-        adversarial_output = adversarial_output.clamp(min=self.action_min, max=self.action_max)
+        inputs = self.process_inputs(inputs)
+        output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
+        adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
+                                                                                      max=self.action_max)
+
         actions = np.stack([*output.data.cpu().numpy().squeeze(),
                             *adversarial_output.data.cpu().numpy().squeeze()], axis=-1)
         return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
                       value=actions)
 
-    def _policy_distribution(self, inputs: torch.Tensor, train: bool = True, adversarial: bool = False) -> Normal:
-        inputs = self.process_inputs(inputs=inputs, train=train)
-        logits = self._actor(inputs) if not adversarial else self._adversarial_actor(inputs)
-        return Normal(logits, torch.exp(self.log_std) + 1e-6)
+    def _policy_distribution(self, inputs: torch.Tensor,
+                             train: bool = True, adversarial: bool = False) -> Tuple[torch.Tensor, torch.Tensor]:
+        self.set_mode(train)
+        inputs = self.process_inputs(inputs=inputs)
+        means = self._actor(inputs) if not adversarial else self._adversarial_actor(inputs)
+        return means, torch.exp((self.log_std if not adversarial else self.adversarial_log_std) + 1e-6)
 
-    def get_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:
-        distribution = self._policy_distribution(inputs=inputs, train=train)
-        return distribution.entropy().sum(dim=1)
+    def sample(self, inputs: torch.Tensor, train: bool = False, adversarial: bool = False) -> torch.Tensor:
+        mean, std = self._policy_distribution(inputs, train=train, adversarial=adversarial)
+        return (mean + torch.randn_like(mean) * std).detach()
 
     def get_adversarial_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:
-        distribution = self._policy_distribution(inputs=inputs, train=train, adversarial=True)
-        return distribution.entropy().sum(dim=1)
+        mean, std = self._policy_distribution(inputs=inputs, train=train, adversarial=True)
+        return Normal(mean, std).entropy().sum(dim=1)
 
-    def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        actions = self.process_inputs(inputs=actions, train=train)
-        distribution = self._policy_distribution(inputs, train=train)
-        return distribution.log_prob(actions[:, :2]).sum(-1)
+    def policy_log_probabilities(self, inputs, actions, train: bool = True, adversarial: bool = False) -> torch.Tensor:
+        actions = self.process_inputs(inputs=[a[:2] if not adversarial else a[2:] for a in actions])
+        try:
+            mean, std = self._policy_distribution(inputs, train, adversarial)
+            log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
+                                  0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
+                                  + self.log_std.sum(-1))
+            return log_probabilities
+        except Exception as e:
+            raise ValueError(f"Numerical error: {e}")
 
     def adversarial_policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        actions = self.process_inputs(inputs=actions, train=train)
-        distribution = self._policy_distribution(inputs, train=train, adversarial=True)
-        return distribution.log_prob(actions[:, :2]).sum(-1)
-
-    def critic(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = self.process_inputs(inputs=inputs, train=train)
-        return self._critic(inputs)
+        return self.policy_log_probabilities(inputs, actions, train, adversarial=True)
 
     def adversarial_critic(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        self._adversarial_critic.train() if train else self._critic.eval()
+        inputs = self.process_inputs(inputs=inputs)
         return self._adversarial_critic(inputs)
 
-    def get_actor_parameters(self) -> Iterator:
-        return self._actor.parameters()
-
-    def get_critic_parameters(self) -> Iterator:
-        return self._critic.parameters()
-
     def get_adversarial_actor_parameters(self) -> Iterator:
-        return self._adversarial_actor.parameters()
+        return list(self._adversarial_actor.parameters()) + [self.adversarial_log_std]
 
     def get_adversarial_critic_parameters(self) -> Iterator:
         return self._adversarial_critic.parameters()
-
-    def set_device(self, device: Union[str, torch.device]):
-        self._device = torch.device(
-            "cuda" if device in ['gpu', 'cuda'] and torch.cuda.is_available() else "cpu"
-        ) if isinstance(device, str) else device
-        try:
-            self.to(self._device)
-            self._actor.to(self._device)
-            self._critic.to(self._device)
-            self._adversarial_actor.to(self._device)
-            self._adversarial_critic.to(self._device)
-        except AssertionError:
-            cprint(f'failed to work on {self._device} so working on cpu', self._logger, msg_type=MessageType.warning)
-            self._device = torch.device('cpu')
-            self.to(self._device)
