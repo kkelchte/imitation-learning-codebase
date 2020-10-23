@@ -17,4 +17,4 @@ job_configs:
     use_singularity: false
     check_if_ros_already_in_use: false
     save_locally: true
-      save_before_wall_time: true
+    save_before_wall_time: true
