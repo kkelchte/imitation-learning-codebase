@@ -52,7 +52,11 @@ class Net(BaseNet):
         return self._critic.parameters()
 
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Normal:
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        if train:
+            self.train()
+        else:
+            self.eval()
+        inputs = self.process_inputs(inputs=inputs)
         logits = self.action_max * self._actor(inputs)
         return Normal(logits, torch.exp(self.log_std))
 
@@ -61,16 +65,25 @@ class Net(BaseNet):
         return distribution.entropy().sum(dim=1)
 
     def get_action(self, inputs, train: bool = False) -> Action:
+        if train:
+            self.train()
+        else:
+            self.eval()
         output = self._policy_distribution(inputs, train).sample()
         output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),
                       value=output)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        inputs = self.process_inputs(inputs=inputs, train=train)
-        actions = self.process_inputs(inputs=actions, train=train)  # preprocess list of Actions
+        if train:
+            self.train()
+        else:
+            self.eval()
+        inputs = self.process_inputs(inputs=inputs)
+        actions = self.process_inputs(inputs=actions)  # preprocess list of Actions
         return self._policy_distribution(inputs).log_prob(actions).sum(dim=-1)
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = self.process_inputs(inputs=inputs, train=train)
+
+        inputs = self.process_inputs(inputs=inputs)
         return self._critic(inputs)

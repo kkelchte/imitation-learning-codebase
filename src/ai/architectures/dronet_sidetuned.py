@@ -107,7 +107,7 @@ class Net(BaseNet):
                                    output_activation=nn.Tanh(),
                                    bias_in_last_layer=False)
 
-    def feature_extract(self, inputs: torch.Tensor) -> torch.Tensor:
+    def _feature_extract(self, inputs: torch.Tensor) -> torch.Tensor:
         verbose = False
         x1 = self.maxpool_1(self.conv2d_1(inputs))
         if verbose:
@@ -162,7 +162,7 @@ class Net(BaseNet):
         # flatten
         return x4.view(x4.size(0), -1)
 
-    def sidetune_feature_extract(self, inputs: torch.Tensor) -> torch.Tensor:
+    def _sidetune_feature_extract(self, inputs: torch.Tensor) -> torch.Tensor:
         x1 = self.sidetune_maxpool_1(self.sidetune_conv2d_1(inputs))
         x2 = F.relu(self.sidetune_batch_normalization_1(x1))
         x2 = F.relu(self.sidetune_batch_normalization_2(self.sidetune_conv2d_2(x2)))
@@ -185,14 +185,15 @@ class Net(BaseNet):
         """
         Outputs steering action only
         """
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        self.set_mode(train)
+        inputs = self.process_inputs(inputs=inputs)
         with torch.no_grad():
-            pretrained_features = self.feature_extract(inputs)
+            pretrained_features = self._feature_extract(inputs)
         if self._config.finetune:
             with torch.no_grad():
-                new_features = self.sidetune_feature_extract(inputs)
+                new_features = self._sidetune_feature_extract(inputs)
         else:
-            new_features = self.sidetune_feature_extract(inputs)
+            new_features = self._sidetune_feature_extract(inputs)
         features = self.alpha * pretrained_features + (1-self.alpha) * new_features
         if self.dropout is not None:
             features = self.dropout(features)

@@ -67,7 +67,8 @@ class Net(BaseNet):
         return self._critic.parameters()
 
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Tuple[torch.Tensor, torch.Tensor]:
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        self.set_mode(train)
+        inputs = self.process_inputs(inputs=inputs)
         means = self._actor(inputs)
         return means, torch.exp(self.log_std)
 
@@ -76,14 +77,14 @@ class Net(BaseNet):
         return (mean + torch.randn_like(mean) * std).detach()
 
     def get_action(self, inputs, train: bool = False) -> Action:
-        inputs = self.process_inputs(inputs, train=train)  # added line 15/10/2020
+        inputs = self.process_inputs(inputs)  # added line 15/10/2020
         output = self.sample(inputs, train=train)
         # output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),
                       value=output)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
-        actions = self.process_inputs(inputs=actions, train=train)  # preprocess list of Actions
+        actions = self.process_inputs(inputs=actions)  # preprocess list of Actions
         try:
             mean, std = self._policy_distribution(inputs, train)
             log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
@@ -94,7 +95,8 @@ class Net(BaseNet):
             raise ValueError(f"Numerical error: {e}")
 
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        self._critic.train() if train else self._critic.eval()
+        inputs = self.process_inputs(inputs=inputs)
         return self._critic(inputs)
 
     def get_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:

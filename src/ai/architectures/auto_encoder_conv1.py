@@ -44,31 +44,31 @@ class Net(BaseNet):
             self.initialize_architecture()
             cprint(f'Started.', self._logger)
 
-    def _encode(self, inputs, train: bool = False):
+    def _encode(self, inputs):
         """
         preprocess inputs, encode with no gradients in finetune mode, apply dropout if necessary
         :param inputs: numpy array, torch tensor, list, ...
         :param train: bool setting training mode on / off in super class
         :return:
         """
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        inputs = self.process_inputs(inputs=inputs)
         if self._config.finetune:
             with torch.no_grad():
                 x = self.encoder(inputs)
         else:
             x = self.encoder(inputs)
-        if self.dropout is not None and train:
+        if self.dropout is not None:
             x = self.dropout(x)
         return x
 
     def _decode(self, inputs: torch.Tensor) -> torch.Tensor:
         return self.decoder(inputs).squeeze(dim=1)
 
-    def forward_with_distribution(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def _forward_with_distribution(self, inputs) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         return network outputs and latent distribution
         """
-        x = self._encode(inputs, train)
+        x = self._encode(inputs)
         mean = x[:, :self.h]
         std = torch.exp(x[:, self.h:]/2)
         x = mean + std * torch.rand_like(std)
@@ -79,11 +79,12 @@ class Net(BaseNet):
         """
         Outputs steering action only
         """
+        self.set_mode(train)
         if not self.vae:
-            x = self._encode(inputs, train)
+            x = self._encode(inputs)
             x = self._decode(x)
         else:
-            x, _, _ = self.forward_with_distribution(inputs, train)
+            x, _, _ = self.forward_with_distribution(inputs)
         return x
 
     def get_action(self, inputs, train: bool = False) -> Action:

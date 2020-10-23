@@ -21,15 +21,8 @@ class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
-        if not quiet:
-            self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                      output_path=config.output_path,
-                                      quiet=False)
-
-            cprint(f'Started.', self._logger)
-
-        self.input_size = (4,)
-        self.output_size = (2,)
+        self.input_size = None
+        self.output_size = None
         self.discrete = True
         self._actor = mlp_creator(sizes=[self.input_size[0], 64, 64, self.output_size[0]],
                                   activation=nn.Tanh(),
@@ -38,7 +31,13 @@ class Net(BaseNet):
         self._critic = mlp_creator(sizes=[self.input_size[0], 64, 64, 1],
                                    activation=nn.Tanh(),
                                    output_activation=None)
-        self.initialize_architecture()
+        if not quiet:
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quiet=False)
+
+            cprint(f'Started.', self._logger)
+            self.initialize_architecture()
 
     def get_actor_parameters(self) -> Iterator:
         return self._actor.parameters()
