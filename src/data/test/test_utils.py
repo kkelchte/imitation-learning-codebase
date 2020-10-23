@@ -45,6 +45,19 @@ class TestUtil(unittest.TestCase):
         plt.show()
         self.assertTrue(True)
 
+    def test_joint_generators(self):
+        def generate_a(num: int = 5):
+            for _ in range(num):
+                yield _
+
+        def generate_b(num: int = 3):
+            for _ in range(num):
+                yield _
+
+        for a, b in zip(generate_a(), generate_b()):
+            self.assertEqual(a, b)
+
+    @unittest.skip
     def test_create_random_gradient_image(self):
         n = 5
         fig, axes = plt.subplots(1, n + 1)

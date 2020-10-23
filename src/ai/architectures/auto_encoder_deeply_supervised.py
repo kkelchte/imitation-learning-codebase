@@ -29,54 +29,53 @@ class Net(BaseNet):
         self.dropout = nn.Dropout(p=config.dropout) if isinstance(config.dropout, float) else None
         self._config.batch_normalisation = config.batch_normalisation if isinstance(config.batch_normalisation, bool) \
             else False
+        self.sigmoid = nn.Sigmoid()
+        self.residual_1 = ResidualBlock(input_channels=1,
+                                        output_channels=32,
+                                        batch_norm=self._config.batch_normalisation,
+                                        activation=torch.nn.ReLU(),
+                                        strides=(1, 1),
+                                        padding=(1, 1),
+                                        kernel_sizes=(3, 3))
+        self.side_logit_1 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
+        self.weight_1 = nn.Parameter(torch.as_tensor(1 / 4), requires_grad=True)
 
+        self.residual_2 = ResidualBlock(input_channels=32,
+                                        output_channels=32,
+                                        batch_norm=self._config.batch_normalisation,
+                                        activation=torch.nn.ReLU(),
+                                        strides=(2, 1),
+                                        padding=(1, 1),
+                                        kernel_sizes=(3, 3))
+        self.side_logit_2 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
+        self.weight_2 = nn.Parameter(torch.as_tensor(1 / 4), requires_grad=True)
+        self.upsample_2 = nn.Upsample(scale_factor=2, mode='nearest')
+
+        self.residual_3 = ResidualBlock(input_channels=32,
+                                        output_channels=32,
+                                        batch_norm=self._config.batch_normalisation,
+                                        activation=torch.nn.ReLU(),
+                                        strides=(2, 1),
+                                        padding=(1, 1),
+                                        kernel_sizes=(3, 3))
+        self.side_logit_3 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
+        self.weight_3 = nn.Parameter(torch.as_tensor(1 / 4), requires_grad=True)
+        self.upsample_3 = nn.Upsample(scale_factor=4, mode='nearest')
+
+        self.residual_4 = ResidualBlock(input_channels=32,
+                                        output_channels=32,
+                                        batch_norm=self._config.batch_normalisation,
+                                        activation=torch.nn.ReLU(),
+                                        strides=(2, 1),
+                                        padding=(1, 1),
+                                        kernel_sizes=(3, 3))
+        self.side_logit_4 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
+        self.weight_4 = nn.Parameter(torch.as_tensor(1 / 4), requires_grad=True)
+        self.upsample_4 = nn.Upsample(scale_factor=8, mode='nearest')
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
                                       quiet=False)
-            self.sigmoid = nn.Sigmoid()
-            self.residual_1 = ResidualBlock(input_channels=1,
-                                            output_channels=32,
-                                            batch_norm=self._config.batch_normalisation,
-                                            activation=torch.nn.ReLU(),
-                                            strides=(1, 1),
-                                            padding=(1, 1),
-                                            kernel_sizes=(3, 3))
-            self.side_logit_1 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
-            self.weight_1 = nn.Parameter(torch.as_tensor(1/4), requires_grad=True)
-
-            self.residual_2 = ResidualBlock(input_channels=32,
-                                            output_channels=32,
-                                            batch_norm=self._config.batch_normalisation,
-                                            activation=torch.nn.ReLU(),
-                                            strides=(2, 1),
-                                            padding=(1, 1),
-                                            kernel_sizes=(3, 3))
-            self.side_logit_2 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
-            self.weight_2 = nn.Parameter(torch.as_tensor(1/4), requires_grad=True)
-            self.upsample_2 = nn.Upsample(scale_factor=2, mode='nearest')
-
-            self.residual_3 = ResidualBlock(input_channels=32,
-                                            output_channels=32,
-                                            batch_norm=self._config.batch_normalisation,
-                                            activation=torch.nn.ReLU(),
-                                            strides=(2, 1),
-                                            padding=(1, 1),
-                                            kernel_sizes=(3, 3))
-            self.side_logit_3 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
-            self.weight_3 = nn.Parameter(torch.as_tensor(1/4), requires_grad=True)
-            self.upsample_3 = nn.Upsample(scale_factor=4, mode='nearest')
-
-            self.residual_4 = ResidualBlock(input_channels=32,
-                                            output_channels=32,
-                                            batch_norm=self._config.batch_normalisation,
-                                            activation=torch.nn.ReLU(),
-                                            strides=(2, 1),
-                                            padding=(1, 1),
-                                            kernel_sizes=(3, 3))
-            self.side_logit_4 = nn.Conv2d(in_channels=32, out_channels=1, kernel_size=1)
-            self.weight_4 = nn.Parameter(torch.as_tensor(1/4), requires_grad=True)
-            self.upsample_4 = nn.Upsample(scale_factor=8, mode='nearest')
 
             self.initialize_architecture()
             cprint(f'Started.', self._logger)

@@ -13,8 +13,10 @@ from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
 """
-Four encoding and four decoding layers with dropout.
-Expects 3x200x200 inputs and outputs 200x200
+Deep Supervision net with discriminator.
+Discriminator is used to improve the predictions from the network on unlabeled real data.
+Discriminator discriminates between simulated (training) data prediction (0) and real (test) data prediction (1).
+The main network can then be trained also on unlabeled real data to minimize the discriminators output.
 """
 
 
@@ -27,9 +29,9 @@ class Net(BaseNet):
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
                                       quiet=False)
-            self._discriminator = mlp_creator(sizes=[self.output_size, 64, 64, 1],
+            self._discriminator = mlp_creator(sizes=[torch.as_tensor(self.output_size).prod(), 64, 64, 1],
                                               activation=nn.ReLU(),
-                                              output_activation=nn.ReLU())
+                                              output_activation=nn.Sigmoid())
             self.initialize_architecture()
             cprint(f'Started.', self._logger)
 
@@ -41,3 +43,22 @@ class Net(BaseNet):
 
     def discriminator_parameters(self, recurse=True):
         return self._discriminator.parameters(recurse)
+
+    def forward_with_all_outputs(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
+                                                                             torch.Tensor, torch.Tensor]:
+        for p in self.discriminator_parameters():
+            p.requires_grad = False
+        for p in self.parameters():
+            p.requires_grad = train
+        return super().forward_with_all_outputs(inputs, train=train)
+
+    def discriminate(self, predictions, train: bool = False) -> torch.Tensor:
+        """
+        Evaluate predictions on whether they come from simulated (0) or real (1) data
+        :param predictions: NxCxHxW with CxHxW corresponding to the output size
+        :param train: train the discriminator part or evaluate
+        :return: output 0 --> simulated, 1 --> real
+        """
+        for p in self.discriminator_parameters():
+            p.requires_grad = train
+        return self._discriminator(predictions.view(-1, torch.as_tensor(self.output_size).prod()))
