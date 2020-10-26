@@ -65,6 +65,40 @@ def prepare_lr_pretrain_imagenet(base_config_file: str,
     return jobs
 
 
+def prepare_lr_discirminator_line_world(base_config_file: str,
+                                        job_config_object: CondorJobConfig,
+                                        number_of_jobs: int,
+                                        output_path: str) -> List[CondorJob]:
+    learning_rates = [0.01, 0.001, 0.0001]
+    critic_learning_rates = [0.01, 0.001, 0.0001]
+    epsilon = [10, 1, 0.1]
+
+    model_paths = [os.path.join(output_path, 'models', 'auto_encoder_deeply_supervised_with_discriminator',
+                                f'lr_{lr}', f'discriminator_lr_{dlr}', f'epsilon_{eps}')
+                   for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon]
+    adjustments = {translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'learning_rate']):
+                   [lr for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon],
+                   translate_keys_to_string(['trainer_config', 'critic_learning_rate']):
+                   [dlr for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon],
+                   translate_keys_to_string(['trainer_config', 'epsilon']):
+                   [eps for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon]
+                   }
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
+
+
 def prepare_lr_architecture_line_world(base_config_file: str,
                                        job_config_object: CondorJobConfig,
                                        number_of_jobs: int,
