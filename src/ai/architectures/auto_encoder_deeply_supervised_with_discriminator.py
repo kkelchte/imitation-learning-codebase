@@ -24,25 +24,24 @@ class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
-
+        self._deeply_supervised_parameter_names = [name for name, _ in self.named_parameters()]
+        self._discriminator = mlp_creator(sizes=[torch.as_tensor(self.output_size).prod(), 64, 64, 1],
+                                          activation=nn.ReLU(),
+                                          output_activation=nn.Sigmoid())
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
                                       quiet=False)
-            self._discriminator = mlp_creator(sizes=[torch.as_tensor(self.output_size).prod(), 64, 64, 1],
-                                              activation=nn.ReLU(),
-                                              output_activation=nn.Sigmoid())
             self.initialize_architecture()
             cprint(f'Started.', self._logger)
 
-    def parameters(self, recurse=True):
-        parameters = list(super().parameters())
-        # TODO get discriminator parameters out
-        for param in parameters:
-            yield param
+    def deeply_supervised_parameters(self, recurse=True):
+        for name, param in self.named_parameters(recurse=recurse):
+            if name in self._deeply_supervised_parameter_names:
+                yield param
 
     def discriminator_parameters(self, recurse=True):
-        return self._discriminator.parameters(recurse)
+        return self._discriminator.parameters(recurse=recurse)
 
     def forward_with_all_outputs(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
                                                                              torch.Tensor, torch.Tensor]:
@@ -59,6 +58,7 @@ class Net(BaseNet):
         :param train: train the discriminator part or evaluate
         :return: output 0 --> simulated, 1 --> real
         """
+
         for p in self.discriminator_parameters():
             p.requires_grad = train
         return self._discriminator(predictions.view(-1, torch.as_tensor(self.output_size).prod()))
