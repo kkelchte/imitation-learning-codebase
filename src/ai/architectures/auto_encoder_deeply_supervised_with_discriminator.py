@@ -45,9 +45,7 @@ class Net(BaseNet):
 
     def forward_with_all_outputs(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
                                                                              torch.Tensor, torch.Tensor]:
-        for p in self.discriminator_parameters():
-            p.requires_grad = False
-        for p in self.parameters():
+        for p in self.deeply_supervised_parameters():
             p.requires_grad = train
         return super().forward_with_all_outputs(inputs, train=train)
 
@@ -58,7 +56,7 @@ class Net(BaseNet):
         :param train: train the discriminator part or evaluate
         :return: output 0 --> simulated, 1 --> real
         """
-
+        self._discriminator.train(train)
         for p in self.discriminator_parameters():
             p.requires_grad = train
         return self._discriminator(predictions.view(-1, torch.as_tensor(self.output_size).prod()))

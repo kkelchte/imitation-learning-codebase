@@ -10,7 +10,7 @@ import numpy as np
 from src.ai.base_net import ArchitectureConfig, BaseNet
 from src.ai.trainer import TrainerConfig
 from src.ai.trainer_factory import TrainerFactory
-from src.ai.utils import mlp_creator, generate_random_dataset_in_raw_data
+from src.ai.utils import mlp_creator, generate_random_dataset_in_raw_data, get_checksum_network_parameters
 from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
 from src.ai.architectures import *  # Do not remove
 from src.data.test.common_utils import generate_dataset_by_length
@@ -191,8 +191,7 @@ class ArchitectureTest(unittest.TestCase):
                                              output_size=(200, 200),)
         for arch in ['auto_encoder_deeply_supervised',
                      'auto_encoder_deeply_supervised_confidence',
-                     'auto_encoder_deeply_supervised_share_weights',]:
-            # TODO:  'auto_encoder_deeply_supervised_share_weights_confidence'
+                     'auto_encoder_deeply_supervised_share_weights']:
             base_config['architecture'] = arch
             base_config['initialisation_type'] = 'xavier'
             network = eval(base_config['architecture']).Net(
@@ -225,6 +224,68 @@ class ArchitectureTest(unittest.TestCase):
                 print(f'{k}: {initial_parameters[k].sum().item()} <-> {p.sum().item()}')
                 self.assertNotEqual(initial_parameters[k].sum().item(), p.sum().item())
             network.remove()
+
+    def test_discriminator(self):
+        # create ds
+        dataset = generate_dataset_by_length(length=5,
+                                             input_size=(1, 200, 200),
+                                             output_size=(200, 200), )
+        # create architecture
+        base_config['architecture'] = 'auto_encoder_deeply_supervised_with_discriminator'
+        base_config['initialisation_type'] = 'xavier'
+        network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        # create trainer
+        trainer_config = {
+            'output_path': self.output_dir,
+            'optimizer': 'Adam',
+            'learning_rate': 0.1,
+            'factory_key': 'DeepSupervisionWithDiscriminator',
+            'data_loader_config': {
+                'batch_size': 2
+            },
+            'discriminator_data_loader_config': {
+                'batch_size': 2
+            },
+            'criterion': 'WeightedBinaryCrossEntropyLoss',
+            "criterion_args_str": 'beta=0.9',
+        }
+        trainer = TrainerFactory().create(config=TrainerConfig().create(config_dict=trainer_config),
+                                          network=network)
+        trainer.data_loader.set_dataset(dataset)
+        trainer.discriminator_data_loader.set_dataset(dataset)
+
+        # test training main network
+        initial_main_checksum = get_checksum_network_parameters(network.deeply_supervised_parameters())
+        initial_discriminator_checksum = get_checksum_network_parameters(network.discriminator_parameters())
+        trainer._train_main_network()
+        self.assertEqual(initial_discriminator_checksum,
+                         get_checksum_network_parameters(network.discriminator_parameters()))
+        self.assertNotEqual(initial_main_checksum,
+                            get_checksum_network_parameters(network.deeply_supervised_parameters()))
+        # test training discriminator network
+        initial_discriminator_checksum = get_checksum_network_parameters(network.discriminator_parameters())
+        initial_main_checksum = get_checksum_network_parameters(network.deeply_supervised_parameters())
+        trainer._train_discriminator_network()
+        self.assertEqual(initial_main_checksum,
+                         get_checksum_network_parameters(network.deeply_supervised_parameters()))
+        self.assertNotEqual(initial_discriminator_checksum,
+                            get_checksum_network_parameters(network.discriminator_parameters()))
+        # test load checkpoint
+        base_config['architecture'] = 'auto_encoder_deeply_supervised_with_discriminator'
+        base_config['initialisation_type'] = 'xavier'
+        base_config['random_seed'] = 29078
+        second_network = eval(base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=base_config)
+        )
+        self.assertNotEqual(second_network.get_checksum(), network.get_checksum())
+        second_network.load_checkpoint(network.get_checkpoint())
+        for (n1, p1), (n2, p2) in zip(network.named_parameters(), second_network.named_parameters()):
+            print(n1, n2)
+            self.assertEqual(p1.sum(), p2.sum())
+        network.remove()
+        second_network.remove()
 
     def test_all_architectures(self):
         skip_architecture_files = ['straight_corridor_depth_30_1c.py', 'straight_corridor_depth_30_3d_stochastic.py']
