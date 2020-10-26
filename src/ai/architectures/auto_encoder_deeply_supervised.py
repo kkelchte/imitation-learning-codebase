@@ -6,7 +6,6 @@ import torch.nn as nn
 
 from src.ai.architectural_components import ResidualBlock
 from src.ai.base_net import BaseNet, ArchitectureConfig
-from src.ai.utils import mlp_creator
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -26,7 +25,6 @@ class Net(BaseNet):
         self.input_scope = 'default'
         self.output_size = (200, 200)
         self.discrete = False
-        self.dropout = nn.Dropout(p=config.dropout) if isinstance(config.dropout, float) else None
         self._config.batch_normalisation = config.batch_normalisation if isinstance(config.batch_normalisation, bool) \
             else False
         self.sigmoid = nn.Sigmoid()
@@ -82,7 +80,8 @@ class Net(BaseNet):
 
     def forward_with_all_outputs(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
                                                                              torch.Tensor, torch.Tensor]:
-        processed_inputs = self.process_inputs(inputs, train)
+        self.set_mode(train)
+        processed_inputs = self.process_inputs(inputs)
         x1 = self.residual_1(processed_inputs)
         out1 = self.side_logit_1(x1)
         prob1 = self.sigmoid(out1).squeeze(dim=1)
@@ -121,7 +120,8 @@ class ImageNet(Net):
         self._imagenet_output = torch.nn.Linear(32*25*25, 1000)
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
-        processed_inputs = self.process_inputs(inputs, train)
+        self.set_mode(train)
+        processed_inputs = self.process_inputs(inputs)
         x1 = self.residual_1(processed_inputs)
         x2 = self.residual_2(x1)
         x3 = self.residual_3(x2)
