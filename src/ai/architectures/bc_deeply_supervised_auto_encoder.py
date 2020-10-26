@@ -78,32 +78,37 @@ class Net(BaseNet):
             self.initialize_architecture()
             cprint(f'Started.', self._logger)
 
-    def forward_with_all_outputs(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
-                                                                             torch.Tensor, torch.Tensor]:
+    def forward_with_intermediate_outputs(self, inputs, train: bool = False) -> dict:
         self.set_mode(train)
         processed_inputs = self.process_inputs(inputs)
-        x1 = self.residual_1(processed_inputs)
-        out1 = self.side_logit_1(x1)
-        prob1 = self.sigmoid(out1).squeeze(dim=1)
 
-        x2 = self.residual_2(x1)
-        out2 = self.side_logit_2(x2)
-        prob2 = self.upsample_2(self.sigmoid(out2)).squeeze(dim=1)
+        results = {'x1': self.residual_1(processed_inputs)}
+        results['out1'] = self.side_logit_1(results['x1'])
+        results['prob1'] = self.sigmoid(results['out1']).squeeze(dim=1)
 
-        x3 = self.residual_3(x2)
-        out3 = self.side_logit_3(x3)
-        prob3 = self.upsample_3(self.sigmoid(out3)).squeeze(dim=1)
+        results['x2'] = self.residual_2(results['x1'])
+        results['out2'] = self.side_logit_2(results['x2'])
+        results['prob2'] = self.upsample_2(self.sigmoid(results['out2'])).squeeze(dim=1)
 
-        x4 = self.residual_4(x3)
-        out4 = self.side_logit_4(x4)
-        prob4 = self.upsample_4(self.sigmoid(out4)).squeeze(dim=1)
+        results['x3'] = self.residual_3(results['x2'])
+        results['out3'] = self.side_logit_3(results['x3'])
+        results['prob3'] = self.upsample_3(self.sigmoid(results['out3'])).squeeze(dim=1)
 
-        final_logit = self.weight_1 * out1 + \
-            self.weight_2 * self.upsample_2(out2) + \
-            self.weight_3 * self.upsample_3(out3) + \
-            self.weight_4 * self.upsample_4(out4)
-        final_prob = self.sigmoid(final_logit).squeeze(dim=1)
-        return prob1, prob2, prob3, prob4, final_prob
+        results['x4'] = self.residual_4(results['x3'])
+        results['out4'] = self.side_logit_4(results['x4'])
+        results['prob4'] = self.upsample_4(self.sigmoid(results['out4'])).squeeze(dim=1)
+
+        final_logit = self.weight_1 * results['out1'] + \
+                      self.weight_2 * self.upsample_2(results['out2']) + \
+                      self.weight_3 * self.upsample_3(results['out3']) + \
+                      self.weight_4 * self.upsample_4(results['out4'])
+        results['final_prob'] = self.sigmoid(final_logit).squeeze(dim=1)
+        return results
+
+    def forward_with_all_outputs(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
+                                                                             torch.Tensor, torch.Tensor]:
+        results = self.forward_with_intermediate_outputs(inputs)
+        return results['prob1'], results['prob2'], results['prob3'], results['prob4'], results['final_prob']
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
         _, _, _, _, final_prob = self.forward_with_all_outputs(inputs, train)
@@ -117,7 +122,7 @@ class ImageNet(Net):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=False)
-        self._imagenet_output = torch.nn.Linear(32*25*25, 1000)
+        self._imagenet_output = torch.nn.Linear(32 * 25 * 25, 1000)
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
         self.set_mode(train)
@@ -127,5 +132,3 @@ class ImageNet(Net):
         x3 = self.residual_3(x2)
         x4 = self.residual_4(x3)
         return self._imagenet_output(x4.flatten(start_dim=1))
-
-
