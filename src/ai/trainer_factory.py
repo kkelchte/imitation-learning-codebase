@@ -1,4 +1,5 @@
 from src.ai.ppo import ProximatePolicyGradient
+from src.ai.ppo_with_adversary import AdversarialProximatePolicyGradient
 from src.ai.trainer import Trainer
 from src.ai.deep_supervision import DeepSupervision
 from src.ai.deep_supervision_confidence import DeepSupervisionConfidence
@@ -19,6 +20,8 @@ class TrainerFactory(ObjectFactory):
             "DeepSupervisionConfidence": DeepSupervisionConfidence,
             "VPG": VanillaPolicyGradient,
             "VanillaPolicyGradient": VanillaPolicyGradient,
+            "AdversarialProximatePolicyGradient": AdversarialProximatePolicyGradient,
+            "APPO": AdversarialProximatePolicyGradient,
             "ProximatePolicyGradient": ProximatePolicyGradient,
             "PPO": ProximatePolicyGradient,
         }

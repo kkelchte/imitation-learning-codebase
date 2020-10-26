@@ -98,7 +98,7 @@ class Net(BaseNet):
             mean, std = self._policy_distribution(inputs, train, adversarial)
             log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
                                   0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
-                                  + self.log_std.sum(-1))
+                                  + (self.log_std.sum(-1)) if not adversarial else self.adversarial_log_std.sum(-1))
             return log_probabilities
         except Exception as e:
             raise ValueError(f"Numerical error: {e}")
@@ -107,12 +107,13 @@ class Net(BaseNet):
         return self.policy_log_probabilities(inputs, actions, train, adversarial=True)
 
     def adversarial_critic(self, inputs, train: bool = False) -> torch.Tensor:
-        self._adversarial_critic.train() if train else self._critic.eval()
+        self._adversarial_critic.train(train)
         inputs = self.process_inputs(inputs=inputs)
         return self._adversarial_critic(inputs)
 
     def get_adversarial_actor_parameters(self) -> Iterator:
-        return list(self._adversarial_actor.parameters()) + [self.adversarial_log_std]
+        for p in [self.adversarial_log_std, *self._adversarial_actor.parameters()]:
+            yield p
 
     def get_adversarial_critic_parameters(self) -> Iterator:
         return self._adversarial_critic.parameters()
