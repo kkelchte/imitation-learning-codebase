@@ -24,6 +24,15 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
 
     def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
         super().__init__(config, network, quiet=True)
+        del self._optimizer
+        self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.deeply_supervised_parameters(),
+                                                                        lr=self._config.learning_rate,
+                                                                        weight_decay=self._config.weight_decay)
+        lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+        del self._scheduler
+        self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
+            if self._config.scheduler_config is not None else None
+
         self._discriminator_optimizer = eval(f'torch.optim.{self._config.optimizer}')(
             params=self._net.discriminator_parameters(),
             lr=self._config.critic_learning_rate if self._config.critic_learning_rate != -1
@@ -39,7 +48,7 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
                                       quiet=False)
             cprint(f'Started.', self._logger)
 
-    def _train_discriminator_network(self, epoch: int = -1, writer=None) -> str:
+    def _train_discriminator_network(self, writer=None) -> str:
         total_error = []
         criterion = nn.BCELoss()
         for sim_batch, real_batch in zip(self.data_loader.sample_shuffled_batch(),
@@ -76,11 +85,12 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
             loss = self._criterion(probabilities[-1], targets).mean()
             for index, prob in enumerate(probabilities[:-1]):
                 loss += self._criterion(prob, targets).mean()
-            loss.mean().backward()
             total_error.append(loss.mean().cpu().detach())
             # adversarial loss on discriminator data
             discriminator_probabilities = self._net.forward_with_all_outputs(real_batch.observations, train=True)
             discriminator_loss = self._net.discriminate(torch.stack(discriminator_probabilities), train=False)
+            loss += discriminator_loss
+            loss.mean().backward()
             discriminator_loss.mean().backward()
             discriminator_output.append(discriminator_loss.mean().cpu().detach())
             # clip gradients
@@ -113,7 +123,7 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
         message = self._train_main_network(epoch, writer)
 
         # Train discriminator network
-        message += self._train_discriminator_network(epoch, writer)
+        message += self._train_discriminator_network(writer)
 
         self.put_model_back_to_original_device()
         return message

@@ -68,7 +68,7 @@ class TestExperiment(unittest.TestCase):
                 'entropy_coefficient': 0.0,
                 'max_actor_training_iterations': 10,
                 'max_critic_training_iterations': 10,
-                'ppo_epsilon': 0.2,
+                'epsilon': 0.2,
                 'kl_target': 0.01},
             'evaluator_config': None,
         }

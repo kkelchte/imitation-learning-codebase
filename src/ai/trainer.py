@@ -46,7 +46,7 @@ class TrainerConfig(EvaluatorConfig):
     phi_key: str = "default"
     discount: Union[str, float] = "default"
     gae_lambda: Union[str, float] = "default"
-    ppo_epsilon: Union[str, float] = "default"
+    epsilon: Union[str, float] = "default"
     use_kl_stop: bool = False
     kl_target: Union[str, float] = "default"
     max_actor_training_iterations: Union[str, int] = "default"
