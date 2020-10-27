@@ -98,7 +98,7 @@ class Net(BaseNet):
             mean, std = self._policy_distribution(inputs, train, adversarial)
             log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
                                   0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
-                                  + (self.log_std.sum(-1)) if not adversarial else self.adversarial_log_std.sum(-1))
+                                  + (self.log_std.sum(-1) if not adversarial else self.adversarial_log_std.sum(-1)))
             return log_probabilities
         except Exception as e:
             raise ValueError(f"Numerical error: {e}")

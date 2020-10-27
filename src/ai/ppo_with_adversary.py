@@ -156,6 +156,7 @@ class AdversarialProximatePolicyGradient(ProximatePolicyGradient):
         actor_loss_distribution = self._train_actor_ppo(batch, phi_weights, writer)
         if writer is not None:
             writer.write_distribution(critic_loss_distribution, "critic_loss")
+            writer.write_distribution(actor_loss_distribution, "actor_loss")
             writer.write_distribution(Distribution(phi_weights.detach()), "phi_weights")
             writer.write_distribution(Distribution(critic_targets.detach()), "critic_targets")
         if self._config.scheduler_config is not None:
