@@ -1,4 +1,4 @@
-output_path: dummy-tracking-env-fixed-std/single-tracking-agent-moving
+output_path: dummy-tracking-env-wo-entropy/single-tracking-agent-moving
 mode: learning_rate_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
