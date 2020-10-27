@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
-export HOME="${PWD}"
+export CODEDIR="${PWD}"
 export PYTHONPATH=''
+export DATADIR="${CODEDIR}/experimental_data"
+mkdir -p $DATADIR
 source /opt/ros/melodic/setup.bash
 
 # perform catkin make if source files have changed.
-cd "${HOME}/src/sim/ros" || exit 1
+cd "${CODEDIR}/src/sim/ros" || exit 1
 
 if [ ! -d python2_ros_ws ] ; then
   make install_python2_ros_ws
@@ -19,21 +21,21 @@ if [ ! -d python3_ros_ws/devel ] ; then
 fi
 
 # shellcheck disable=SC1090
-source "${HOME}/src/sim/ros/python2_ros_ws/devel/setup.bash" --extend || exit 2
+source "${CODEDIR}/src/sim/ros/python2_ros_ws/devel/setup.bash" --extend || exit 2
 
 # shellcheck disable=SC1090
-source "${HOME}/src/sim/ros/python3_ros_ws/devel/setup.bash" --extend || exit 2
+source "${CODEDIR}/src/sim/ros/python3_ros_ws/devel/setup.bash" --extend || exit 2
 
 
-export GAZEBO_MODEL_PATH="${HOME}/src/sim/ros/gazebo/models"
-export PYTHONPATH=${PYTHONPATH}:${HOME}
+export GAZEBO_MODEL_PATH="${CODEDIR}/src/sim/ros/gazebo/models"
+export PYTHONPATH=${PYTHONPATH}:${CODEDIR}
 
-export LD_LIBRARY_PATH=/opt/ros/melodic/lib:${HOME}/src/sim/ros/python2_ros_ws/devel/lib:${HOME}/src/sim/ros/python3_ros_ws/devel/lib:/.singularity.d/libs
-export CMAKE_PREFIX_PATH=/opt/ros/melodic:${HOME}/src/sim/ros/python2_ros_ws/devel:${HOME}/src/sim/ros/python3_ros_ws/devel
+export LD_LIBRARY_PATH=/opt/ros/melodic/lib:${CODEDIR}/src/sim/ros/python2_ros_ws/devel/lib:${CODEDIR}/src/sim/ros/python3_ros_ws/devel/lib:/.singularity.d/libs
+export CMAKE_PREFIX_PATH=/opt/ros/melodic:${CODEDIR}/src/sim/ros/python2_ros_ws/devel:${CODEDIR}/src/sim/ros/python3_ros_ws/devel
 
-export DSO_PATH=${HOME}/src/sim/ros/dso
+export DSO_PATH=${CODEDIR}/src/sim/ros/dso
 export TURTLEBOT3_MODEL='burger'
-cd "${HOME}" || exit 1
+cd "${CODEDIR}" || exit 1
 
 #IPADDRESS="$(ip addr show wlp2s0 | grep inet | head -1 | cut -d '/' -f 1 | cut -d ' ' -f 6)"
 #alias turtle='export ROS_MASTER_URI=http://${IPADDRESS}:11311 && export ROS_HOSTNAME={IPADDRESS}'
