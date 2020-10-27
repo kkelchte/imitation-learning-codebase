@@ -2,7 +2,7 @@ architecture_config:
   architecture: tracking_actor_critic
   device: cpu
   log_std: -0.5
-  random_seed: 5346
+  random_seed: 5100
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
@@ -13,7 +13,7 @@ environment_config:
   invert_reward: false
   factory_key: GYM
   gym_config:
-    random_seed: 5346
+    random_seed: 5100
     render: false
     world_name: tracking-v0
     args: 'random_location=True'
@@ -26,15 +26,15 @@ tb_render_every_n_epochs: 100
 tensorboard: true
 trainer_config:
   scheduler_config:
-    number_of_epochs: 5000
+    number_of_epochs: 1000
   criterion: MSELoss
   critic_learning_rate: 0.0001
-  actor_learning_rate: 0.00001
-  gradient_clip_norm: -1
+  actor_learning_rate: 0.1
+  gradient_clip_norm: 10
   optimizer: RMSprop
   data_loader_config:
     batch_size: 200
-    random_seed: 5346
+    random_seed: 5100
   device: cpu
   discount: 0.99
   factory_key: PPO

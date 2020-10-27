@@ -36,7 +36,7 @@ class Net(BaseNet):
 
         log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
         self.log_std = torch.nn.Parameter(torch.ones(self.output_size, dtype=torch.float32) * log_std,
-                                          requires_grad=True)
+                                          requires_grad=False)
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
