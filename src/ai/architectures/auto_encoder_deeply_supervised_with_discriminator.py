@@ -7,7 +7,7 @@ import torch.nn as nn
 from src.ai.architectural_components import ResidualBlock
 from src.ai.architectures.bc_deeply_supervised_auto_encoder import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator
+from src.ai.utils import mlp_creator, conv_creator
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
@@ -25,9 +25,14 @@ class Net(BaseNet):
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
         self._deeply_supervised_parameter_names = [name for name, _ in self.named_parameters()]
-        self._discriminator = mlp_creator(sizes=[torch.as_tensor(self.output_size).prod(), 64, 64, 1],
-                                          activation=nn.ReLU(),
-                                          output_activation=nn.Sigmoid())
+        self._discriminator = conv_creator(channels=[1, 3, 6, 9],
+                                           kernel_sizes=[5, 5, 5],
+                                           strides=[3, 3, 3],
+                                           activation=nn.LeakyReLU(),
+                                           output_activation=nn.LeakyReLU(),
+                                           batch_norm=self._config.batch_normalisation)
+        self._discriminator_decision = mlp_creator([9*6*6, 1], output_activation=nn.Sigmoid(),
+                                                   bias_in_last_layer=False)
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
@@ -41,7 +46,10 @@ class Net(BaseNet):
                 yield param
 
     def discriminator_parameters(self, recurse=True):
-        return self._discriminator.parameters(recurse=recurse)
+        for p in self._discriminator.parameters(recurse=recurse):
+            yield p
+        for p in self._discriminator_decision.parameters(recurse=recurse):
+            yield p
 
     def forward_with_all_outputs(self, inputs, train: bool = False) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor,
                                                                              torch.Tensor, torch.Tensor]:
@@ -59,4 +67,5 @@ class Net(BaseNet):
         self._discriminator.train(train)
         for p in self.discriminator_parameters():
             p.requires_grad = train
-        return self._discriminator(predictions.view(-1, torch.as_tensor(self.output_size).prod()))
+        feature = self._discriminator(predictions).view(-1, 9*6*6)
+        return self._discriminator_decision(feature)

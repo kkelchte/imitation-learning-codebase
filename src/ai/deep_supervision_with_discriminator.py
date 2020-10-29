@@ -65,7 +65,9 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
             deeply_supervised_error.append(loss.mean().cpu().detach())
             # adversarial loss on discriminator data
             discriminator_probabilities = self._net.forward_with_all_outputs(real_batch.observations, train=True)
-            discriminator_loss = self._net.discriminate(torch.stack(discriminator_probabilities), train=False).mean()
+            discriminator_loss = self._net.discriminate(torch.cat(discriminator_probabilities).unsqueeze(dim=1),
+                                                        train=False).mean()
+            loss *= (1 - self._config.epsilon)
             loss += self._config.epsilon * discriminator_loss
             loss.mean().backward()
             discriminator_error.append(discriminator_loss.mean().cpu().detach())
@@ -88,8 +90,10 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
             for index, prob in enumerate(discriminator_probabilities):
                 writer.write_output_image(prob, f'real/predictions_{index}')
             writer.write_output_image(torch.stack(real_batch.observations), 'real/inputs')
-        return f' Training: supervision {self._config.criterion} {supervised_error_distribution.mean: 0.3e} [{supervised_error_distribution.std:0.2e}]' \
-               f' discriminator {supervised_error_distribution.mean: 0.3e} [{supervised_error_distribution.std:0.2e}]'
+        return f' Training: supervision {self._config.criterion} {supervised_error_distribution.mean: 0.3e} ' \
+               f'[{supervised_error_distribution.std:0.2e}]' \
+               f' discriminator {discriminator_error_distribution.mean: 0.3e} ' \
+               f'[{discriminator_error_distribution.std:0.2e}]'
 
     def _train_discriminator_network(self, writer=None) -> str:
         total_error = []
@@ -101,7 +105,7 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
             real_predictions = torch.cat(self._net.forward_with_all_outputs(real_batch.observations, train=False))
             targets = torch.as_tensor([*[0] * len(sim_predictions), *[1] * len(real_predictions)])\
                 .type(self._net.dtype).to(self._device)
-            outputs = self._net.discriminate(torch.cat([sim_predictions, real_predictions]), train=True).squeeze(dim=1)
+            outputs = self._net.discriminate(torch.cat([sim_predictions, real_predictions]).unsqueeze(dim=1), train=True).squeeze(dim=1)
             loss = criterion(outputs, targets)
             loss.mean().backward()
             if self._config.gradient_clip_norm != -1:
