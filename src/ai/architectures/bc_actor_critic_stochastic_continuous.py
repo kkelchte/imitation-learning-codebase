@@ -16,6 +16,8 @@ from src.core.utils import get_filename_without_extension
 Base Class used by continuous stochastic actor-critic networks.
 """
 
+EPSILON = 1e-6
+
 
 class Net(BaseNet):
 
@@ -63,7 +65,7 @@ class Net(BaseNet):
         actions = self.process_inputs(inputs=actions)  # preprocess list of Actions
         try:
             mean, std = self._policy_distribution(inputs, train)
-            log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
+            log_probabilities = -(0.5 * ((actions - mean) / (std + EPSILON)).pow(2).sum(-1) +
                                   0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
                                   + self.log_std.sum(-1))
             return log_probabilities

@@ -20,11 +20,7 @@ First two action values correspond to the blue or default agent who tracks the r
 The second two action values move the red or adversary agent who flees from the blue square.
 """
 
-
-def get_slow_hunt(state: torch.Tensor) -> torch.Tensor:
-    agent_zero = state[:2]
-    agent_one = state[2:]
-    return 0.3 * np.sign(agent_one - agent_zero)
+EPSILON = 1e-6
 
 
 class Net(BaseNet):
@@ -82,7 +78,7 @@ class Net(BaseNet):
         self.set_mode(train)
         inputs = self.process_inputs(inputs=inputs)
         means = self._actor(inputs) if not adversarial else self._adversarial_actor(inputs)
-        return means, torch.exp((self.log_std if not adversarial else self.adversarial_log_std) + 1e-6)
+        return means, torch.exp(self.log_std if not adversarial else self.adversarial_log_std)
 
     def sample(self, inputs: torch.Tensor, train: bool = False, adversarial: bool = False) -> torch.Tensor:
         mean, std = self._policy_distribution(inputs, train=train, adversarial=adversarial)
@@ -96,7 +92,7 @@ class Net(BaseNet):
         actions = self.process_inputs(inputs=[a[:2] if not adversarial else a[2:] for a in actions])
         try:
             mean, std = self._policy_distribution(inputs, train, adversarial)
-            log_probabilities = -(0.5 * ((actions - mean) / std).pow(2).sum(-1) +
+            log_probabilities = -(0.5 * ((actions - mean) / (std + EPSILON)).pow(2).sum(-1) +
                                   0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
                                   + (self.log_std.sum(-1) if not adversarial else self.adversarial_log_std.sum(-1)))
             return log_probabilities
