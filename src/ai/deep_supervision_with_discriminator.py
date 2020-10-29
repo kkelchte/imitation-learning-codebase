@@ -74,14 +74,12 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
                 nn.utils.clip_grad_norm_(self._net.parameters(),
                                          self._config.gradient_clip_norm)
             self._optimizer.step()
-            self._net.global_step += 1
 
         supervised_error_distribution = Distribution(deeply_supervised_error)
         discriminator_error_distribution = Distribution(discriminator_error)
         if writer is not None:
-            writer.set_step(self._net.global_step)
-            writer.write_distribution(supervised_error_distribution, 'training_deep_supervision')
-            writer.write_distribution(discriminator_error_distribution, 'training_discriminator')
+            writer.write_distribution(supervised_error_distribution, 'training_loss_from_deep_supervision')
+            writer.write_distribution(discriminator_error_distribution, 'training_loss_from_discriminator')
             if self._config.store_output_on_tensorboard and epoch % 30 == 0:
                 for index, prob in enumerate(probabilities):
                     writer.write_output_image(prob, f'training/predictions_{index}')
@@ -114,8 +112,7 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
 
         error_distribution = Distribution(total_error)
         if writer is not None:
-            writer.set_step(self._net.global_step)
-            writer.write_distribution(error_distribution, 'discriminator')
+            writer.write_distribution(error_distribution, 'discriminator_loss')
         return f' train discriminator network BCE {error_distribution.mean: 0.3e}'
 
     def train(self, epoch: int = -1, writer=None) -> str:
@@ -126,6 +123,10 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
 
         # Train discriminator network
         message += self._train_discriminator_network(writer)
+
+        self._net.global_step += 1
+        if writer is not None:
+            writer.set_step(self._net.global_step)
 
         self.put_model_back_to_original_device()
         return message
