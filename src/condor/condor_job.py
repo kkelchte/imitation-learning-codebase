@@ -224,6 +224,7 @@ class CondorJob:
             return config
         # Do not copy hdf5 files as you assume they are on gluster
         # copying seemed to end uncompleted resulting in corrupted files.
+        # using rsync might help.
         # config_dict = search_for_key_and_adjust(config_dict)
 
         adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
@@ -234,16 +235,16 @@ class CondorJob:
 
         # add some extra lines to create new output path and copy hdf5 files
         extra_lines = f'mkdir -p {self.local_output_path} \n'
-        extra_lines += f'cp -r {self._original_output_path}/* {self.local_output_path} 2>&1 >> /dev/null ' \
+        extra_lines += f'rsync -r {self._original_output_path}/ {self.local_output_path} 2>&1 >> /dev/null ' \
                        f'| echo \'no original data\' \n'
         for original_hdf5_file, new_hdf5_file in original_to_new_location_tuples:
             extra_lines += f'echo copying \"{original_hdf5_file}\" \n'
-            extra_lines += f'cp {original_hdf5_file} {new_hdf5_file} \n'
+            extra_lines += f'rsync {original_hdf5_file} {new_hdf5_file} \n'
         return extra_lines
 
     def _add_lines_to_copy_local_data_back(self) -> str:
         lines = f'mkdir -p {self._original_output_path} \n'
-        lines += f'cp -r {self.local_output_path}/* {self._original_output_path} \n'
+        lines += f'rsync -r {self.local_output_path}/ {self._original_output_path} \n'
         lines += f'rm -r {self.local_output_path} \n'
         return lines
 
@@ -261,7 +262,7 @@ class CondorJob:
                  f"sleep 60 \n kill -0 $PROCESSID >> /dev/null\n CHECKPID=$?\n COUNT=$((COUNT+1))\n " \
                  f"if [ $((COUNT % 60)) = 59 ] ; then \n " \
                  f"echo \'copying data back \' \n" \
-                 f"cp -r {self.local_output_path}/* {self._original_output_path} \n" \
+                 f"rsync -r {self.local_output_path}/ {self._original_output_path} \n" \
                  f"fi \n" \
                  f"done\n"
         lines += "if [ $CHECKPID == 0 ] ; then \n" \

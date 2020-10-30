@@ -1,4 +1,4 @@
-output_path: encoder_decoder/mixed_deeply_supervised
+output_path: encoder_decoder/discriminator
 mode: lr_discirminator_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:
@@ -6,10 +6,10 @@ job_configs:
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 2
     gpus: 1
-    gpu_mem_mb: 4900
-    cpu_mem_gb: 29
+    gpu_mem_mb: 2900
+    cpu_mem_gb: 19
     disk_mem_gb: 52
-    wall_time_s: 3 * 24 * 60 * 60
+    wall_time_s: 6 * 60 * 60
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false

@@ -73,26 +73,31 @@ def prepare_lr_discirminator_line_world(base_config_file: str,
                                         output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001]
     critic_learning_rates = [0.01, 0.001, 0.0001]
-    epsilon = [10, 1, 0.1]
+    epsilon = [0, 0.3, 0.6, 0.9]
+    bns = [True, False]
 
     model_paths = [os.path.join(output_path, 'models', 'auto_encoder_deeply_supervised_with_discriminator',
-                                f'lr_{lr}', f'discriminator_lr_{dlr}', f'epsilon_{eps}')
+                                f'model_lr_{lr}', f'discriminator_lr_{dlr}', f'epsilon_{eps}', 'bn' if bn else 'dflt')
                    for lr in learning_rates
                    for dlr in critic_learning_rates
-                   for eps in epsilon]
+                   for eps in epsilon
+                   for bn in bns]
     adjustments = {translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
                    [lr for lr in learning_rates
                    for dlr in critic_learning_rates
-                   for eps in epsilon],
+                   for eps in epsilon
+                    for bn in bns],
                    translate_keys_to_string(['trainer_config', 'critic_learning_rate']):
                    [dlr for lr in learning_rates
                    for dlr in critic_learning_rates
-                   for eps in epsilon],
+                   for eps in epsilon
+                    for bn in bns],
                    translate_keys_to_string(['trainer_config', 'epsilon']):
                    [eps for lr in learning_rates
                    for dlr in critic_learning_rates
-                   for eps in epsilon]
+                   for eps in epsilon
+                    for bn in bns]
                    }
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
