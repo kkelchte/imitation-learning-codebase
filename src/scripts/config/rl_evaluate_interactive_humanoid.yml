@@ -16,4 +16,4 @@ number_of_episodes: 100
 number_of_epochs: 1
 output_path: humanoid-v2/evaluated
 tensorboard: false
-load_checkpoint_dir: /Users/kelchtermans/experimental_data/humanoid-v2/implmatters_505
+load_checkpoint_dir: humanoid-v2/default
