@@ -123,7 +123,8 @@ class Net(BaseNet):
                                                                                    torch.Tensor,
                                                                                    torch.Tensor,
                                                                                    torch.Tensor], torch.Tensor]:
-        processed_inputs = self.process_inputs(inputs, train)
+        self.set_mode(train)
+        processed_inputs = self.process_inputs(inputs)
         # bring 1 channel to 32 channels
         x0 = self.conv0(processed_inputs)
         # apply first filterset at 32x200x200
@@ -182,7 +183,8 @@ class ImageNet(Net):
         self._imagenet_output = torch.nn.Linear(32*25*25, 1000)
 
     def forward(self, inputs, train: bool = False) -> torch.Tensor:
-        processed_inputs = self.process_inputs(inputs, train)
+        self.set_mode(train)
+        processed_inputs = self.process_inputs(inputs)
         x1 = self.residual_1(processed_inputs)
         x2 = self.residual_2(x1)
         x3 = self.residual_3(x2)

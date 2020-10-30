@@ -131,7 +131,8 @@ class Net(BaseNet):
         """
         Outputs steering action only
         """
-        inputs = self.process_inputs(inputs=inputs, train=train)
+        self.set_mode(train)
+        inputs = self.process_inputs(inputs=inputs)
         if self._config.finetune:
             with torch.no_grad():
                 x4 = self.feature_extract(inputs)
