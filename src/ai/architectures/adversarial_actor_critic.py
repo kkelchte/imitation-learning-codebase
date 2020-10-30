@@ -33,24 +33,24 @@ class Net(BaseNet):
         self.action_max = 1
 
         self._actor = mlp_creator(sizes=[self.input_size[0], 10, self.output_size[0]//2],
-                                  activation=nn.Tanh(),
+                                  activation=nn.LeakyReLU(),
                                   output_activation=None)
         log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
         self.log_std = torch.nn.Parameter(torch.ones((self.output_size[0]//2,), dtype=torch.float32) * log_std,
                                           requires_grad=True)
 
         self._critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
-                                   activation=nn.Tanh(),
+                                   activation=nn.LeakyReLU(),
                                    output_activation=None)
 
         self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 10, self.output_size[0]//2],
-                                              activation=nn.Tanh(),
+                                              activation=nn.LeakyReLU(),
                                               output_activation=None)
         self.adversarial_log_std = torch.nn.Parameter(torch.ones((self.output_size[0]//2,),
                                                                  dtype=torch.float32) * log_std, requires_grad=True)
 
         self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
-                                               activation=nn.Tanh(),
+                                               activation=nn.LeakyReLU(),
                                                output_activation=None)
 
         if not quiet:

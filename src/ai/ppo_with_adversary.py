@@ -80,7 +80,7 @@ class AdversarialProximatePolicyGradient(ProximatePolicyGradient):
 
                 # normalize advantages (phi_weights)
                 mini_batch_phi_weights = (mini_batch_phi_weights - mini_batch_phi_weights.mean()) \
-                    / (mini_batch_phi_weights.std() + 1e-8)
+                    / (mini_batch_phi_weights.std() + 1e-6)
 
                 new_log_probabilities = self._net.adversarial_policy_log_probabilities(inputs=mini_batch_observations,
                                                                                        actions=mini_batch_actions,

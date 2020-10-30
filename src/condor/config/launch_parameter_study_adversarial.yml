@@ -1,4 +1,4 @@
-output_path: dummy-tracking-env-2/adversarial-agent-moving
+output_path: dummy-tracking-env-2/adversarial-agent-moving-leaky_relu-wo_entropy-clip_grads
 mode: param_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value

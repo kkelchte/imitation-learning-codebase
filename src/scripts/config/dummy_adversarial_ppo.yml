@@ -19,18 +19,16 @@ environment_config:
     args: 'random_location=True'
   max_number_of_steps: 300  # let number of steps depend on environment
 train_every_n_steps: 1000
-number_of_epochs: 10000
+number_of_epochs: 1000
 output_path: test_adversarial
 save_checkpoint_every_n: 100
 tb_render_every_n_epochs: 10
 tensorboard: true
 trainer_config:
-  scheduler_config:
-    number_of_epochs: 5000
   criterion: MSELoss
   critic_learning_rate: 0.0001
   actor_learning_rate: 0.00001
-  gradient_clip_norm: -1
+  gradient_clip_norm: 3
   optimizer: RMSprop
   data_loader_config:
     batch_size: 100
@@ -40,7 +38,7 @@ trainer_config:
   factory_key: APPO
   gae_lambda: 0.95
   phi_key: gae
-  entropy_coefficient: 0.01
+  entropy_coefficient: 0.0
   max_actor_training_iterations: 50
   max_critic_training_iterations: 10
   ppo_epsilon: 0.2
