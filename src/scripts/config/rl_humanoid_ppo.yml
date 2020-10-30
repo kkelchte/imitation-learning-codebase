@@ -1,6 +1,6 @@
 architecture_config:
   architecture: humanoid_376_17c
-  log_std: 0.
+  log_std: -0.5
   device: cpu
   random_seed: 2048
   initialisation_type: orthogonal
