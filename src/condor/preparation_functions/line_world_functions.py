@@ -73,8 +73,8 @@ def prepare_lr_discirminator_line_world(base_config_file: str,
                                         output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001]
     critic_learning_rates = [0.01, 0.001, 0.0001]
-    epsilon = [0, 0.3, 0.6, 0.9]
-    bns = [True, False]
+    epsilon = [0.4, 0.5, 0.6]
+    bns = [True]
 
     model_paths = [os.path.join(output_path, 'models', 'auto_encoder_deeply_supervised_with_discriminator',
                                 f'model_lr_{lr}', f'discriminator_lr_{dlr}', f'epsilon_{eps}', 'bn' if bn else 'dflt')
