@@ -228,7 +228,7 @@ class CondorJob:
         # Do not copy hdf5 files as you assume they are on gluster
         # copying seemed to end uncompleted resulting in corrupted files.
         # using rsync might help.
-        # config_dict = search_for_key_and_adjust(config_dict)
+        config_dict = search_for_key_and_adjust(config_dict)
 
         adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
         # store adjust config file in condor dir and make command point to adjust config file
