@@ -30,8 +30,8 @@ $ roslaunch turtlebot3_gazebo turtlebot3_house.launch
 $ roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch 
 $ roslaunch turtlebot3_slam turtlebot3_slam.launch slam_methods:=gmapping
 # if you have turtlebot 3 also locally installed:
-$ roslaunch $CODEDIR/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_teleop/launch/turtlebot3_teleop_key.launch
 $ roslaunch $CODEDIR/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch slam_methods:=gmapping
+$ roslaunch $CODEDIR/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_teleop/launch/turtlebot3_teleop_key.launch
 ```
 
 ### 2) drive in map
