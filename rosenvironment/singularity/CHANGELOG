@@ -1,3 +1,4 @@
+0.1.6 add realsense and ip
 0.1.5 vision opencv system wide, add image transport compressed, add image view, visual priors
 0.1.4 add dependencies navigation stack
 0.1.3 add dependencies for dso and pangolin
