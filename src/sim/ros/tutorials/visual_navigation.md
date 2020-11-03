@@ -64,6 +64,7 @@ add a 'turtle' alias in the entrypoint within your codebase.
 (local)$ turtle
 (local)$ roscore &
 (local)$ ssh turtlebot@192.168.0.167 (pw: departmentsname)
+(remote)$ export ROS_MASTER_URI=http://HOST_IP_ADDRESS:11311
 (remote)$ roslaunch turtlebot3_bringup turtlebot3_robot.launch
 ```
 
