@@ -133,7 +133,7 @@ dmypy.json
 # Singularity build files
 rosenvironment/singularity/cu*
 rosenvironment/singularity/.*
-rosenvironment/singularity/*.sif
+rosenvironment/singularity/*.sif*
 rosenvironment/singularity/writable_image
 
 # Pycharm files
@@ -171,6 +171,7 @@ test_dir/
 /src/sim/ros/python3_ros_ws/src/slam_gmapping
 /src/sim/ros/python3_ros_ws/src/turtlebot3
 /src/sim/ros/python3_ros_ws/src/vision_opencv
+/src/sim/ros/python3_ros_ws/src/image_pipeline
 /src/sim/ros/python3_ros_ws/logs
 /src/sim/ros/python2_ros_ws/*
 *CMakeLists.txt*
