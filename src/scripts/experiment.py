@@ -104,7 +104,8 @@ class Experiment:
                                              data_saver=self._data_saver,
                                              environment=self._environment,
                                              net=self._net,
-                                             writer=self._writer)
+                                             writer=self._writer) \
+            if self._config.episode_runner_config is not None else None
 
         if self._config.load_checkpoint_found \
                 and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
@@ -155,7 +156,7 @@ class Experiment:
                 self.save_checkpoint(tag='best')
             cprint(msg, self._logger)
         if self._trainer is not None:
-            self._trainer.data_loader.set_dataset()
+            self._trainer.data_loader.empty_dataset()
         if self._evaluator is not None and self._config.evaluator_config.evaluate_extensive:
             self._evaluator.evaluate_extensive()
 

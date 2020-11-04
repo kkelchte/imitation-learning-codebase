@@ -8,7 +8,9 @@ from src.core.utils import get_filename_without_extension, get_to_root_dir
 experiment_config = {
     "output_path": "/tmp",
     "number_of_epochs": 5,
-    "number_of_episodes": -1,
+    "episode_runner_config": {
+        "number_of_episodes": -1,
+    },
     "environment_config": {
         "factory_key": "GYM",
         "max_number_of_steps": -1,
@@ -52,7 +54,7 @@ class TestVPGGym(unittest.TestCase):
         experiment_config['output_path'] = self.output_dir
 
     def test_vpg_cart_pole_fs(self):
-        experiment_config['number_of_episodes'] = 2
+        experiment_config['episode_runner_config']['number_of_episodes'] = 2
         experiment_config['data_saver_config']['store_on_ram_only'] = False
         experiment_config['data_saver_config']['separate_raw_data_runs'] = True
         self.experiment = Experiment(ExperimentConfig().create(config_dict=experiment_config))
@@ -60,7 +62,7 @@ class TestVPGGym(unittest.TestCase):
         self.experiment.shutdown()
 
     def test_vpg_cart_pole_ram(self):
-        experiment_config['number_of_episodes'] = 2
+        experiment_config['episode_runner_config']['number_of_episodes'] = 2
         experiment_config['data_saver_config']['store_on_ram_only'] = True
         self.experiment = Experiment(ExperimentConfig().create(config_dict=experiment_config))
         self.experiment.run()

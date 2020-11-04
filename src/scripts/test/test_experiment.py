@@ -27,8 +27,10 @@ class TestExperiment(unittest.TestCase):
         config_dict = {
             'output_path': self.output_dir,
             'number_of_epochs': 10,
-            'number_of_episodes': -1,
-            'train_every_n_steps': 10,
+            'episode_runner_config': {
+                'number_of_episodes': -1,
+                'train_every_n_steps': 10
+            },
             'load_checkpoint_dir': None,
             'load_checkpoint_found': True,
             'save_checkpoint_every_n': 3,

@@ -8,7 +8,7 @@ from src.core.utils import get_filename_without_extension, get_to_root_dir
 experiment_config = {
     "output_path": "/tmp",
     "data_saver_config": {},  # provide empty dict for default data_saving config, if None --> no data saved.
-    "number_of_episodes": 2,
+    "episode_runner_config": {"number_of_episodes": 2},
     "architecture_config": {
         "architecture": "tiny_128_rgb_6c",
         "initialisation_type": 'xavier',
@@ -45,7 +45,7 @@ class TestGymModelEvaluation(unittest.TestCase):
         self.assertEqual(len(raw_data_dirs), 1)
         run_dir = raw_data_dirs[0]
         with open(os.path.join(run_dir, 'done.data'), 'r') as f:
-            self.assertEqual(experiment_config["number_of_episodes"] *
+            self.assertEqual(experiment_config["episode_runner_config"]["number_of_episodes"] *
                              experiment_config["environment_config"]["max_number_of_steps"],
                              len(f.readlines()))
         self.experiment.shutdown()
@@ -61,7 +61,7 @@ class TestGymModelEvaluation(unittest.TestCase):
         run_dir = raw_data_dirs[0]
         with open(os.path.join(run_dir, 'done.data'), 'r') as f:
             self.assertEqual(len(f.readlines()),
-                             experiment_config["number_of_episodes"] *
+                             experiment_config["episode_runner_config"]["number_of_episodes"] *
                              experiment_config["environment_config"]["max_number_of_steps"])
         self.experiment.shutdown()
 
