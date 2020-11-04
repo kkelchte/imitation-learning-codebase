@@ -11,7 +11,8 @@ environment_config:
     render: true
     world_name: CartPole-v0
   max_number_of_steps: -1
-number_of_episodes: 10
+episode_runner_config:
+  number_of_episodes: 10
 number_of_epochs: 1
 output_path: cart_pole_vpg
 tensorboard: true

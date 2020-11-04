@@ -1,6 +1,7 @@
 output_path: cube_world
 number_of_epochs: 1
-number_of_episodes: 3
+episode_runner_config:
+  number_of_episodes: 3
 load_checkpoint_dir: cube_world
 architecture_config:
   architecture: tiny_128_rgb_6c

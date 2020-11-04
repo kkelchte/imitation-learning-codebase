@@ -1,6 +1,7 @@
 output_path: line_world_evaluate
 number_of_epochs: 1
-number_of_episodes: 1
+episode_runner_config:
+  number_of_episodes: 1
 architecture_config:
   architecture: dronenet
   device: cpu

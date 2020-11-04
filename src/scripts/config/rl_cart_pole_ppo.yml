@@ -17,9 +17,11 @@ environment_config:
     render: false
     world_name: CartPole-v0
   max_number_of_steps: -1  # let number of steps depend on environment
-number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
+episode_runner_config:
+  number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 500
-train_every_n_steps: 200
+episode_runner_config:
+  train_every_n_steps: 200
 output_path: cart_pole2/stochastic_critic
 tensorboard: true
 save_checkpoint_every_n: 100

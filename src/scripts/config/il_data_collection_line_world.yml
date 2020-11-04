@@ -1,6 +1,7 @@
 output_path: test_line_world
 number_of_epochs: 1
-number_of_episodes: 1
+episode_runner_config:
+  number_of_episodes: 1
 environment_config:
   factory_key: ROS
   max_number_of_steps: -1

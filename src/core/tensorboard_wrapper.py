@@ -44,7 +44,7 @@ class TensorboardWrapper(SummaryWriter):
         self.add_images(tag, images, self.step, dataformats='NCHW')
 
     def write_gif(self, frames: List[np.ndarray] = None) -> None:
-        if frames is None:
+        if len(frames) == 0:
             return
         # map uint8 to int16 due to pytorch bug https://github.com/facebookresearch/InferSent/issues/99
         video_tensor = torch.stack([torch.as_tensor(f.astype(np.int16), dtype=torch.uint8) for f in frames[::10]])

@@ -16,7 +16,8 @@ environment_config:
     render: false
     world_name: tracking-v0
   max_number_of_steps: 200  # let number of steps depend on environment
-number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
+episode_runner_config:
+  number_of_episodes: 10  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 1000
 output_path: test_tracking
 save_checkpoint_every_n: 100

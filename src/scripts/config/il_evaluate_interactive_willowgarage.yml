@@ -1,6 +1,7 @@
 output_path: willowgarage
 number_of_epochs: 1
-number_of_episodes: 1
+episode_runner_config:
+  number_of_episodes: 1
 load_checkpoint_dir: dronenet
 architecture_config:
   architecture: dronenet

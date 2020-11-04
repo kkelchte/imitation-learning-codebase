@@ -1,6 +1,7 @@
 output_path: line_world/dronet_sidetuned/real_sim_noisy_augmented
 number_of_epochs: 31
-number_of_episodes: -1
+episode_runner_config:
+  number_of_episodes: -1
 save_checkpoint_every_n: 10
 load_checkpoint_dir: line_world/dronet_sidetuned/adam_lr000001/models/seed_5100
 architecture_config:

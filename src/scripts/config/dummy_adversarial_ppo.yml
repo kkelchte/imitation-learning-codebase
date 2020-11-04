@@ -18,7 +18,8 @@ environment_config:
     world_name: tracking-v0
     args: 'random_location=True'
   max_number_of_steps: 300  # let number of steps depend on environment
-train_every_n_steps: 1000
+episode_runner_config:
+  train_every_n_steps: 1000
 number_of_epochs: 1000
 output_path: test_adversarial
 save_checkpoint_every_n: 100

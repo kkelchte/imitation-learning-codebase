@@ -17,10 +17,10 @@ from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
 from src.core.utils import get_filename_without_extension, get_data_dir, get_date_time_tag
-from src.core.data_types import TerminationType, Distribution
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
+from src.scripts.episode_runner import EpisodeRunnerConfig, EpisodeRunner
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.common.environment_factory import EnvironmentFactory
 
@@ -36,8 +36,7 @@ Script starts environment runner with dataset_saver object to store the episodes
 @dataclass
 class ExperimentConfig(Config):
     number_of_epochs: int = 1
-    number_of_episodes: int = -1
-    train_every_n_steps: int = -1
+    episode_runner_config: Optional[EpisodeRunnerConfig] = None
     load_checkpoint_dir: Optional[str] = None  # path to checkpoints
     load_checkpoint_found: bool = True
     save_checkpoint_every_n: int = -1
@@ -49,10 +48,9 @@ class ExperimentConfig(Config):
     trainer_config: Optional[TrainerConfig] = None
     evaluator_config: Optional[EvaluatorConfig] = None
     tester_config: Optional[EvaluatorConfig] = None
+    run_test_episodes: bool = False
 
     def __post_init__(self):
-        assert not (self.number_of_episodes != -1 and self.train_every_n_steps != -1), \
-            'Should specify either number of episodes per epoch or number of steps before training.'
         # Avoid None value error by deleting irrelevant fields
         if self.environment_config is None:
             del self.environment_config
@@ -68,6 +66,14 @@ class ExperimentConfig(Config):
             del self.tester_config
         if self.load_checkpoint_dir is None:
             del self.load_checkpoint_dir
+        if self.episode_runner_config is None:
+            del self.episode_runner_config
+        # if episode runner config has no limit on duration, use trainers batch size
+        if self.episode_runner_config is not None and \
+                self.episode_runner_config.number_of_episodes == -1 and \
+                self.episode_runner_config.train_every_n_steps == -1 and \
+                self.trainer_config is not None:
+            self.episode_runner_config.train_every_n_steps = self.trainer_config.data_loader_config.batch_size
 
 
 class Experiment:
@@ -75,7 +81,6 @@ class Experiment:
     def __init__(self, config: ExperimentConfig):
         np.random.seed(123)
         self._epoch = 0
-        self._max_mean_return = None
         self._config = config
         self._logger = get_logger(name=get_filename_without_extension(__file__),
                                   output_path=config.output_path,
@@ -90,11 +95,17 @@ class Experiment:
             if self._config.trainer_config is not None else None
         self._evaluator = Evaluator(config=self._config.evaluator_config, network=self._net) \
             if self._config.evaluator_config is not None else None
-        self._tester = None
+        self._tester = None  # create at the end to avoid too much data is loaded in RAM
         self._writer = None
         if self._config.tensorboard:  # Local import so code can run without tensorboard
             from src.core.tensorboard_wrapper import TensorboardWrapper
             self._writer = TensorboardWrapper(log_dir=config.output_path)
+        self._episode_runner = EpisodeRunner(config=self._config.episode_runner_config,
+                                             data_saver=self._data_saver,
+                                             environment=self._environment,
+                                             net=self._net,
+                                             writer=self._writer)
+
         if self._config.load_checkpoint_found \
                 and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
             self.load_checkpoint(f'{self._config.output_path}/torch_checkpoints')
@@ -103,79 +114,21 @@ class Experiment:
                 self._config.load_checkpoint_dir = f'{get_data_dir(self._config.output_path)}/' \
                                                    f'{self._config.load_checkpoint_dir}'
             self.load_checkpoint(self._config.load_checkpoint_dir)
-
         cprint(f'Initiated.', self._logger)
-
-    def _enough_episodes_check(self, episode_number: int) -> bool:
-        if self._config.train_every_n_steps != -1:
-            return len(self._data_saver) >= self._config.train_every_n_steps
-        elif self._config.number_of_episodes != -1:
-            return episode_number >= self._config.number_of_episodes
-        elif self._trainer is not None and self._data_saver is not None:
-            return len(self._data_saver) >= self._config.trainer_config.data_loader_config.batch_size
-        else:
-            raise NotImplementedError
-
-    def _run_episodes(self) -> Tuple[str, bool]:
-        """
-                Run episodes interactively with environment up until enough data is gathered.
-                :return: output message for epoch string, whether current model is the best so far.
-                """
-        if self._data_saver is not None and self._config.data_saver_config.clear_buffer_before_episode:
-            self._data_saver.clear_buffer()
-
-        frames = [] if self._config.tb_render_every_n_epochs != -1 and \
-            self._epoch % self._config.tb_render_every_n_epochs == 0 and \
-            self._writer is not None else None
-        count_episodes = 0
-        count_success = 0
-        episode_return = 0
-        episode_returns = []
-        episode_lengths = []
-        while not self._enough_episodes_check(count_episodes):
-            if self._data_saver is not None and self._config.data_saver_config.separate_raw_data_runs:
-                self._data_saver.update_saving_directory()
-            experience, next_observation = self._environment.reset()
-            count_steps = 0
-            while experience.done == TerminationType.NotDone and not self._enough_episodes_check(count_episodes):
-                action = self._net.get_action(next_observation) if self._net is not None else None
-                experience, next_observation = self._environment.step(action)
-                episode_return += experience.info['unfiltered_reward'] \
-                    if 'unfiltered_reward' in experience.info.keys() else experience.reward
-                if frames is not None and 'frame' in experience.info.keys():
-                    frames.append(experience.info['frame'])
-                if self._data_saver is not None:
-                    self._data_saver.save(experience=experience)
-                count_steps += 1
-            episode_lengths.append(count_steps)
-            count_success += 1 if experience.done.name == TerminationType.Success.name else 0
-            count_episodes += 1
-            episode_returns.append(experience.info['return'] if 'return' in experience.info.keys() else episode_return)
-        if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
-            self._data_saver.create_train_validation_hdf5_files()
-        msg = f" {count_episodes} episodes"
-        if count_success != 0:
-            msg += f" with {count_success} success"
-            if self._writer is not None:
-                self._writer.write_scalar(count_success/float(count_episodes), "success")
-        return_distribution = Distribution(episode_returns)
-        msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
-        if self._writer is not None:
-            self._writer.write_scalar(np.mean(episode_lengths).item(), 'episode_lengths')
-            self._writer.write_distribution(return_distribution, "episode_return")
-            self._writer.write_gif(frames)
-        best_checkpoint = False
-        if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:
-            self._max_mean_return = return_distribution.mean
-            best_checkpoint = True
-        return msg, best_checkpoint
 
     def run(self):
         for self._epoch in range(self._config.number_of_epochs):
             best_ckpt = False
             msg = f'{get_date_time_tag()} epoch: {self._epoch + 1} / {self._config.number_of_epochs}'
             if self._environment is not None:
-                output_msg, best_ckpt = self._run_episodes()
+                if self._data_saver is not None and self._config.data_saver_config.clear_buffer_before_episode:
+                    self._data_saver.clear_buffer()
+                output_msg, best_ckpt = self._episode_runner.run(
+                    store_frames=(self._config.tb_render_every_n_epochs != -1 and
+                                  self._epoch % self._config.tb_render_every_n_epochs == 0 and
+                                  self._writer is not None))
+                if self._data_saver is not None and self._config.data_saver_config.store_hdf5:
+                    self._data_saver.create_train_validation_hdf5_files()
                 msg += output_msg
             if self._trainer is not None:
                 if self._data_saver is not None:  # update fresh data to train
@@ -185,6 +138,14 @@ class Experiment:
                 msg += self._trainer.train(epoch=self._epoch, writer=self._writer)
             if self._evaluator is not None:  # if validation error is minimal then save best checkpoint
                 output_msg, best_ckpt = self._evaluator.evaluate(epoch=self._epoch, writer=self._writer)
+                msg += output_msg
+            if self._config.run_test_episodes:
+                output_msg, best_ckpt = self._episode_runner.run(
+                    store_frames=(self._config.tb_render_every_n_epochs != -1 and
+                                  self._epoch % self._config.tb_render_every_n_epochs == 0 and
+                                  self._writer is not None),
+                    test=True
+                )
                 msg += output_msg
             if self._config.save_checkpoint_every_n != -1 and \
                     (self._epoch % self._config.save_checkpoint_every_n == 0 or
@@ -260,6 +221,8 @@ class Experiment:
             self._evaluator.remove()
         if self._net is not None:
             self._net.remove()
+        if self._episode_runner is not None:
+            self._episode_runner.remove()
         [h.close() for h in self._logger.handlers]
 
 

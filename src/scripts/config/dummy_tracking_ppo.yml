@@ -1,7 +1,7 @@
 architecture_config:
   architecture: tracking_actor_critic
   device: cpu
-  log_std: -0.5
+  log_std: 0
   random_seed: 5100
   initialisation_type: orthogonal
 data_saver_config:
@@ -18,7 +18,8 @@ environment_config:
     world_name: tracking-v0
     args: 'random_location=True'
   max_number_of_steps: 300  # let number of steps depend on environment
-train_every_n_steps: 1000
+episode_runner_config:
+  train_every_n_steps: 1000
 number_of_epochs: 10000
 output_path: test_tracking
 save_checkpoint_every_n: 100
@@ -29,7 +30,7 @@ trainer_config:
     number_of_epochs: 1000
   criterion: MSELoss
   critic_learning_rate: 0.0001
-  actor_learning_rate: 0.1
+  actor_learning_rate: 0.0001
   gradient_clip_norm: 10
   optimizer: RMSprop
   data_loader_config:

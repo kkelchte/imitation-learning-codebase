@@ -18,9 +18,11 @@ environment_config:
     render: false
     world_name: Humanoid-v2
   max_number_of_steps: -1  # let number of steps depend on environment
-number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
+episode_runner_config:
+  number_of_episodes: -1  # stop when there are enough samples in buffer to fill batch
 number_of_epochs: 488
-train_every_n_steps: 2048
+episode_runner_config:
+  train_every_n_steps: 2048
 output_path: humanoid-v2/default
 tensorboard: true
 save_checkpoint_every_n: 50

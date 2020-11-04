@@ -98,8 +98,9 @@ class DataSaver:
             return self._frame_counter
 
     def update_saving_directory(self):
-        self._config.saving_directory = create_saving_directory(self._config.output_path,
-                                                                self._config.saving_directory_tag)
+        if self._config.separate_raw_data_runs:
+            self._config.saving_directory = create_saving_directory(self._config.output_path,
+                                                                    self._config.saving_directory_tag)
 
     def get_saving_directory(self):
         return self._config.saving_directory if not self._config.store_on_ram_only else 'ram'

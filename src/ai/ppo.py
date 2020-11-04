@@ -81,7 +81,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                     nn.utils.clip_grad_norm_(self._net.get_actor_parameters(),
                                              self._config.gradient_clip_norm)
                 self._actor_optimizer.step()
-                assert not np.isnan(batch_loss.detach().numpy())
+                assert not np.any(np.isnan(batch_loss.detach().numpy()))
                 list_batch_loss.append(batch_loss.detach())
                 list_entropy_loss.append(entropy_loss.detach())
         actor_loss_distribution = Distribution(torch.stack(list_batch_loss))
