@@ -163,3 +163,4 @@ class BaseNet(nn.Module):
         self.global_step = checkpoint['global_step']
         self.load_state_dict(checkpoint['model_state'])
         self.set_device(self._device)
+        cprint(f'checksum: {self.get_checksum()}', self._logger)
