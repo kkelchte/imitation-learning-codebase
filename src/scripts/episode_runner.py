@@ -61,17 +61,18 @@ class EpisodeRunner:
         self._frames = []
         self._count_episodes = 0
         self._count_success = 0
-        self._episode_return = 0
         self._episode_returns = []
         self._episode_lengths = []
 
     def _run_episode(self, store_frames: bool = False, test: bool = False) -> int:
         count_steps = 0
+        _episode_return = 0
         experience, next_observation = self._environment.reset()
-        while experience.done == TerminationType.NotDone and not self._enough_episodes_check(self._count_episodes):
+        while experience.done == TerminationType.NotDone and not self._enough_episodes_check(self._count_episodes,
+                                                                                             test=test):
             action = self._net.get_action(next_observation) if self._net is not None else None
             experience, next_observation = self._environment.step(action)
-            self._episode_return += experience.info['unfiltered_reward'] \
+            _episode_return += experience.info['unfiltered_reward'] \
                 if 'unfiltered_reward' in experience.info.keys() else experience.reward
             if 'frame' in experience.info.keys() and store_frames:
                 self._frames.append(experience.info['frame'])
@@ -82,11 +83,12 @@ class EpisodeRunner:
         self._count_success += 1 if experience.done.name == TerminationType.Success.name else 0
         self._count_episodes += 1
         self._episode_returns.append(experience.info['return'] if 'return' in experience.info.keys()
-                                     else self._episode_return)
+                                     else _episode_return)
         return count_steps
 
-    def _get_result_message(self):
-        msg = f" {self._count_episodes} episodes"
+    def _get_result_message(self, test: bool = False):
+        msg = " " if not test else " test "
+        msg += f"{self._count_episodes} episodes"
         if self._count_success != 0:
             msg += f" with {self._count_success} success"
             if self._writer is not None:
@@ -104,18 +106,29 @@ class EpisodeRunner:
             best_checkpoint = True
         return msg, best_checkpoint
 
-    def run(self, store_frames: bool = False, test: bool = False) -> Tuple[str, bool]:
+    def run_adversarial_test(self, store_frames: bool = False) -> Tuple[str, bool]:
+        """
+        Run test episodes for two parts of the adversarial network
+        :param store_frames: bool whether a gif should be created of episodes
+        :return: result message and whether current checkpoint is best
+        """
+        # TODO
+        return '', False
+
+    def run(self, store_frames: bool = False, test: bool = False, adversarial: bool = False) -> Tuple[str, bool]:
         """
         Run episodes interactively with environment up until enough data is gathered.
         :return: output message for epoch string, whether current model is the best so far.
         """
+        if test and adversarial:
+            return self.run_adversarial_test(store_frames=store_frames)
         self._reset()
-        while not self._enough_episodes_check(self._count_episodes):
+        while not self._enough_episodes_check(self._count_episodes, test=test):
             if self._data_saver is not None and not test:
                 self._data_saver.update_saving_directory()
             self._run_episode(store_frames=store_frames,
                               test=test)
-        return self._get_result_message()
+        return self._get_result_message(test)
 
     def remove(self):
         [h.close() for h in self._logger.handlers]

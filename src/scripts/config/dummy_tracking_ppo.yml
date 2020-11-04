@@ -25,6 +25,7 @@ output_path: test_tracking
 save_checkpoint_every_n: 100
 tb_render_every_n_epochs: 100
 tensorboard: true
+run_test_episodes: true
 trainer_config:
   scheduler_config:
     number_of_epochs: 1000

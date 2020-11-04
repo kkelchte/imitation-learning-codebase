@@ -145,7 +145,9 @@ class Experiment:
                     store_frames=(self._config.tb_render_every_n_epochs != -1 and
                                   self._epoch % self._config.tb_render_every_n_epochs == 0 and
                                   self._writer is not None),
-                    test=True
+                    test=True,
+                    # ! adversarial tag should be in architecture name
+                    adversarial='adversarial' in self._config.architecture_config.architecture
                 )
                 msg += output_msg
             if self._config.save_checkpoint_every_n != -1 and \
