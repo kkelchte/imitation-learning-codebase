@@ -23,7 +23,9 @@ def prepare_architecture_study(base_config_file: str,
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
     architectures = ['adversarial_actor_critic', 'fleeing_actor_critic', 'tracking_actor_critic']
     model_paths = [os.path.join(output_path, 'models', a, f'sd_{seed}') for a in architectures for seed in seeds]
-    adjustments = {translate_keys_to_string(['architecture_config',
+    adjustments = {translate_keys_to_string(['environment_config', 'invert_reward']):
+                       ['true' if 'fleeing' in a else 'false' for a in architectures for seed in seeds],
+                   translate_keys_to_string(['architecture_config',
                                             'random_seed']): [seed for a in architectures for seed in seeds],
                    translate_keys_to_string(['architecture_config',
                                              'architecture']): [a for a in architectures for seed in seeds],
