@@ -198,6 +198,9 @@ class Experiment:
         if self._tester is not None:
             output_msg, _ = self._tester.evaluate(epoch=self._epoch, writer=self._writer, tag='test')
             cprint(f'Testing: {output_msg}', self._logger)
+            if self._config.tester_config.evaluate_extensive:
+                self._tester.evaluate_extensive()
+
         cprint(f'Finished.', self._logger)
 
     def save_checkpoint(self, tag: str = ''):

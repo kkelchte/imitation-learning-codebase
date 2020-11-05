@@ -76,8 +76,8 @@ class WeightedBinaryCrossEntropyLoss(NLLLoss):
         epsilon = 1e-3
         unreduced_loss = - self._beta * targets * (inputs + epsilon).log() \
                          - (1 - self._beta) * (1 - targets) * (1 - inputs + epsilon).log()
-        # sum over all dimensions except the batch dimension
-        unreduced_loss = unreduced_loss.sum(dim=tuple([i + 1 for i in range(dimension - 1)]))
+        # average over all dimensions except the batch dimension
+        unreduced_loss = unreduced_loss.mean(dim=tuple([i + 1 for i in range(dimension - 1)]))
         if self._reduction == 'none':
             return unreduced_loss
         elif self._reduction == 'mean':

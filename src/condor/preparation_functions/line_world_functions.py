@@ -9,6 +9,46 @@ from src.condor.preparation_functions.il_preparation_functions import prepare_de
 from src.core.utils import get_date_time_tag
 
 
+def prepare_wd_confidence_line_world(base_config_file: str,
+                                     job_config_object: CondorJobConfig,
+                                     number_of_jobs: int,
+                                     output_path: str) -> List[CondorJob]:
+    learning_rates = [0.1, 0.01, 0.001, 0.0001]
+    #weight_decays = [0.0, 0.01, 0.001, 0.0001, ]
+    weight_decays = [10, 1.0, 0.1]
+
+    architectures = ['auto_encoder_deeply_supervised_confidence']
+
+    model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}', f'wd_{wd}')
+                   for arch in architectures
+                   for lr in learning_rates
+                   for wd in weight_decays]
+    adjustments = {translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'learning_rate']):
+                   [lr for arch in architectures
+                   for lr in learning_rates
+                   for wd in weight_decays],
+                   translate_keys_to_string(['architecture_config', 'architecture']):
+                   [arch for arch in architectures
+                   for lr in learning_rates
+                   for wd in weight_decays],
+                   translate_keys_to_string(['trainer_config', 'factory_key']):
+                       ['DeepSupervisionConfidence' if 'confidence' in arch
+                        else 'DeepSupervision'
+                        for arch in architectures
+                        for lr in learning_rates
+                        for wd in weight_decays],
+                   translate_keys_to_string(['trainer_config', 'confidence_weight']):
+                       [wd for arch in architectures
+                        for lr in learning_rates
+                        for wd in weight_decays]}
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
+
+
 def prepare_lr_pretrain_imagenet(base_config_file: str,
                                  job_config_object: CondorJobConfig,
                                  number_of_jobs: int,
@@ -27,14 +67,56 @@ def prepare_lr_pretrain_imagenet(base_config_file: str,
     return jobs
 
 
+def prepare_lr_discirminator_line_world(base_config_file: str,
+                                        job_config_object: CondorJobConfig,
+                                        number_of_jobs: int,
+                                        output_path: str) -> List[CondorJob]:
+    learning_rates = [0.0001]
+    critic_learning_rates = [0.001]
+    epsilon = [0.5]
+    bns = [True]
+
+    model_paths = [os.path.join(output_path, 'models', 'auto_encoder_deeply_supervised_with_discriminator',
+                                f'model_lr_{lr}', f'discriminator_lr_{dlr}', f'epsilon_{eps}', 'bn' if bn else 'dflt')
+                   for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon
+                   for bn in bns]
+    adjustments = {translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'learning_rate']):
+                   [lr for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon
+                    for bn in bns],
+                   translate_keys_to_string(['trainer_config', 'critic_learning_rate']):
+                   [dlr for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon
+                    for bn in bns],
+                   translate_keys_to_string(['trainer_config', 'epsilon']):
+                   [eps for lr in learning_rates
+                   for dlr in critic_learning_rates
+                   for eps in epsilon
+                    for bn in bns]
+                   }
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
+
+
 def prepare_lr_architecture_line_world(base_config_file: str,
                                        job_config_object: CondorJobConfig,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001]
-    architectures = ['auto_encoder_deeply_supervised_share_weights',
-                     'auto_encoder_deeply_supervised_share_weights_confidence']
-    batch_norm = [False, True]
+    #architectures = ['auto_encoder_deeply_supervised_confidence']
+
+    architectures = ['bc_deeply_supervised_auto_encoder',
+                     'auto_encoder_deeply_supervised_share_weights']
+    # 'auto_encoder_deeply_supervised_share_weights_confidence'
+    batch_norm = [False]
     loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
 
     model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
@@ -74,7 +156,7 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                         for arch in architectures
                         for lr in learning_rates
                         for bn in batch_norm
-                        for ls in loss]
+                        for ls in loss],
                    }
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,

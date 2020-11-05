@@ -128,10 +128,9 @@ class DatacleaningTest(unittest.TestCase):
         self.assertEqual(2*len(info['episode_lengths']),
                          len(data_loader.get_dataset()))
 
-    @unittest.skip
-    def test_line_world_noise_augmentation(self):
+    def test_line_world_augmentation(self):
         line_image = np.ones((100, 100, 3))
-        line_image[40:43, :, 0:2] = 0
+        line_image[:, 40:43, 0:2] = 0
         info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
                                                    num_runs=20,
                                                    input_size=(100, 100, 3),
@@ -148,7 +147,11 @@ class DatacleaningTest(unittest.TestCase):
             'training_validation_split': 0.7,
             'remove_first_n_timestamps': 5,
             'binary_maps_as_target': True,
-            'augment_background_noise': True
+            'invert_binary_maps': True,
+            'augment_background_noise': 0.1,
+            'augment_background_textured': 0.9,
+            'texture_directory': 'textured_dataset',
+            'augment_empty_images': 0.1
         }
         data_cleaner = DataCleaner(config=DataCleaningConfig().create(config_dict=cleaner_config_dict))
         data_cleaner.clean()
@@ -157,47 +160,7 @@ class DatacleaningTest(unittest.TestCase):
             'hdf5_files': glob(f'{self.output_dir}/train*.hdf5')
         }))
         data_loader.load_dataset()
-        import matplotlib.pyplot as plt
-        plt.imshow(data_loader.get_dataset().observations[0].permute(1, 2, 0).squeeze())
-        plt.show()
-        plt.imshow(data_loader.get_dataset().actions[0])
-        plt.show()
-
-    @unittest.skip
-    def test_line_world_texture_augmentation(self):
-        line_image = np.ones((100, 100, 3))
-        line_image[40:43, :, 0:2] = 0
-        info = generate_random_dataset_in_raw_data(output_dir=self.output_dir,
-                                                   num_runs=20,
-                                                   input_size=(100, 100, 3),
-                                                   output_size=(1,),
-                                                   continuous=True,
-                                                   fixed_input_value=line_image,
-                                                   store_hdf5=False)
-        cleaner_config_dict = {
-            'output_path': self.output_dir,
-            'data_loader_config': {
-                'data_directories': info['episode_directories'],
-                'input_size': (1, 64, 64)
-            },
-            'training_validation_split': 0.7,
-            'remove_first_n_timestamps': 5,
-            'binary_maps_as_target': True,
-            'augment_background_textured': True,
-            'texture_directory': 'textured_dataset'
-        }
-        data_cleaner = DataCleaner(config=DataCleaningConfig().create(config_dict=cleaner_config_dict))
-        data_cleaner.clean()
-        data_loader = DataLoader(config=DataLoaderConfig().create(config_dict={
-            'output_path': self.output_dir,
-            'hdf5_files': glob(f'{self.output_dir}/train*.hdf5')
-        }))
-        data_loader.load_dataset()
-        import matplotlib.pyplot as plt
-        plt.imshow(data_loader.get_dataset().observations[0].squeeze())
-        plt.show()
-        plt.imshow(data_loader.get_dataset().actions[0])
-        plt.show()
+        data_loader.get_dataset().plot()
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

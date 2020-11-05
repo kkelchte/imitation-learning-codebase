@@ -1,9 +1,9 @@
-output_path: test_encoder_decoder
-number_of_epochs: 200
+output_path: test_discriminator
+number_of_epochs: 100
 number_of_episodes: -1
-save_checkpoint_every_n: 99
+save_checkpoint_every_n: 10
 architecture_config:
-  architecture: auto_encoder_deeply_supervised_confidence
+  architecture: auto_encoder_deeply_supervised_with_discriminator
   initialisation_type: xavier
   random_seed: 4
   device: cuda
@@ -11,17 +11,22 @@ architecture_config:
   batch_normalisation: default
   vae: false
   dtype: default
-  log_std: default
 trainer_config:
   optimizer: Adam
   learning_rate: 0.001
-  factory_key: DeepSupervisionConfidence
-  add_KL_divergence_loss: false
-  weight_decay: 0.
-  confidence_weight: 0.01
+  critic_learning_rate: 0.001
+  epsilon: 0.2
+  factory_key: DeepSupervisionWithDiscriminator
+  weight_decay: 0.00003
+  discriminator_data_loader_config:
+    batch_size: 10
+    hdf5_files:
+      #- /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/hdf5_files/1_200/real/tiny_dummy.hdf5
+      - /gluster/visics/kkelchte/line_world_data/real/1_200_200/validation_0.hdf5
   data_loader_config:
     loop_over_hdf5_files: true
     hdf5_files:
+      #- /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/hdf5_files/1_200/sim/tiny_dummy.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_0.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_10.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_11.hdf5
@@ -37,20 +42,21 @@ trainer_config:
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_9.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 32
+    batch_size: 10
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
   device: cuda
   store_output_on_tensorboard: true
 evaluator_config:
   data_loader_config:
-    loop_over_hdf5_files: true
+    loop_over_hdf5_files: false
     hdf5_files:
+#      - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/hdf5_files/1_200/sim/tiny_dummy.hdf5
       -  /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/validation_0.hdf5
-      -  /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/validation_1.hdf5
+#      -  /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/validation_1.hdf5
     random_seed: 32
     balance_over_actions: false
-    batch_size: 32
+    batch_size: 20
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
@@ -60,7 +66,7 @@ tester_config:
       -  /gluster/visics/kkelchte/line_world_data/real/1_200_200/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
-    batch_size: 32
+    batch_size: 20
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true

@@ -15,6 +15,7 @@ from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
+from src.data.data_loader import DataLoaderConfig
 
 """Given model, config, data_loader, trains a model and logs relevant training information
 
@@ -39,22 +40,26 @@ class TrainerConfig(EvaluatorConfig):
     scheduler_config: Optional[SchedulerConfig] = None
     entropy_coefficient: float = 0
     weight_decay: float = 0
+    confidence_weight: float = 0
     gradient_clip_norm: float = -1
     factory_key: str = "BASE"
     phi_key: str = "default"
     discount: Union[str, float] = "default"
     gae_lambda: Union[str, float] = "default"
-    ppo_epsilon: Union[str, float] = "default"
+    epsilon: Union[str, float] = "default"
     use_kl_stop: bool = False
     kl_target: Union[str, float] = "default"
     max_actor_training_iterations: Union[str, int] = "default"
     max_critic_training_iterations: Union[str, int] = "default"
     add_KL_divergence_loss: bool = False
+    discriminator_data_loader_config: DataLoaderConfig = None
 
     def __post_init__(self):
         # add options in post_init so they are easy to find
         if self.scheduler_config is None:
             del self.scheduler_config
+        if self.discriminator_data_loader_config is None:
+            del self.discriminator_data_loader_config
         assert self.phi_key in ["default", "gae", "reward-to-go", "return", "value-baseline"]
 
 
