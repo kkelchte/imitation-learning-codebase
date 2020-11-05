@@ -41,6 +41,7 @@ class EpisodeRunner:
         self._net = net
         self._writer = writer
         self._max_mean_return = None
+        self._min_mean_return = None
         self._reset()
 
     def _enough_episodes_check(self, episode_number: int, test: bool = False) -> bool:
@@ -64,13 +65,16 @@ class EpisodeRunner:
         self._episode_returns = []
         self._episode_lengths = []
 
-    def _run_episode(self, store_frames: bool = False, test: bool = False) -> int:
+    def _run_episode(self, store_frames: bool = False, test: bool = False, agent_id: int = -1) -> int:
         count_steps = 0
         _episode_return = 0
         experience, next_observation = self._environment.reset()
         while experience.done == TerminationType.NotDone and not self._enough_episodes_check(self._count_episodes,
                                                                                              test=test):
-            action = self._net.get_action(next_observation) if self._net is not None else None
+            kwargs = {'inputs': next_observation}
+            if agent_id != -1:
+                kwargs['agent_id'] = agent_id
+            action = self._net.get_action(**kwargs) if self._net is not None else None
             experience, next_observation = self._environment.step(action)
             _episode_return += experience.info['unfiltered_reward'] \
                 if 'unfiltered_reward' in experience.info.keys() else experience.reward
@@ -86,8 +90,8 @@ class EpisodeRunner:
                                      else _episode_return)
         return count_steps
 
-    def _get_result_message(self, test: bool = False):
-        msg = " " if not test else " test "
+    def _get_result_message(self, test: bool = False, tag: str = '', lowest_return: bool = False):
+        msg = f" {'' if not test else 'test'} {tag} "
         msg += f"{self._count_episodes} episodes"
         if self._count_success != 0:
             msg += f" with {self._count_success} success"
@@ -96,14 +100,20 @@ class EpisodeRunner:
         return_distribution = Distribution(self._episode_returns)
         msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
-            self._writer.write_scalar(np.mean(self._episode_lengths).item(), 'episode_lengths')
-            self._writer.write_distribution(return_distribution, "episode_return")
+            self._writer.write_scalar(np.mean(self._episode_lengths).item(),
+                                      f'{"" if not test else "test_"}episode_lengths{"_"+tag if tag is not "" else ""}')
+            self._writer.write_distribution(return_distribution,
+                                            f'{"" if not test else "test_"}episode_return{"_"+tag if tag is not "" else ""}')
             self._writer.write_gif(self._frames)
 
         best_checkpoint = False
         if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:
             self._max_mean_return = return_distribution.mean
             best_checkpoint = True
+        if self._min_mean_return is None or return_distribution.mean < self._min_mean_return:
+            self._min_mean_return = return_distribution.mean
+            if lowest_return:
+                best_checkpoint = True
         return msg, best_checkpoint
 
     def run_adversarial_test(self, store_frames: bool = False) -> Tuple[str, bool]:
@@ -112,8 +122,22 @@ class EpisodeRunner:
         :param store_frames: bool whether a gif should be created of episodes
         :return: result message and whether current checkpoint is best
         """
-        # TODO
-        return '', False
+        self._reset()
+        while not self._enough_episodes_check(self._count_episodes, test=True):
+            self._run_episode(store_frames=store_frames,
+                              test=True,
+                              agent_id=0)
+        msg0, best_checkpoint0 = self._get_result_message(test=True,
+                                                          tag='agent_0',)
+        self._reset()
+        while not self._enough_episodes_check(self._count_episodes, test=True):
+            self._run_episode(store_frames=store_frames,
+                              test=True,
+                              agent_id=1)
+        msg1, best_checkpoint1 = self._get_result_message(test=True,
+                                                          tag='agent_1',
+                                                          lowest_return=True)
+        return msg0 + msg1, best_checkpoint0 and best_checkpoint1
 
     def run(self, store_frames: bool = False, test: bool = False, adversarial: bool = False) -> Tuple[str, bool]:
         """

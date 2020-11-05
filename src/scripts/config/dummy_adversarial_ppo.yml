@@ -1,5 +1,5 @@
 architecture_config:
-  architecture: adversarial_actor_critic
+  architecture: tracking_actor_critic
   device: cpu
   log_std: -0.5
   random_seed: 5346
@@ -29,7 +29,7 @@ tensorboard: true
 trainer_config:
   criterion: MSELoss
   critic_learning_rate: 0.0001
-  actor_learning_rate: 0.00001
+  actor_learning_rate: 0.0001
   gradient_clip_norm: 3
   optimizer: RMSprop
   data_loader_config:

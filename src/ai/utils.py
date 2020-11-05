@@ -10,6 +10,12 @@ from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 
 
+def get_slow_hunt(state: torch.Tensor) -> torch.Tensor:
+    agent_zero = state[:2]
+    agent_one = state[2:]
+    return 0.3 * np.sign(agent_one - agent_zero)
+
+
 def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
     for p in weights.parameters():
         if len(p.shape) == 1:

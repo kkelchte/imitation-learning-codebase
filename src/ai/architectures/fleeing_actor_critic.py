@@ -7,7 +7,7 @@ import numpy as np
 
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator
+from src.ai.utils import mlp_creator, get_slow_hunt
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -15,12 +15,6 @@ from src.core.utils import get_filename_without_extension
 """
 continuous actor critic with 4d actions (X,Y) for 2 agents
 """
-
-
-def get_slow_hunt(state: torch.Tensor) -> torch.Tensor:
-    agent_zero = state[:2]
-    agent_one = state[2:]
-    return 0.3 * np.sign(agent_one - agent_zero)
 
 
 class Net(BaseNet):

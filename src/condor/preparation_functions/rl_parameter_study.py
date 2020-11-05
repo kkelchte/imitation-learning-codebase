@@ -16,6 +16,27 @@ def prepare_param_study(base_config_file: str,
     return jobs
 
 
+def prepare_architecture_study(base_config_file: str,
+                             job_config_object: CondorJobConfig,
+                             number_of_jobs: int,
+                             output_path: str) -> List[CondorJob]:
+    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    architectures = ['adversarial_actor_critic', 'fleeing_actor_critic', 'tracking_actor_critic']
+    model_paths = [os.path.join(output_path, 'models', a, f'sd_{seed}') for a in architectures for seed in seeds]
+    adjustments = {translate_keys_to_string(['architecture_config',
+                                            'random_seed']): [seed for a in architectures for seed in seeds],
+                   translate_keys_to_string(['architecture_config',
+                                             'architecture']): [a for a in architectures for seed in seeds],
+                   translate_keys_to_string(['output_path']): model_paths,
+                   translate_keys_to_string(['trainer_config', 'factory_key']):
+                       ['APPO' if 'adversarial' in a else 'PPO' for a in architectures for seed in seeds]}
+    config_files = create_configs(base_config=base_config_file,
+                                  output_path=output_path,
+                                  adjustments=adjustments)
+    return create_jobs_from_job_config_files(config_files,
+                                             job_config_object=job_config_object)
+
+
 def prepare_batch_size_study(base_config_file: str,
                              job_config_object: CondorJobConfig,
                              number_of_jobs: int,
