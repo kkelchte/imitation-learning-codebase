@@ -1,5 +1,5 @@
 output_path: test_discriminator
-number_of_epochs: 100
+number_of_epochs: 1000
 number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
