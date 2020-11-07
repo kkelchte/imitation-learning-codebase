@@ -86,7 +86,8 @@ class CondorJob:
 
         i = 0
         while os.path.isdir(self.output_dir):
-            self.output_dir = f'{self.output_dir}_{i}' if i == 0 else '_'.join(self.output_dir.split('_')[:-1]) + '_' + str(i)
+            self.output_dir = f'{self.output_dir}_{i}' if i == 0 else '_'.join(self.output_dir.split('_')[:-1]) \
+                                                                      + '_' + str(i)
             i += 1
 
         os.makedirs(self.output_dir)
@@ -113,7 +114,7 @@ class CondorJob:
         self.error_file = os.path.join(self.output_dir, 'job.error')
         self.log_file = os.path.join(self.output_dir, 'job.log')
 
-        self.local_home = '/tmp/imitation-learning-codebase'
+        self.local_home = '$TEMP'
         self.local_output_path = f'{self.local_home}/{os.path.basename(self.output_dir)}_' \
                                  f'{get_date_time_tag()}' if self._config.save_locally else None
         self._original_output_path = None
@@ -199,7 +200,9 @@ class CondorJob:
         self._original_output_path = config_dict['output_path']
         if not self._original_output_path.startswith('/'):
             self._original_output_path = f'{get_data_dir(os.environ["HOME"])}/{self._original_output_path}'
-        config_dict['output_path'] = self.local_output_path
+        # cut local_home, which is a TEMP environment variable, from the output path of the adjusted config
+        # so python expereriment will take the DATADIR environment variable which should be set to TEMP
+        config_dict['output_path'] = self.local_output_path[len(self.local_home)+1:]
 
         # adjust config if hdf5 files are present and store original_to_new_location_tuples
         original_to_new_location_tuples = []
@@ -232,7 +235,8 @@ class CondorJob:
         self._config.command = f'{self._config.command.split("--config")[0]} --config {adjusted_config_file}'
 
         # add some extra lines to create new output path and copy hdf5 files
-        extra_lines = f'mkdir -p {self.local_output_path} \n'
+        extra_lines = f'export DATADIR=$TEMP \n'
+        extra_lines += f'mkdir -p {self.local_output_path} \n'
         extra_lines += f'cp -r {self._original_output_path}/* {self.local_output_path} 2>&1 >> /dev/null ' \
                        f'| echo \'no original data\' \n'
         for original_hdf5_file, new_hdf5_file in original_to_new_location_tuples:
@@ -289,7 +293,7 @@ class CondorJob:
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
-                if 'DATADIR' in os.environ.keys():
+                if 'DATADIR' in os.environ.keys() and not self._config.save_locally:
                     executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
                 executable.write(f'export HOME={os.environ["HOME"]}\n')
                 executable.write(f'{self._config.command} {"&" if self._config.save_before_wall_time else ""}\n')
