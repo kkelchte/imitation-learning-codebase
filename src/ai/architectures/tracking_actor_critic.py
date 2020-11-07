@@ -26,11 +26,11 @@ class Net(BaseNet):
         self.action_min = -1
         self.action_max = 1
 
-        self._actor = mlp_creator(sizes=[self.input_size[0], 10, self.output_size[0]],
+        self._actor = mlp_creator(sizes=[self.input_size[0], 12, self.output_size[0]],
                                   activation=nn.Tanh(),
                                   output_activation=None)
 
-        self._critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
+        self._critic = mlp_creator(sizes=[self.input_size[0], 12, 1],
                                    activation=nn.Tanh(),
                                    output_activation=None)
 
