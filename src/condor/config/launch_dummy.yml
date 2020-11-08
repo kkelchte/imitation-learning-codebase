@@ -1,4 +1,4 @@
-output_path: discrete-dummy-tracking/baseline
+output_path: dummy-tracking/baseline
 mode: default
 number_of_jobs:  # indicates number of seeds per parameter value
   - 1
