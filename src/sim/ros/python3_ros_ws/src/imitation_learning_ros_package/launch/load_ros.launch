@@ -69,6 +69,11 @@
         </include>
     </group>
 
+    <arg name="tello_real" default="false"/>
+    <group if="$(arg tello_real)">
+        <include file="$(find tello_driver)/launch/tello_node.launch"/>
+    </group>
+
     <!--######################## HELPER NODES ########################-->
     <arg name="fsm" default="true"/>
     <arg name="fsm_config" default="debug"/>
