@@ -50,6 +50,8 @@ class RosEnvironment(Environment):
                 if config.ros_config.ros_launch_config.robot_name == 'ardrone_real' else False
             roslaunch_arguments['turtlebot_real'] = True \
                 if config.ros_config.ros_launch_config.robot_name == 'turtlebot_real' else False
+            roslaunch_arguments['tello_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'tello_real' else False
 
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:
