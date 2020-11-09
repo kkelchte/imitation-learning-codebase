@@ -38,7 +38,7 @@ export TURTLEBOT3_MODEL='burger'
 cd "${CODEDIR}" || exit 1
 
 HOST_IP_ADDRESS="$(ip addr | grep inet | grep 192 |  cut -d '/' -f 1 | cut -d ' ' -f 6)"
-alias turtle='export ROS_MASTER_URI=http://${HOST_IP_ADDRESS}:11311 && export ROS_HOSTNAME={HOST_IP_ADDRESS}'
+alias turtle='export ROS_MASTER_URI=http://${HOST_IP_ADDRESS}:11311 && export ROS_HOSTNAME=${HOST_IP_ADDRESS}'
 #alias turtle='export ROS_MASTER_URI=http://192.168.0.149:11311 && export ROS_HOSTNAME=192.168.0.149'
 #alias turtle='export ROS_MASTER_URI=http://192.168.0.129:11311 && export ROS_HOSTNAME=192.168.0.129'
 # potentially remove .singularity.d/libs from LD_LIBRARY_PATH

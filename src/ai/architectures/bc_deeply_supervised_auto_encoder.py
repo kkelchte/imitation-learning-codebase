@@ -1,8 +1,10 @@
 #!/bin/python3.8
 from typing import Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
+from cv2 import cv2
 
 from src.ai.architectural_components import ResidualBlock
 from src.ai.base_net import BaseNet, ArchitectureConfig
@@ -115,7 +117,13 @@ class Net(BaseNet):
         return final_prob
 
     def get_action(self, inputs, train: bool = False) -> Action:
-        raise NotImplementedError
+        image = self.forward(inputs, train=train).detach().cpu().squeeze().numpy()
+        image *= 255
+        image = image.astype(np.uint8)
+        cv2.imshow("Image window", image)
+        cv2.waitKey(3)
+        return None
+#        raise NotImplementedError
 
 
 class ImageNet(Net):

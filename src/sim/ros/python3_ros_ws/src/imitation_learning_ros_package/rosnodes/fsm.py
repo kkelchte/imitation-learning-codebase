@@ -77,6 +77,7 @@ class Fsm:
 
         self.mode = rospy.get_param('/fsm/fsm_mode')
         self._state = FsmState.Unknown
+        self._init_fields()
         self._state_pub = rospy.Publisher(rospy.get_param('/fsm/state_topic'), String, queue_size=10)
         self._rewards_pub = rospy.Publisher(rospy.get_param('/fsm/reward_topic'), RosReward, queue_size=10)
         self._subscribe()
@@ -84,7 +85,6 @@ class Fsm:
         self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
         self.count = 0
         self._run_number = 0
-        self._init_fields()
         self.run()
 
     def _subscribe(self):

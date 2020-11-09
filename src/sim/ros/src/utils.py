@@ -4,6 +4,7 @@ from typing import Union, List, Tuple
 
 import numpy as np
 import rospy
+from cv2 import cv2
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
@@ -146,6 +147,7 @@ def process_image(msg, sensor_stats: dict = None) -> np.ndarray:
 
 def process_compressed_image(msg, sensor_stats: dict = None) -> np.ndarray:
     img = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='passthrough')
+    #img = cv2.flip(img, 0)
     return resize_image(img, sensor_stats)
 
 

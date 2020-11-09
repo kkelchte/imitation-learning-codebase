@@ -1,0 +1,31 @@
+teleop:
+  piloting:
+    type: topic
+    message_type: "geometry_msgs/Twist"
+    topic_name: cmd_vel
+    axis_mappings:
+      -
+        axis: 3  # Right thumb stick (up/down)
+        target: linear.x
+        scale: 0.7
+        offset: 0.0
+      -
+        axis: 0  # Left thumb stick (left/right)
+        target: angular.z
+        scale: 1.0
+        offset: 0.0
+  go:
+    type: topic
+    message_type: "std_msgs/Empty"
+    topic_name: '/fsm/go'
+    deadman_buttons: [3] #traingle
+    axis_mappings: []
+  overtake:
+    type: topic
+    message_type: "std_msgs/Empty"
+    topic_name: '/fsm/overtake'
+    deadman_buttons: [2] # o
+    axis_mappings: []
+  toggle_camera_forward_down:
+    type: method
+    buttons: [7]  # R2
