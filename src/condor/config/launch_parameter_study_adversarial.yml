@@ -2,7 +2,7 @@ output_path: adversarial-dummy-tracking/baseline
 mode: default
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
-  - 5
+  - 10
 base_config_files:
   - src/scripts/config/dummy_adversarial_ppo.yml
 job_configs:
