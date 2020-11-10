@@ -28,7 +28,7 @@ tb_render_every_n_epochs: 10
 tensorboard: true
 trainer_config:
   criterion: MSELoss
-  critic_learning_rate: 0.0001
+  critic_learning_rate: 0.0005
   actor_learning_rate: 0.0001
   gradient_clip_norm: 3
   optimizer: RMSprop
