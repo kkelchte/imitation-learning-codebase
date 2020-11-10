@@ -30,14 +30,14 @@ $ roslaunch turtlebot3_gazebo turtlebot3_house.launch
 $ roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch 
 $ roslaunch turtlebot3_slam turtlebot3_slam.launch slam_methods:=gmapping
 # if you have turtlebot 3 also locally installed:
-$ roslaunch $HOME/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_teleop/launch/turtlebot3_teleop_key.launch
-$ roslaunch $HOME/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch slam_methods:=gmapping
+$ roslaunch $CODEDIR/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch slam_methods:=gmapping
+$ roslaunch $CODEDIR/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_teleop/launch/turtlebot3_teleop_key.launch
 ```
 
 ### 2) drive in map
 
 ```
-$ roslaunch $HOME/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_navigation/launch/turtlebot3_navigation.launch map_file:=$HOME/src/sim/ros/python3_ros_ws/src/ros_course_part2/tb3_house_map/tb3_house_map.yaml
+$ roslaunch $CODEDIR/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_navigation/launch/turtlebot3_navigation.launch map_file:=$HOME/src/sim/ros/python3_ros_ws/src/ros_course_part2/tb3_house_map/tb3_house_map.yaml
 ```
 
 - Set estimated start location
@@ -73,7 +73,7 @@ add a 'turtle' alias in the entrypoint within your codebase.
 # load rosmaster URI according to set IP addres (macbook: 177)
 (local) $ turtle
 (local) $ roslaunch imitation_learning_ros_package teleop_joystick.launch
-(local) $ roslaunch $HOME/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch slam_methods:=gmapping &
+(local) $ roslaunch $CODEDIR/src/sim/ros/python3_ros_ws/src/turtlebot3/turtlebot3_slam/launch/turtlebot3_slam.launch slam_methods:=gmapping &
 (local) $ rosrun map_server map_saver -f $HOME/src/sim/ros/map
 ```
 
