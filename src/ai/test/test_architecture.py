@@ -189,8 +189,7 @@ class ArchitectureTest(unittest.TestCase):
         dataset = generate_dataset_by_length(length=5,
                                              input_size=(1, 200, 200),
                                              output_size=(200, 200),)
-        for arch in ['auto_encoder_deeply_supervised',
-                     'auto_encoder_deeply_supervised_confidence',
+        for arch in ['auto_encoder_deeply_supervised_confidence',
                      'auto_encoder_deeply_supervised_share_weights']:
             base_config['architecture'] = arch
             base_config['initialisation_type'] = 'xavier'

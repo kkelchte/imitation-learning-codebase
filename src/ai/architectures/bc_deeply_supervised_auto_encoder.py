@@ -28,7 +28,13 @@ class Net(BaseNet):
         self._config.batch_normalisation = config.batch_normalisation if isinstance(config.batch_normalisation, bool) \
             else False
         self.sigmoid = nn.Sigmoid()
-        self.residual_1 = ResidualBlock(input_channels=1,
+
+        self.conv0 = torch.nn.Conv2d(in_channels=1,
+                                     out_channels=32,
+                                     kernel_size=3,
+                                     padding=1,
+                                     stride=1)
+        self.residual_1 = ResidualBlock(input_channels=32,
                                         output_channels=32,
                                         batch_norm=self._config.batch_normalisation,
                                         activation=torch.nn.ReLU(),
@@ -82,7 +88,7 @@ class Net(BaseNet):
         self.set_mode(train)
         processed_inputs = self.process_inputs(inputs)
 
-        results = {'x1': self.residual_1(processed_inputs)}
+        results = {'x1': self.residual_1(self.conv0(processed_inputs))}
         results['out1'] = self.side_logit_1(results['x1'])
         results['prob1'] = self.sigmoid(results['out1']).squeeze(dim=1)
 

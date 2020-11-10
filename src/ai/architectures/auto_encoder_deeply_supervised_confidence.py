@@ -47,3 +47,7 @@ class Net(BaseNet):
         conf4 = self.upsample_4(self.sigmoid(self.side_conf_4(results['x4']))).squeeze(dim=1)
         return (results['prob1'], results['prob2'], results['prob3'], results['prob4']), \
                (conf1, conf2, conf3, conf4), results['final_prob']
+
+    def forward(self, inputs, train):
+        _, _, final_results = self.forward_with_all_outputs(inputs, train)
+        return final_results
