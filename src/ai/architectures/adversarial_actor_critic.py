@@ -62,17 +62,6 @@ class Net(BaseNet):
 
             self.initialize_architecture()
 
-    def get_action(self, inputs, train: bool = False) -> Action:
-        inputs = self.process_inputs(inputs)
-        output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
-        adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
-                                                                                      max=self.action_max)
-
-        actions = np.stack([*output.data.cpu().numpy().squeeze(),
-                            *adversarial_output.data.cpu().numpy().squeeze()], axis=-1)
-        return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
-                      value=actions)
-
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
         inputs = self.process_inputs(inputs)
         if agent_id == 0:

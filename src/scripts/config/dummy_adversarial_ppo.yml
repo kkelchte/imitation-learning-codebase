@@ -1,5 +1,5 @@
 architecture_config:
-  architecture: tracking_actor_critic
+  architecture: adversarial_actor_critic
   device: cpu
   log_std: -0.5
   random_seed: 5346
