@@ -1,16 +1,16 @@
-output_path: adversarial-dummy-tracking/baseline
-mode: default
+output_path: adversarial-dummy-tracking/architectures/model
+mode: architecture_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
-  - 10
+  - 3
 base_config_files:
   - src/scripts/config/dummy_adversarial_ppo.yml
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/start2017/r0669036/code/imitation-learning-codebase
-    cpus: 2
+    cpus: 3
     gpus: 0
-    cpu_mem_gb: 3
+    cpu_mem_gb: 5
     disk_mem_gb: 52
     wall_time_s: 10 * 3600
     nice: true
