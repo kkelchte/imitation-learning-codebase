@@ -18,15 +18,13 @@ trainer_config:
   epsilon: 0.2
   factory_key: DeepSupervisionWithDiscriminator
   weight_decay: 0.00003
-  discriminator_data_loader_config:
+  target_data_loader_config:
     batch_size: 10
     hdf5_files:
-#      - hdf5_files/1_200/real/tiny_dummy.hdf5
       - /gluster/visics/kkelchte/line_world_data/real/1_200_200_shuffled/validation_0.hdf5
   data_loader_config:
     loop_over_hdf5_files: true
     hdf5_files:
-#      - hdf5_files/1_200/sim/tiny_dummy.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_0.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_10.hdf5
       - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_11.hdf5
@@ -51,7 +49,6 @@ evaluator_config:
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
-      #- hdf5_files/1_200/sim/tiny_dummy.hdf5
       -  /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
@@ -62,7 +59,6 @@ evaluator_config:
 tester_config:
   data_loader_config:
     hdf5_files:
-#      - hdf5_files/1_200/real/tiny_dummy.hdf5
       -  /gluster/visics/kkelchte/line_world_data/real/1_200_200/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false

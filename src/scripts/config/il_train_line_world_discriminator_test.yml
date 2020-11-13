@@ -18,7 +18,7 @@ trainer_config:
   epsilon: 0.5
   factory_key: DeepSupervisionWithDiscriminator
   weight_decay: 0.
-  discriminator_data_loader_config:
+  target_data_loader_config:
     batch_size: 25
     hdf5_files:
       - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/hdf5_files/1_200/real/tiny_dummy.hdf5

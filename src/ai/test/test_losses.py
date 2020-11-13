@@ -5,7 +5,7 @@ import unittest
 import torch
 
 from src.ai.evaluator import Evaluator, EvaluatorConfig
-from src.ai.losses import WeightedBinaryCrossEntropyLoss
+from src.ai.losses import *
 from src.core.utils import get_to_root_dir, get_filename_without_extension
 
 
@@ -35,6 +35,31 @@ class UtilsTest(unittest.TestCase):
         }
         evaluator = Evaluator(config=EvaluatorConfig().create(config_dict=evaluator_base_config), network=None)
         self.assertTrue(isinstance(evaluator._criterion, WeightedBinaryCrossEntropyLoss))
+
+    def test_coral_loss(self):
+        loss = Coral()
+        batch_size = 100000
+        feature_size = (256,)
+        source = torch.randn(size=(batch_size, *feature_size))
+        target = torch.randn(size=(batch_size, *feature_size))
+        coral = loss(source, target)
+        self.assertTrue(coral < 3)
+
+        scale = 10
+        source = scale * torch.randn(size=(batch_size, *feature_size))
+        target = torch.randn(size=(batch_size, *feature_size))
+        coral = loss(source, target)
+        self.assertTrue(1000 < coral < 2000)
+
+    def test_mmd_loss(self):
+        batch_size = 10
+        feature_size = (64, 3, 3)
+        source = 10 * torch.randn(size=(batch_size, *feature_size), requires_grad=True) + 10
+        target = torch.randn(size=(batch_size, *feature_size), requires_grad=True)
+
+        mmd_loss_simple = MMDLossSimple()
+        mmd_loss_zhao = MMDLossZhao(kernel_mul=1.0, kernel_num=2, fix_sigma=None)
+        print(mmd_loss_simple(source, target), mmd_loss_zhao(source, target))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

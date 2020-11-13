@@ -52,14 +52,15 @@ class TrainerConfig(EvaluatorConfig):
     max_actor_training_iterations: Union[str, int] = "default"
     max_critic_training_iterations: Union[str, int] = "default"
     add_KL_divergence_loss: bool = False
-    discriminator_data_loader_config: DataLoaderConfig = None
+    target_data_loader_config: DataLoaderConfig = None
+    domain_adaptation_criterion: str = "default"
 
     def __post_init__(self):
         # add options in post_init so they are easy to find
         if self.scheduler_config is None:
             del self.scheduler_config
-        if self.discriminator_data_loader_config is None:
-            del self.discriminator_data_loader_config
+        if self.target_data_loader_config is None:
+            del self.target_data_loader_config
         assert self.phi_key in ["default", "gae", "reward-to-go", "return", "value-baseline"]
 
 

@@ -244,7 +244,7 @@ class ArchitectureTest(unittest.TestCase):
             'data_loader_config': {
                 'batch_size': 2
             },
-            'discriminator_data_loader_config': {
+            'target_data_loader_config': {
                 'batch_size': 2
             },
             'criterion': 'WeightedBinaryCrossEntropyLoss',
@@ -253,7 +253,7 @@ class ArchitectureTest(unittest.TestCase):
         trainer = TrainerFactory().create(config=TrainerConfig().create(config_dict=trainer_config),
                                           network=network)
         trainer.data_loader.set_dataset(dataset)
-        trainer.discriminator_data_loader.set_dataset(dataset)
+        trainer.target_data_loader.set_dataset(dataset)
 
         # test training main network
         initial_main_checksum = get_checksum_network_parameters(network.deeply_supervised_parameters())
