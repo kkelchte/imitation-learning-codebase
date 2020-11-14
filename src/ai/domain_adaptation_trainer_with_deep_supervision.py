@@ -34,6 +34,8 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         total_error = []
+        task_error = []
+        domain_error = []
         for source_batch, target_batch in zip(self.data_loader.sample_shuffled_batch(),
                                               self.target_data_loader.sample_shuffled_batch()):
             self._optimizer.zero_grad()
@@ -41,31 +43,39 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
 
             # deep supervision loss
             probabilities = self._net.forward_with_all_outputs(source_batch.observations, train=True)
-            loss = self._criterion(probabilities[-1], targets).mean()
+            task_loss = self._criterion(probabilities[-1], targets).mean()
             for index, prob in enumerate(probabilities[:-1]):
-                loss += self._criterion(prob, targets).mean()
-            loss *= (1 - self.epsilon)
+                task_loss += self._criterion(prob, targets).mean()
+            task_loss *= (1 - self._config.epsilon)
 
             # add domain adaptation loss
-            loss += self.epsilon * self._domain_adaptation_criterion(self._net.get_features(source_batch.observations),
-                                                                     self._net.get_features(target_batch.observations))
-
+            domain_loss = self._config.epsilon * self._domain_adaptation_criterion(
+                self._net.get_features(source_batch.observations),
+                self._net.get_features(target_batch.observations))
+            loss = task_loss + domain_loss
             loss.backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
                                          self._config.gradient_clip_norm)
             self._optimizer.step()
             self._net.global_step += 1
-            total_error.append(loss.cpu().detach())
+            task_error.append(task_loss.cpu().detach().numpy())
+            domain_error.append(domain_loss.cpu().detach().numpy())
+            total_error.append(loss.cpu().detach().numpy())
+
         self.put_model_back_to_original_device()
 
         if self._scheduler is not None:
             self._scheduler.step()
 
-        error_distribution = Distribution(total_error)
+        task_error_distribution = Distribution(task_error)
+        domain_error_distribution = Distribution(domain_error)
+        total_error_distribution = Distribution(total_error)
         if writer is not None:
             writer.set_step(self._net.global_step)
-            writer.write_distribution(error_distribution, 'training')
+            writer.write_distribution(task_error_distribution, 'training/task_error')
+            writer.write_distribution(domain_error_distribution, 'training/domain_error')
+            writer.write_distribution(total_error_distribution, 'training/total_error')
             if self._config.store_output_on_tensorboard and epoch % 30 == 0:
                 writer.write_output_image(probabilities[-1], 'source/predictions')
                 writer.write_output_image(targets, 'source/targets')
@@ -74,4 +84,9 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
                                           'target/predictions')
                 writer.write_output_image(torch.stack(target_batch.observations), 'target/inputs')
 
-        return f' training {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
+        return f' task {self._config.criterion} ' \
+               f'{task_error_distribution.mean: 0.3e} ' \
+               f'[{task_error_distribution.std:0.2e}] ' \
+               f' domain {self._config.domain_adaptation_criterion} ' \
+               f'{domain_error_distribution.mean: 0.3e} ' \
+               f'[{domain_error_distribution.std: 0.2e}]'

@@ -3,7 +3,7 @@ number_of_epochs: 100
 number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
-  architecture: auto_encoder_deeply_supervised_with_discriminator
+  architecture: auto_encoder_deeply_supervised_share_weights
   initialisation_type: xavier
   random_seed: 4
   device: cuda
@@ -15,11 +15,15 @@ trainer_config:
   optimizer: Adam
   learning_rate: 0.1
   critic_learning_rate: 0.01
+  #factory_key: DeepSupervisionWithDiscriminator
+  factory_key: DADS
+  #domain_adaptation_criterion: MMDLossZhao
+  #epsilon: 0.5
+  domain_adaptation_criterion: Coral
   epsilon: 0.5
-  factory_key: DeepSupervisionWithDiscriminator
   weight_decay: 0.
   target_data_loader_config:
-    batch_size: 25
+    batch_size: 10
     hdf5_files:
       - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/hdf5_files/1_200/real/tiny_dummy.hdf5
   data_loader_config:

@@ -31,7 +31,7 @@ class DomainAdaptationTrainer(Trainer):
         self.target_data_loader = DataLoader(config=self._config.target_data_loader_config)
         self.target_data_loader.load_dataset()
         self._domain_adaptation_criterion = eval(f'{self._config.domain_adaptation_criterion}()') \
-            if not self._config.domain_adaptation_criterion == 'default' else MMDLossJordan()
+            if not self._config.domain_adaptation_criterion == 'default' else MMDLossZhao()
         self._domain_adaptation_criterion.to(self._device)
 
         if not quiet:
@@ -43,36 +43,44 @@ class DomainAdaptationTrainer(Trainer):
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()
         total_error = []
+        task_error = []
+        domain_error = []
         for source_batch, target_batch in zip(self.data_loader.sample_shuffled_batch(),
                                               self.target_data_loader.sample_shuffled_batch()):
             self._optimizer.zero_grad()
             targets = data_to_tensor(source_batch.actions).type(self._net.dtype).to(self._device)
             # task loss
             predictions = self._net.forward(source_batch.observations, train=True)
-            loss = (1 - self.epsilon) * self._criterion(predictions, targets).mean()
+            task_loss = (1 - self._config.epsilon) * self._criterion(predictions, targets).mean()
 
             # add domain adaptation loss
-            loss += self.epsilon * self._domain_adaptation_criterion(self._net.get_features(source_batch.observations,
-                                                                                            train=True),
-                                                                     self._net.get_features(target_batch.observations,
-                                                                                            train=True))
+            domain_loss = self._config.epsilon * self._domain_adaptation_criterion(
+                self._net.get_features(source_batch.observations, train=True),
+                self._net.get_features(target_batch.observations, train=True))
 
+            loss = task_loss + domain_loss
             loss.backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.parameters(),
                                          self._config.gradient_clip_norm)
             self._optimizer.step()
             self._net.global_step += 1
+            task_error.append(task_loss.cpu().detach())
+            domain_error.append(domain_loss.cpu().detach())
             total_error.append(loss.cpu().detach())
         self.put_model_back_to_original_device()
 
         if self._scheduler is not None:
             self._scheduler.step()
 
-        error_distribution = Distribution(total_error)
+        task_error_distribution = Distribution(task_error)
+        domain_error_distribution = Distribution(domain_error)
+        total_error_distribution = Distribution(total_error)
         if writer is not None:
             writer.set_step(self._net.global_step)
-            writer.write_distribution(error_distribution, 'training')
+            writer.write_distribution(task_error_distribution, 'training/task_error')
+            writer.write_distribution(domain_error_distribution, 'training/domain_error')
+            writer.write_distribution(total_error_distribution, 'training/total_error')
             if self._config.store_output_on_tensorboard and epoch % 30 == 0:
                 writer.write_output_image(predictions, 'source/predictions')
                 writer.write_output_image(targets, 'source/targets')
