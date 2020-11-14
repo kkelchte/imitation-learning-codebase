@@ -47,7 +47,7 @@ def prepare_batch_size_study(base_config_file: str,
                              number_of_jobs: int,
                              output_path: str) -> List[CondorJob]:
     batch_sizes = [50, 100, 500, 1000, 5000]
-    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    seeds = [123 * n + 5961 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}/bs_{bs}') for bs in batch_sizes for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
                                              'random_seed']): seeds * len(batch_sizes),

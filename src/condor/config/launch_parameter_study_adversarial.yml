@@ -1,5 +1,5 @@
-output_path: adversarial-dummy-tracking/learning_rates
-mode: learning_rate_study
+output_path: adversarial-dummy-tracking/batch_sizes
+mode: batch_size_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
   - 1
