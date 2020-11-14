@@ -66,7 +66,7 @@ def prepare_learning_rate_study(base_config_file: str,
                                 number_of_jobs: int,
                                 output_path: str) -> List[CondorJob]:
     learning_rates = [0.01, 0.001, 0.0001, 0.00001, 0.000001]
-    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    seeds = [123 * n + 5961 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}/lr_{lr}') for lr in learning_rates for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
                                              'random_seed']): seeds * len(learning_rates),
