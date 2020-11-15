@@ -88,7 +88,7 @@ def prepare_optimiser_study(base_config_file: str,
                             number_of_jobs: int,
                             output_path: str) -> List[CondorJob]:
     optimizers = ['SGD', 'Adam', 'Adadelta', 'RMSprop']
-    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    seeds = [123 * n + 5961 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}/opt_{opt}') for opt in optimizers for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
                                              'random_seed']): seeds * len(optimizers),

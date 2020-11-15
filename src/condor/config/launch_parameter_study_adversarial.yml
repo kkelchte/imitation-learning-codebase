@@ -1,8 +1,8 @@
-output_path: adversarial-dummy-tracking/batch_sizes
-mode: batch_size_study
+output_path: adversarial-dummy-tracking/optimizers
+mode: optimiser_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
-  - 1
+  - 2
 base_config_files:
   - src/scripts/config/dummy_adversarial_ppo.yml
 job_configs:
