@@ -107,7 +107,7 @@ def prepare_loss_study(base_config_file: str,
                        number_of_jobs: int,
                        output_path: str) -> List[CondorJob]:
     losses = ['MSELoss', 'L1Loss', 'SmoothL1Loss']
-    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    seeds = [123 * n + 5961 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}/loss_{loss}') for loss in losses for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
                                              'random_seed']): seeds * len(losses),
