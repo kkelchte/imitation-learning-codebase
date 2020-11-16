@@ -4,6 +4,7 @@ number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
   architecture: bc_deeply_supervised_auto_encoder
+#  architecture: auto_encoder_deeply_supervised_with_discriminator
   initialisation_type: xavier
   random_seed: 4
   device: cuda
@@ -16,6 +17,7 @@ trainer_config:
   optimizer: Adam
   learning_rate: 0.001
   factory_key: DADS
+#  factory_key: DSDis
   weight_decay: 0.00003
   epsilon: 0.2
   domain_adaptation_criterion: MMDLossZhao

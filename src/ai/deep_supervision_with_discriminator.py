@@ -66,6 +66,10 @@ class DeepSupervisionWithDiscriminator(DeepSupervision, DomainAdaptationTrainer)
             network_outputs = torch.cat(self._net.forward_with_all_outputs(real_batch.observations,
                                                                            train=True)).unsqueeze(dim=1)
             discriminator_loss = self._net.discriminate(network_outputs, train=False).mean()
+            #results = self._net.forward_with_intermediate_outputs(real_batch.observations, train=True)
+            #feature_maps =
+
+            # combine losses with epsilon weight
             loss *= (1 - self._config.epsilon)
             loss += self._config.epsilon * discriminator_loss
             loss.mean().backward()
