@@ -28,7 +28,7 @@ class Net(BaseNet):
         self._config.batch_normalisation = config.batch_normalisation if isinstance(config.batch_normalisation, bool) \
             else False
         self.sigmoid = nn.Sigmoid()
-        self.pool_features = torch.nn.MaxPool2d(5)
+        # self.pool_features = torch.nn.MaxPool2d(5)
         self.conv0 = torch.nn.Conv2d(in_channels=1,
                                      out_channels=32,
                                      kernel_size=3,
@@ -125,10 +125,7 @@ class Net(BaseNet):
 
     def get_features(self, inputs, train: bool = False) -> torch.Tensor:
         results = self.forward_with_intermediate_outputs(inputs, train=train)
-        pooled_features = self.pool_features(results['x4'])
-        #return torch.cat([v.flatten(start_dim=1, end_dim=3)
-        #                  for v in [results['x1'], results['x2'], results['x3'], results['x4']]], dim=1)
-        return pooled_features
+        return results['x4']
 
 
 class ImageNet(Net):
