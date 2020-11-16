@@ -11,6 +11,7 @@ architecture_config:
   batch_normalisation: true
   vae: false
   dtype: default
+  log_std: default
 trainer_config:
   optimizer: Adam
   learning_rate: 0.1

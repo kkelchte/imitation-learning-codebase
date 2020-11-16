@@ -1,14 +1,14 @@
 output_path: test_encoder_decoder
 number_of_epochs: 200
 number_of_episodes: -1
-save_checkpoint_every_n: 99
+save_checkpoint_every_n: 10
 architecture_config:
-  architecture: auto_encoder_deeply_supervised_confidence
+  architecture: auto_encoder_deeply_supervised_share_weights
   initialisation_type: xavier
   random_seed: 4
   device: cuda
   dropout: default
-  batch_normalisation: default
+  batch_normalisation: true
   vae: false
   dtype: default
   log_std: default
@@ -18,7 +18,7 @@ trainer_config:
   factory_key: DADS
   weight_decay: 0.00003
   epsilon: 0.2
-  domain_adaptation_criterion: MMDLossZhao
+  domain_adaptation_criterion: Coral
   target_data_loader_config:
     batch_size: 1
     hdf5_files:
