@@ -9,5 +9,5 @@ RequestDisk 	 = 52 G
 Request_GPUs = 1
 
 # If you want X11 forwarding, uncomment this
-Requirements = ( OpSysAndVer == "Fedora32" ) && (Has_ssse3 == true) && (CUDACapability >= 3.7) && (CUDAGlobalMemoryMb >= 3900)
+Requirements = ( OpSysAndVer == "Fedora32" ) && (Has_ssse3 == true) && (CUDACapability >= 3.7) && (CUDAGlobalMemoryMb >= 7900)
 Queue
