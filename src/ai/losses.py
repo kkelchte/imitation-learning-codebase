@@ -104,6 +104,12 @@ class Coral(Module):
         :param target: NxD: batch of size N with samples of dimension D
         :return: two norm of difference in covariances
         """
+
+        if len(source.shape) == 4:
+            size = source.size()
+            source = source.view(size[0], size[1] * size[2] * size[3])
+            target = target.view(size[0], size[1] * size[2] * size[3])
+
         # source variance
         xm = torch.mean(source, 0, keepdim=True) - source
         xc = (xm.t() @ xm) / source.shape[0]

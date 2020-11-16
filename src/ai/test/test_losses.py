@@ -53,13 +53,12 @@ class UtilsTest(unittest.TestCase):
 
     def test_mmd_loss(self):
         batch_size = 10
-        feature_size = (64, 3, 3)
+        feature_size = (64, 25, 25)
         source = 10 * torch.randn(size=(batch_size, *feature_size), requires_grad=True) + 10
         target = torch.randn(size=(batch_size, *feature_size), requires_grad=True)
 
-        mmd_loss_simple = MMDLossSimple()
         mmd_loss_zhao = MMDLossZhao(kernel_mul=1.0, kernel_num=2, fix_sigma=None)
-        print(mmd_loss_simple(source, target), mmd_loss_zhao(source, target))
+        print(mmd_loss_zhao(source, target))
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

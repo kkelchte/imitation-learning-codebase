@@ -125,8 +125,9 @@ class Net(BaseNet):
 
     def get_features(self, inputs, train: bool = False) -> torch.Tensor:
         results = self.forward_with_intermediate_outputs(inputs, train=train)
-        return torch.cat([v.flatten(start_dim=1, end_dim=3)
-                          for v in [results['x1'], results['x2'], results['x3'], results['x4']]], dim=1)
+        #return torch.cat([v.flatten(start_dim=1, end_dim=3)
+        #                  for v in [results['x1'], results['x2'], results['x3'], results['x4']]], dim=1)
+        return results['x4']
 
 
 class ImageNet(Net):

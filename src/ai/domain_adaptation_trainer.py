@@ -96,4 +96,7 @@ class DomainAdaptationTrainer(Trainer):
                                           'target/predictions')
                 writer.write_output_image(torch.stack(target_batch.observations), 'target/inputs')
 
-        return f' training {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'
+        return f' training task: {self._config.criterion} {task_error_distribution.mean: 0.3e} ' \
+               f'[{task_error_distribution.std:0.2e}]' \
+               f' domain: {self._config.domain_adaptation_criterion} {domain_error_distribution.mean: 0.3e} ' \
+               f'[{domain_error_distribution.std:0.2e}]'
