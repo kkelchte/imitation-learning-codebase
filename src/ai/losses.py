@@ -67,10 +67,10 @@ class WeightedBinaryCrossEntropyLoss(NLLLoss):
         self._reduction = reduction
 
     def forward(self, inputs, targets):
-        assert targets.max() <= 1
-        assert targets.min() >= 0
-        assert inputs.max() <= 1
-        assert inputs.min() >= 0
+        assert targets.max() <= 1, FloatingPointError(f'got target max {targets.max()}')
+        assert targets.min() >= 0, FloatingPointError(f'got target min {targets.min()}')
+        assert inputs.max() <= 1, FloatingPointError(f'got inputs max {inputs.max()}')
+        assert inputs.min() >= 0, FloatingPointError(f'got inputs min {inputs.min()}')
         dimension = len(inputs.shape)
 
         # if an input value == 0, the log value is -inf, where a -1 * -inf == nan.

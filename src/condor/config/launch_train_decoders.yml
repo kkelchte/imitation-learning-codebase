@@ -1,4 +1,4 @@
-output_path: encoder_decoder/domain_adaptation_deeply_supervised
+output_path: encoder_decoder/domain_adaptation_deeply_supervised_redo
 mode: domain_adaptation
 wait_time_between_jobs_sec: 0.1
 job_configs:
@@ -9,7 +9,7 @@ job_configs:
     gpu_mem_mb: 3900
     cpu_mem_gb: 29
     disk_mem_gb: 52
-    wall_time_s: 4 * 24 * 60 * 60
+    wall_time_s: 20 * 60 * 60
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false

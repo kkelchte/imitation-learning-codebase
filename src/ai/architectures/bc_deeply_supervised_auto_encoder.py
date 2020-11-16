@@ -28,7 +28,7 @@ class Net(BaseNet):
         self._config.batch_normalisation = config.batch_normalisation if isinstance(config.batch_normalisation, bool) \
             else False
         self.sigmoid = nn.Sigmoid()
-        # self.pool_features = torch.nn.MaxPool2d(5)
+
         self.conv0 = torch.nn.Conv2d(in_channels=1,
                                      out_channels=32,
                                      kernel_size=3,

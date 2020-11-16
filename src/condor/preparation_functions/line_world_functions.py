@@ -14,7 +14,7 @@ def prepare_domain_adaptation(base_config_file: str,
                              number_of_jobs: int,
                              output_path: str) -> List[CondorJob]:
     domain_adaptation_criterions = ['MMDLossZhao', 'Coral']
-    epsilons = [0.5, 0.1, 0.05]
+    epsilons = [0.01, 0.001, 0.0001, 0.0]
     learning_rates = [0.01, 0.001, 0.0001]
     model_paths = [os.path.join(output_path, 'models', f'{dac}', f'eps_{eps}', f'lr_{lr}')
                    for dac in domain_adaptation_criterions
