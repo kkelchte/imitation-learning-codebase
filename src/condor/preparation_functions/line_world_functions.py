@@ -8,6 +8,7 @@ from src.condor.helper_functions import create_configs, Dag, translate_keys_to_s
 from src.condor.preparation_functions.il_preparation_functions import prepare_default
 from src.core.utils import get_date_time_tag
 
+
 def prepare_domain_adaptation(base_config_file: str,
                              job_config_object: CondorJobConfig,
                              number_of_jobs: int,
@@ -24,7 +25,7 @@ def prepare_domain_adaptation(base_config_file: str,
                        [lr for dac in domain_adaptation_criterions
                         for eps in epsilons
                         for lr in learning_rates],
-                   translate_keys_to_string(['trainer_config', 'domain_adaptation_criterions']):
+                   translate_keys_to_string(['trainer_config', 'domain_adaptation_criterion']):
                        [dac for dac in domain_adaptation_criterions
                         for eps in epsilons
                         for lr in learning_rates],
@@ -37,6 +38,7 @@ def prepare_domain_adaptation(base_config_file: str,
                                   adjustments=adjustments)
     return create_jobs_from_job_config_files(config_files,
                                              job_config_object=job_config_object)
+
 
 def prepare_wd_confidence_line_world(base_config_file: str,
                                      job_config_object: CondorJobConfig,
