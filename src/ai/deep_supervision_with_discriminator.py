@@ -26,7 +26,6 @@ class DeepSupervisionWithDiscriminator(DeepSupervision, DomainAdaptationTrainer)
     def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
         super().__init__(config, network, quiet=True)
 
-        del self._optimizer
         self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.deeply_supervised_parameters(),
                                                                         lr=self._config.learning_rate,
                                                                         weight_decay=self._config.weight_decay)

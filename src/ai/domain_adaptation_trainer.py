@@ -6,7 +6,6 @@ import numpy as np
 from src.ai.base_net import BaseNet
 from src.ai.trainer import TrainerConfig, Trainer
 from src.ai.losses import *
-from src.ai.deep_supervision import DeepSupervision
 from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor
 from src.core.data_types import Distribution, Dataset
 from src.core.logger import get_logger, cprint
