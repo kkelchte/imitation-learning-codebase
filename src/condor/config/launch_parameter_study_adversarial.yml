@@ -1,5 +1,5 @@
-output_path: adversarial-dummy-tracking/phi_keys
-mode: phi_study
+output_path: adversarial-dummy-tracking/epsilon
+mode: ppo_epsilon_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
   - 2
