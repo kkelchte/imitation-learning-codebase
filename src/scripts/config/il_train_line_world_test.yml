@@ -20,7 +20,7 @@ trainer_config:
   epsilon: 0.2
   domain_adaptation_criterion: Coral
   target_data_loader_config:
-    batch_size: 10
+    batch_size: 5
     hdf5_files:
       - hdf5_files/1_200/real/tiny_dummy.hdf5
   data_loader_config:
@@ -29,7 +29,7 @@ trainer_config:
       - hdf5_files/1_200/sim/tiny_dummy.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 10
+    batch_size: 5
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
   device: cuda
@@ -41,7 +41,7 @@ evaluator_config:
       - hdf5_files/1_200/sim/tiny_dummy.hdf5
     random_seed: 32
     balance_over_actions: false
-    batch_size: 10
+    batch_size: 32
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
