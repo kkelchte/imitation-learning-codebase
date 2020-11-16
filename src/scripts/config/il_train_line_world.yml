@@ -20,7 +20,7 @@ trainer_config:
   epsilon: 0.2
   domain_adaptation_criterion: Coral
   target_data_loader_config:
-    batch_size: 5
+    batch_size: 10
     hdf5_files:
 #      - hdf5_files/1_200/real/tiny_dummy.hdf5
       - /gluster/visics/kkelchte/line_world_data/real/1_200_200_shuffled/validation_0.hdf5
@@ -43,7 +43,7 @@ trainer_config:
 #      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_9.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 5
+    batch_size: 10
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
   device: cuda
@@ -57,7 +57,7 @@ evaluator_config:
       #-  /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/validation_1.hdf5
     random_seed: 32
     balance_over_actions: false
-    batch_size: 1
+    batch_size: 32
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
