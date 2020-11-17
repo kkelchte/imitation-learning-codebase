@@ -38,6 +38,7 @@ class TestDagJob(unittest.TestCase):
     def test_python_job(self):
         jobs = []
         for job_index in range(2):
+            os.makedirs(os.path.join(self.output_dir, str(job_index)))
             jobs.append(create_condor_job(os.path.join(self.output_dir, str(job_index))))
 
         dag_lines = '# test dag file: \n'
