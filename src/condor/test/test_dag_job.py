@@ -38,14 +38,14 @@ class TestDagJob(unittest.TestCase):
     def test_python_job(self):
         jobs = []
         for job_index in range(2):
-            jobs.append(create_condor_job(os.path.join(self.output_dir, job_index)))
+            jobs.append(create_condor_job(os.path.join(self.output_dir, str(job_index))))
 
         dag_lines = '# test dag file: \n'
         for index, job in enumerate(jobs):
             dag_lines += f'JOB job_{index} {job.job_file} \n'
 
         for index in range(len(jobs)-1):
-            dag_lines += f'PARENT job_{index} job_{index+1}'
+            dag_lines += f'PARENT job_{index} job_{index+1} \n'
 
         dag = Dag(lines_dag_file=dag_lines,
                   dag_directory=os.path.join(self.output_dir, 'dag', get_date_time_tag()))
