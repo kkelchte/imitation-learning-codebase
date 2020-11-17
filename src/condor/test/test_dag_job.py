@@ -50,10 +50,10 @@ class TestDagJob(unittest.TestCase):
 
         dag = Dag(lines_dag_file=dag_lines,
                   dag_directory=os.path.join(self.output_dir, 'dag', get_date_time_tag()))
-        dag.submit()
-        wait_for_job_to_finish(jobs[-1].log_file)
+
         import pdb; pdb.set_trace()
-        a = 100
+        dag.submit()
+        import pdb; pdb.set_trace()
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
