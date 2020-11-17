@@ -188,7 +188,7 @@ def prepare_ppo_max_train_steps_study(base_config_file: str,
                                       output_path: str) -> List[CondorJob]:
     max_value_training_iterations = [1, 5, 10, 50]
     max_actor_training_iterations = [1, 5, 10, 50]
-    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    seeds = [123 * n + 5961 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}/p_{x}_v_{y}')
                    for y in max_value_training_iterations
                    for x in max_actor_training_iterations

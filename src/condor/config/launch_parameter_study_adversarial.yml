@@ -1,8 +1,8 @@
-output_path: adversarial-dummy-tracking/entropy
-mode: entropy_study
+output_path: adversarial-dummy-tracking/training_steps
+mode: ppo_max_train_steps_study
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
-  - 3
+  - 1
 base_config_files:
   - src/scripts/config/dummy_adversarial_ppo.yml
 job_configs:
