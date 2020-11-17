@@ -16,6 +16,18 @@ from src.condor.helper_functions import create_configs, get_variable_name, strip
     translate_keys_to_string
 
 
+def create_condor_job(output_path) -> CondorJob:
+    config_dict = {
+        'output_path': output_path,
+        'command': 'python src/condor/test/dummy_python_script.py',
+    }
+    config = CondorJobConfig().create(config_dict=config_dict)
+    job = CondorJob(config=config)
+    job.write_job_file()
+    job.write_executable_file()
+    return job
+
+
 class TestDagJob(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -23,24 +35,9 @@ class TestDagJob(unittest.TestCase):
         os.makedirs(self.output_dir, exist_ok=True)
 
     def test_python_job(self):
-        config_dict = {
-            'output_path': self.output_dir,
-            'command': 'python src/condor/test/dummy_python_script.py',
-            'use_singularity': False
-        }
-        config = CondorJobConfig().create(config_dict=config_dict)
-        job = CondorJob(config=config)
-        condor_dir = sorted(os.listdir(os.path.join(self.output_dir, 'condor')))[-1]
-        self.assertTrue(os.path.isdir(os.path.join(self.output_dir, 'condor', condor_dir)))
-        job.write_job_file()
-        job.write_executable_file()
-        for file_path in [job.job_file, job.executable_file]:
-            self.assertTrue(os.path.isfile(file_path))
-            read_file_to_output(file_path)
-        output_executable = subprocess.call(shlex.split(f'{os.path.join(self.output_dir, "condor", condor_dir)}/'
-                                                        f'job.executable'))
-        self.assertEqual(output_executable, 2)
-        self.assertEqual(job.submit(), 0)
+        jobs = []
+        for job_index in range(2):
+            jobs.append(create_condor_job(os.path.join(self.output_dir, job_index)))
 
         wait_for_job_to_finish(job.log_file)
 
