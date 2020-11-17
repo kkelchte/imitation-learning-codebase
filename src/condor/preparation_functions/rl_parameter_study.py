@@ -219,7 +219,7 @@ def prepare_entropy_study(base_config_file: str,
                           number_of_jobs: int,
                           output_path: str) -> List[CondorJob]:
     entropy_vals = [0.0, 0.1, -0.1]
-    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    seeds = [123 * n + 5961 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, 'models', f'sd_{seed}/entr_{x}') for x in entropy_vals for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
                                              'random_seed']): seeds * len(entropy_vals),
