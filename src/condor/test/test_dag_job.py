@@ -49,7 +49,8 @@ class TestDagJob(unittest.TestCase):
         job_id = int(log_line.split(' ')[1].split('.')[0][1:])
         while 'nJobStatus = 2' in str(subprocess.check_output(shlex.split(f'condor_q -l {job_id}'))) or \
                 'nJobStatus = 1' in str(subprocess.check_output(shlex.split(f'condor_q -l {job_id}'))):
-            time.sleep(5)
+            print('wait for job to finish...')
+            time.sleep(1)
 
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))
