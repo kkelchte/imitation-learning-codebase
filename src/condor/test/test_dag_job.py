@@ -10,10 +10,11 @@ import yaml
 
 from src.ai.utils import generate_random_dataset_in_raw_data
 from src.condor.test.test_condor_job import wait_for_job_to_finish
-from src.core.utils import get_filename_without_extension, read_file_to_output, get_file_length, get_data_dir
+from src.core.utils import get_filename_without_extension, read_file_to_output, get_file_length, get_data_dir, \
+    get_date_time_tag
 from src.condor.condor_job import CondorJob, CondorJobConfig
 from src.condor.helper_functions import create_configs, get_variable_name, strip_variable, strip_command, \
-    translate_keys_to_string
+    translate_keys_to_string, Dag
 
 
 def create_condor_job(output_path) -> CondorJob:
@@ -39,13 +40,17 @@ class TestDagJob(unittest.TestCase):
         for job_index in range(2):
             jobs.append(create_condor_job(os.path.join(self.output_dir, job_index)))
 
-        wait_for_job_to_finish(job.log_file)
+        dag_lines = '# test dag file: \n'
+        for index, job in enumerate(jobs):
+            dag_lines += f'JOB job_{index} {job.job_file} \n'
 
-        for file_path in [job.output_file, job.error_file, job.log_file]:
-            self.assertTrue(os.path.isfile(file_path))
-        with open(job.error_file, 'r') as f:
-            error_file_length = len(f.readlines())
-        self.assertEqual(0, error_file_length)
+        for index in range(len(jobs)-1):
+            dag_lines += f'PARENT job_{index} job_{index+1}'
+
+        dag = Dag(lines_dag_file=dag_lines,
+                  dag_directory=os.path.join(self.output_dir, 'dag', get_date_time_tag()))
+        dag.submit()
+        wait_for_job_to_finish(jobs[-1].log_file)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
