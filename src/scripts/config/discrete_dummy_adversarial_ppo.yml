@@ -1,13 +1,13 @@
-output_path: test_discrete_tracking
+output_path: test_discrete_adversarial
 number_of_epochs: 1000
 episode_runner_config:
   number_of_episodes: 5
   train_every_n_steps: -1
 architecture_config:
-  architecture: discrete_tracking_actor_critic
+  architecture: discrete_adversarial_actor_critic
   device: cpu
   log_std: 0
-  random_seed: 5100
+  random_seed: 5961
   initialisation_type: orthogonal
 environment_config:
   normalize_observations: false

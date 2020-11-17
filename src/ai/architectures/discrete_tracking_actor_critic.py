@@ -23,7 +23,11 @@ class Net(BaseNet):
         super().__init__(config=config, quiet=True)
         self.input_size = (4,)
         self.output_size = (5,)
-        self.discrete = True
+        self.discrete = False
+
+        log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
+        self.log_std = torch.nn.Parameter(torch.ones(self.output_size, dtype=torch.float32) * log_std,
+                                          requires_grad=True)
 
         self._actor = mlp_creator(sizes=[self.input_size[0], 10, self.output_size[0]],
                                   activation=nn.Tanh(),
@@ -32,10 +36,6 @@ class Net(BaseNet):
         self._critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
                                    activation=nn.Tanh(),
                                    output_activation=None)
-
-        log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
-        self.log_std = torch.nn.Parameter(torch.ones(self.output_size, dtype=torch.float32) * log_std,
-                                          requires_grad=True)
 
         self.initialize_architecture()
 
