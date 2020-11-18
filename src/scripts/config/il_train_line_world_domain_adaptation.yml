@@ -8,7 +8,7 @@ architecture_config:
   random_seed: 4
   device: cuda
   dropout: default
-  batch_normalisation: true
+  batch_normalisation: default
   vae: false
   dtype: default
   log_std: default
@@ -16,12 +16,12 @@ trainer_config:
   optimizer: Adam
   learning_rate: 0.001
   factory_key: DADS
-  weight_decay: 0.00003
-  gradient_clip_norm: 1
+  weight_decay: 0.0
+  gradient_clip_norm: -1
   epsilon: 0.2
   domain_adaptation_criterion: Coral
   target_data_loader_config:
-    batch_size: 10
+    batch_size: 32
     hdf5_files:
 #      - hdf5_files/1_200/real/tiny_dummy.hdf5
       - /gluster/visics/kkelchte/line_world_data/real/1_200_200_shuffled/validation_0.hdf5
@@ -44,7 +44,7 @@ trainer_config:
 #      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_9.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 10
+    batch_size: 32
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
   device: cuda

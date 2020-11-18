@@ -55,10 +55,14 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
                 task_loss += self._criterion(prob, targets).mean()
             task_loss *= (1 - self._config.epsilon)
 
-            # add domain adaptation loss
-            domain_loss = self._config.epsilon * self._domain_adaptation_criterion(
-                self._net.get_features(source_batch.observations),
-                self._net.get_features(target_batch.observations))
+            # add domain adaptation loss on distribution of output pixels at each output
+            domain_loss = sum([self._domain_adaptation_criterion(sp.flatten().unsqueeze(1), tp.flatten().unsqueeze(1))
+                               for sp, tp in zip(self._net.forward_with_all_outputs(source_batch.observations,
+                                                                                    train=True),
+                                                 self._net.forward_with_all_outputs(target_batch.observations,
+                                                                                    train=True))
+                               ]) * self._config.epsilon
+
             loss = task_loss + domain_loss
             loss.backward()
             if self._config.gradient_clip_norm != -1:
@@ -87,10 +91,19 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
                 writer.write_output_image(probabilities[-1], 'source/predictions')
                 writer.write_output_image(targets, 'source/targets')
                 writer.write_output_image(torch.stack(source_batch.observations), 'source/inputs')
-                writer.write_output_image(self._net.forward(target_batch.observations, train=True),
+                writer.write_output_image(self._net.forward(target_batch.observations, train=False),
                                           'target/predictions')
                 writer.write_output_image(torch.stack(target_batch.observations), 'target/inputs')
-
+            if self._config.store_feature_maps_on_tensorboard and epoch % 30 == 0:
+                for name, batch in zip(['source', 'target'], [source_batch, target_batch]):
+                    outputs = self._net.forward_with_intermediate_outputs(batch.observations, train=False)
+                    for i in range(4):  # store first 5 images of batch
+                        for layer in ['x1', 'x2', 'x3', 'x4']:
+                            feature_maps = outputs[layer][i].flatten(start_dim=0, end_dim=0)
+                            title = f'feature_map/{name}/layer_{layer}/{i}'
+                            # title += 'inds_' + '_'.join([str(v.item()) for v in winning_indices.indices])
+                            # title += '_vals_' + '_'.join([f'{v.item():0.2f}' for v in winning_indices.values])
+                            writer.write_output_image(feature_maps, title)
         return f' task {self._config.criterion} ' \
                f'{task_error_distribution.mean: 0.3e} ' \
                f'[{task_error_distribution.std:0.2e}] ' \

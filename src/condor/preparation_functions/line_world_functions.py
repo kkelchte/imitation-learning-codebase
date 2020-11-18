@@ -10,13 +10,13 @@ from src.core.utils import get_date_time_tag
 
 
 def prepare_domain_adaptation(base_config_file: str,
-                             job_config_object: CondorJobConfig,
-                             number_of_jobs: int,
-                             output_path: str) -> List[CondorJob]:
+                              job_config_object: CondorJobConfig,
+                              number_of_jobs: int,
+                              output_path: str) -> List[CondorJob]:
 
     domain_adaptation_criterions = ['default', 'MMDLossZhao', 'Coral']
     epsilons = [0.01, 0.001, 0.0001, 0.0]
-    learning_rates = [0.001, 0.0001]
+    learning_rates = [0.001]
     model_paths = [os.path.join(output_path, 'models', f'{dac}', f'eps_{eps}', f'lr_{lr}')
                    for dac in domain_adaptation_criterions
                    for eps in epsilons

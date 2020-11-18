@@ -19,8 +19,9 @@ trainer_config:
   factory_key: DADS
 #  factory_key: DSDis
   weight_decay: 0.00003
-  epsilon: 0.2
-  domain_adaptation_criterion: MMDLossZhao
+  epsilon: 0.8
+  store_feature_maps_on_tensorboard: True
+  domain_adaptation_criterion: MMDLossSimple #Coral #MMDLossZhao
   target_data_loader_config:
     batch_size: 5
     hdf5_files:
