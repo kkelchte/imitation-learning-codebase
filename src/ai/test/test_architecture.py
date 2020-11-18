@@ -15,42 +15,37 @@ from src.core.utils import get_to_root_dir, get_filename_without_extension, gene
 from src.ai.architectures import *  # Do not remove
 from src.data.test.common_utils import generate_dataset_by_length
 
-base_config = {
-    "architecture": "",
-    "initialisation_type": 'xavier',
-    "random_seed": 0,
-    "device": 'cpu',
-}
-
 
 class ArchitectureTest(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
-        base_config['output_path'] = self.output_dir
+        self.base_config = {"architecture": "", "initialisation_type": 'xavier', "random_seed": 0, "device": 'cpu',
+                            'output_path': self.output_dir}
 
     def test_tiny_128_rgb_6c_initialisation_store_load(self):
         # Test initialisation of different seeds
-        base_config['architecture'] = 'tiny_128_rgb_6c'
-        base_config['initialisation_type'] = 'xavier'
-        network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config),
+        self.base_config['architecture'] = 'tiny_128_rgb_6c'
+        self.base_config['initialisation_type'] = 'xavier'
+        self.base_config['random_seed'] = 0
+        network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config),
         )
         for p in network.parameters():
             check_network = p.data
             break
-        base_config['random_seed'] = 2
-        second_network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['random_seed'] = 2
+        second_network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         for p in second_network.parameters():
             check_second_network = p.data
             break
         self.assertNotEqual(torch.sum(check_second_network), torch.sum(check_network))
-        base_config['random_seed'] = 0
-        third_network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['random_seed'] = 0
+        third_network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         for p in third_network.parameters():
             check_third_network = p.data
@@ -71,9 +66,9 @@ class ArchitectureTest(unittest.TestCase):
         third_network.remove()
 
     def test_tiny_128_rgb_6c_preprocessed_and_raw_input(self):
-        base_config['architecture'] = 'tiny_128_rgb_6c'
-        network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['architecture'] = 'tiny_128_rgb_6c'
+        network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         # test normal batch of data
         self.assertEqual(network.forward(torch.randint(255, (10, *network.input_size))/255.).shape[1:],
@@ -91,9 +86,9 @@ class ArchitectureTest(unittest.TestCase):
         network.remove()
 
     def test_tiny_128_rgb_6c_raw_input_zero_centered(self):
-        base_config['architecture'] = 'tiny_128_rgb_6c'
-        network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['architecture'] = 'tiny_128_rgb_6c'
+        network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         network.input_scope = 'zero_centered'
         # test single unprocessed data point
@@ -110,10 +105,10 @@ class ArchitectureTest(unittest.TestCase):
     def test_input_output_vae_architectures(self):
         for vae in [True]:
             for architecture in ['auto_encoder_conv1', 'u_net']:
-                base_config['architecture'] = architecture
-                base_config['vae'] = vae
-                network = eval(base_config['architecture']).Net(
-                    config=ArchitectureConfig().create(config_dict=base_config)
+                self.base_config['architecture'] = architecture
+                self.base_config['vae'] = vae
+                network = eval(self.base_config['architecture']).Net(
+                    config=ArchitectureConfig().create(config_dict=self.base_config)
                 )
                 # test single unprocessed data point
                 batch_size = 256
@@ -153,10 +148,10 @@ class ArchitectureTest(unittest.TestCase):
         self.assertEqual(count, 170)
 
     def test_initialisation(self):
-        base_config['architecture'] = 'cart_pole_4_2d_stochastic'
-        base_config['initialisation_type'] = 'constant'
-        network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['architecture'] = 'cart_pole_4_2d_stochastic'
+        self.base_config['initialisation_type'] = 'constant'
+        network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         for p in network._actor[0].parameters():
             if len(p.shape) == 1:
@@ -168,9 +163,9 @@ class ArchitectureTest(unittest.TestCase):
         network.remove()
 
     def test_sidetuned_network(self):
-        base_config['architecture'] = 'dronet_sidetuned'
-        network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['architecture'] = 'dronet_sidetuned'
+        network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         fixed_weight_checksum = network.conv2d_1.weight.data.sum().item()
         variable_weight_checksum = network.sidetune_conv2d_1.weight.data.sum().item()
@@ -191,10 +186,10 @@ class ArchitectureTest(unittest.TestCase):
                                              output_size=(200, 200),)
         for arch in ['auto_encoder_deeply_supervised_confidence',
                      'auto_encoder_deeply_supervised_share_weights']:
-            base_config['architecture'] = arch
-            base_config['initialisation_type'] = 'xavier'
-            network = eval(base_config['architecture']).Net(
-                config=ArchitectureConfig().create(config_dict=base_config)
+            self.base_config['architecture'] = arch
+            self.base_config['initialisation_type'] = 'xavier'
+            network = eval(self.base_config['architecture']).Net(
+                config=ArchitectureConfig().create(config_dict=self.base_config)
             )
 
             # test single unprocessed data point
@@ -224,20 +219,23 @@ class ArchitectureTest(unittest.TestCase):
                 self.assertNotEqual(initial_parameters[k].sum().item(), p.sum().item())
             network.remove()
 
+    #@unittest.skip
     def test_discriminator(self):
         # create ds
         dataset = generate_dataset_by_length(length=5,
                                              input_size=(1, 200, 200),
                                              output_size=(200, 200), )
         # create architecture
-        base_config['architecture'] = 'auto_encoder_deeply_supervised_with_discriminator'
-        base_config['initialisation_type'] = 'xavier'
-        network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['architecture'] = 'auto_encoder_deeply_supervised_with_discriminator'
+        self.base_config['initialisation_type'] = 'xavier'
+        network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         # create trainer
+        output_path = self.output_dir + '/discriminator'
+        os.makedirs(output_path, exist_ok=True)
         trainer_config = {
-            'output_path': self.output_dir,
+            'output_path': output_path,
             'optimizer': 'Adam',
             'learning_rate': 0.1,
             'factory_key': 'DeepSupervisionWithDiscriminator',
@@ -272,11 +270,11 @@ class ArchitectureTest(unittest.TestCase):
         self.assertNotEqual(initial_discriminator_checksum,
                             get_checksum_network_parameters(network.discriminator_parameters()))
         # test load checkpoint
-        base_config['architecture'] = 'auto_encoder_deeply_supervised_with_discriminator'
-        base_config['initialisation_type'] = 'xavier'
-        base_config['random_seed'] = 29078
-        second_network = eval(base_config['architecture']).Net(
-            config=ArchitectureConfig().create(config_dict=base_config)
+        self.base_config['architecture'] = 'auto_encoder_deeply_supervised_with_discriminator'
+        self.base_config['initialisation_type'] = 'xavier'
+        self.base_config['random_seed'] = 29078
+        second_network = eval(self.base_config['architecture']).Net(
+            config=ArchitectureConfig().create(config_dict=self.base_config)
         )
         self.assertNotEqual(second_network.get_checksum(), network.get_checksum())
         second_network.load_checkpoint(network.get_checkpoint())
@@ -291,10 +289,10 @@ class ArchitectureTest(unittest.TestCase):
         for arch in os.listdir(os.path.join('src', 'ai', 'architectures')):
             if '__' in arch or arch in skip_architecture_files or 'bc' in arch:
                 continue
-            base_config['architecture'] = arch[:-3]
-            base_config['initialisation_type'] = 'xavier'
-            network = eval(base_config['architecture']).Net(
-                config=ArchitectureConfig().create(config_dict=base_config)
+            self.base_config['architecture'] = arch[:-3]
+            self.base_config['initialisation_type'] = 'xavier'
+            network = eval(self.base_config['architecture']).Net(
+                config=ArchitectureConfig().create(config_dict=self.base_config)
             )
 
             # test single unprocessed data point
