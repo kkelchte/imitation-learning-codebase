@@ -77,7 +77,7 @@ def count_grep_name(grep_str: str) -> int:
 def get_to_root_dir():
     # assume you're in a subfolder in the codebase:
     if 'CODEDIR' in os.environ.keys():
-        os.chdir('$CODEDIR')
+        os.chdir(os.environ['CODEDIR'])
     while 'ROOTDIR' not in os.listdir('.'):
         os.chdir('..')
         if os.getcwd() == '/':

@@ -17,7 +17,7 @@ from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
 from src.core.utils import get_filename_without_extension, get_data_dir, get_date_time_tag
-from src.core.data_types import TerminationType, Distribution
+from src.core.data_types import TerminationType, Distribution, Dataset
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
@@ -189,7 +189,7 @@ class Experiment:
                 self.save_checkpoint(tag='best')
             cprint(msg, self._logger)
         if self._trainer is not None:
-            self._trainer.data_loader.set_dataset()
+            self._trainer.data_loader.set_dataset(Dataset())
         if self._evaluator is not None and self._config.evaluator_config.evaluate_extensive:
             self._evaluator.evaluate_extensive()
 
