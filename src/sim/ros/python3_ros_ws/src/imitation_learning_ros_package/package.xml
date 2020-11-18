@@ -22,7 +22,7 @@
 
   <!-- Dependencies needed only for running tests. -->
   <export>
-  <gazebo_ros gazebo_model_path="$(env HOME)/src/sim/ros/gazebo/models"/>
+  <gazebo_ros gazebo_model_path="$(env CODEDIR)/src/sim/ros/gazebo/models"/>
   </export>
 
 </package>

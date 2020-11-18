@@ -15,7 +15,7 @@ from src.sim.ros.src.process_wrappers import RosWrapper
 class TestRos(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
     @unittest.skip
