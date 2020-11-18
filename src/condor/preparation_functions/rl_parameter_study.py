@@ -9,7 +9,7 @@ def prepare_param_study(base_config_file: str,
                         job_config_object: CondorJobConfig,
                         number_of_jobs: int,
                         output_path: str) -> List[CondorJob]:
-    seeds = [123 * n + 5100 for n in range(number_of_jobs)]
+    seeds = [132 * n + 5100 for n in range(number_of_jobs)]
     model_paths = [os.path.join(output_path, f'sd_{seed}') for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
                                              'random_seed']): [seed for seed in seeds],
