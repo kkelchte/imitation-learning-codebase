@@ -16,6 +16,8 @@ job_configs:
     save_locally: true
     save_before_wall_time: true
     extra_requirements: ( Has_ssse3 == True )
+    black_list:
+      - vladimir
 number_of_jobs:
   - 1
 base_config_files: 

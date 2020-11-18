@@ -20,6 +20,7 @@ trainer_config:
   gradient_clip_norm: -1
   epsilon: 0.2
   domain_adaptation_criterion: Coral
+  store_feature_maps_on_tensorboard: True
   target_data_loader_config:
     batch_size: 32
     hdf5_files:
