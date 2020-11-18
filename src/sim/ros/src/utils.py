@@ -30,7 +30,7 @@ def apply_noise_to_twist(twist: Twist, noise: np.ndarray) -> Twist():
 def get_output_path() -> str:
     output_path = rospy.get_param('/output_path', '/tmp')
     if not output_path.startswith('/'):
-        output_path = os.path.join(os.environ['HOME'], output_path)
+        output_path = os.path.join(os.environ['CODEDIR'], output_path)
     if not os.path.isdir(output_path):
         os.makedirs(output_path)
     return output_path

@@ -84,7 +84,7 @@ class RobotMapper:
             cprint('Could not find background file so exit.', self._logger)
             sys.exit(0)
         if not self._background_file.startswith('/'):
-            self._background_file = os.path.join(os.environ['HOME'], self._background_file)
+            self._background_file = os.path.join(os.environ['CODEDIR'], self._background_file)
         self._background_image = Image.open(self._background_file)
 
         # Camera intrinsics from assumption of horizontal and vertical field of view

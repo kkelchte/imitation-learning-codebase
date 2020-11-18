@@ -35,7 +35,7 @@ class TestFsm(unittest.TestCase):
             'control_mapping': False,
             'waypoint_indicator': False,
         }
-        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         self.config['output_path'] = self.output_dir
 
