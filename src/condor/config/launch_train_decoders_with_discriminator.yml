@@ -1,4 +1,4 @@
-output_path: encoder_decoder/discriminator_finalist
+output_path: encoder_decoder/discriminator_lr_share_weights
 mode: lr_discirminator_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:
@@ -7,7 +7,7 @@ job_configs:
     cpus: 2
     gpus: 1
     gpu_mem_mb: 2900
-    cpu_mem_gb: 19
+    cpu_mem_gb: 30
     disk_mem_gb: 52
     wall_time_s: 4 * 24 * 60 * 60
     nice: true

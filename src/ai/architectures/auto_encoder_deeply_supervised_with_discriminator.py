@@ -6,6 +6,7 @@ import torch.nn as nn
 
 from src.ai.architectural_components import ResidualBlock
 from src.ai.architectures.bc_deeply_supervised_auto_encoder import Net as BaseNet
+#from src.ai.architectures.auto_encoder_deeply_supervised_share_weights import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
 from src.ai.utils import mlp_creator, conv_creator
 from src.core.data_types import Action

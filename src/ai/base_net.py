@@ -105,6 +105,7 @@ class BaseNet(nn.Module):
                 # check for scope
                 if inputs.max() > 1 or inputs.min() < 0:
                     inputs += inputs.min()
+                    inputs = torch.as_tensor(inputs, dtype=torch.float32)
                     inputs /= inputs.max()
                 if self.input_scope == 'zero_centered':
                     inputs *= 2

@@ -4,6 +4,7 @@ from torch import nn
 import numpy as np
 
 from src.ai.base_net import BaseNet
+from src.ai.domain_adaptation_trainer import DomainAdaptationTrainer
 from src.ai.trainer import TrainerConfig
 from src.ai.deep_supervision import DeepSupervision
 from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor
@@ -20,31 +21,27 @@ Allows combination of outputs as weighted sum in one big backward pass.
 """
 
 
-class DeepSupervisionWithDiscriminator(DeepSupervision):
+class DeepSupervisionWithDiscriminator(DeepSupervision, DomainAdaptationTrainer):
 
     def __init__(self, config: TrainerConfig, network: BaseNet, quiet: bool = False):
         super().__init__(config, network, quiet=True)
-        self._config.epsilon = 0.2 if self._config.epsilon == "default" else self._config.epsilon
-
-        del self._optimizer
-        self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.deeply_supervised_parameters(),
-                                                                        lr=self._config.learning_rate,
-                                                                        weight_decay=self._config.weight_decay)
-        lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
-        del self._scheduler
-        self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
-            if self._config.scheduler_config is not None else None
-
-        self._discriminator_optimizer = eval(f'torch.optim.{self._config.optimizer}')(
-            params=self._net.discriminator_parameters(),
-            lr=self._config.critic_learning_rate if self._config.critic_learning_rate != -1
-            else self._config.learning_rate,
-            weight_decay=self._config.weight_decay)
-
-        self.discriminator_data_loader = DataLoader(config=self._config.discriminator_data_loader_config)
-        self.discriminator_data_loader.load_dataset()
 
         if not quiet:
+            self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(
+                params=self._net.deeply_supervised_parameters(),
+                lr=self._config.learning_rate,
+                weight_decay=self._config.weight_decay)
+            lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
+
+            self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
+                if self._config.scheduler_config is not None else None
+
+            self._discriminator_optimizer = eval(f'torch.optim.{self._config.optimizer}')(
+                params=self._net.discriminator_parameters(),
+                lr=self._config.critic_learning_rate if self._config.critic_learning_rate != -1
+                else self._config.learning_rate,
+                weight_decay=self._config.weight_decay)
+
             self._logger = get_logger(name=get_filename_without_extension(__file__),
                                       output_path=config.output_path,
                                       quiet=False)
@@ -54,8 +51,9 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
         deeply_supervised_error = []
         discriminator_error = []
         for sim_batch, real_batch in zip(self.data_loader.sample_shuffled_batch(),
-                                         self.discriminator_data_loader.sample_shuffled_batch()):
+                                         self.target_data_loader.sample_shuffled_batch()):
             self._optimizer.zero_grad()
+
             # normal deep supervision loss
             targets = data_to_tensor(sim_batch.actions).type(self._net.dtype).to(self._device)
             probabilities = self._net.forward_with_all_outputs(sim_batch.observations, train=True)
@@ -63,10 +61,15 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
             for index, prob in enumerate(probabilities[:-1]):
                 loss += self._criterion(prob, targets).mean()
             deeply_supervised_error.append(loss.mean().cpu().detach())
+
             # adversarial loss on discriminator data
-            discriminator_probabilities = self._net.forward_with_all_outputs(real_batch.observations, train=True)
-            discriminator_loss = self._net.discriminate(torch.cat(discriminator_probabilities).unsqueeze(dim=1),
-                                                        train=False).mean()
+            network_outputs = torch.cat(self._net.forward_with_all_outputs(real_batch.observations,
+                                                                           train=True)).unsqueeze(dim=1)
+            discriminator_loss = self._net.discriminate(network_outputs, train=False).mean()
+            #results = self._net.forward_with_intermediate_outputs(real_batch.observations, train=True)
+            #feature_maps =
+
+            # combine losses with epsilon weight
             loss *= (1 - self._config.epsilon)
             loss += self._config.epsilon * discriminator_loss
             loss.mean().backward()
@@ -87,7 +90,7 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
                     writer.write_output_image(prob, f'training/predictions_{index}')
                 writer.write_output_image(targets, 'training/targets')
                 writer.write_output_image(torch.stack(sim_batch.observations), 'training/inputs')
-            for index, prob in enumerate(discriminator_probabilities):
+            for index, prob in enumerate(self._net.forward_with_all_outputs(real_batch.observations, train=False)):
                 writer.write_output_image(prob, f'real/predictions_{index}')
             writer.write_output_image(torch.stack(real_batch.observations), 'real/inputs')
         return f' Training: supervision {self._config.criterion} {supervised_error_distribution.mean: 0.3e} ' \
@@ -99,7 +102,7 @@ class DeepSupervisionWithDiscriminator(DeepSupervision):
         total_error = []
         criterion = nn.BCELoss()
         for sim_batch, real_batch in zip(self.data_loader.sample_shuffled_batch(),
-                                         self.discriminator_data_loader.sample_shuffled_batch()):
+                                         self.target_data_loader.sample_shuffled_batch()):
             self._discriminator_optimizer.zero_grad()
             sim_predictions = torch.cat(self._net.forward_with_all_outputs(sim_batch.observations, train=False))
             real_predictions = torch.cat(self._net.forward_with_all_outputs(real_batch.observations, train=False))

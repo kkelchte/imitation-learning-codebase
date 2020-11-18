@@ -189,8 +189,7 @@ class ArchitectureTest(unittest.TestCase):
         dataset = generate_dataset_by_length(length=5,
                                              input_size=(1, 200, 200),
                                              output_size=(200, 200),)
-        for arch in ['auto_encoder_deeply_supervised',
-                     'auto_encoder_deeply_supervised_confidence',
+        for arch in ['auto_encoder_deeply_supervised_confidence',
                      'auto_encoder_deeply_supervised_share_weights']:
             base_config['architecture'] = arch
             base_config['initialisation_type'] = 'xavier'
@@ -245,7 +244,7 @@ class ArchitectureTest(unittest.TestCase):
             'data_loader_config': {
                 'batch_size': 2
             },
-            'discriminator_data_loader_config': {
+            'target_data_loader_config': {
                 'batch_size': 2
             },
             'criterion': 'WeightedBinaryCrossEntropyLoss',
@@ -254,7 +253,7 @@ class ArchitectureTest(unittest.TestCase):
         trainer = TrainerFactory().create(config=TrainerConfig().create(config_dict=trainer_config),
                                           network=network)
         trainer.data_loader.set_dataset(dataset)
-        trainer.discriminator_data_loader.set_dataset(dataset)
+        trainer.target_data_loader.set_dataset(dataset)
 
         # test training main network
         initial_main_checksum = get_checksum_network_parameters(network.deeply_supervised_parameters())

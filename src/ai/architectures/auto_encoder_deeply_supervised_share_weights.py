@@ -17,20 +17,20 @@ class Net(BaseNet):
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
 
-        self.conv2_1.weight = self.conv1_1.weight
-        self.conv2_2.weight = self.conv1_2.weight
-        self.conv2_1.bias = self.conv1_1.bias
-        self.conv2_2.bias = self.conv1_2.bias
+        self.residual_2.residual_net.conv_0.weight = self.residual_1.residual_net.conv_0.weight
+        self.residual_2.residual_net.conv_0.bias = self.residual_1.residual_net.conv_0.bias
+        self.residual_2.residual_net.conv_1.weight = self.residual_1.residual_net.conv_1.weight
+        self.residual_2.residual_net.conv_1.bias = self.residual_1.residual_net.conv_1.bias
 
-        self.conv3_1.weight = self.conv1_1.weight
-        self.conv3_2.weight = self.conv1_2.weight
-        self.conv3_1.bias = self.conv1_1.bias
-        self.conv3_2.bias = self.conv1_2.bias
+        self.residual_3.residual_net.conv_0.weight = self.residual_1.residual_net.conv_0.weight
+        self.residual_3.residual_net.conv_0.bias = self.residual_1.residual_net.conv_0.bias
+        self.residual_3.residual_net.conv_1.weight = self.residual_1.residual_net.conv_1.weight
+        self.residual_3.residual_net.conv_1.bias = self.residual_1.residual_net.conv_1.bias
 
-        self.conv4_1.weight = self.conv1_1.weight
-        self.conv4_2.weight = self.conv1_2.weight
-        self.conv4_1.bias = self.conv1_1.bias
-        self.conv4_2.bias = self.conv1_2.bias
+        self.residual_4.residual_net.conv_0.weight = self.residual_1.residual_net.conv_0.weight
+        self.residual_4.residual_net.conv_0.bias = self.residual_1.residual_net.conv_0.bias
+        self.residual_4.residual_net.conv_1.weight = self.residual_1.residual_net.conv_1.weight
+        self.residual_4.residual_net.conv_1.bias = self.residual_1.residual_net.conv_1.bias
 
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
