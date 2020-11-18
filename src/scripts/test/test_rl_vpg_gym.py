@@ -3,7 +3,7 @@ import unittest
 import os
 
 from src.scripts.experiment import ExperimentConfig, Experiment
-from src.core.utils import get_filename_without_extension, get_to_root_dir
+from src.core.utils import get_filename_without_extension, get_to_root_dir, get_data_dir
 
 experiment_config = {
     "output_path": "/tmp",
@@ -47,7 +47,7 @@ experiment_config = {
 class TestVPGGym(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["PWD"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         experiment_config['output_path'] = self.output_dir
 

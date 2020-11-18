@@ -183,7 +183,7 @@ class Experiment:
                 msg += output_msg
             if self._config.save_checkpoint_every_n != -1 and \
                     (self._epoch % self._config.save_checkpoint_every_n == 0 or
-                     self._epoch == self._config.number_of_epochs - 1) and not best_ckpt:
+                     self._epoch == self._config.number_of_epochs - 1):
                 self.save_checkpoint(tag=f'{self._epoch:05d}')
             if best_ckpt and self._config.save_checkpoint_every_n != -1:
                 self.save_checkpoint(tag='best')
