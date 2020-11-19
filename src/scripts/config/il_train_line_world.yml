@@ -2,7 +2,6 @@ output_path: test_encoder_decoder
 episode_runner_config:
   number_of_episodes: -1
 number_of_epochs: 200
-number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
   architecture: bc_deeply_supervised_auto_encoder

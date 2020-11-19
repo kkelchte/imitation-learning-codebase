@@ -2,7 +2,6 @@ output_path: straight_corridor
 number_of_epochs: 100
 episode_runner_config:
   number_of_episodes: 5
-episode_runner_config:
   train_every_n_steps: -1
 architecture_config:
   architecture: straight_corridor_depth_30_1c
