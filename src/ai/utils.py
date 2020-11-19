@@ -55,13 +55,35 @@ def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
     return data
 
 
-def mlp_creator(sizes: List[int], activation: nn.Module, output_activation: nn.Module = None,
+def mlp_creator(sizes: List[int], activation: nn.Module = None, output_activation: nn.Module = None,
                 bias_in_last_layer: bool = True) -> nn.Module:
     """Create Multi-Layer Perceptron"""
     layers = []
     for j in range(len(sizes)-1):
         is_not_last_layer = j < len(sizes)-2
         layers += [nn.Linear(sizes[j], sizes[j+1], bias=True if bias_in_last_layer else is_not_last_layer)]
+        act = activation if is_not_last_layer else output_activation
+        if act is not None:
+            layers += [act]
+    return nn.Sequential(*layers)
+
+
+def conv_creator(channels: List[int], kernel_sizes: List[int] = None,
+                 strides: List[int] = None, activation: nn.Module = None,
+                 output_activation: nn.Module = None,
+                 bias_in_last_layer: bool = True,
+                 batch_norm: bool = False) -> nn.Module:
+    """Create Conv2d Network"""
+    layers = []
+    for j in range(len(channels) - 1):
+        is_not_last_layer = j < len(channels) - 2
+        layers += [nn.Conv2d(in_channels=channels[j],
+                             out_channels=channels[j + 1],
+                             kernel_size=3 if kernel_sizes is None else kernel_sizes[j],
+                             stride=2 if strides is None else strides[j],
+                             bias=True if bias_in_last_layer else is_not_last_layer)]
+        if batch_norm:
+            layers += [nn.BatchNorm2d(channels[j+1])]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act]

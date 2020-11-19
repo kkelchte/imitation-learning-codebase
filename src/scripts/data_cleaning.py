@@ -12,7 +12,7 @@ from src.core.config_loader import Parser, Config
 from src.core.data_types import Dataset
 from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.data.utils import create_hdf5_file_from_dataset, set_binary_maps_as_target, augment_background_noise, \
-    augment_background_textured
+    augment_background_textured, parse_binary_maps
 
 """
 Data cleaner script loads raw data with a data loader, cleans it and stores the data in hdf5 files.
@@ -85,15 +85,22 @@ class DataCleaner:
                 run_dataset.clip(self._config.max_run_length)
                 assert len(run_dataset) <= self._config.max_run_length
             # augment with background noise and change target to binary map
+
+            binary_maps = parse_binary_maps(run_dataset.observations, invert=self._config.invert_binary_maps) \
+                if self._config.augment_background_noise != 0 or self._config.augment_background_textured != 0 else None
             if self._config.binary_maps_as_target:
-                run_dataset = set_binary_maps_as_target(run_dataset, invert=self._config.invert_binary_maps)
+                run_dataset = set_binary_maps_as_target(run_dataset, invert=self._config.invert_binary_maps,
+                                                        binary_images=binary_maps)
+
             if self._config.augment_background_noise != 0:
-                run_dataset = augment_background_noise(run_dataset, p=self._config.augment_background_noise)
+                run_dataset = augment_background_noise(run_dataset, p=self._config.augment_background_noise,
+                                                       binary_images=binary_maps)
             if self._config.augment_background_textured != 0:
                 run_dataset = augment_background_textured(run_dataset,
                                                           texture_directory=self._config.texture_directory,
                                                           p=self._config.augment_background_textured,
-                                                          p2=self._config.augment_empty_images)
+                                                          p_empty=self._config.augment_empty_images,
+                                                          binary_images=binary_maps)
             # store dhf5 file once max dataset size is reached
             hdf5_data.extend(run_dataset)
             self._data_loader.empty_dataset()

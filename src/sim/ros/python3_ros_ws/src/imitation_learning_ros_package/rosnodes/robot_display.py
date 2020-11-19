@@ -7,14 +7,14 @@ import cv2
 import numpy as np
 from bebop_msgs.msg import CommonCommonStateBatteryStateChanged
 from imitation_learning_ros_package.msg import RosReward
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CompressedImage
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String, Empty, Float32MultiArray
 
 from src.core.data_types import Action, TerminationType
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import process_image, get_output_path, adapt_twist_to_action
+from src.sim.ros.src.utils import process_image, process_compressed_image, get_output_path, adapt_twist_to_action
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 JOYSTICK_BUTTON_MAPPING = {
@@ -170,6 +170,14 @@ class RobotDisplay:
     def _process_image(self, msg: Image, args: tuple) -> None:
         sensor_topic, sensor_stats = args
         image = process_image(msg, sensor_stats)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        if sum(image.shape) < 3000:
+            image = cv2.resize(image, (600, 400), interpolation=cv2.INTER_AREA)
+        self._draw(image)
+
+    def _process_compressed_image(self, msg: CompressedImage, args: tuple) -> None:
+        sensor_topic, sensor_stats = args
+        image = process_compressed_image(msg, sensor_stats)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         if sum(image.shape) < 3000:
             image = cv2.resize(image, (600, 400), interpolation=cv2.INTER_AREA)

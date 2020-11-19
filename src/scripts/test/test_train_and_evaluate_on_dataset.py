@@ -6,7 +6,7 @@ from glob import glob
 
 from src.ai.base_net import ArchitectureConfig
 from src.ai.utils import generate_random_dataset_in_raw_data
-from src.core.utils import get_to_root_dir, get_filename_without_extension
+from src.core.utils import get_to_root_dir, get_filename_without_extension, get_data_dir
 from src.ai.architectures import *  # Do not remove
 from src.scripts.experiment import Experiment, ExperimentConfig
 
@@ -14,7 +14,7 @@ from src.scripts.experiment import Experiment, ExperimentConfig
 class DatasetExperimentsTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["PWD"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         self.experiment_config = {"output_path": self.output_dir,
                                   "number_of_epochs": 4,
@@ -51,9 +51,10 @@ class DatasetExperimentsTest(unittest.TestCase):
         experiment = Experiment(config=ExperimentConfig().create(config_dict=self.experiment_config))
         experiment.run()
 
+        print(os.listdir(os.path.join(self.output_dir, 'torch_checkpoints')))
         # check if checkpoints were stored in torch_checkpoints
-        self.assertEqual(len([f for f in os.listdir(os.path.join(self.output_dir, 'torch_checkpoints'))
-                              if f.endswith('ckpt')]), 3)
+        self.assertEqual(5, len([f for f in os.listdir(os.path.join(self.output_dir, 'torch_checkpoints'))
+                                 if f.endswith('ckpt')]))
 
     def test_train_model_on_generated_dataset_with_tensorboard(self):
         network = eval(self.experiment_config['architecture_config']['architecture']).Net(
@@ -127,8 +128,7 @@ class DatasetExperimentsTest(unittest.TestCase):
         shutil.rmtree(external_dataset, ignore_errors=True)
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.output_dir, ignore_errors=True)
-        time.sleep(2)
+        shutil.rmtree(self.output_dir)
 
 
 if __name__ == '__main__':

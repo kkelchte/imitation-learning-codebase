@@ -86,7 +86,8 @@ class CondorJob:
 
         i = 0
         while os.path.isdir(self.output_dir):
-            self.output_dir = f'{self.output_dir}_{i}' if i == 0 else '_'.join(self.output_dir.split('_')[:-1]) + '_' + str(i)
+            self.output_dir = f'{self.output_dir}_{i}' if i == 0 else '_'.join(self.output_dir.split('_')[:-1]) \
+                                                                      + '_' + str(i)
             i += 1
 
         os.makedirs(self.output_dir)
@@ -113,7 +114,7 @@ class CondorJob:
         self.error_file = os.path.join(self.output_dir, 'job.error')
         self.log_file = os.path.join(self.output_dir, 'job.log')
 
-        self.local_home = '/tmp/imitation-learning-codebase'
+        self.local_home = '$TEMP'
         self.local_output_path = f'{self.local_home}/{os.path.basename(self.output_dir)}_' \
                                  f'{get_date_time_tag()}' if self._config.save_locally else None
         self._original_output_path = None
@@ -171,7 +172,6 @@ class CondorJob:
                  '| cut -d \'@\' -f 2 | cut -d \'.\' -f 1) \n'
         lines += 'Command=$(cat $_CONDOR_JOB_AD | grep Cmd | grep kkelchte | head -1 | cut -d \'/\' -f 8) \n'
 
-        #lines += f'if [ -e {self.local_home}/* ] ; then'
         lines += 'while [ $(condor_who | grep kkelchte | wc -l) != 1 ] ; do \n'
         lines += '\t echo found other ros job, so leaving machine $RemoteHost \n'
         lines += '\t ssh opal /usr/bin/condor_hold ${ClusterId}.${ProcId} \n'
@@ -199,7 +199,9 @@ class CondorJob:
         self._original_output_path = config_dict['output_path']
         if not self._original_output_path.startswith('/'):
             self._original_output_path = f'{get_data_dir(os.environ["HOME"])}/{self._original_output_path}'
-        config_dict['output_path'] = self.local_output_path
+        # cut local_home, which is a TEMP environment variable, from the output path of the adjusted config
+        # so python expereriment will take the DATADIR environment variable which should be set to TEMP
+        config_dict['output_path'] = self.local_output_path[len(self.local_home)+1:]
 
         # adjust config if hdf5 files are present and store original_to_new_location_tuples
         original_to_new_location_tuples = []
@@ -223,7 +225,11 @@ class CondorJob:
                 elif isinstance(value, dict):
                     config[key] = search_for_key_and_adjust(value)
             return config
-        config_dict = search_for_key_and_adjust(config_dict)
+        # Do not copy hdf5 files as you assume they are on gluster
+        # copying seemed to end uncompleted resulting in corrupted files.
+        # using rsync might help.
+        # NOT WORKING WITH $TEMP local folder TODO
+        #config_dict = search_for_key_and_adjust(config_dict)
 
         adjusted_config_file = os.path.join(self.output_dir, 'adjusted_config.yml')
         # store adjust config file in condor dir and make command point to adjust config file
@@ -232,17 +238,18 @@ class CondorJob:
         self._config.command = f'{self._config.command.split("--config")[0]} --config {adjusted_config_file}'
 
         # add some extra lines to create new output path and copy hdf5 files
-        extra_lines = f'mkdir -p {self.local_output_path} \n'
-        extra_lines += f'cp -r {self._original_output_path}/* {self.local_output_path} 2>&1 >> /dev/null ' \
+        extra_lines = f'export DATADIR=$TEMP \n'
+        extra_lines += f'mkdir -p {self.local_output_path} \n'
+        extra_lines += f'rsync -r {self._original_output_path}/ {self.local_output_path} 2>&1 >> /dev/null ' \
                        f'| echo \'no original data\' \n'
         for original_hdf5_file, new_hdf5_file in original_to_new_location_tuples:
             extra_lines += f'echo copying \"{original_hdf5_file}\" \n'
-            extra_lines += f'cp {original_hdf5_file} {new_hdf5_file} \n'
+            extra_lines += f'rsync {original_hdf5_file} {new_hdf5_file} \n'
         return extra_lines
 
     def _add_lines_to_copy_local_data_back(self) -> str:
         lines = f'mkdir -p {self._original_output_path} \n'
-        lines += f'cp -r {self.local_output_path}/* {self._original_output_path} \n'
+        lines += f'rsync -r {self.local_output_path}/ {self._original_output_path} \n'
         lines += f'rm -r {self.local_output_path} \n'
         return lines
 
@@ -260,7 +267,7 @@ class CondorJob:
                  f"sleep 60 \n kill -0 $PROCESSID >> /dev/null\n CHECKPID=$?\n COUNT=$((COUNT+1))\n " \
                  f"if [ $((COUNT % 60)) = 59 ] ; then \n " \
                  f"echo \'copying data back \' \n" \
-                 f"cp -r {self.local_output_path}/* {self._original_output_path} \n" \
+                 f"rsync -r {self.local_output_path}/ {self._original_output_path} \n" \
                  f"fi \n" \
                  f"done\n"
         lines += "if [ $CHECKPID == 0 ] ; then \n" \
@@ -289,7 +296,7 @@ class CondorJob:
             else:
                 executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
-                if 'DATADIR' in os.environ.keys():
+                if 'DATADIR' in os.environ.keys() and not self._config.save_locally:
                     executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
                 executable.write(f'export HOME={os.environ["HOME"]}\n')
                 executable.write(f'{self._config.command} {"&" if self._config.save_before_wall_time else ""}\n')

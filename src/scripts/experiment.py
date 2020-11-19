@@ -17,6 +17,7 @@ from src.ai.trainer import TrainerConfig
 from src.ai.architectures import *  # Do not remove
 from src.ai.trainer_factory import TrainerFactory
 from src.core.utils import get_filename_without_extension, get_data_dir, get_date_time_tag
+from src.core.data_types import TerminationType, Distribution, Dataset
 from src.core.config_loader import Config, Parser
 from src.core.logger import get_logger, cprint, MessageType
 from src.data.data_saver import DataSaverConfig, DataSaver
@@ -115,6 +116,7 @@ class Experiment:
                 self._config.load_checkpoint_dir = f'{get_data_dir(self._config.output_path)}/' \
                                                    f'{self._config.load_checkpoint_dir}'
             self.load_checkpoint(self._config.load_checkpoint_dir)
+
         cprint(f'Initiated.', self._logger)
 
     def run(self):
@@ -152,7 +154,7 @@ class Experiment:
                 msg += output_msg
             if self._config.save_checkpoint_every_n != -1 and \
                     (self._epoch % self._config.save_checkpoint_every_n == 0 or
-                     self._epoch == self._config.number_of_epochs - 1) and not best_ckpt:
+                     self._epoch == self._config.number_of_epochs - 1):
                 self.save_checkpoint(tag=f'{self._epoch:05d}')
             if best_ckpt and self._config.save_checkpoint_every_n != -1:
                 self.save_checkpoint(tag='best')
@@ -167,6 +169,9 @@ class Experiment:
         if self._tester is not None:
             output_msg, _ = self._tester.evaluate(epoch=self._epoch, writer=self._writer, tag='test')
             cprint(f'Testing: {output_msg}', self._logger)
+            if self._config.tester_config.evaluate_extensive:
+                self._tester.evaluate_extensive()
+
         cprint(f'Finished.', self._logger)
 
     def save_checkpoint(self, tag: str = ''):

@@ -62,6 +62,6 @@ trainer_config:
   entropy_coefficient: 0.
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10
-  ppo_epsilon: 0.2
+  epsilon: 0.2
   use_kl_stop: false
   kl_target: 0.01

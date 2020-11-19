@@ -1,0 +1,62 @@
+output_path: test_line_world_train
+number_of_epochs: 200
+number_of_episodes: -1
+save_checkpoint_every_n: 10
+architecture_config:
+  architecture: bc_deeply_supervised_auto_encoder
+#  architecture: auto_encoder_deeply_supervised_with_discriminator
+  initialisation_type: xavier
+  random_seed: 4
+  device: cuda
+  dropout: default
+  batch_normalisation: true
+  vae: false
+  dtype: default
+  log_std: default
+trainer_config:
+  optimizer: Adam
+  learning_rate: 0.001
+  factory_key: DADS
+#  factory_key: DSDis
+  weight_decay: 0.00003
+  epsilon: 0.8
+  store_feature_maps_on_tensorboard: True
+  domain_adaptation_criterion: MMDLossSimple #Coral #MMDLossZhao
+  target_data_loader_config:
+    batch_size: 5
+    hdf5_files:
+      - hdf5_files/1_200/real/tiny_dummy.hdf5
+  data_loader_config:
+    loop_over_hdf5_files: false
+    hdf5_files:
+      - hdf5_files/1_200/sim/tiny_dummy.hdf5
+    random_seed: 123
+    balance_over_actions: false
+    batch_size: 5
+  criterion: WeightedBinaryCrossEntropyLoss
+  criterion_args_str: 'beta=0.9'
+  device: cuda
+  store_output_on_tensorboard: true
+evaluator_config:
+  data_loader_config:
+    loop_over_hdf5_files: false
+    hdf5_files:
+      - hdf5_files/1_200/sim/tiny_dummy.hdf5
+    random_seed: 32
+    balance_over_actions: false
+    batch_size: 32
+  criterion: MSELoss
+  device: cuda
+  store_output_on_tensorboard: true
+tester_config:
+  data_loader_config:
+    hdf5_files:
+      - hdf5_files/1_200/real/tiny_dummy.hdf5
+    random_seed: 32
+    balance_over_actions: false
+    batch_size: 32
+  criterion: MSELoss
+  device: cuda
+  store_output_on_tensorboard: true
+  evaluate_extensive: true
+tensorboard: true

@@ -137,20 +137,20 @@ def prepare_phi_study(base_config_file: str,
                                              job_config_object=job_config_object)
 
 
-def prepare_ppo_epsilon_study(base_config_file: str,
+def prepare_epsilon_study(base_config_file: str,
                               job_config_object: CondorJobConfig,
                               number_of_jobs: int,
                               output_path: str) -> List[CondorJob]:
-    ppo_epsilon = [0.02, 0.1, 0.2, 1, 2]
+    epsilon = [0.02, 0.1, 0.2, 1, 2]
     seeds = [123 * n + 5100 for n in range(number_of_jobs)]
-    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}/eps_{x}') for x in ppo_epsilon for seed in seeds]
+    model_paths = [os.path.join(output_path, 'models', f'sd_{seed}_eps_{x}') for x in epsilon for seed in seeds]
     adjustments = {translate_keys_to_string(['architecture_config',
-                                            'random_seed']): seeds * len(ppo_epsilon),
+                                            'random_seed']): seeds * len(epsilon),
                    translate_keys_to_string(['output_path']): model_paths,
-                   translate_keys_to_string(['trainer_config', 'ppo_epsilon']):
-                       [x for x in ppo_epsilon for _ in range(len(seeds))],
+                   translate_keys_to_string(['trainer_config', 'epsilon']):
+                       [x for x in epsilon for _ in range(len(seeds))],
                    translate_keys_to_string(['trainer_config', 'factory_key']):
-                       ['PPO' for x in ppo_epsilon for _ in range(len(seeds))]}
+                       ['PPO' for x in epsilon for _ in range(len(seeds))]}
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)

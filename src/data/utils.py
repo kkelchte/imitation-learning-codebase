@@ -3,6 +3,7 @@ import os
 from copy import deepcopy
 from typing import List, Tuple, Union
 
+import PIL
 from cv2 import cv2
 import h5py
 import torch
@@ -57,13 +58,16 @@ def filename_to_timestamp(filename: str) -> int:
     return int(os.path.basename(filename).split('.')[0])
 
 
-def load_and_preprocess_file(file_name: str, size: tuple = None, scope: str = 'default') -> torch.Tensor:
+def load_and_preprocess_file(file_name: str, size: tuple = None, scope: str = 'default') -> Union[None, torch.Tensor]:
     """
     file_name: full path to image file
     size: tuple or list of 3 dimensions: (CHANNEL, WIDTH, HEIGHT) used with
     range: 'default' ~ 0:1, 'uint8' ~ 0:255, 'zero_centered' ~ -1:1
     """
-    data = Image.open(file_name, mode='r')
+    try:
+        data = Image.open(file_name, mode='r')
+    except PIL.UnidentifiedImageError:
+        return None
     if size is not None and len(size) != 0:
         data = cv2.resize(np.asarray(data), dsize=(size[1], size[2]), interpolation=cv2.INTER_LANCZOS4)
         if size[0] == 1:
@@ -390,30 +394,36 @@ def parse_binary_maps(observations: List[torch.Tensor], invert: bool = False) ->
     return binary_images
 
 
-def set_binary_maps_as_target(dataset: Dataset, invert: bool = False) -> Dataset:
-    binary_maps = parse_binary_maps(copy.deepcopy(dataset.observations), invert=invert)
-    dataset.actions = [torch.as_tensor(b) for b in binary_maps]
+def set_binary_maps_as_target(dataset: Dataset, invert: bool = False, binary_images: List[np.ndarray] = None) -> Dataset:
+    if binary_images is None:
+        binary_images = parse_binary_maps(copy.deepcopy(dataset.observations), invert=invert)
+    dataset.actions = [torch.as_tensor(b) for b in binary_images]
     return dataset
 
 
-def augment_background_noise(dataset: Dataset, p: float = 0.0) -> Dataset:
+def augment_background_noise(dataset: Dataset, p: float = 0.0, low: float = 0., high: float = 1.,
+                             binary_images: List[np.ndarray] = None) -> Dataset:
     """
     parse background and fore ground. Give fore ground random color and background noise.
+    :param binary_images:
+    :param high:
+    :param low:
     :param p: probability for each image to be augmented with background
     :param dataset: augmented dataset in which observations are adjusted with new back- and foregrounds
     :return: augmented dataset
     """
-    binary_images = parse_binary_maps(copy.deepcopy(dataset.observations))
+    if binary_images is None:
+        binary_images = parse_binary_maps(copy.deepcopy(dataset.observations), invert=True)
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
     num_channels = dataset.observations[0].shape[0]
     for index, image in tqdm(enumerate(binary_images)):
         if np.random.binomial(1, p):
             new_shape = (*image.shape, num_channels)
-            bg = np.random.uniform(-1, 1, size=new_shape)
-            fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
+            bg = np.random.uniform(low, high, size=new_shape)
+            fg = create_random_gradient_image(new_shape, low=low, high=high)
             three_channel_mask = np.stack([image] * num_channels, axis=-1)
-            new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg)).permute(2, 0, 1)
+            new_img = torch.as_tensor(((1 - three_channel_mask) * bg + three_channel_mask * fg)).permute(2, 0, 1)
         else:
             new_img = dataset.observations[index]
         augmented_dataset.observations.append(new_img)
@@ -421,9 +431,11 @@ def augment_background_noise(dataset: Dataset, p: float = 0.0) -> Dataset:
 
 
 def augment_background_textured(dataset: Dataset, texture_directory: str,
-                                p: float = 0.0, p_empty: float = 0.0) -> Dataset:
+                                p: float = 0.0, p_empty: float = 0.0,
+                                binary_images: List[np.ndarray] = None) -> Dataset:
     """
     parse background and fore ground. Give fore ground random color and background a crop of a textured image.
+    :param binary_images:
     :param p_empty: in case of augmentation with texture, potentially augment without any foreground and empty action map (hacky!)
     :param p: probability for each image to be augmented with background
     :param dataset: augmented dataset in which observations are adjusted with new back- and foregrounds
@@ -436,10 +448,12 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
     texture_paths = [os.path.join(texture_directory, sub_directory, image)
                      for sub_directory in os.listdir(texture_directory)
                      if os.path.isdir(os.path.join(texture_directory, sub_directory))
-                     for image in os.listdir(os.path.join(texture_directory, sub_directory))]
+                     for image in os.listdir(os.path.join(texture_directory, sub_directory))
+                     if image.endswith('.jpg')]
     assert len(texture_paths) != 0
     # 2. parse binary images to extract fore- and background
-    binary_images = parse_binary_maps(copy.deepcopy(dataset.observations))
+    if binary_images is None:
+        binary_images = parse_binary_maps(copy.deepcopy(dataset.observations), invert=True)
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
     num_channels = dataset.observations[0].shape[0]
@@ -449,13 +463,29 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
             bg_image = np.random.choice(texture_paths)
             bg = load_and_preprocess_file(bg_image,
                                           size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
-            if np.random.binomial(1, p_empty):
-                fg = np.zeros(new_shape) + np.random.uniform(-1, 1)
+            if not np.random.binomial(1, p_empty):
                 three_channel_mask = np.stack([image] * num_channels, axis=-1)
-                new_img = torch.as_tensor((-(three_channel_mask - 1) * fg + three_channel_mask * bg)).permute(2, 0, 1)
-            else:
-                new_img = bg.permute(2, 0, 1)
+                fg = create_random_gradient_image(size=bg.shape)
+                new_img = torch.as_tensor(((1 - three_channel_mask) * bg + three_channel_mask * fg)).permute(2, 0, 1)
                 augmented_dataset.observations.append(new_img)
+            else:
+                augmented_dataset.observations.append(torch.as_tensor(bg).permute(2, 0, 1))
+                augmented_dataset.actions[index] = torch.zeros_like(augmented_dataset.actions[index])
         else:
             augmented_dataset.observations.append(dataset.observations[index])
     return augmented_dataset
+
+
+def create_random_gradient_image(size: tuple, low: float = 0., high: float = 1.) -> np.ndarray:
+    color_a = np.random.uniform(low, high)
+    color_b = np.random.uniform(low, high)
+    locations = (np.random.randint(size[0]), np.random.randint(size[0]))
+    while locations[0] == locations[1]:
+        locations = (np.random.randint(size[0]), np.random.randint(size[0]))
+    x1, x2 = min(locations), max(locations)
+    gradient = np.arange(color_a, color_b, ((color_b - color_a)/(x2 - x1)))
+    gradient = gradient[:x2-x1]
+    assert len(gradient) == x2 - x1, f'failed: {len(gradient)} vs {x2 - x1}'
+    vertical_gradient = np.concatenate([np.ones(x1) * color_a, gradient, np.ones(size[0] - x2) * color_b])
+    image = np.stack([vertical_gradient]*size[1], axis=1).reshape(size)
+    return image

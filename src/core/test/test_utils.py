@@ -24,6 +24,7 @@ class TestUtils(unittest.TestCase):
         get_to_root_dir()
         self.assertTrue('ROOTDIR' in os.listdir())
         # check raise error
+        del os.environ['CODEDIR']
         os.chdir('../..')
         self.assertRaises(
             FileNotFoundError,

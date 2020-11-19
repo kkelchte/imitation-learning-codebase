@@ -6,7 +6,7 @@ augment_background_noise: False
 augment_background_textured: False
 texture_directory: textured_dataset
 binary_maps_as_target: True
-shuffle: True
+shuffle: false
 require_success: False
 max_run_length: 20000
 max_hdf5_size: 5000000000
