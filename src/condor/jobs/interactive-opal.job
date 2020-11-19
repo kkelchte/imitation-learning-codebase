@@ -1,0 +1,16 @@
+###########################
+# Submit an interactive job
+###########################
+Universe 	= vanilla
+RequestCpus     = 1
+RequestMemory   = 25 G
+RequestDisk	= 5 G
+# max time 4h
++RequestWallTime = 2*60*60
+Request_GPUS    = 0
+Requirements = (machineowner == "Visics") && HasSingularity && ( OpSysAndVer == "Fedora32" ) && ( Mips >= 26000 ) && (machine == opal.esat.kuleuven.be)
+
+# If you want X11 forwarding, uncomment this
+Requirements = ( OpSysAndVer == "Fedora32" )
+
+Queue
