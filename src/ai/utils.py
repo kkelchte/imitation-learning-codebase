@@ -102,7 +102,8 @@ def generate_random_dataset_in_raw_data(output_dir: str, num_runs: int = 20,
                                         store_hdf5: bool = False) -> dict:
     """Generate data, stored in raw_data directory of output_dir"""
     data_saver = DataSaver(config=DataSaverConfig().create(config_dict={'output_path': output_dir,
-                                                                        'store_hdf5': store_hdf5}))
+                                                                        'store_hdf5': store_hdf5,
+                                                                        'separate_raw_data_runs': True}))
     info = generate_dummy_dataset(data_saver,
                                   num_runs=num_runs,
                                   input_size=input_size,
