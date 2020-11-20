@@ -102,7 +102,7 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
                             # title += 'inds_' + '_'.join([str(v.item()) for v in winning_indices.indices])
                             # title += '_vals_' + '_'.join([f'{v.item():0.2f}' for v in winning_indices.values])
                             writer.write_output_image(feature_maps, title)
-            writer.write_figure(plot_gradient_flow(self._net.named_parameters()))
+            writer.write_figure(tag='gradient', figure=plot_gradient_flow(self._net.named_parameters()))
 
         return f' task {self._config.criterion} ' \
                f'{task_error_distribution.mean: 0.3e} ' \

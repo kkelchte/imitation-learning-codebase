@@ -4,24 +4,24 @@ episode_runner_config:
   number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
-#  architecture: bc_deeply_supervised_auto_encoder
-  architecture: auto_encoder_deeply_supervised_heuristic_output
+  architecture: bc_deeply_supervised_auto_encoder
+#  architecture: auto_encoder_deeply_supervised_heuristic_output
 #  architecture: auto_encoder_deeply_supervised_with_discriminator
   initialisation_type: xavier
   random_seed: 4
   device: cuda
   dropout: default
-  batch_normalisation: true
+  batch_normalisation: false
   vae: false
   dtype: default
   log_std: default
 trainer_config:
   optimizer: Adam
-  learning_rate: 0.001
-  factory_key: DS
-  #factory_key: DADS
+  learning_rate: 0.1
+#  factory_key: DS
+  factory_key: DADS
 #  factory_key: DSDis
-  weight_decay: 0.00003
+  weight_decay: 0.0
   epsilon: 0.8
   store_feature_maps_on_tensorboard: True
   domain_adaptation_criterion: MMDLossZhao #Coral #MMDLossSimple #Coral #MMDLossZhao

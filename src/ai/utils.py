@@ -183,8 +183,12 @@ def plot_gradient_flow(named_parameters):
     layers = []
     for n, p in named_parameters:
         if p.requires_grad and "bias" not in n:
-            layers.append(n)
-            ave_grads.append(p.grad.abs().mean())
+            try:
+                ave_grads.append(p.grad.abs().mean())
+            except:
+                pass
+            else:
+                layers.append(n)
     figure = plt.figure()
     plt.plot(ave_grads, alpha=0.3, color="b")
     plt.hlines(0, 0, len(ave_grads) + 1, linewidth=1, color="k")

@@ -1,7 +1,6 @@
 output_path: line_world/dronet_sidetuned_extra_train_ctr/adam_lr000001_e2e
 #output_path: line_world/dronet_finetuned/sgd_lr00001
 mode: train
-job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 4
@@ -10,7 +9,6 @@ job_configs:
     disk_mem_gb: 52
     wall_time_s: 60 * 60
     nice: true
-    gpu_mem_mb: 1900
     use_singularity: false
     check_if_ros_already_in_use: false
     save_locally: true
