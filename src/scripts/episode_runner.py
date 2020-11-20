@@ -101,11 +101,11 @@ class EpisodeRunner:
         msg += f" with return {return_distribution.mean: 0.3e} [{return_distribution.std: 0.2e}]"
         if self._writer is not None:
             self._writer.write_scalar(np.mean(self._episode_lengths).item(),
-                                      f'{"" if not test else "test_"}episode_lengths{"_"+tag if tag is not "" else ""}')
+                                      f'{"" if not test else "test_"}episode_lengths{"_"+tag if tag != "" else ""}')
             self._writer.write_distribution(return_distribution,
-                                            f'{"" if not test else "test_"}episode_return{"_"+tag if tag is not "" else ""}')
+                                            f'{"" if not test else "test_"}episode_return{"_"+tag if tag != "" else ""}')
             self._writer.write_gif(self._frames,
-                                   f'{"" if not test else "test_"}episode{"_"+tag if tag is not "" else ""}')
+                                   f'{"" if not test else "test_"}episode{"_"+tag if tag != "" else ""}')
 
         best_checkpoint = False
         if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:

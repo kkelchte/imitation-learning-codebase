@@ -1,5 +1,5 @@
 #!/bin/python3.8
-from typing import Tuple
+from typing import Tuple, Union, List
 
 import numpy as np
 import torch
@@ -30,7 +30,6 @@ class Net(BaseNet):
         self._config.batch_normalisation = config.batch_normalisation if isinstance(config.batch_normalisation, bool) \
             else False
         self.sigmoid = nn.Sigmoid()
-
         self.conv0 = torch.nn.Conv2d(in_channels=1,
                                      out_channels=32,
                                      kernel_size=3,
@@ -122,7 +121,7 @@ class Net(BaseNet):
         _, _, _, _, final_prob = self.forward_with_all_outputs(inputs, train)
         return final_prob
 
-    def get_action(self, inputs, train: bool = False) -> Action:
+    def get_action(self, inputs, train: bool = False) -> Union[None, Action]:
         image = self.forward(inputs, train=train).detach().cpu().squeeze().numpy()
         image *= 255
         image = image.astype(np.uint8)
@@ -131,9 +130,10 @@ class Net(BaseNet):
         return None
 #        raise NotImplementedError
 
-    def get_features(self, inputs, train: bool = False) -> torch.Tensor:
+    def get_features(self, inputs, train: bool = False) -> List[torch.Tensor]:
         results = self.forward_with_intermediate_outputs(inputs, train=train)
-        return results['x4']
+        # average feature maps over 32 channels and return as 4 vectors of size Nx32 for each output
+        return [results[key].mean(dim=2).mean(dim=2) for key in ['x1', 'x2', 'x3', 'x4']]
 
 
 class ImageNet(Net):
