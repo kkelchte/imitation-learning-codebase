@@ -221,7 +221,7 @@ def prepare_lr_wd_bn_line_world(base_config_file: str,
                        [bn for lr in learning_rates
                         for wd in weight_decay
                         for bn in batch_norm],
-                   translate_keys_to_string(['architecture_config', 'weight_decay']):
+                   translate_keys_to_string(['trainer_config', 'weight_decay']):
                        [wd for lr in learning_rates
                         for wd in weight_decay
                         for bn in batch_norm],
