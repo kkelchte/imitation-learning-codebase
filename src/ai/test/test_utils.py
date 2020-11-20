@@ -11,7 +11,7 @@ from src.ai.trainer import TrainerConfig
 from src.ai.trainer_factory import TrainerFactory
 from src.ai.utils import generate_random_dataset_in_raw_data, DiscreteActionMapper, plot_gradient_flow
 from src.core.tensorboard_wrapper import TensorboardWrapper
-from src.core.utils import get_to_root_dir, get_filename_without_extension
+from src.core.utils import get_to_root_dir, get_filename_without_extension, get_data_dir
 from src.ai.architectures import *  # Do not remove
 from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.data.test.common_utils import generate_dataset_by_length
@@ -20,7 +20,7 @@ from src.data.test.common_utils import generate_dataset_by_length
 class UtilsTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["PWD"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
     def test_discrete_action_mapper(self):

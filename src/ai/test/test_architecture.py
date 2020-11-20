@@ -11,7 +11,7 @@ from src.ai.base_net import ArchitectureConfig, BaseNet
 from src.ai.trainer import TrainerConfig
 from src.ai.trainer_factory import TrainerFactory
 from src.ai.utils import mlp_creator, generate_random_dataset_in_raw_data, get_checksum_network_parameters
-from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image
+from src.core.utils import get_to_root_dir, get_filename_without_extension, generate_random_image, get_data_dir
 from src.ai.architectures import *  # Do not remove
 from src.data.test.common_utils import generate_dataset_by_length
 
@@ -19,7 +19,7 @@ from src.data.test.common_utils import generate_dataset_by_length
 class ArchitectureTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["PWD"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         self.base_config = {"architecture": "", "initialisation_type": 'xavier', "random_seed": 0, "device": 'cpu',
                             'output_path': self.output_dir}
