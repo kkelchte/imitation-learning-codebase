@@ -13,8 +13,8 @@ from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
 
 """
-Four encoding and four decoding layers with dropout.
-Expects 3x200x200 inputs and outputs 200x200
+Four res blocks working at resolution
+Expects 1x200x200 inputs and outputs 200x200 at each intermediate feature maps
 """
 
 

@@ -1,5 +1,5 @@
-output_path: encoder_decoder/baselines
-mode: lr_architecture_line_world
+output_path: encoder_decoder/baselines_generalisation_study
+mode: lr_wd_bn_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:
   - command: python3.8 src/scripts/experiment.py

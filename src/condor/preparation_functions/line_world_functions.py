@@ -198,16 +198,34 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                              job_config_object=job_config_object)
 
 
-def prepare_lr_line_world(base_config_file: str,
-                          job_config_object: CondorJobConfig,
-                          number_of_jobs: int,
-                          output_path: str) -> List[CondorJob]:
-    learning_rates = [0.01, 0.001, 0.0001, 0.00001]
-    model_paths = [os.path.join(output_path, 'models', f'lr_{lr}')
-                   for lr in learning_rates]
+def prepare_lr_wd_bn_line_world(base_config_file: str,
+                                job_config_object: CondorJobConfig,
+                                number_of_jobs: int,
+                                output_path: str) -> List[CondorJob]:
+
+    learning_rates = [0.001, 0.0001]
+    batch_norm = [True, False]
+    weight_decay = [0.001, 0.0001, 0.00001]
+
+    model_paths = [os.path.join(output_path, 'models', 'bn' if bn else 'default', f'wd_{wd}', f'lr_{lr}')
+                   for lr in learning_rates
+                   for wd in weight_decay
+                   for bn in batch_norm]
+
     adjustments = {translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
-                       [lr for lr in learning_rates]}
+                       [lr for lr in learning_rates
+                        for wd in weight_decay
+                        for bn in batch_norm],
+                   translate_keys_to_string(['architecture_config', 'batch_normalisation']):
+                       [bn for lr in learning_rates
+                        for wd in weight_decay
+                        for bn in batch_norm],
+                   translate_keys_to_string(['architecture_config', 'weight_decay']):
+                       [wd for lr in learning_rates
+                        for wd in weight_decay
+                        for bn in batch_norm],
+                   }
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)
