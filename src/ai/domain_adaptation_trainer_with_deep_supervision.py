@@ -56,12 +56,10 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
             task_loss *= (1 - self._config.epsilon)
 
             # add domain adaptation loss on distribution of output pixels at each output
-            domain_loss = sum([self._domain_adaptation_criterion(sp.flatten().unsqueeze(1), tp.flatten().unsqueeze(1))
-                               for sp, tp in zip(self._net.forward_with_all_outputs(source_batch.observations,
-                                                                                    train=True),
-                                                 self._net.forward_with_all_outputs(target_batch.observations,
-                                                                                    train=True))
-                               ]) * self._config.epsilon
+            domain_loss = sum(self._domain_adaptation_criterion(sp, tp) for sp, tp in zip(
+                self._net.get_features(source_batch.observations, train=True),
+                self._net.get_features(target_batch.observations, train=True)
+            )) * self._config.epsilon
 
             loss = task_loss + domain_loss
             loss.backward()
