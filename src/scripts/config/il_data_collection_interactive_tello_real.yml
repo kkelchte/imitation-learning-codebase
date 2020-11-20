@@ -20,11 +20,7 @@ environment_config:
       control_mapping: true
       waypoint_indicator: false
       control_mapping_config: joystick
-      world_name: empty
-      x_pos: 0.0
-      y_pos: 0.0
-      z_pos: 1.0
-      yaw_or: 1.57
+      world_name: default
     actor_configs:
 #      - name: keyboard
 #        file: src/sim/ros/config/actor/keyboard_bebop_real.yml

@@ -1,0 +1,70 @@
+output_path: test_discriminator
+number_of_epochs: 100
+number_of_episodes: -1
+save_checkpoint_every_n: 10
+architecture_config:
+  architecture: auto_encoder_deeply_supervised_with_discriminator
+  initialisation_type: xavier
+  random_seed: 4
+  device: cuda
+  dropout: default
+  batch_normalisation: default
+  vae: false
+  dtype: default
+trainer_config:
+  optimizer: Adam
+  learning_rate: 0.001
+  critic_learning_rate: 0.001
+  epsilon: 0.2
+  factory_key: DeepSupervisionWithDiscriminator
+  weight_decay: 0.00003
+  target_data_loader_config:
+    batch_size: 10
+    hdf5_files:
+      - /gluster/visics/kkelchte/line_world_data/real/1_200_200_shuffled/validation_0.hdf5
+  data_loader_config:
+    loop_over_hdf5_files: true
+    hdf5_files:
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_0.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_10.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_11.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_12.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_1.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_2.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_3.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_4.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_5.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_6.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_7.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_8.hdf5
+      - /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/train_9.hdf5
+    random_seed: 123
+    balance_over_actions: false
+    batch_size: 10
+  criterion: WeightedBinaryCrossEntropyLoss
+  criterion_args_str: 'beta=0.9'
+  device: cuda
+  store_output_on_tensorboard: true
+evaluator_config:
+  data_loader_config:
+    loop_over_hdf5_files: false
+    hdf5_files:
+      -  /gluster/visics/kkelchte/line_world_data/sim/mixed/1_200_200/validation_0.hdf5
+    random_seed: 32
+    balance_over_actions: false
+    batch_size: 20
+  criterion: MSELoss
+  device: cuda
+  store_output_on_tensorboard: true
+tester_config:
+  data_loader_config:
+    hdf5_files:
+      -  /gluster/visics/kkelchte/line_world_data/real/1_200_200/validation_0.hdf5
+    random_seed: 32
+    balance_over_actions: false
+    batch_size: 20
+  criterion: MSELoss
+  device: cuda
+  store_output_on_tensorboard: true
+  evaluate_extensive: true
+tensorboard: true

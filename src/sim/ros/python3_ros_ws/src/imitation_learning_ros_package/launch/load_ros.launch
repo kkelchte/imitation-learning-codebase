@@ -6,13 +6,13 @@
     <arg name="output_path" default="/tmp"/>
     <param name="output_path" value="$(arg output_path)"/>
     <arg name="world_name" default="debug_drone"/>
-    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
+    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
 
     <!--######################## GAZEBO ########################-->
     <arg name="gazebo" default="false"/>
     <group if="$(arg gazebo)">
         <include file="$(find imitation_learning_ros_package)/launch/gazebo.launch">
-            <arg name="world_name" value="$(env HOME)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
+            <arg name="world_name" value="$(env CODEDIR)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
             <arg name="gui" value="false"/>
             <arg name="headless" default="true"/>
         </include>
@@ -20,7 +20,7 @@
 
     <!--######################## ROBOTS ########################-->
     <arg name="robot_name" default="dummy"/>
-    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
+    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
 
     <arg name="x_pos" default="0"/>
     <arg name="y_pos" default="0"/>
@@ -30,7 +30,7 @@
     <arg name="turtlebot_sim" default="false"/>
     <group if="$(arg turtlebot_sim)">
           <param name="robot_description"
-                 command="$(find xacro)/xacro --inorder $(env HOME)/src/sim/ros/gazebo/urdf/turtlebot3_burger.urdf.xacro"/>
+                 command="$(find xacro)/xacro --inorder $(env CODEDIR)/src/sim/ros/gazebo/urdf/turtlebot3_burger.urdf.xacro"/>
           <node pkg="gazebo_ros"
                 type="spawn_model"
                 name="spawn_urdf"
@@ -48,7 +48,7 @@
         <arg name="y" value="$(arg y_pos)"/>
         <arg name="z" value="$(arg z_pos)"/>
         <arg name="Y" default="$(arg yaw_or)"/>
-        <arg name="model" default="$(env HOME)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
+        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
       </include>
     </group>
 
@@ -64,7 +64,9 @@
 
     <arg name="turtlebot_real" default="false"/>
     <group if="$(arg turtlebot_real)">
-<!--        <include file="$(find ardrone_driver)/launch/ardrone_node.launch"/>-->
+        <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
+            <arg name="model" value="burger" />
+        </include>
     </group>
 
     <arg name="tello_real" default="false"/>
@@ -75,7 +77,7 @@
     <!--######################## HELPER NODES ########################-->
     <arg name="fsm" default="true"/>
     <arg name="fsm_config" default="debug"/>
-    <rosparam command="load" file="$(env HOME)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
+    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
     <group if="$(arg fsm)">
         <node pkg="imitation_learning_ros_package"
               name="fsm"
@@ -86,7 +88,7 @@
     <arg name="control_mapping" default="true"/>
     <arg name="control_mapping_config" default="default"/>
     <rosparam command="load"
-                  file="$(env HOME)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
+                  file="$(env CODEDIR)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
                   ns="control_mapping"/>
     <group if="$(arg control_mapping)">
         <node pkg="imitation_learning_ros_package"
@@ -95,7 +97,7 @@
               output="screen"/>
     </group>
 
-    <arg name="waypoint_indicator" default="true"/>
+    <arg name="waypoint_indicator" default="false"/>
     <group if="$(arg waypoint_indicator)">
         <node pkg="imitation_learning_ros_package"
               name="waypoint_indicator"
@@ -122,7 +124,7 @@
     <arg name="joystick" default="false"/>
     <group if="$(arg joystick)" ns="/actor/joystick">
         <arg name="joystick_config_file_path_with_extension"
-             default="$(env HOME)/src/sim/ros/config/actor/joystick_turtlebot_sim.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/joystick_turtlebot_sim.yml"/>
         <rosparam command="load"
                   file="$(arg joystick_config_file_path_with_extension)"/>
         <!--<node pkg="imitation_learning_ros_package"
@@ -143,7 +145,7 @@
     <arg name="keyboard" default="false"/>
     <group if="$(arg keyboard)">
         <arg name="keyboard_config_file_path_with_extension"
-             default="$(env HOME)/src/sim/ros/config/actor/keyboard_turtlebot_sim.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/keyboard_turtlebot_sim.yml"/>
         <rosparam command="load"
                   file="$(arg keyboard_config_file_path_with_extension)"
                   ns="/actor/keyboard"/>
@@ -157,7 +159,7 @@
     <arg name="ros_expert" default="false"/>
     <group if="$(arg ros_expert)">
         <arg name="ros_expert_config_file_path_with_extension"
-             default="$(env HOME)/src/sim/ros/config/actor/ros_expert.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/ros_expert.yml"/>
         <rosparam command="load"
                   file="$(arg ros_expert_config_file_path_with_extension)"
                   ns="/actor/ros_expert"/>
@@ -171,7 +173,7 @@
     <arg name="dnn_actor" default="false"/>
     <group if="$(arg dnn_actor)">
         <arg name="dnn_actor_config_file_path_with_extension"
-             default="$(env HOME)/src/sim/ros/config/actor/dnn_actor.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/dnn_actor.yml"/>
         <rosparam command="load"
                   file="$(arg dnn_actor_config_file_path_with_extension)"
                   ns="/actor/dnn_actor"/>

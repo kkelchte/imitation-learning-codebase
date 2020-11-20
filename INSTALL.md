@@ -21,6 +21,7 @@ python3.8 -m pip install -r ../rosenvironment/singularity/requirements
 echo 'alias cdcodebase="cd ~/code/imitation-learning-codebase && source virtualenvironment/venv/bin/activate && export PYTHONPATH=~/code/imitation-learning-codebase"' >> $HOME/.bashrc
 mkdir -p ~/code/imitation-learning-codebase/experimental_data
 echo 'export DATADIR=~/code/imitation-learning-codebase/experimental_data'  >> $HOME/.bashrc
+echo 'export CODEDIR=~/code/imitation-learning-codebase'  >> $HOME/.bashrc
 # from a new terminal window
 cdcodebase
 /bin/bash test_suite.sh

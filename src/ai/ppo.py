@@ -24,7 +24,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
     def __init__(self, config: TrainerConfig, network: BaseNet):
         super().__init__(config, network, quiet=True)
 
-        self._config.ppo_epsilon = 0.2 if self._config.ppo_epsilon == "default" else self._config.ppo_epsilon
+        self._config.epsilon = 0.2 if self._config.epsilon == "default" else self._config.epsilon
         self._config.kl_target = 0.01 if self._config.kl_target == "default" else self._config.kl_target
         if self._config.max_actor_training_iterations == "default":
             self._config.max_actor_training_iterations = 10
@@ -64,7 +64,7 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                                                                            train=True)
                 ratio = torch.exp(new_log_probabilities - mini_batch_original_log_probabilities)
                 unclipped_loss = ratio * mini_batch_phi_weights
-                clipped_loss = ratio.clamp(1 - self._config.ppo_epsilon, 1 + self._config.ppo_epsilon) \
+                clipped_loss = ratio.clamp(1 - self._config.epsilon, 1 + self._config.epsilon) \
                     * mini_batch_phi_weights
                 surrogate_loss = - torch.min(unclipped_loss, clipped_loss).mean()
                 entropy_loss = - self._config.entropy_coefficient * \
@@ -107,8 +107,8 @@ class ProximatePolicyGradient(VanillaPolicyGradient):
                 unclipped_loss = self._criterion(batch_values, mini_batch_targets)
                 # absolute clipping
                 clipped_values = mini_batch_previous_values + \
-                    (batch_values - mini_batch_previous_values).clamp(-self._config.ppo_epsilon,
-                                                                      self._config.ppo_epsilon)
+                    (batch_values - mini_batch_previous_values).clamp(-self._config.epsilon,
+                                                                      self._config.epsilon)
                 clipped_loss = self._criterion(clipped_values, mini_batch_targets)
                 batch_loss = torch.max(unclipped_loss, clipped_loss)
                 batch_loss.mean().backward()

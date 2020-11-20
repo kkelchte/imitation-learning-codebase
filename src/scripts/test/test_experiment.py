@@ -68,7 +68,7 @@ class TestExperiment(unittest.TestCase):
                 'entropy_coefficient': 0.0,
                 'max_actor_training_iterations': 10,
                 'max_critic_training_iterations': 10,
-                'ppo_epsilon': 0.2,
+                'epsilon': 0.2,
                 'kl_target': 0.01},
             'evaluator_config': None,
         }
@@ -77,7 +77,7 @@ class TestExperiment(unittest.TestCase):
         )
         experiment = Experiment(self.config)
         experiment.run()
-        self.assertEqual(len(glob(f'{self.output_dir}/torch_checkpoints/*.ckpt')), 5)
+        self.assertEqual(len(glob(f'{self.output_dir}/torch_checkpoints/*.ckpt')), 6)
         # best checkpoint might not be latest, so remove this one.
         os.remove(f'{self.output_dir}/torch_checkpoints/checkpoint_best.ckpt')
         config_dict['architecture_config']['random_seed'] = 543

@@ -163,6 +163,9 @@ virtualenvironment/venv
 /.local
 test_dir/
 
+/src/sim/ros/python3_ros_ws/src/tello_driver
+/src/sim/ros/python3_ros_ws/src/codec_image_transport
+/src/sim/ros/python3_ros_ws/src/camera_info_manager_py
 /src/sim/ros/python3_ros_ws/src/bebop_autonomy
 /src/sim/ros/python3_ros_ws/src/dso_ros
 /src/sim/ros/python3_ros_ws/src/navigation

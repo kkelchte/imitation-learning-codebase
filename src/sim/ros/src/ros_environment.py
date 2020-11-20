@@ -57,7 +57,7 @@ class RosEnvironment(Environment):
             for actor_config in config.ros_config.actor_configs:
                 roslaunch_arguments[actor_config.name] = True
                 config_file = actor_config.file if actor_config.file.startswith('/') \
-                    else os.path.join(os.environ['HOME'], actor_config.file)
+                    else os.path.join(os.environ['CODEDIR'], actor_config.file)
                 roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
 
         assert os.path.isfile(os.path.join(os.environ["PWD"], 'src/sim/ros/config/world/',

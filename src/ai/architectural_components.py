@@ -1,4 +1,5 @@
-from typing import Tuple, Type
+from collections import OrderedDict
+from typing import Tuple, Type, List
 
 import torch
 from torch import nn
@@ -31,24 +32,24 @@ class ResidualBlock(torch.nn.Module):
         self._final_activation = activation
         elements = []
         if pool is not None:
-            elements.append(pool)
-        elements.append(torch.nn.Conv2d(in_channels=input_channels,
-                                        out_channels=output_channels,
-                                        kernel_size=kernel_sizes[0],
-                                        padding=padding[0],
-                                        stride=strides[0]))
+            elements.append(('pool', pool))
+        elements.append(('conv_0', torch.nn.Conv2d(in_channels=input_channels,
+                                                   out_channels=output_channels,
+                                                   kernel_size=kernel_sizes[0],
+                                                   padding=padding[0],
+                                                   stride=strides[0])))
         if batch_norm:
-            elements.append(torch.nn.BatchNorm2d(output_channels))
-        elements.append(activation)
-        elements.append(torch.nn.Conv2d(in_channels=output_channels,
-                                        out_channels=output_channels,
-                                        kernel_size=kernel_sizes[1],
-                                        padding=padding[1],
-                                        stride=strides[1]))
+            elements.append(('bn_0', torch.nn.BatchNorm2d(output_channels)))
+        elements.append(('act_0', activation))
+        elements.append(('conv_1', torch.nn.Conv2d(in_channels=output_channels,
+                                                   out_channels=output_channels,
+                                                   kernel_size=kernel_sizes[1],
+                                                   padding=padding[1],
+                                                   stride=strides[1])))
         if batch_norm:
-            elements.append(torch.nn.BatchNorm2d(output_channels))
-        elements.append(activation)
-        self.residual_net = torch.nn.Sequential(*elements)
+            elements.append(('bn_1', torch.nn.BatchNorm2d(output_channels)))
+        elements.append(('act_1', activation))
+        self.residual_net = torch.nn.Sequential(OrderedDict(elements))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         x = self.residual_net(inputs)
