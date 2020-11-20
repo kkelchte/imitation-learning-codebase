@@ -4,7 +4,8 @@ episode_runner_config:
   number_of_episodes: -1
 save_checkpoint_every_n: 10
 architecture_config:
-  architecture: bc_deeply_supervised_auto_encoder
+#  architecture: bc_deeply_supervised_auto_encoder
+  architecture: auto_encoder_deeply_supervised_heuristic_output
 #  architecture: auto_encoder_deeply_supervised_with_discriminator
   initialisation_type: xavier
   random_seed: 4
@@ -17,7 +18,8 @@ architecture_config:
 trainer_config:
   optimizer: Adam
   learning_rate: 0.001
-  factory_key: DADS
+  factory_key: DS
+  #factory_key: DADS
 #  factory_key: DSDis
   weight_decay: 0.00003
   epsilon: 0.8

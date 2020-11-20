@@ -8,7 +8,7 @@ from src.ai.domain_adaptation_trainer import DomainAdaptationTrainer
 from src.ai.trainer import TrainerConfig, Trainer
 from src.ai.losses import *
 from src.ai.deep_supervision import DeepSupervision
-from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor
+from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor, plot_gradient_flow
 from src.core.data_types import Distribution, Dataset
 from src.core.logger import get_logger, cprint
 from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -102,6 +102,8 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
                             # title += 'inds_' + '_'.join([str(v.item()) for v in winning_indices.indices])
                             # title += '_vals_' + '_'.join([f'{v.item():0.2f}' for v in winning_indices.values])
                             writer.write_output_image(feature_maps, title)
+            writer.write_figure(plot_gradient_flow(self._net.named_parameters()))
+
         return f' task {self._config.criterion} ' \
                f'{task_error_distribution.mean: 0.3e} ' \
                f'[{task_error_distribution.std:0.2e}] ' \

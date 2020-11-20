@@ -306,7 +306,6 @@ def load_dataset_from_hdf5(filename: str, input_size: List[int] = None) -> h5py.
     h5py_file = h5py.File(filename, 'r')
     if input_size is not None and input_size != []:
         assert tuple(h5py_file['dataset']['observations'][0].shape) == tuple(input_size)
-    print(len(h5py_file['dataset']['done'][:]))
     return h5py_file['dataset']
 
 
