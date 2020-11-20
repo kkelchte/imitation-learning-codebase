@@ -163,7 +163,8 @@ class Experiment:
             self._trainer.data_loader.empty_dataset()
         if self._evaluator is not None and self._config.evaluator_config.evaluate_extensive:
             self._evaluator.evaluate_extensive()
-
+        if self._evaluator is not None:
+            self._evaluator.data_loader.empty_dataset()
         self._tester = Evaluator(config=self._config.tester_config, network=self._net) \
             if self._config.tester_config is not None else None
         if self._tester is not None:
