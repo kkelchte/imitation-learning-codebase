@@ -20,6 +20,9 @@ install_python3_ros_ws: python3_ros_ws/src
 	git clone -b melodic https://github.com/ros-perception/image_pipeline.git src/image_pipeline && \
 	git clone https://github.com/kkelchte/dso_ros.git -b master src/dso_ros && \
 	git clone https://github.com/ros-planning/navigation.git -b melodic-devel src/navigation && \
+	git clone https://github.com/ros-perception/camera_info_manager_py.git src/camera_info_manager_py && \
+	git clone https://github.com/yoshito-n-students/codec_image_transport.git src/codec_image_transport && \
+	git clone https://github.com/kkelchte/tello_driver.git -b development src/tello_driver && \
 	catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
 	-DPYTHON_LIBRARY=/usr/lib/python3.8 && \
 	catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
@@ -48,9 +51,6 @@ install_python2_ros_ws: python2_ros_ws/src
 	cd python2_ros_ws && \
 	git clone https://github.com/kkelchte/hector_quadrotor.git src/hector_quadrotor && \
 	git clone https://github.com/tu-darmstadt-ros-pkg/hector_localization.git src/hector_localization && \
-	git clone https://github.com/ros-perception/camera_info_manager_py.git src/camera_info_manager_py && \
-	git clone https://github.com/yoshito-n-students/codec_image_transport.git src/codec_image_transport && \
-	git clone https://github.com/kkelchte/tello_driver.git -b development src/tello_driver && \
 	catkin build -DPYTHON_EXECUTABLE=/usr/bin/python2.7 -DPYTHON_INCLUDE_DIR=/usr/include/python2.7m \
 	-DPYTHON_LIBRARY=/usr/lib/libpython2.7m.so
 
