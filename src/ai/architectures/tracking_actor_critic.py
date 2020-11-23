@@ -7,7 +7,7 @@ import numpy as np
 
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator
+from src.ai.utils import mlp_creator, get_slow_run
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -51,7 +51,7 @@ class Net(BaseNet):
         output = self.sample(inputs, train=train)
         output = output.clamp(min=self.action_min, max=self.action_max)
         return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
-                      value=np.stack([*output.data.cpu().numpy().squeeze(), 0, 0], axis=-1))
+                      value=np.stack([*output.data.cpu().numpy().squeeze(), *get_slow_run(inputs.squeeze())], axis=-1))
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
         actions = self.process_inputs(inputs=[a[:2] for a in actions])
