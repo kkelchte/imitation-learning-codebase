@@ -285,6 +285,8 @@ class CondorJob:
             if self._config.save_locally:
                 executable.write(self._adjust_commands_config_to_save_locally())
             if self._config.use_singularity:
+                if 'DATADIR' in os.environ.keys() and not self._config.save_locally:
+                    executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
                 command = f"/usr/bin/singularity exec --nv {self._config.singularity_file} "
                 command += os.path.join(self._config.codebase_dir,
                                         'rosenvironment' if os.path.basename(self._config.singularity_dir) == 'ubuntu'

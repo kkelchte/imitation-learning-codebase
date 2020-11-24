@@ -11,7 +11,8 @@ job_configs:
     disk_mem_gb: 52
     wall_time_s: 20 * 60 * 60
     nice: true
-    use_singularity: false
+        use_singularity: true
+    singularity_dir: fedora
     check_if_ros_already_in_use: false
     save_locally: true
     save_before_wall_time: true

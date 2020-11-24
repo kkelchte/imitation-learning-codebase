@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-export HOME="${PWD}"
+export CODEDIR="${PWD}"
 export PYTHONPATH=${PWD}:${PWD}/../dummy-tracking-gym
 "$@"

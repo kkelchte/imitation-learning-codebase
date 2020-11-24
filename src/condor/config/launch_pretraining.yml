@@ -10,7 +10,8 @@ job_configs:
     wall_time_s: 15 * 60 * 60
     nice: true
     gpu_mem_mb: 7900
-    use_singularity: false
+    use_singularity: true
+    singularity_dir: fedora
     check_if_ros_already_in_use: false
     save_locally: false
 number_of_jobs:
