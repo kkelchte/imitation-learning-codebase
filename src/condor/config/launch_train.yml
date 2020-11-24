@@ -1,7 +1,7 @@
 output_path: line_world/dronet_sidetuned_extra_train_ctr/adam_lr000001_e2e
 #output_path: line_world/dronet_finetuned/sgd_lr00001
 mode: train
-  - command: python3.8 src/scripts/experiment.py
+  - command: python3 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 4
     gpus: 1

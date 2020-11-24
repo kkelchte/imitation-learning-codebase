@@ -1,7 +1,7 @@
 output_path: cube_world
 mode: dag_data_collection
 job_configs:
-  - command: python3.8 src/scripts/experiment.py
+  - command: python3 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 11
     gpus: 1
@@ -13,7 +13,7 @@ job_configs:
     check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
-  - command: python3.8 src/scripts/data_cleaning.py
+  - command: python3 src/scripts/data_cleaning.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 2
     gpus: 0

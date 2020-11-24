@@ -8,7 +8,7 @@ base_config_files:
 #  - src/scripts/config/dummy_fleeing_ppo.yml
 #  - src/scripts/config/dummy_adversarial_ppo.yml
 job_configs:
-  - command: python3.8 src/scripts/experiment.py
+  - command: python3 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase-dummy-tracking-env
     cpus: 2
     gpus: 1

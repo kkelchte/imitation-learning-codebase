@@ -1,7 +1,7 @@
 output_path: cube_world
 mode: default
 job_configs:
-  - command: python3.8 src/scripts/data_cleaning.py
+  - command: python3 src/scripts/data_cleaning.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 2
     gpus: 0
