@@ -18,7 +18,7 @@ trainer_config:
   learning_rate: 0.001
   factory_key: DS
   weight_decay: 0.0
-  gradient_clip_norm: -1
+  gradient_clip_norm: 1
   data_loader_config:
     loop_over_hdf5_files: true
     hdf5_files:
