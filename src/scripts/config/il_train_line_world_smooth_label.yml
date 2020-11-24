@@ -23,8 +23,8 @@ trainer_config:
   data_loader_config:
     loop_over_hdf5_files: true
     hdf5_files:
-      - /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_line/1_200/train_0.hdf5
-      - /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_line/1_200/train_1.hdf5
+      - /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_label/1_200/train_0.hdf5
+      - /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_label/1_200/train_1.hdf5
     random_seed: 123
     balance_over_actions: false
     batch_size: 32
@@ -36,7 +36,7 @@ evaluator_config:
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
-      -  /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_line/1_200/validation_0.hdf5
+      -  /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_label/1_200/validation_0.hdf5
     random_seed: 32
     balance_over_actions: false
     batch_size: 32
