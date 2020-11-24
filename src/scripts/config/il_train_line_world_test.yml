@@ -18,24 +18,24 @@ architecture_config:
 trainer_config:
   optimizer: Adam
   learning_rate: 0.1
-#  factory_key: DS
-  factory_key: DADS
+  factory_key: DS
+#  factory_key: DADS
 #  factory_key: DSDis
   weight_decay: 0.0
   epsilon: 0.8
   store_feature_maps_on_tensorboard: True
   domain_adaptation_criterion: MMDLossZhao #Coral #MMDLossSimple #Coral #MMDLossZhao
-  target_data_loader_config:
-    batch_size: 5
-    hdf5_files:
-      - hdf5_files/1_200/real/tiny_dummy.hdf5
+#  target_data_loader_config:
+#    batch_size: 5
+#    hdf5_files:
+#      - hdf5_files/1_200/real/tiny_dummy.hdf5
   data_loader_config:
     loop_over_hdf5_files: false
     hdf5_files:
       - hdf5_files/1_200/sim/tiny_dummy.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 5
+    batch_size: 32
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
   device: cuda
@@ -48,7 +48,8 @@ evaluator_config:
     random_seed: 32
     balance_over_actions: false
     batch_size: 32
-  criterion: MSELoss
+  criterion: WeightedBinaryCrossEntropyLoss
+  criterion_args_str: 'beta=0.9'
   device: cuda
   store_output_on_tensorboard: true
 tester_config:

@@ -384,7 +384,7 @@ def parse_binary_maps(observations: List[torch.Tensor], invert: bool = False) ->
     create binary maps from observations based on R-channel which is 1 on background and 0 at blue line.
     :param observations: [channels (RGB) x height x width ]
     :param invert: bool switch high - low binary values
-    :return: binary maps : [1 x height x width ]
+    :return: binary maps : [height x width ]
     '''
     observations = [o.numpy() for o in observations]
     binary_images = [
@@ -394,10 +394,17 @@ def parse_binary_maps(observations: List[torch.Tensor], invert: bool = False) ->
     return binary_images
 
 
-def set_binary_maps_as_target(dataset: Dataset, invert: bool = False, binary_images: List[np.ndarray] = None) -> Dataset:
+def set_binary_maps_as_target(dataset: Dataset, invert: bool = False, binary_images: List[np.ndarray] = None,
+                              smoothen_labels: bool = False) -> Dataset:
     if binary_images is None:
         binary_images = parse_binary_maps(copy.deepcopy(dataset.observations), invert=invert)
-    dataset.actions = [torch.as_tensor(b) for b in binary_images]
+    binary_images = torch.stack([torch.as_tensor(b).unsqueeze(0) for b in binary_images], dim=0)
+    # smoothen binary maps to punish line predictions close to line less severely
+    if smoothen_labels:
+        binary_images = torch.nn.AvgPool2d(kernel_size=11,
+                                           stride=1,
+                                           padding=5)(binary_images)
+    dataset.actions = [b for b in binary_images]
     return dataset
 
 
@@ -454,21 +461,26 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
     # 2. parse binary images to extract fore- and background
     if binary_images is None:
         binary_images = parse_binary_maps(copy.deepcopy(dataset.observations), invert=True)
+    # 3. combine foreground and background in augmented dataset
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
     num_channels = dataset.observations[0].shape[0]
     for index, image in tqdm(enumerate(binary_images)):
         if np.random.binomial(1, p):
-            new_shape = (*image.shape, num_channels)
             bg_image = np.random.choice(texture_paths)
             bg = load_and_preprocess_file(bg_image,
                                           size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
             if not np.random.binomial(1, p_empty):
-                three_channel_mask = np.stack([image] * num_channels, axis=-1)
+                # smoothen mask to make transition less abrupt with randomly selected kernel size
+                three_channel_mask = torch.stack([torch.as_tensor(image)] * num_channels, dim=0).unsqueeze(0)
+                kernel = np.random.choice(list(range(7))) * 2 + 1  # select random (but odd) kernel size
+                padding = np.floor((kernel - 1) / 2).astype(np.int32)  # make padding to have same dimensions
+                three_channel_mask = torch.nn.AvgPool2d(kernel_size=kernel, stride=1, padding=padding)(
+                    three_channel_mask).squeeze(0).permute(1, 2, 0)
                 fg = create_random_gradient_image(size=bg.shape)
                 new_img = torch.as_tensor(((1 - three_channel_mask) * bg + three_channel_mask * fg)).permute(2, 0, 1)
                 augmented_dataset.observations.append(new_img)
-            else:
+            else:  # for ratio p_empty put only background
                 augmented_dataset.observations.append(torch.as_tensor(bg).permute(2, 0, 1))
                 augmented_dataset.actions[index] = torch.zeros_like(augmented_dataset.actions[index])
         else:
