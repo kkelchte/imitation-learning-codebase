@@ -298,7 +298,7 @@ class CondorJob:
                 #                  f'\'shell.bash\' \'hook\' 2> /dev/null)\"\n')
                 # executable.write(f'eval \"$__conda_setup\"\n')
                 # executable.write(f'unset __conda_setup\n')
-                executable.write(f'bash\n')
+                executable.write(f'source {os.environ["HOME"]}/.bashrc\n')
                 executable.write(f'conda activate venv\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
                 if 'DATADIR' in os.environ.keys() and not self._config.save_locally:
