@@ -296,7 +296,8 @@ class CondorJob:
                            f"{'&' if self._config.save_before_wall_time else ''}\n"
                 executable.write(command)
             else:
-                executable.write(f'source {self._config.codebase_dir}/virtualenvironment/venv/bin/activate\n')
+                executable.write(f'source {os.environ["HOME"]}/.bashrc\n')
+                executable.write(f'conda activate venv\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
                 if 'DATADIR' in os.environ.keys() and not self._config.save_locally:
                     executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')

@@ -1,8 +1,14 @@
-ENVIRONMENT_DIR=venv
+.PHONY: create_env
 
-.PHONY: venv
+install:
+	wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+	/bin/sh Miniconda3-latest-Linux-x86_64.sh && \
+	rm Miniconda3-latest-Linux-x86_64.sh
 
-venv: ../rosenvironment/singularity/requirements
-	if [ -d venv ] ; then rm -r venv; fi && \
-	virtualenv -p python3 ${ENVIRONMENT_DIR} \
-	echo 'source venv/bin/activate and python3 -m pip install -r ../rosenvironment/singularity/requirements'
+create_env:
+	conda create --name venv python=3.8
+
+install_packages:
+	conda install --yes --file requirements-conda && \
+	conda install --yes pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch && \
+	python3 -m pip install -r requirements-pip
