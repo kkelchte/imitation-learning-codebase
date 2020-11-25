@@ -43,7 +43,7 @@ class TensorboardWrapper(SummaryWriter):
             images = torch.stack(3*[images], dim=1)
         self.add_images(tag, images, self.step, dataformats='NCHW')
 
-    def write_gif(self, frames: List[np.ndarray] = None) -> None:
+    def write_gif(self, frames: List[np.ndarray] = None, tag: str = "") -> None:
         if len(frames) == 0:
             return
         # map uint8 to int16 due to pytorch bug https://github.com/facebookresearch/InferSent/issues/99
@@ -51,4 +51,4 @@ class TensorboardWrapper(SummaryWriter):
         video_tensor.unsqueeze_(dim=0)  # add batch dimension
         if len(video_tensor.shape) == 4:  # add channel dimension in case of grayscale images
             video_tensor.unsqueeze_(dim=2)
-        self.add_video(tag='game play', vid_tensor=video_tensor, global_step=self.step, fps=20)
+        self.add_video(tag=f'game play/{tag}', vid_tensor=video_tensor, global_step=self.step, fps=15)

@@ -15,6 +15,21 @@ from src.condor.helper_functions import create_configs, get_variable_name, strip
     translate_keys_to_string
 
 
+def wait_for_job_to_finish(log_file):
+    max_duration = 5 * 60
+    with open(log_file, 'r') as f:
+        log_line = f.readlines()[0]
+        f.close()
+    job_id = int(log_line.split(' ')[1].split('.')[0][1:])
+    stime = time.time()
+    while 'nJobStatus = 2' in str(subprocess.check_output(shlex.split(f'condor_q -l {job_id}'))) or \
+            'nJobStatus = 1' in str(subprocess.check_output(shlex.split(f'condor_q -l {job_id}'))):
+        print('wait for job to finish...')
+        time.sleep(3)
+        if time.time() - stime > max_duration:
+            raise TimeoutError(f'job {job_id} takes too long: {time.time() - stime}s > {max_duration}s.')
+
+
 class TestCondorJob(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -42,10 +57,8 @@ class TestCondorJob(unittest.TestCase):
         self.assertEqual(output_executable, 2)
 
         self.assertEqual(job.submit(), 0)
-        self.assertTrue(len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10)
-        subprocess.call('condor_q')
-        while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
-            time.sleep(1)  # Assuming this is only condor job
+        wait_for_job_to_finish(job.log_file)
+
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))
         error_file_length = len(open(job.error_file, 'r').readlines())
@@ -71,10 +84,8 @@ class TestCondorJob(unittest.TestCase):
                                                         f'job.executable'))
         self.assertEqual(output_executable, 2)
         self.assertEqual(job.submit(), 0)
-        self.assertTrue(len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10)
-        subprocess.call('condor_q')
-        while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
-            time.sleep(1)  # Assuming this is only condor job
+        wait_for_job_to_finish(job.log_file)
+
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))
         read_file_to_output(os.path.join(self.output_dir, 'condor', condor_dir, 'singularity.output'))
@@ -168,10 +179,8 @@ class TestCondorJob(unittest.TestCase):
             read_file_to_output(file_path)
         # submit
         self.assertEqual(job.submit(), 0)
-        self.assertTrue(len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10)
-        subprocess.call('condor_q')
-        while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
-            time.sleep(1)  # Assuming this is only condor job
+        wait_for_job_to_finish(job.log_file)
+
         # when finished
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))
@@ -222,10 +231,7 @@ class TestCondorJob(unittest.TestCase):
         job.write_job_file()
         job.write_executable_file()
         self.assertEqual(job.submit(), 0)
-
-        while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
-            time.sleep(1)  # Assuming this is only condor job
-
+        wait_for_job_to_finish(job.log_file)
         # assert second job was put on hold
         read_file_to_output(job.log_file)
         with open(job.log_file, 'r') as f:
@@ -288,9 +294,8 @@ class TestCondorJob(unittest.TestCase):
         condor_job.write_job_file()
         condor_job.write_executable_file()
         condor_job.submit()
-        # wait for job to finish...
-        while len(glob(os.path.join(condor_job.output_dir, 'FINISHED*'))) == 0:
-            time.sleep(1)
+        wait_for_job_to_finish(condor_job.log_file)
+
         self.assertTrue(glob(os.path.join(condor_job.output_dir, 'FINISHED*'))[0].endswith('0'))
         # check jobs output file to control hdf5 files were loaded locally
         # compare file sizes to ensure same hdf5 files were copied
@@ -328,10 +333,7 @@ class TestCondorJob(unittest.TestCase):
             read_file_to_output(file_path)
 
         self.assertEqual(job.submit(), 0)
-
-        subprocess.call('condor_q')
-        while len(str(subprocess.check_output(f'condor_q')).split('\\n')) > 10:
-            time.sleep(1)  # Assuming this is only condor job
+        wait_for_job_to_finish(job.log_file)
 
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))

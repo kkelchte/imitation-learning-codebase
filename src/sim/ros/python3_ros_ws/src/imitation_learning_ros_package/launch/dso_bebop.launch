@@ -2,5 +2,5 @@
 <launch>
     <include file="$(find bebop_driver)/launch/bebop_node.launch"/>
     <node pkg="dso_ros" name="dso_live" type="dso_live" output="screen" args="image:=/bebop/image_raw
-    calib=$(env HOME)/src/sim/ros/config/calibration/bebop.txt"/>
+    calib=$(env CODEDIR)/src/sim/ros/config/calibration/bebop.txt"/>
 </launch>

@@ -13,14 +13,16 @@ python3_ros_ws/src:
 install_python3_ros_ws: python3_ros_ws/src
 	cd python3_ros_ws && \
 	git clone https://github.com/kkelchte/bebop_autonomy.git src/bebop_autonomy && \
-	git clone https://github.com/kkelchte/vision_opencv.git -b origin/melodic src/vision_opencv && \
-	git clone https://github.com/ROBOTIS-GIT/turtlebot3.git -b origin/melodic-devel src/turtlebot3 && \
-	git clone https://github.com/ros-perception/openslam_gmapping.git -b origin/melodic-devel src/openslam_gmapping && \
-	git clone https://github.com/ros-perception/slam_gmapping.git -b origin/melodic-devel src/slam_gmapping && \
-	git clone -b melodic https://github.com/ros-perception/image_pipeline.git
-	git clone git@github.com:kkelchte/ros_course_part2.git src/ros_course_part2 && \
-	git clone https://github.com/kkelchte/dso_ros.git -b origin/master src/dso_ros && \
-	git clone https://github.com/ros-planning/navigation.git -b melodic-devel src/navigation&& \
+	git clone https://github.com/kkelchte/vision_opencv.git -b melodic src/vision_opencv && \
+	git clone https://github.com/ROBOTIS-GIT/turtlebot3.git -b melodic-devel src/turtlebot3 && \
+	git clone https://github.com/ros-perception/openslam_gmapping.git -b melodic-devel src/openslam_gmapping && \
+	git clone https://github.com/ros-perception/slam_gmapping.git -b melodic-devel src/slam_gmapping && \
+	git clone -b melodic https://github.com/ros-perception/image_pipeline.git src/image_pipeline && \
+	git clone https://github.com/kkelchte/dso_ros.git -b master src/dso_ros && \
+	git clone https://github.com/ros-planning/navigation.git -b melodic-devel src/navigation && \
+	git clone https://github.com/ros-perception/camera_info_manager_py.git src/camera_info_manager_py && \
+	git clone https://github.com/yoshito-n-students/codec_image_transport.git src/codec_image_transport && \
+	git clone https://github.com/kkelchte/tello_driver.git -b development src/tello_driver && \
 	catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
 	-DPYTHON_LIBRARY=/usr/lib/python3.8 && \
 	catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
@@ -63,8 +65,8 @@ python2_ros_ws/devel/setup.bash: $(wildcard python2_ros_ws/src/**/*)
 #################
 
 test_suite: test/test_*.py
-	cd ${HOME} && date &&\
-	echo "Access output in $HOME/suite_output_test" && \
+	cd ${CODEDIR} && date &&\
+	echo "Access output in ${CODEDIR}/suite_output_test" && \
 	if [ -d suite_output_test ] ; then rm -r suite_output_test; fi && mkdir suite_output_test &&\
 	for f in $^ ; do echo $${f}; python3.8 src/sim/ros/$${f} > suite_output_$${f} 2>&1; sleep 5; \
 	tail suite_output_$${f}; done && cd src/sim/ros && date

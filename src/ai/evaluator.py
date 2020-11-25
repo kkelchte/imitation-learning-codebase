@@ -33,6 +33,7 @@ class EvaluatorConfig(Config):
     device: str = 'cpu'
     evaluate_extensive: bool = False
     store_output_on_tensorboard: bool = False
+    store_feature_maps_on_tensorboard: bool = False
 
 
 class Evaluator:

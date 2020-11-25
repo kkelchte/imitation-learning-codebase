@@ -4,6 +4,7 @@ from typing import Union, List, Tuple
 
 import numpy as np
 import rospy
+from cv2 import cv2
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
@@ -30,7 +31,7 @@ def apply_noise_to_twist(twist: Twist, noise: np.ndarray) -> Twist():
 def get_output_path() -> str:
     output_path = rospy.get_param('/output_path', '/tmp')
     if not output_path.startswith('/'):
-        output_path = os.path.join(os.environ['HOME'], output_path)
+        output_path = os.path.join(os.environ['CODEDIR'], output_path)
     if not os.path.isdir(output_path):
         os.makedirs(output_path)
     return output_path
@@ -146,6 +147,7 @@ def process_image(msg, sensor_stats: dict = None) -> np.ndarray:
 
 def process_compressed_image(msg, sensor_stats: dict = None) -> np.ndarray:
     img = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='passthrough')
+    #img = cv2.flip(img, 0)
     return resize_image(img, sensor_stats)
 
 

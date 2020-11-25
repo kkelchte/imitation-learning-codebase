@@ -50,12 +50,14 @@ class RosEnvironment(Environment):
                 if config.ros_config.ros_launch_config.robot_name == 'ardrone_real' else False
             roslaunch_arguments['turtlebot_real'] = True \
                 if config.ros_config.ros_launch_config.robot_name == 'turtlebot_real' else False
+            roslaunch_arguments['tello_real'] = True \
+                if config.ros_config.ros_launch_config.robot_name == 'tello_real' else False
 
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:
                 roslaunch_arguments[actor_config.name] = True
                 config_file = actor_config.file if actor_config.file.startswith('/') \
-                    else os.path.join(os.environ['HOME'], actor_config.file)
+                    else os.path.join(os.environ['CODEDIR'], actor_config.file)
                 roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
 
         assert os.path.isfile(os.path.join(os.environ["PWD"], 'src/sim/ros/config/world/',

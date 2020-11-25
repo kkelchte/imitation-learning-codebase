@@ -7,7 +7,7 @@
     <param name="output_path" value="$(arg output_path)"/>
 
     <arg name="joystick_config_file_path_with_extension"
-         default="$(env HOME)/src/sim/ros/config/actor/joystick_turtlebot_real_direct.yml"/>
+         default="$(env CODEDIR)/src/sim/ros/config/actor/joystick_turtlebot_real_direct.yml"/>
     <rosparam command="load"
               file="$(arg joystick_config_file_path_with_extension)"/>
     <node pkg="joy" name="joy_node" type="joy_node" output="screen">

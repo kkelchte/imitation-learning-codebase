@@ -1,13 +1,13 @@
-output_path: encoder_decoder/mixed_deeply_supervised
+output_path: encoder_decoder/baselines
 mode: lr_architecture_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 3
+    cpus: 2
     gpus: 1
     gpu_mem_mb: 3900
-    cpu_mem_gb: 15
+    cpu_mem_gb: 29
     disk_mem_gb: 52
     wall_time_s: 20 * 60 * 60
     nice: true
@@ -16,6 +16,8 @@ job_configs:
     save_locally: true
     save_before_wall_time: true
     extra_requirements: ( Has_ssse3 == True )
+    black_list:
+      - vladimir
 number_of_jobs:
   - 1
 base_config_files: 
