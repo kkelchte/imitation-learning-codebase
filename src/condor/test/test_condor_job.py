@@ -54,8 +54,6 @@ class TestCondorJob(unittest.TestCase):
             read_file_to_output(file_path)
         output_executable = subprocess.call(shlex.split(f'{os.path.join(self.output_dir, "condor", condor_dir)}/'
                                                         f'job.executable'))
-        import pdb
-        pdb.set_trace()
         self.assertEqual(output_executable, 2)
 
         self.assertEqual(job.submit(), 0)
@@ -64,8 +62,6 @@ class TestCondorJob(unittest.TestCase):
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))
         error_file_length = len(open(job.error_file, 'r').readlines())
-        import pdb
-        pdb.set_trace()
         self.assertEqual(0, error_file_length)
 
     @unittest.skip
