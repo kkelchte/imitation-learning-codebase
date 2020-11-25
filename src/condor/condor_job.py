@@ -294,7 +294,10 @@ class CondorJob:
                            f"{'&' if self._config.save_before_wall_time else ''}\n"
                 executable.write(command)
             else:
-                executable.write(f'export PATH="/esat/opal/kkelchte/conda/bin:$PATH"\n')
+                executable.write(f'__conda_setup = \"$(\'{os.environ["CONDADIR"]}/bin/conda\' '
+                                 f'\'shell.bash\' \'hook\' 2> /dev/null)\"\n')
+                executable.write(f'eval \"$__conda_setup\"\n')
+                executable.write(f'unset __conda_setup\n')
                 executable.write(f'conda activate venv\n')
                 executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
                 if 'DATADIR' in os.environ.keys() and not self._config.save_locally:

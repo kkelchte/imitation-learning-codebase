@@ -11,7 +11,7 @@ cd imitation-learning-codebase
 
 ## Install conda python environment
 In the conda virtual environment you can run all code except the ROS-GAZEBO simulator.
-If working on Esat, install conda environment on Opal: /esat/opal/r-number/conda.
+If working on Esat, install conda environment on Opal: /esat/opal/your-r-number/conda.
 This directory is specified during the installation process
 
 ```bash
@@ -34,6 +34,7 @@ echo 'alias cdcodebase="cd ~/code/imitation-learning-codebase && conda activate 
 mkdir -p ~/code/imitation-learning-codebase/experimental_data
 echo 'export DATADIR=~/code/imitation-learning-codebase/experimental_data'  >> $HOME/.bashrc
 echo 'export CODEDIR=~/code/imitation-learning-codebase'  >> $HOME/.bashrc
+echo 'export CONDADIR=/esat/opal/YOUR-R-NUMBER/conda' >> $HOME/.bashrc
 # from a new terminal window
 cdcodebase
 /bin/bash test_suite.sh
