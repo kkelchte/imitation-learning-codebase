@@ -5,7 +5,7 @@ install:
 	/bin/sh Miniconda3-latest-Linux-x86_64.sh && \
 	rm Miniconda3-latest-Linux-x86_64.sh
 
-create_env: install
+create_env:
 	conda create --name venv python=3.8 && \
 	conda activate venv && \
 	conda install --yes --file requirements-conda && \
