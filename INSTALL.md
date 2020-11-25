@@ -18,8 +18,12 @@ This directory is specified during the installation process
 # from codebase root directory
 cd virtualenvironment
 make 
+conda init bash
 # in new terminal: avoid conda base env to start at each bash
 conda config --set auto_activate_base false
+# create venv
+make create_env
+make install_packages
 ```
 
 Place some environment variables in .bashrc:
