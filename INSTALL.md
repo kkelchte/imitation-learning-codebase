@@ -34,7 +34,6 @@ echo 'alias cdcodebase="cd ~/code/imitation-learning-codebase && conda activate 
 mkdir -p ~/code/imitation-learning-codebase/experimental_data
 echo 'export DATADIR=~/code/imitation-learning-codebase/experimental_data'  >> $HOME/.bashrc
 echo 'export CODEDIR=~/code/imitation-learning-codebase'  >> $HOME/.bashrc
-echo 'export CONDADIR=/esat/opal/YOUR-R-NUMBER/conda' >> $HOME/.bashrc
 # from a new terminal window
 cdcodebase
 /bin/bash test_suite.sh
