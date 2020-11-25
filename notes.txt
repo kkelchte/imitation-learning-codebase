@@ -1,0 +1,7 @@
+make python3_ros_ws/devel/setup.bash
+
+in python3_ros_ws/src
+git clone --branch melodic https://github.com/ros-perception/vision_opencv.git
+
+
+catkin_make --cmake-args -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 -DPYTHON_LIBRARY=/usr/lib/python3.8
