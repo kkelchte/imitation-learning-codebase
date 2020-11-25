@@ -9,7 +9,6 @@ create_env:
 	conda create --name venv python=3.8
 
 install_packages:
-	conda activate venv && \
 	conda install --yes --file requirements-conda && \
 	conda install --yes pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch && \
 	python3 -m pip install -r requirements-pip
