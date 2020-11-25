@@ -1,0 +1,17 @@
+ipython
+jupyter
+matplotlib
+mock
+numpy
+pillow
+pylint
+pytest
+pyyaml
+scikit-image
+scikit-learn
+scipy
+dataclasses
+tensorboard
+tqdm
+h5py
+graphviz
