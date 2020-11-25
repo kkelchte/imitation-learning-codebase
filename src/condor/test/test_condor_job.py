@@ -62,6 +62,8 @@ class TestCondorJob(unittest.TestCase):
         for file_path in [job.output_file, job.error_file, job.log_file]:
             self.assertTrue(os.path.isfile(file_path))
         error_file_length = len(open(job.error_file, 'r').readlines())
+        import pdb
+        pdb.set_trace()
         self.assertEqual(0, error_file_length)
 
     @unittest.skip

@@ -4,8 +4,6 @@ echo "
 Test all code base ROS exclusive from low to high dependent code.
 "
 start_time="$(date)"
-
-conda activate venv
 export PYTHONPATH=$PWD:$PYTHONPATH
 
 if [ -d test_dir ] ; then
