@@ -9,6 +9,7 @@ import h5py
 import torch
 from PIL import Image
 import numpy as np
+from kornia import gaussian_blur2d
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -401,9 +402,7 @@ def set_binary_maps_as_target(dataset: Dataset, invert: bool = False, binary_ima
     binary_images = torch.stack([torch.as_tensor(b).unsqueeze(0) for b in binary_images], dim=0)
     # smoothen binary maps to punish line predictions close to line less severely
     if smoothen_labels:
-        binary_images = torch.nn.AvgPool2d(kernel_size=11,
-                                           stride=1,
-                                           padding=5)(binary_images)
+        binary_images = gaussian_blur2d(binary_images, kernel_size=(11, 11), sigma=(4, 4))
     dataset.actions = [b for b in binary_images]
     return dataset
 
@@ -472,14 +471,17 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
                                           size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
             if not np.random.binomial(1, p_empty):
                 # smoothen mask to make transition less abrupt with randomly selected kernel size
-                three_channel_mask = torch.stack([torch.as_tensor(image)] * num_channels, dim=0).unsqueeze(0)
-                kernel = np.random.choice(list(range(7))) * 2 + 1  # select random (but odd) kernel size
-                padding = np.floor((kernel - 1) / 2).astype(np.int32)  # make padding to have same dimensions
-                three_channel_mask = torch.nn.AvgPool2d(kernel_size=kernel, stride=1, padding=padding)(
-                    three_channel_mask).squeeze(0).permute(1, 2, 0)
-                fg = create_random_gradient_image(size=bg.shape)
+                three_channel_mask = torch.stack([torch.as_tensor(image)] * num_channels, dim=-1)
+                fg = create_random_gradient_image(size=bg.shape, mean=bg.mean())
                 new_img = torch.as_tensor(((1 - three_channel_mask) * bg + three_channel_mask * fg)).permute(2, 0, 1)
-                augmented_dataset.observations.append(new_img)
+                kernel_size = int(np.random.choice(list(range(4))) * 2 + 1)  # select random (but odd) kernel size
+                sigma = np.random.uniform(0.1, 3)  # select random (but odd) kernel size
+                blurred_img = gaussian_blur2d(new_img.unsqueeze(0), kernel_size=(kernel_size, kernel_size),
+                                              sigma=(sigma, sigma))
+                # Potential extension: motion blur.
+                # This requires consecutive frames on batch level
+                # This should happen before shuffling
+                augmented_dataset.observations.append(blurred_img)
             else:  # for ratio p_empty put only background
                 augmented_dataset.observations.append(torch.as_tensor(bg).permute(2, 0, 1))
                 augmented_dataset.actions[index] = torch.zeros_like(augmented_dataset.actions[index])
@@ -488,12 +490,20 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
     return augmented_dataset
 
 
-def create_random_gradient_image(size: tuple, low: float = 0., high: float = 1.) -> np.ndarray:
+def create_random_gradient_image(size: tuple, low: float = 0., high: float = 1., mean: float = -1) -> np.ndarray:
+    """
+    mean is float to which fg colors should differ enough
+    """
+    minimum_distance = 10
+    locations = (np.random.randint(size[0]), np.random.randint(size[0]))
     color_a = np.random.uniform(low, high)
     color_b = np.random.uniform(low, high)
-    locations = (np.random.randint(size[0]), np.random.randint(size[0]))
-    while locations[0] == locations[1]:
+    while abs(locations[0] - locations[1]) < minimum_distance:
         locations = (np.random.randint(size[0]), np.random.randint(size[0]))
+    while abs(color_a - mean) < 0.05:
+        color_a = np.random.uniform(low, high)
+    while abs(color_b - mean) < 0.05:
+        color_b = np.random.uniform(low, high)
     x1, x2 = min(locations), max(locations)
     gradient = np.arange(color_a, color_b, ((color_b - color_a)/(x2 - x1)))
     gradient = gradient[:x2-x1]
