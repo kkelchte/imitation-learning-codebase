@@ -52,7 +52,7 @@ class TrainerConfig(EvaluatorConfig):
     max_actor_training_iterations: Union[str, int] = "default"
     max_critic_training_iterations: Union[str, int] = "default"
     add_KL_divergence_loss: bool = False
-    target_data_loader_config: DataLoaderConfig = None
+    target_data_loader_config: Optional[DataLoaderConfig] = None
     domain_adaptation_criterion: str = "default"
 
     def __post_init__(self):
