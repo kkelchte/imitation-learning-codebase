@@ -9,8 +9,7 @@ job_configs:
     disk_mem_gb: 52
     wall_time_s: 10 * 60
     nice: true
-    use_singularity: true
-    singularity_dir: fedora
+    use_singularity: false
     check_if_ros_already_in_use: False
     save_locally: False
 number_of_jobs:
