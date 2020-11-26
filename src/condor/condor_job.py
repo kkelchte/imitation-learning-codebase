@@ -296,10 +296,12 @@ class CondorJob:
             else:
                 executable.write(f'source {os.environ["HOME"]}/.bashrc\n')
                 executable.write(f'conda activate venv\n')
-                executable.write(f'export PYTHONPATH=$PYTHONPATH:{self._config.codebase_dir}\n')
-                if 'DATADIR' in os.environ.keys() and not self._config.save_locally:
-                    executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
-                executable.write(f'export HOME={os.environ["HOME"]}\n')
+                executable.write(f'export PYTHONPATH={self._config.codebase_dir}:$PYTHONPATH\n')
+                if not self._config.save_locally:
+                    if 'DATADIR' in os.environ.keys():
+                        executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
+                else:
+                    executable.write(f'export DATADIR=$TEMP\n')
                 executable.write(f'{self._config.command} {"&" if self._config.save_before_wall_time else ""}\n')
             if self._config.save_before_wall_time:
                 executable.write("PROCESSID=$! \n")
