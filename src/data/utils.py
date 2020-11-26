@@ -403,7 +403,7 @@ def set_binary_maps_as_target(dataset: Dataset, invert: bool = False, binary_ima
     # smoothen binary maps to punish line predictions close to line less severely
     if smoothen_labels:
         binary_images = gaussian_blur2d(binary_images, kernel_size=(11, 11), sigma=(4, 4))
-    dataset.actions = [b for b in binary_images]
+    dataset.actions = [b.squeeze() for b in binary_images]
     return dataset
 
 
@@ -477,7 +477,7 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
                 kernel_size = int(np.random.choice(list(range(4))) * 2 + 1)  # select random (but odd) kernel size
                 sigma = np.random.uniform(0.1, 3)  # select random (but odd) kernel size
                 blurred_img = gaussian_blur2d(new_img.unsqueeze(0), kernel_size=(kernel_size, kernel_size),
-                                              sigma=(sigma, sigma))
+                                              sigma=(sigma, sigma)).squeeze(0)
                 # Potential extension: motion blur.
                 # This requires consecutive frames on batch level
                 # This should happen before shuffling
