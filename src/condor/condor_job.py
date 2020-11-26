@@ -302,6 +302,7 @@ class CondorJob:
                         executable.write(f'export DATADIR={os.environ["DATADIR"]}\n')
                 else:
                     executable.write(f'export DATADIR=$TEMP\n')
+                executable.write(f'export HOME={os.environ["HOME"]}\n')
                 executable.write(f'{self._config.command} {"&" if self._config.save_before_wall_time else ""}\n')
             if self._config.save_before_wall_time:
                 executable.write("PROCESSID=$! \n")
