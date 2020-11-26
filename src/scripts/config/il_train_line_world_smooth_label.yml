@@ -21,7 +21,7 @@ trainer_config:
   gradient_clip_norm: -1
   store_feature_maps_on_tensorboard: True
   data_loader_config:
-    loop_over_hdf5_files: true
+    loop_over_hdf5_files: false
     hdf5_files:
       - /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_label/1_200/train_0.hdf5
       - /gluster/visics/kkelchte/hdf5_files/line_world/mixed_smoothed_label/1_200/train_1.hdf5
