@@ -1,2 +1,2 @@
 debian package:
-- pull out opencv to allow debugger to work in singularity
+- add kornia
