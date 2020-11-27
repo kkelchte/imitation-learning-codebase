@@ -68,6 +68,8 @@ class ExperimentConfig(Config):
             del self.tester_config
         if self.load_checkpoint_dir is None:
             del self.load_checkpoint_dir
+        if self.load_checkpoint_dir is None:
+            del self.load_checkpoint_file
         if self.episode_runner_config is None:
             del self.episode_runner_config
         # if episode runner config has no limit on duration, use trainers batch size

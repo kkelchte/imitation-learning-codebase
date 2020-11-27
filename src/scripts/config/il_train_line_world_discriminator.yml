@@ -17,8 +17,8 @@ trainer_config:
   learning_rate: 0.001
   critic_learning_rate: 0.001
   epsilon: 0.2
-  factory_key: DeepSupervisionWithDiscriminator
-  weight_decay: 0.00003
+  factory_key: DSDis
+  weight_decay: 0.0
   target_data_loader_config:
     batch_size: 10
     hdf5_files:
@@ -44,6 +44,7 @@ trainer_config:
     batch_size: 10
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
+  domain_adaptation_criterion: BCELoss
   device: cuda
   store_output_on_tensorboard: true
 evaluator_config:

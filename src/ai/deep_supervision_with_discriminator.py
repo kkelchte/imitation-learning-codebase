@@ -56,18 +56,21 @@ class DeepSupervisionWithDiscriminator(DeepSupervision, DomainAdaptationTrainer)
 
             # normal deep supervision loss
             targets = data_to_tensor(sim_batch.actions).type(self._net.dtype).to(self._device)
-            probabilities = self._net.forward_with_all_outputs(sim_batch.observations, train=True)
-            loss = self._criterion(probabilities[-1], targets).mean()
-            for index, prob in enumerate(probabilities[:-1]):
+            sim_predictions = self._net.forward_with_all_outputs(sim_batch.observations, train=True)
+            loss = self._criterion(sim_predictions[-1], targets).mean()
+            for index, prob in enumerate(sim_predictions[:-1]):
                 loss += self._criterion(prob, targets).mean()
             deeply_supervised_error.append(loss.mean().cpu().detach())
 
             # adversarial loss on discriminator data
-            network_outputs = torch.cat(self._net.forward_with_all_outputs(real_batch.observations,
-                                                                           train=True)).unsqueeze(dim=1)
-            discriminator_loss = self._net.discriminate(network_outputs, train=False).mean()
-            #results = self._net.forward_with_intermediate_outputs(real_batch.observations, train=True)
-            #feature_maps =
+            real_predictions = self._net.forward_with_all_outputs(real_batch.observations, train=True)
+            discriminator_targets = torch.as_tensor([*[0] * len(sim_predictions) * len(sim_predictions[0]),
+                                                     *[1] * len(real_predictions) * len(real_predictions[0])])\
+                .type(self._net.dtype).to(self._device)
+            outputs = self._net.discriminate(torch.cat([torch.cat(sim_predictions),
+                                                        torch.cat(real_predictions)]).unsqueeze(dim=1),
+                                             train=False).squeeze(dim=1)
+            discriminator_loss = -self._domain_adaptation_criterion(outputs, discriminator_targets)
 
             # combine losses with epsilon weight
             loss *= (1 - self._config.epsilon)
@@ -86,13 +89,13 @@ class DeepSupervisionWithDiscriminator(DeepSupervision, DomainAdaptationTrainer)
             writer.write_distribution(supervised_error_distribution, 'training_loss_from_deep_supervision')
             writer.write_distribution(discriminator_error_distribution, 'training_loss_from_discriminator')
             if self._config.store_output_on_tensorboard and epoch % 30 == 0:
-                for index, prob in enumerate(probabilities):
+                for index, prob in enumerate(sim_predictions):
                     writer.write_output_image(prob, f'training/predictions_{index}')
                 writer.write_output_image(targets, 'training/targets')
                 writer.write_output_image(torch.stack(sim_batch.observations), 'training/inputs')
-            for index, prob in enumerate(self._net.forward_with_all_outputs(real_batch.observations, train=False)):
-                writer.write_output_image(prob, f'real/predictions_{index}')
-            writer.write_output_image(torch.stack(real_batch.observations), 'real/inputs')
+                for index, prob in enumerate(real_predictions):
+                    writer.write_output_image(prob, f'real/predictions_{index}')
+                writer.write_output_image(torch.stack(real_batch.observations), 'real/inputs')
         return f' Training: supervision {self._config.criterion} {supervised_error_distribution.mean: 0.3e} ' \
                f'[{supervised_error_distribution.std:0.2e}]' \
                f' discriminator {discriminator_error_distribution.mean: 0.3e} ' \
@@ -100,7 +103,6 @@ class DeepSupervisionWithDiscriminator(DeepSupervision, DomainAdaptationTrainer)
 
     def _train_discriminator_network(self, writer=None) -> str:
         total_error = []
-        criterion = nn.BCELoss()
         for sim_batch, real_batch in zip(self.data_loader.sample_shuffled_batch(),
                                          self.target_data_loader.sample_shuffled_batch()):
             self._discriminator_optimizer.zero_grad()
@@ -108,8 +110,9 @@ class DeepSupervisionWithDiscriminator(DeepSupervision, DomainAdaptationTrainer)
             real_predictions = torch.cat(self._net.forward_with_all_outputs(real_batch.observations, train=False))
             targets = torch.as_tensor([*[0] * len(sim_predictions), *[1] * len(real_predictions)])\
                 .type(self._net.dtype).to(self._device)
-            outputs = self._net.discriminate(torch.cat([sim_predictions, real_predictions]).unsqueeze(dim=1), train=True).squeeze(dim=1)
-            loss = criterion(outputs, targets)
+            outputs = self._net.discriminate(torch.cat([sim_predictions,
+                                                        real_predictions]).unsqueeze(dim=1), train=True).squeeze(dim=1)
+            loss = self._domain_adaptation_criterion(outputs, targets)
             loss.mean().backward()
             if self._config.gradient_clip_norm != -1:
                 nn.utils.clip_grad_norm_(self._net.discriminator_parameters(),
