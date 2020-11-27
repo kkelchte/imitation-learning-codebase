@@ -1,5 +1,5 @@
 output_path: test_train_smooth_line
-number_of_epochs: 1000
+number_of_epochs: 200
 episode_runner_config:
   number_of_episodes: -1
 save_checkpoint_every_n: 10

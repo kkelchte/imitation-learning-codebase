@@ -143,7 +143,7 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        job_config_object: CondorJobConfig,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
-    learning_rates = [0.001, 0.0001, 0.00001, 0.000001]
+    learning_rates = [0.001, 0.0001]
 
     architectures = ['bc_deeply_supervised_auto_encoder']
     # architectures = ['bc_deeply_supervised_auto_encoder',

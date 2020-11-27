@@ -1,4 +1,4 @@
-output_path: line_world/smooth_label/baseline
+output_path: line_world/smooth_label/big_ds
 mode: lr_architecture_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:

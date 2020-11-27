@@ -1,20 +1,21 @@
-output_path: encoder_decoder/textured/models/default/auto_encoder_conv1/lr_0.001
+output_path: test_smooth_label
 number_of_epochs: 0
+load_checkpoint_file: /usr/data/kkelchtel/mount/opal/line_world/smooth_line/baseline/models/bc_deeply_supervised_auto_encoder/lr_0.001/torch_checkpoints/checkpoint_best.ckpt
 episode_runner_config:
   number_of_episodes: 1
 architecture_config:
-  architecture: auto_encoder_conv1
+  architecture: bc_deeply_supervised_auto_encoder
   device: cuda
-evaluator_config:
+tester_config:
   data_loader_config:
+    loop_over_hdf5_files: false
     hdf5_files:
-      - hdf5_files/line_world/real/1_64_64/validation_0.hdf5
-    random_seed: 123
+      - hdf5_files/line_world/real/1_200_200_shuffled/validation_0.hdf5
+    random_seed: 32
     balance_over_actions: false
-    batch_size: 64
-    input_size: [1, 64, 64]
+    batch_size: 32
   criterion: MSELoss
   device: cuda
   store_output_on_tensorboard: true
-  evaluate_extensive: true
+  evaluate_extensive: false
 tensorboard: true

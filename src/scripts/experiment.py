@@ -38,7 +38,8 @@ Script starts environment runner with dataset_saver object to store the episodes
 class ExperimentConfig(Config):
     number_of_epochs: int = 1
     episode_runner_config: Optional[EpisodeRunnerConfig] = None
-    load_checkpoint_dir: Optional[str] = None  # path to checkpoints
+    load_checkpoint_dir: Optional[str] = None  # path to checkpoint directory containing torch_checkpoints
+    load_checkpoint_file: Optional[str] = None  # path to checkpoints
     load_checkpoint_found: bool = True
     save_checkpoint_every_n: int = -1
     tensorboard: bool = False
@@ -110,12 +111,14 @@ class Experiment:
 
         if self._config.load_checkpoint_found \
                 and len(glob(f'{self._config.output_path}/torch_checkpoints/*.ckpt')) > 0:
-            self.load_checkpoint(f'{self._config.output_path}/torch_checkpoints')
+            self.load_checkpoint(self.get_checkpoint_file(self._config.output_path))
+        elif self._config.load_checkpoint_file is not None:
+            self.load_checkpoint(self._config.load_checkpoint_file)
         elif self._config.load_checkpoint_dir is not None:
             if not self._config.load_checkpoint_dir.startswith('/'):
                 self._config.load_checkpoint_dir = f'{get_data_dir(self._config.output_path)}/' \
                                                    f'{self._config.load_checkpoint_dir}'
-            self.load_checkpoint(self._config.load_checkpoint_dir)
+            self.load_checkpoint(self.get_checkpoint_file(self._config.load_checkpoint_dir))
 
         cprint(f'Initiated.', self._logger)
 
@@ -190,9 +193,15 @@ class Experiment:
         torch.save(checkpoint, f'{self._config.output_path}/torch_checkpoints/checkpoint_latest.ckpt')
         cprint(f'stored {filename}', self._logger)
 
-    def load_checkpoint(self, checkpoint_dir: str):
-        if not checkpoint_dir.endswith('torch_checkpoints'):
+    def get_checkpoint_file(self, checkpoint_dir: str) -> str:
+        """
+        Search in torch_checkpoints directory for
+        'best' and otherwise 'latest' and otherwise checkpoint with highest tag.
+        Return absolute path.
+        """
+        if not checkpoint_dir.endswith('torch_checkpoints') and not checkpoint_dir.endswith('.ckpt'):
             checkpoint_dir += '/torch_checkpoints'
+
         if len(glob(f'{checkpoint_dir}/*.ckpt')) == 0 and len(glob(f'{checkpoint_dir}/torch_checkpoints/*.ckpt')) == 0:
             cprint(f'Could not find suitable checkpoint in {checkpoint_dir}', self._logger, MessageType.error)
             time.sleep(0.1)
@@ -206,6 +215,9 @@ class Experiment:
             checkpoints = {int(f.split('.')[0].split('_')[-1]): os.path.join(checkpoint_dir, f)
                            for f in os.listdir(checkpoint_dir)}
             checkpoint_file = checkpoints[max(checkpoints.keys())]
+        return checkpoint_file
+
+    def load_checkpoint(self, checkpoint_file: str):
         # Load params for each experiment element
         checkpoint = torch.load(checkpoint_file, map_location=torch.device('cpu'))
         self._epoch = checkpoint['epoch'] if 'epoch' in checkpoint.keys() else 0
