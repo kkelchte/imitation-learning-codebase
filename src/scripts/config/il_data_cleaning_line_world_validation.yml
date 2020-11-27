@@ -1,4 +1,4 @@
-output_path: hdf5_files/line_world/smoothen_labels/1_200_200
+output_path: hdf5_files/line_world/gaussian_blurred_lines_wo_smooth_labels/1_200_200
 training_validation_split: 0.
 remove_first_n_timestamps: 30
 augment_background_noise: 0.01
@@ -6,7 +6,7 @@ augment_background_textured: 0.98
 augment_empty_images: 0.01
 texture_directory: manual_floor_dataset
 binary_maps_as_target: True
-smoothen_labels: True
+smoothen_labels: False
 invert_binary_maps: True
 require_success: True
 max_run_length: 200
