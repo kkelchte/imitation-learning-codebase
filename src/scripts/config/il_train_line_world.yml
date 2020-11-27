@@ -47,7 +47,7 @@ trainer_config:
       - /gluster/visics/kkelchte/hdf5_files/line_world/gaussian_blurred_lines_wo_smooth_labels/1_200_200/train_7.hdf5
       - /gluster/visics/kkelchte/hdf5_files/line_world/gaussian_blurred_lines_wo_smooth_labels/1_200_200/train_8.hdf5
       - /gluster/visics/kkelchte/hdf5_files/line_world/gaussian_blurred_lines_wo_smooth_labels/1_200_200/train_9.hdf5
-      random_seed: 123
+    random_seed: 123
     balance_over_actions: false
     batch_size: 32
   criterion: WeightedBinaryCrossEntropyLoss
