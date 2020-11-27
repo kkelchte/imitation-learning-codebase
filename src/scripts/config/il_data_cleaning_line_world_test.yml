@@ -1,4 +1,4 @@
-output_path: hdf5_files/line_world/mixed/1_200_200
+output_path: hdf5_files/line_world/mixed/1_200
 training_validation_split: 1.0
 remove_first_n_timestamps: 30
 augment_background_noise: 0.01

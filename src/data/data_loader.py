@@ -96,6 +96,7 @@ class DataLoader:
     def load_dataset(self):
         if len(self._config.hdf5_files) != 0:
             if self._config.loop_over_hdf5_files:
+                del self._dataset
                 self._dataset = Dataset()
                 self._hdf5_file_index += 1
                 self._hdf5_file_index %= len(self._config.hdf5_files)
@@ -139,18 +140,17 @@ class DataLoader:
         return self._dataset
 
     def empty_dataset(self) -> None:
+        del self._dataset
         self._dataset = Dataset()
 
     def set_dataset(self, ds: Dataset = None) -> None:
         if ds is not None:
             self._dataset = ds
         else:
+            del self._dataset
             self._dataset = Dataset()
             self.update_data_directories_with_raw_data()
             self.load_dataset()
-
-    def empty_dataset(self) -> None:
-        self._dataset = Dataset()
 
     def get_dataset(self) -> Dataset:
         return self._dataset

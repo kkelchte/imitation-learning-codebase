@@ -30,24 +30,23 @@ trainer_config:
 #    hdf5_files:
 #      - hdf5_files/1_200/real/tiny_dummy.hdf5
   data_loader_config:
-    loop_over_hdf5_files: false
+    loop_over_hdf5_files: true
     hdf5_files:
       - hdf5_files/1_200/sim/tiny_dummy.hdf5
     random_seed: 123
     balance_over_actions: false
-    batch_size: 32
+    batch_size: 10
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
   device: cuda
   store_output_on_tensorboard: true
 evaluator_config:
   data_loader_config:
-    loop_over_hdf5_files: false
+    loop_over_hdf5_files: true
     hdf5_files:
       - hdf5_files/1_200/sim/tiny_dummy.hdf5
-    random_seed: 32
     balance_over_actions: false
-    batch_size: 32
+    batch_size: 10
   criterion: WeightedBinaryCrossEntropyLoss
   criterion_args_str: 'beta=0.9'
   device: cuda
