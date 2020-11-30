@@ -1,13 +1,11 @@
-output_path: hdf5_files/line_world/gaussian_blurred_lines/1_200
+output_path: hdf5_files/line_world_ctr/gaussian_blurred_lines/1_200
 training_validation_split: 1.0
 remove_first_n_timestamps: 30
 augment_background_noise: 0.01
 augment_background_textured: 0.98
 augment_empty_images: 0.01
 texture_directory: textured_dataset
-binary_maps_as_target: True
-smoothen_labels: True
-invert_binary_maps: True
+binary_maps_as_target: False
 require_success: True
 max_run_length: 200
 max_hdf5_size: 3000000000

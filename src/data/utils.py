@@ -9,7 +9,7 @@ import h5py
 import torch
 from PIL import Image
 import numpy as np
-from kornia import gaussian_blur2d
+from kornia import gaussian_blur2d, motion_blur
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -464,24 +464,28 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
     num_channels = dataset.observations[0].shape[0]
-    for index, image in tqdm(enumerate(binary_images)):
+    for index, image in tqdm(enumerate(binary_images[:-1])):
         if np.random.binomial(1, p):
             bg_image = np.random.choice(texture_paths)
             bg = load_and_preprocess_file(bg_image,
                                           size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
             if not np.random.binomial(1, p_empty):
-                # smoothen mask to make transition less abrupt with randomly selected kernel size
-                three_channel_mask = torch.stack([torch.as_tensor(image)] * num_channels, dim=-1)
+                # smoothen mask to make transition less abrupt with randomly selected kernel size and motion blur
+                masks = torch.stack([torch.as_tensor(binary_images[index]),
+                                     torch.as_tensor(binary_images[index+1])],
+                                    dim=0).unsqueeze(1)
+                if num_channels > 1:
+                    masks = masks.repeat(1, 3, 1, 1)
+                kernel_size = int(np.random.choice(list(range(5))) * 2 + 5)  # select random (but odd) kernel size
+                angle = np.random.randint(0, 359)
+                direction = np.random.uniform(-1, 1)
+                blurred_mask = motion_blur(masks, kernel_size, angle, direction)[0].permute(1, 2, 0).clamp(0, 1)
+
                 fg = create_random_gradient_image(size=bg.shape, mean=bg.mean())
-                new_img = torch.as_tensor(((1 - three_channel_mask) * bg + three_channel_mask * fg)).permute(2, 0, 1)
-                kernel_size = int(np.random.choice(list(range(4))) * 2 + 1)  # select random (but odd) kernel size
-                sigma = np.random.uniform(0.1, 3)  # select random (but odd) kernel size
-                blurred_img = gaussian_blur2d(new_img.unsqueeze(0), kernel_size=(kernel_size, kernel_size),
-                                              sigma=(sigma, sigma)).squeeze(0)
-                # Potential extension: motion blur.
-                # This requires consecutive frames on batch level
-                # This should happen before shuffling
-                augmented_dataset.observations.append(blurred_img)
+                new_img = torch.as_tensor(((1 - blurred_mask) * bg + blurred_mask * fg)).permute(2, 0, 1)
+                # plt.imshow(new_img.squeeze(0))
+                # plt.show()
+                augmented_dataset.observations.append(new_img)
             else:  # for ratio p_empty put only background
                 augmented_dataset.observations.append(torch.as_tensor(bg).permute(2, 0, 1))
                 augmented_dataset.actions[index] = torch.zeros_like(augmented_dataset.actions[index])
