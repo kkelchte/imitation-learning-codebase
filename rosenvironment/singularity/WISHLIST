@@ -1,2 +1,4 @@
 debian package:
 - add kornia
+pip install omg-tools
+apt-get install python3-tk
