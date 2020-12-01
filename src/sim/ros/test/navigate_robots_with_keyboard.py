@@ -44,6 +44,7 @@ class TestRobots(unittest.TestCase):
         config = EnvironmentConfig().create(config_dict=config_dict)
         self._environment = RosEnvironment(config=config)
 
+    #@unittest.skip
     def test_turtlebot_sim(self):
         self.start(robot_name='turtlebot_sim', fsm_config='takeover_run')
         experience, _ = self._environment.reset()
@@ -54,23 +55,34 @@ class TestRobots(unittest.TestCase):
         while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()
 
+    @unittest.skip
     def test_drone_sim(self):
         self.start(robot_name='drone_sim', fsm_config='takeover_run')
         self._environment.reset()
         while True:
             self._environment.step()
 
+    @unittest.skip
     def test_bebop_real(self):
         self.start(robot_name='bebop_real', fsm_config='takeover_run')
         self._environment.reset()
         while True:
             self._environment.step()
 
+    @unittest.skip
     def test_tello_real(self):
         self.start(robot_name='tello_real', fsm_config='takeover_run')
         self._environment.reset()
         while True:
             self._environment.step()
+
+    @unittest.skip
+    def test_double_drones_real(self):
+        self.start(robot_name='double_drone_sim', fsm_config='single_run')
+        experience = self._environment.reset()
+        while True:
+            self._environment.step()
+            import pdb; pdb.set_trace()
 
     def tearDown(self) -> None:
         if hasattr(self, '_environment'):

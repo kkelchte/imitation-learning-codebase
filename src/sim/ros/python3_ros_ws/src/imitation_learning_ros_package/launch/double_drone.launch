@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="world_name" default="debug_drone"/>
+
+    <include file="$(find imitation_learning_ros_package)/launch/gazebo.launch">
+        <arg name="world_name" value="$(env CODEDIR)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
+        <arg name="gui" value="true"/>
+        <arg name="headless" default="true"/>
+    </include>
+
+    <arg name="distance" default="5"/>
+    <arg name="x_pos" default="0"/>
+    <arg name="y_pos" default="0"/>
+    <arg name="z_pos" default="0."/>
+    <arg name="yaw_or" default="0"/>
+
+    <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
+        <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+        <arg name="x" value="$(arg x_pos)"/>
+        <arg name="y" value="$(arg y_pos)"/>
+        <arg name="z" value="$(arg z_pos)"/>
+        <arg name="Y" default="$(arg yaw_or)"/>
+        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg robot_name).gazebo.xacro"/>
+    </include>
+    <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="fleeing">
+        <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+        <arg name="name" default="fleeing_quadrotor"/>
+        <arg name="x" value="$(eval arg('x_pos') + arg('distance'))"/>
+        <arg name="y" value="$(arg y_pos)"/>
+        <arg name="z" value="$(arg z_pos)"/>
+        <arg name="Y" default="$(eval 3.14 + arg('yaw_or'))"/>
+        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
+    </include>
+</launch>

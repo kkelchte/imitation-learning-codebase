@@ -27,8 +27,8 @@
     <arg name="z_pos" default="0."/>
     <arg name="yaw_or" default="1.57"/>
 
-    <arg name="turtlebot_sim" default="false"/>
-    <group if="$(arg turtlebot_sim)">
+
+    <group if="$(eval arg('robot_name') == 'turtlebot_sim')">
           <param name="robot_description"
                  command="$(find xacro)/xacro --inorder $(env CODEDIR)/src/sim/ros/gazebo/urdf/turtlebot3_burger.urdf.xacro"/>
           <node pkg="gazebo_ros"
@@ -39,39 +39,55 @@
                 output="log"/>
     </group>
 
-    <arg name="drone_sim" default="false"/>
-    <group if="$(arg drone_sim)">
-      <!-- Spawn simulated quadrotor uav -->
-      <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
-        <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
-        <arg name="x" value="$(arg x_pos)"/>
-        <arg name="y" value="$(arg y_pos)"/>
-        <arg name="z" value="$(arg z_pos)"/>
-        <arg name="Y" default="$(arg yaw_or)"/>
-        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
-      </include>
+    <group if="$(eval arg('robot_name') == 'drone_sim_down_cam' or arg('robot_name') == 'drone_sim')">
+        <arg name="model_name" default="drone_sim"/>
+        <!-- Spawn simulated quadrotor uav -->
+        <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
+            <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+            <arg name="x" value="$(arg x_pos)"/>
+            <arg name="y" value="$(arg y_pos)"/>
+            <arg name="z" value="$(arg z_pos)"/>
+            <arg name="Y" default="$(arg yaw_or)"/>
+            <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
+        </include>
     </group>
 
-    <arg name="bebop_real" default="false"/>
-    <group if="$(arg bebop_real)">
+    <group if="$(eval arg('robot_name') == 'bebop_real')">
         <include file="$(find bebop_driver)/launch/bebop_node.launch"/>
     </group>
 
-    <arg name="ardrone_real" default="false"/>
-    <group if="$(arg ardrone_real)">
-<!--        <include file="$(find ardrone_driver)/launch/ardrone_node.launch"/>-->
-    </group>
-
-    <arg name="turtlebot_real" default="false"/>
-    <group if="$(arg turtlebot_real)">
+    <group if="$(eval arg('robot_name') == 'turtlebot_real')">
         <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
             <arg name="model" value="burger" />
         </include>
     </group>
 
-    <arg name="tello_real" default="false"/>
-    <group if="$(arg tello_real)">
+    <group if="$(eval arg('robot_name') == 'tello_real')">
         <include file="$(find tello_driver)/launch/tello_node.launch"/>
+    </group>
+
+
+    <arg name="double_drone_sim" default="false"/>
+    <group if="$(arg double_drone_sim)">
+        <arg name="model_name" default="drone_sim_wide_angle"/>
+        <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="tracking">
+            <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+            <arg name="name" default="tracking_quadrotor"/>
+            <arg name="x" value="$(arg x_pos)"/>
+            <arg name="y" value="$(arg y_pos)"/>
+            <arg name="z" value="$(arg z_pos)"/>
+            <arg name="Y" default="$(arg yaw_or)"/>
+            <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
+        </include>
+        <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="fleeing">
+            <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+            <arg name="name" default="fleeing_quadrotor"/>
+            <arg name="x" value="$(eval arg('x_pos') + arg('distance'))"/>
+            <arg name="y" value="$(arg y_pos)"/>
+            <arg name="z" value="$(arg z_pos)"/>
+            <arg name="Y" default="$(eval 3.14 + arg('yaw_or'))"/>
+            <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
+        </include>
     </group>
 
     <!--######################## HELPER NODES ########################-->

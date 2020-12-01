@@ -1,0 +1,18 @@
+robot_type: double_quadrotor_sim
+command_topic: /tracking/cmd_vel
+command_topic_1: /fleeing/cmd_vel
+sensors:
+  - tracking_forward_camera
+  - fleeing_forward_camera
+tracking_forward_camera_topic: /tracking/forward/camera/image
+tracking_forward_camera_type: Image
+tracking_forward_camera_stats:
+  height: 200
+  width: 200
+  depth: 3
+fleeing_forward_camera_topic: /fleeing/forward/camera/image
+fleeing_forward_camera_type: Image
+fleeing_forward_camera_stats:
+  height: 200
+  width: 200
+  depth: 3

@@ -38,20 +38,8 @@ class RosEnvironment(Environment):
         self._pause_period = 1./config.ros_config.step_rate_fps
         roslaunch_arguments = config.ros_config.ros_launch_config.__dict__
         # Add automatically added values according to robot_name, world_name, actor_configs
-        if config.ros_config.ros_launch_config.gazebo:
-            roslaunch_arguments['turtlebot_sim'] = True \
-                if config.ros_config.ros_launch_config.robot_name == 'turtlebot_sim' else False
-            roslaunch_arguments['drone_sim'] = True \
-                if config.ros_config.ros_launch_config.robot_name == 'drone_sim' else False
-        else:
-            roslaunch_arguments['bebop_real'] = True \
-                if config.ros_config.ros_launch_config.robot_name == 'bebop_real' else False
-            roslaunch_arguments['ardrone_real'] = True \
-                if config.ros_config.ros_launch_config.robot_name == 'ardrone_real' else False
-            roslaunch_arguments['turtlebot_real'] = True \
-                if config.ros_config.ros_launch_config.robot_name == 'turtlebot_real' else False
-            roslaunch_arguments['tello_real'] = True \
-                if config.ros_config.ros_launch_config.robot_name == 'tello_real' else False
+        # if config.ros_config.ros_launch_config.robot_name is not None:
+        #     roslaunch_arguments[config.ros_config.ros_launch_config.robot_name] = True
 
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:

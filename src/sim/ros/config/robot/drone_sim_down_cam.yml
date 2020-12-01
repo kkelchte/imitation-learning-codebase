@@ -1,14 +1,14 @@
 robot_type: quadrotor_sim
 command_topic: /cmd_vel
 sensors:
-  - forward_camera
+  - downward_camera
   - odometry
-forward_camera_topic: /forward/camera/image
-forward_camera_type: Image
-forward_camera_stats:
+downward_camera_topic: /down/camera/image
+downward_camera_type: Image
+downward_camera_stats:
   height: 200
   width: 200
-  depth: 3
+  depth: 1
 #imu_topic: /raw_imu
 #imu_type: Imu
 odometry_topic: /ground_truth/state
