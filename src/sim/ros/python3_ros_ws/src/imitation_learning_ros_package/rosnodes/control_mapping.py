@@ -71,7 +71,7 @@ class ControlMapper:
         rospy.init_node('control_mapper')
 
     def _subscribe(self):
-        rospy.Subscriber(rospy.get_param('/fsm/state_topic', '/fsm_state'), String, self._fsm_state_update)
+        rospy.Subscriber(rospy.get_param('/fsm/state_topic', '/fsm/state'), String, self._fsm_state_update)
         # For each actor add subscriber < actor config
         actor_topics = []
         for state, mode in self._mapping.items():
@@ -120,9 +120,10 @@ class ControlMapper:
             self.count += 1
             if self.count % self._rate_fps == 0:
                 msg = f"{rospy.get_time(): 0.0f}ms:"
+                msg += f" {self._fsm_state} "
                 for key in self._messages.keys():
                     msg += f" {key} {self._messages[key]}\n"
-                cprint(msg, self._logger, msg_type=MessageType.debug)
+                cprint(msg, self._logger)
 
 
 if __name__ == "__main__":

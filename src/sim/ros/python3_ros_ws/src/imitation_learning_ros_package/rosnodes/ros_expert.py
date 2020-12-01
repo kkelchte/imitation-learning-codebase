@@ -26,6 +26,7 @@ from src.core.utils import camelcase_to_snake_format, get_filename_without_exten
 class RosExpert(Actor):
 
     def __init__(self):
+        self.count = 0
         rospy.init_node('ros_expert')
         stime = time.time()
         max_duration = 60
@@ -199,21 +200,28 @@ class RosExpert(Actor):
 
         if self._noise is not None:
             twist = apply_noise_to_twist(twist=twist, noise=self._noise.sample())
-        cprint(f'twist: {twist.linear.x}, {twist.linear.y}, {twist.linear.z}, '
-               f'{twist.angular.x}, {twist.angular.y}, {twist.angular.z}', self._logger, msg_type=MessageType.debug)
+        # cprint(f'twist: {twist.linear.x}, {twist.linear.y}, {twist.linear.z}, '
+        #        f'{twist.angular.x}, {twist.angular.y}, {twist.angular.z}', self._logger, msg_type=MessageType.debug)
         return twist
 
     def get_action(self, sensor_data: dict = None) -> Action:
         assert sensor_data is None
         action = adapt_twist_to_action(self._update_twist())
         action.actor_name = self._name
-        cprint(f'action: {action}', self._logger, msg_type=MessageType.debug)
+        # cprint(f'action: {action}', self._logger, msg_type=MessageType.debug)
         return action
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
             self._publisher.publish(self._update_twist())
+            # self.count += 1
+            # if self.count % 10 * self._rate_fps == 0:
+            #     msg = f'waypoint yaw adjustment: {self._adjust_yaw_waypoint_following} \n'
+            #     msg += f' collision yaw adjustment: {self._adjust_yaw_collision_avoidance} \n'
+            #     msg += f' next waypoint: {self._next_waypoint} \n'
+            #     msg += f' cmd: {self._update_twist()}'
+            #     cprint(msg, self._logger, msg_type=MessageType.info)
             rate.sleep()
 
 

@@ -24,6 +24,7 @@ class TestRosExpert(unittest.TestCase):
             'gazebo': False,
             'fsm': False,
             'control_mapping': False,
+            'waypoint_indicator': True,
             'ros_expert': True,
             'output_path': self.output_dir,
             'ros_expert_config_file_path_with_extension': f'src/sim/ros/config/actor/ros_expert.yml'
@@ -57,14 +58,15 @@ class TestRosExpert(unittest.TestCase):
 
     def send_scan_and_read_twist(self, scan: LaserScan) -> Twist:
         self.ros_topic.publishers[self._depth_topic].publish(scan)
-        time.sleep(0.1)
+        time.sleep(1)
         received_twist: Twist = self.ros_topic.topic_values[self.command_topic]
         return received_twist
 
     def _test_collision_avoidance_with_laser_scan(self):
+        time.sleep(5)
         # publish depth scan making robot go left
         scan = LaserScan()
-        scan.ranges = [2] * 20 + [5] * 30 + [2] * (360-50)
+        scan.ranges = [1] * 20 + [15] * 30 + [1] * (360-50)
         twist = self.send_scan_and_read_twist(scan)
         self.assertEqual(twist.angular.z, 1)
 
@@ -90,7 +92,7 @@ class TestRosExpert(unittest.TestCase):
         odom.pose.pose.orientation.z = 0
         odom.pose.pose.orientation.w = 1
         self.ros_topic.publishers[self._pose_topic].publish(odom)
-        time.sleep(1)
+        time.sleep(3)
         received_twist: Twist = self.ros_topic.topic_values[self.command_topic]
         self.assertEqual(received_twist.angular.z, 0)
         # -30 degrees rotated in yaw => compensate in + yaw
@@ -102,7 +104,7 @@ class TestRosExpert(unittest.TestCase):
         odom.pose.pose.orientation.z = -0.258819
         odom.pose.pose.orientation.w = 0.9659258
         self.ros_topic.publishers[self._pose_topic].publish(odom)
-        time.sleep(1)
+        time.sleep(3)
         received_twist: Twist = self.ros_topic.topic_values[self.command_topic]
         self.assertEqual(received_twist.angular.z, 1)
         # +30 degrees rotated in yaw => compensate in + yaw
@@ -114,7 +116,7 @@ class TestRosExpert(unittest.TestCase):
         odom.pose.pose.orientation.z = 0.258819
         odom.pose.pose.orientation.w = 0.9659258
         self.ros_topic.publishers[self._pose_topic].publish(odom)
-        time.sleep(1)
+        time.sleep(3)
         received_twist: Twist = self.ros_topic.topic_values[self.command_topic]
         self.assertEqual(received_twist.angular.z, -1)
 

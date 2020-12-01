@@ -37,10 +37,11 @@ class TestControlMapper(unittest.TestCase):
         # subscribe to supervision and command control
         self.command_topic = rospy.get_param('/robot/command_topic')
         self.supervision_topic = rospy.get_param('/control_mapping/supervision_topic')
+        self.fsm_topic = rospy.get_param('/fsm/state_topic')
         subscribe_topics = [
             TopicConfig(topic_name=self.command_topic, msg_type="Twist"),
             TopicConfig(topic_name=self.supervision_topic, msg_type="Twist"),
-            TopicConfig(topic_name='/fsm/state', msg_type="String"),
+            TopicConfig(topic_name=self.fsm_topic, msg_type="String"),
         ]
         # create publishers for all control topics < control_mapper/default.yml
         self._mapping = rospy.get_param('/control_mapping/mapping')
@@ -105,7 +106,7 @@ class TestControlMapper(unittest.TestCase):
                           FsmState.TakenOver]:
             print(f'FSM STATE: {fsm_state}')
             #   publish fsm state
-            self.ros_topic.publishers['/fsm/state'].publish(fsm_state.name)
+            self.ros_topic.publishers[self.fsm_topic].publish(fsm_state.name)
             #   wait
             time.sleep(1)
             #   publish on all controls
@@ -116,7 +117,7 @@ class TestControlMapper(unittest.TestCase):
                 solution[control_topic] = control_command.linear.x
                 self.ros_topic.publishers[control_topic].publish(control_command)
             #   wait
-            time.sleep(1)
+            time.sleep(3)
             #   assert control is equal to intended control
             if 'command' in self._mapping[fsm_state.name].keys():
                 original_topic = self._mapping[fsm_state.name]['command']
