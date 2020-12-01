@@ -13,12 +13,13 @@ environment_config:
     info:
       -current_waypoint
       -sensor/odometry
-    observation: forward_camera
+    observation: downward_camera
     visible_xterm: false
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
-      robot_name: drone_sim
+      robot_name: drone_sim_down_cam
+      model_name: drone_sim_down_cam
       fsm_config: single_run
       fsm: true
       control_mapping: true

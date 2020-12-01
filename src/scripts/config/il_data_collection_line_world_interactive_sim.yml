@@ -14,7 +14,7 @@ environment_config:
     max_update_wait_period_s: 10
     ros_launch_config:
       random_seed: 123
-      robot_name: drone_sim
+      robot_name: drone_sim_down_cam
       model_name: drone_sim_down_cam
       robot_display: true
       fsm_config: takeover_run
