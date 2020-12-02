@@ -3,10 +3,12 @@ import os
 import time
 from enum import IntEnum
 
+import actionlib
 import numpy as np
 import rospy
 
 from geometry_msgs.msg import WrenchStamped
+from hector_uav_msgs.msg import TakeoffAction, TakeoffActionGoal
 from std_msgs.msg import Empty, Float32
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
@@ -135,12 +137,32 @@ class Fsm:
         """Add entrance of idle state all field variables are reset
         """
         self._init_fields()
-        cprint(f'resetting', self._logger, msg_type=MessageType.debug)
+        cprint(f'resetting', self._logger)
         self._start()
 
     def _start(self):
         """Define correct initial state depending on mode"""
         if self.mode == FsmMode.SingleRun:
+            self._robot = rospy.get_param('/robot/robot_type', '')
+            if 'quadrotor_sim' in self._robot:
+                action_name = rospy.get_param('/robot/takeoff_action', '/action/takeoff')
+
+                def call_takeoff_action(n):
+                    client = actionlib.SimpleActionClient(n, TakeoffAction)
+                    client.wait_for_server()
+                    client.send_goal(goal=TakeoffActionGoal())
+                    client.wait_for_result()
+                    cprint(f'takeoff: {client.get_result()}', self._logger)
+
+                if isinstance(action_name, list):
+                    for name in action_name:
+                        call_takeoff_action(name)
+                else:
+                    call_takeoff_action(action_name)
+                # rospy.wait_for_service('/enable_motors')
+                # enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
+                # enable_motors_service.call(True)
+
             self._running()
         if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
             self._takeover()
@@ -287,7 +309,7 @@ class Fsm:
             self.count += 1
             if self.count % self._rate_fps == 0:
                 msg = f"{rospy.get_time(): 0.0f}ms reward: {self._current_reward} shutting down:{self._is_shuttingdown}"
-                cprint(msg, self._logger, msg_type=MessageType.debug)
+                cprint(msg, self._logger)
 
 
 if __name__ == "__main__":

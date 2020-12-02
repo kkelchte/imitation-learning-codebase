@@ -33,7 +33,7 @@ class TestControlMapper(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=False)
+                                       visible=True)
         # subscribe to supervision and command control
         self.command_topic = rospy.get_param('/robot/command_topic')
         self.supervision_topic = rospy.get_param('/control_mapping/supervision_topic')
@@ -116,6 +116,8 @@ class TestControlMapper(unittest.TestCase):
                 control_command.linear.x = index * 100
                 solution[control_topic] = control_command.linear.x
                 self.ros_topic.publishers[control_topic].publish(control_command)
+
+            import pdb; pdb.set_trace()
             #   wait
             time.sleep(3)
             #   assert control is equal to intended control

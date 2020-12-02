@@ -26,6 +26,8 @@
     <arg name="y_pos" default="0"/>
     <arg name="z_pos" default="0."/>
     <arg name="yaw_or" default="1.57"/>
+<!--    Distance between two drones used for double_drone_sim-->
+    <arg name="distance" default="3"/>
 
 
     <group if="$(eval arg('robot_name') == 'turtlebot_sim')">

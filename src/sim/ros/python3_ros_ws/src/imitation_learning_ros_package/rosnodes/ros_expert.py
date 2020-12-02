@@ -57,19 +57,6 @@ class RosExpert(Actor):
         self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
         self._subscribe()
 
-        self._robot = rospy.get_param('/robot/robot_type')
-
-        if self._robot == 'quadrotor_sim':
-            action_name = '/action/takeoff'
-            client = actionlib.SimpleActionClient(action_name, TakeoffAction)
-            client.wait_for_server()
-            client.send_goal(goal=TakeoffActionGoal())
-            client.wait_for_result()
-            cprint(f'takeoff: {client.get_result()}', self._logger)
-            #rospy.wait_for_service('/enable_motors')
-            #enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
-            #enable_motors_service.call(True)
-
     def _subscribe(self):
         # Robot sensors:
         for sensor in ['/robot/depth_scan', '/robot/odometry']:

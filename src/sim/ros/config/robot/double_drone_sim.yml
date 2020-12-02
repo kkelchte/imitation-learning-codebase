@@ -1,18 +1,27 @@
 robot_type: double_quadrotor_sim
-command_topic: /tracking/cmd_vel
-command_topic_1: /fleeing/cmd_vel
+takeoff_action:
+  - /tracking/action/takeoff
+  - /fleeing/action/takeoff
+tracking_command_topic: /tracking/cmd_vel
+fleeing_command_topic: /fleeing/cmd_vel
 sensors:
   - tracking_forward_camera
+  - tracking_tf
   - fleeing_forward_camera
+  - fleeing_tf
 tracking_forward_camera_topic: /tracking/forward/camera/image
 tracking_forward_camera_type: Image
 tracking_forward_camera_stats:
   height: 200
   width: 200
   depth: 3
+tracking_tf_topic: /tracking/ground_truth_to_tf/pose
+tracking_tf_type: PoseStamped
 fleeing_forward_camera_topic: /fleeing/forward/camera/image
 fleeing_forward_camera_type: Image
 fleeing_forward_camera_stats:
   height: 200
   width: 200
   depth: 3
+fleeing_tf_topic: /fleeing/ground_truth_to_tf/pose
+fleeing_tf_type: PoseStamped

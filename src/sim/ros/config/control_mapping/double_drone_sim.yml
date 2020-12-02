@@ -1,0 +1,15 @@
+supervision_topic: '/control_mapper/supervision'
+rate_fps: 60
+mapping:
+  Unknown: {}
+  Terminated: {}
+  Running:
+    tracking_command: /ros_python_interface/cmd_vel
+    fleeing_command: /ros_python_interface/cmd_vel_1
+  TakenOver: {}
+  DriveBack: {}
+
+#max_time
+#current_time
+#control_time
+#aggressiveness

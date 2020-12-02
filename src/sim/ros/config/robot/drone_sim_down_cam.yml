@@ -1,4 +1,5 @@
 robot_type: quadrotor_sim
+takeoff_action: /action/takeoff
 command_topic: /cmd_vel
 sensors:
   - downward_camera

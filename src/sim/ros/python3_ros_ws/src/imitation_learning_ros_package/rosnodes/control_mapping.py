@@ -51,20 +51,28 @@ class ControlMapper:
 
         self._mapping = rospy.get_param('/control_mapping/mapping')
         cprint(f'mapping: {self._mapping}', self._logger)
-        for key in FsmState.members():
-            if key not in self._mapping.keys():
-                self._mapping[key] = {}
-        self._fsm_state = FsmState.Unknown
+
+        # get robot command topics according to control keys
+        self._publishers = {}  # required publishers to control robot(s)
+        control_types = []
+        for fsm_state in FsmState.members():
+            if fsm_state not in self._mapping.keys():
+                self._mapping[fsm_state] = {}
+            else:
+                control_types.extend(self._mapping[fsm_state].keys())
+        for control_type in set(control_types):
+            if control_type == 'supervision':
+                self._publishers[control_type] = rospy.Publisher(rospy.get_param('/control_mapping/supervision_topic'),
+                                                                 Twist, queue_size=10)
+            else:
+                self._publishers[control_type] = rospy.Publisher(rospy.get_param(f'/robot/{control_type}_topic'),
+                                                                 Twist, queue_size=10)
 
         noise_config = rospy.get_param('/control_mapping/noise', None)
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config is not None else None
 
-        self._publishers = {
-            'command': rospy.Publisher(rospy.get_param('/robot/command_topic'), Twist, queue_size=10),
-            'supervision': rospy.Publisher(rospy.get_param('/control_mapping/supervision_topic'),
-                                           Twist, queue_size=10)
-        }
-        self._messages = {}
+        self._fsm_state = FsmState.Unknown
+        self._messages = {}  # contains all controls comin from actors
         self._rate_fps = rospy.get_param('/control_mapping/rate_fps', 60)
         self.count = 0
         self._subscribe()
@@ -74,13 +82,9 @@ class ControlMapper:
         rospy.Subscriber(rospy.get_param('/fsm/state_topic', '/fsm/state'), String, self._fsm_state_update)
         # For each actor add subscriber < actor config
         actor_topics = []
-        for state, mode in self._mapping.items():
-            if 'command' in mode.keys():
-                # if param (mode[command]) does not exist, assume mode[command] is the topic
-                actor_topics.append(rospy.get_param(mode['command'], mode['command']))
-            if 'supervision' in mode.keys():
-                # if param (mode[supervision]) does not exist, assume mode[supervision] is the topic
-                actor_topics.append(rospy.get_param(mode['supervision'], mode['supervision']))
+        for state, controls in self._mapping.items():
+            for ctr in controls.values():
+                actor_topics.append(ctr)
         actor_topics = set(actor_topics)
         for topic in actor_topics:
             rospy.Subscriber(topic, Twist, self._control_callback, callback_args=topic)
@@ -95,18 +99,14 @@ class ControlMapper:
                            f'Ensure all FSM States are specified in config/control_mapper/*.yml.')
 
     def _control_callback(self, msg: Twist, topic_name):
-        if 'command' in self._mapping[self._fsm_state.name].keys() \
-                and topic_name == self._mapping[self._fsm_state.name]['command']:
-            self._messages['command'] = msg
-            if self._noise is not None:
-                self._messages['command'] = apply_noise_to_twist(twist=deepcopy(msg), noise=self._noise.sample())
-        if 'supervision' in self._mapping[self._fsm_state.name].keys() \
-                and topic_name == self._mapping[self._fsm_state.name]['supervision']:
-            self._messages['supervision'] = msg
+        self._messages[topic_name] = msg
 
     def publish(self):
-        for key in self._messages.keys():
-            self._publishers[key].publish(self._messages[key])
+        for robot_control, actor_topic in self._mapping[self._fsm_state.name].items():
+            control_msg = self._messages[actor_topic]
+            if 'command' in robot_control and self._noise is not None:
+                control_msg = apply_noise_to_twist(control_msg, self._noise)
+            self._publishers[robot_control].publish(control_msg)
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)
@@ -121,8 +121,11 @@ class ControlMapper:
             if self.count % self._rate_fps == 0:
                 msg = f"{rospy.get_time(): 0.0f}ms:"
                 msg += f" {self._fsm_state} "
-                for key in self._messages.keys():
-                    msg += f" {key} {self._messages[key]}\n"
+                for actor_topic in self._messages.keys():
+                    msg += f" {actor_topic} {self._messages[actor_topic]}\n"
+                msg += f" publishing on "
+                for robot_control in self._mapping[self._fsm_state.name].keys():
+                    msg += f" {robot_control},"
                 cprint(msg, self._logger)
 
 

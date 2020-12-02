@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="world_name" default="debug_drone"/>
+    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
+    <arg name="robot_name" default="double_drone_sim"/>
+    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
 
     <include file="$(find imitation_learning_ros_package)/launch/gazebo.launch">
         <arg name="world_name" value="$(env CODEDIR)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
@@ -8,19 +11,21 @@
         <arg name="headless" default="true"/>
     </include>
 
-    <arg name="distance" default="5"/>
+    <arg name="distance" default="3"/>
     <arg name="x_pos" default="0"/>
     <arg name="y_pos" default="0"/>
     <arg name="z_pos" default="0."/>
     <arg name="yaw_or" default="0"/>
 
-    <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
+    <arg name="model_name" default="drone_sim_wide_angle"/>
+    <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="tracking">
         <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+        <arg name="name" default="tracking_quadrotor"/>
         <arg name="x" value="$(arg x_pos)"/>
         <arg name="y" value="$(arg y_pos)"/>
         <arg name="z" value="$(arg z_pos)"/>
         <arg name="Y" default="$(arg yaw_or)"/>
-        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg robot_name).gazebo.xacro"/>
+        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
     </include>
     <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="fleeing">
         <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
@@ -29,6 +34,22 @@
         <arg name="y" value="$(arg y_pos)"/>
         <arg name="z" value="$(arg z_pos)"/>
         <arg name="Y" default="$(eval 3.14 + arg('yaw_or'))"/>
-        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
+        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
     </include>
+
+    <arg name="fsm_config" default="single_run"/>
+    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
+    <node pkg="imitation_learning_ros_package"
+          name="fsm"
+          type="fsm.py"
+          output="screen"/>
+
+    <arg name="control_mapping_config" default="double_drone_sim"/>
+    <rosparam command="load"
+                  file="$(env CODEDIR)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
+                  ns="control_mapping"/>
+    <node pkg="imitation_learning_ros_package"
+          name="control_mapping"
+          type="control_mapping.py"
+          output="screen"/>
 </launch>
