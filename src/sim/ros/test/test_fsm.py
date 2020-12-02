@@ -28,7 +28,7 @@ class TestFsm(unittest.TestCase):
 
     def setUp(self) -> None:
         self.config = {
-            'robot_name': 'drone_sim',
+            'robot_name': 'dummy',
             'fsm': True,
             'fsm_config': 'single_run',
             'world_name': 'debug_drone',
@@ -42,7 +42,7 @@ class TestFsm(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=self.config,
-                                       visible=False)
+                                       visible=True)
         self.delay_evaluation = rospy.get_param('/world/delay_evaluation')
         self.state_topic = rospy.get_param('/fsm/state_topic')
         self.reward_topic = rospy.get_param('/fsm/reward_topic')
@@ -55,7 +55,7 @@ class TestFsm(unittest.TestCase):
         # create publishers for all relevant sensors < FSM
         self._pose_topic = rospy.get_param('/robot/odometry_topic')
         self._pose_type = rospy.get_param('/robot/odometry_type')
-        self._reset_topic = rospy.get_param('/fsm/reset_topic', '/reset')
+        self._reset_topic = rospy.get_param('/fsm/reset_topic', '/fsm/reset')
         publish_topics = [
             TopicConfig(topic_name=self._pose_topic, msg_type=self._pose_type),
             TopicConfig(topic_name=self._reset_topic, msg_type='Empty'),

@@ -8,7 +8,7 @@ from cv2 import cv2
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, PoseStamped
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32MultiArray
 
@@ -121,6 +121,16 @@ def process_imu(msg: Imu, _=None) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
 
 
 def process_odometry(msg: Odometry, _=None) -> np.ndarray:
+    return np.asarray([msg.pose.pose.position.x,
+                       msg.pose.pose.position.y,
+                       msg.pose.pose.position.z,
+                       msg.pose.pose.orientation.x,
+                       msg.pose.pose.orientation.y,
+                       msg.pose.pose.orientation.z,
+                       msg.pose.pose.orientation.w])
+
+
+def process_pose_stamped(msg: PoseStamped, _=None) -> np.ndarray:
     return np.asarray([msg.pose.pose.position.x,
                        msg.pose.pose.position.y,
                        msg.pose.pose.position.z,

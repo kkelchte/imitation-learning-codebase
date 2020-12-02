@@ -149,10 +149,9 @@ class Fsm:
 
                 def call_takeoff_action(n):
                     client = actionlib.SimpleActionClient(n, TakeoffAction)
+                    cprint(f'waiting for takeoff', self._logger)
                     client.wait_for_server()
                     client.send_goal(goal=TakeoffActionGoal())
-                    client.wait_for_result()
-                    cprint(f'takeoff: {client.get_result()}', self._logger)
 
                 if isinstance(action_name, list):
                     for name in action_name:
@@ -308,7 +307,7 @@ class Fsm:
             rate.sleep()
             self.count += 1
             if self.count % self._rate_fps == 0:
-                msg = f"{rospy.get_time(): 0.0f}ms reward: {self._current_reward} shutting down:{self._is_shuttingdown}"
+                msg = f"{rospy.get_time(): 0.0f}ms, state: {self._state.name}, reward: {self._current_reward} shutting down:{self._is_shuttingdown}"
                 cprint(msg, self._logger)
 
 

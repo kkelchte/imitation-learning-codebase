@@ -137,6 +137,14 @@
               type="robot_display.py"
               output="screen"/>
     </group>
+
+    <arg name="bounding_box_indicator" default="false"/>
+    <group if="$(arg bounding_box_indicator)">
+        <node pkg="imitation_learning_ros_package"
+              name="bounding_box_indicator"
+              type="bounding_box_indicator.py"
+              output="screen"/>
+    </group>
     <!--######################## ACTOR NODES ########################-->
     <arg name="joystick" default="false"/>
     <group if="$(arg joystick)" ns="/actor/joystick">
