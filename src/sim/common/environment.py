@@ -38,14 +38,14 @@ class RosLaunchConfig(Config):
     fsm_config: str = 'single_run'
     control_mapping: bool = True
     control_mapping_config: str = 'default'
-    waypoint_indicator: bool = True
+    waypoint_indicator: bool = False
     x_pos: float = 0.
     y_pos: float = 0.
     z_pos: float = 1.
     yaw_or: float = 1.57
     world_name: str = None
     robot_name: str = None
-    robot_mapping: bool = True
+    robot_mapping: bool = False
 
     def __post_init__(self):
         assert os.path.isfile(f'src/sim/ros/config/fsm/{self.fsm_config}.yml')

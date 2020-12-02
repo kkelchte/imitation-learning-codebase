@@ -1,0 +1,10 @@
+supervision_topic: '/control_mapper/supervision'
+rate_fps: 60
+mapping:
+  Unknown: {}
+  Terminated: {}
+  Running:
+    tracking_command: '/actor/keyboard/cmd_vel'
+    fleeing_command: '/actor/joystick/cmd_vel'
+  TakenOver: {}
+  DriveBack: {}
