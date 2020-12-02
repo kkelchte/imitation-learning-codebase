@@ -86,6 +86,7 @@ class ControlMapper:
             for ctr in controls.values():
                 actor_topics.append(ctr)
         actor_topics = set(actor_topics)
+        cprint(f'subscribing to: {actor_topics}', self._logger, msg_type=MessageType.debug)
         for topic in actor_topics:
             rospy.Subscriber(topic, Twist, self._control_callback, callback_args=topic)
 
@@ -103,10 +104,12 @@ class ControlMapper:
 
     def publish(self):
         for robot_control, actor_topic in self._mapping[self._fsm_state.name].items():
-            control_msg = self._messages[actor_topic]
-            if 'command' in robot_control and self._noise is not None:
-                control_msg = apply_noise_to_twist(control_msg, self._noise)
-            self._publishers[robot_control].publish(control_msg)
+            if actor_topic in self._messages.keys():
+                control_msg = self._messages[actor_topic]
+                if 'command' in robot_control and self._noise is not None:
+                    control_msg = apply_noise_to_twist(twist=deepcopy(control_msg),
+                                                       noise=self._noise.sample())
+                self._publishers[robot_control].publish(control_msg)
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)
@@ -118,15 +121,15 @@ class ControlMapper:
             #     control_time = current_time
             rate.sleep()
             self.count += 1
-            if self.count % self._rate_fps == 0:
+            if self.count % 1 * self._rate_fps == 0:
                 msg = f"{rospy.get_time(): 0.0f}ms:"
-                msg += f" {self._fsm_state} "
+                msg += f" state: {FsmState(self._fsm_state).name} "
                 for actor_topic in self._messages.keys():
                     msg += f" {actor_topic} {self._messages[actor_topic]}\n"
                 msg += f" publishing on "
                 for robot_control in self._mapping[self._fsm_state.name].keys():
                     msg += f" {robot_control},"
-                cprint(msg, self._logger)
+                cprint(msg, self._logger, msg_type=MessageType.debug)
 
 
 if __name__ == "__main__":

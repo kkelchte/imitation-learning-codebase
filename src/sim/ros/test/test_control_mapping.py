@@ -100,6 +100,7 @@ class TestControlMapper(unittest.TestCase):
     #@unittest.skip
     def test_control_mapper_noisy(self):
         self.start(control_mapper_config='test_noisy')
+        time.sleep(5)
         # for each fsm state
         for fsm_state in [FsmState.Running,
                           FsmState.DriveBack,
@@ -116,8 +117,6 @@ class TestControlMapper(unittest.TestCase):
                 control_command.linear.x = index * 100
                 solution[control_topic] = control_command.linear.x
                 self.ros_topic.publishers[control_topic].publish(control_command)
-
-            import pdb; pdb.set_trace()
             #   wait
             time.sleep(3)
             #   assert control is equal to intended control
