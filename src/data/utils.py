@@ -470,21 +470,10 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
             bg = load_and_preprocess_file(bg_image,
                                           size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
             if not np.random.binomial(1, p_empty):
-                # smoothen mask to make transition less abrupt with randomly selected kernel size and motion blur
-                masks = torch.stack([torch.as_tensor(binary_images[index]),
-                                     torch.as_tensor(binary_images[index+1])],
-                                    dim=0).unsqueeze(1)
-                if num_channels > 1:
-                    masks = masks.repeat(1, 3, 1, 1)
-                kernel_size = int(np.random.choice(list(range(5))) * 2 + 5)  # select random (but odd) kernel size
-                angle = np.random.randint(0, 359)
-                direction = np.random.uniform(-1, 1)
-                blurred_mask = motion_blur(masks, kernel_size, angle, direction)[0].permute(1, 2, 0).clamp(0, 1)
-
+                # blurred_mask = motion_blur_mask(binary_images[index], binary_images[index + 1], num_channels)
+                blurred_mask = gaussian_blur_mask(binary_images[index], num_channels)
                 fg = create_random_gradient_image(size=bg.shape, mean=bg.mean())
                 new_img = torch.as_tensor(((1 - blurred_mask) * bg + blurred_mask * fg)).permute(2, 0, 1)
-                # plt.imshow(new_img.squeeze(0))
-                # plt.show()
                 augmented_dataset.observations.append(new_img)
             else:  # for ratio p_empty put only background
                 augmented_dataset.observations.append(torch.as_tensor(bg).permute(2, 0, 1))
@@ -492,6 +481,29 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
         else:
             augmented_dataset.observations.append(dataset.observations[index])
     return augmented_dataset
+
+
+def gaussian_blur_mask(image: torch.Tensor, num_channels: int) -> torch.Tensor:
+    mask = torch.stack([torch.as_tensor(image)] * num_channels, dim=0)
+    kernel_size = int(np.random.choice(list(range(4))) * 2 + 1)  # select random (but odd) kernel size
+    sigma = np.random.uniform(0.1, 3)  # select deviation
+    return gaussian_blur2d(mask.unsqueeze(0), kernel_size=(kernel_size, kernel_size),
+                           sigma=(sigma, sigma)).squeeze(0).permute(1, 2, 0).clamp(0, 1)
+
+
+def motion_blur_mask(image_a: torch.Tensor,
+              image_b: torch.Tensor, num_channels: int) -> torch.Tensor():
+    # smoothen mask to make transition less abrupt with randomly selected kernel size and motion blur
+    masks = torch.stack([torch.as_tensor(image_a),
+                         torch.as_tensor(image_b)],
+                         dim=0).unsqueeze(1)
+    if num_channels > 1:
+        masks = masks.repeat(1, 3, 1, 1)
+
+    kernel_size = int(np.random.choice(list(range(5))) * 2 + 5)  # select random (but odd) kernel size
+    angle = np.random.randint(0, 359)
+    direction = np.random.uniform(-1, 1)
+    return motion_blur(masks, kernel_size, angle, direction)[0].permute(1, 2, 0).clamp(0, 1)
 
 
 def create_random_gradient_image(size: tuple, low: float = 0., high: float = 1., mean: float = -1) -> np.ndarray:
