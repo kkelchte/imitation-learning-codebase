@@ -35,26 +35,26 @@ class ModifiedStatePublisher:
 
         self._mode = rospy.get_param('/modified_state_publisher/mode')
         cprint(f'mode: {self._mode}', self._logger)
+        rospy.Subscriber(rospy.get_param('/fsm/state_topic', '/fsm/state'), String, self._fsm_state_update)
+
         if self._mode == 'global_poses':
             self._publisher = rospy.Publisher(rospy.get_param('/robot/modified_state_topic', '/modified_state'),
-                                              CombinedGlobalPoses)
-            self._state = np.asarray([999]*9)
+                                              CombinedGlobalPoses, queue_size=10)
+            self.tracking_position = np.asarray([999.]*3)
+            self.tracking_orientation = np.asarray([999.]*3)
+            self.fleeing_position = np.asarray([999.]*3)
+            for agent in ['tracking',
+                          'fleeing']:
+                topic_name = rospy.get_param(f'/robot/tf_{agent}_topic', f'/{agent}/ground_truth_to_tf/pose')
+                type_name = rospy.get_param(f'/robot/tf_{agent}_type', 'PoseStamped')
+                rospy.Subscriber(topic_name, eval(type_name), self._set_pose, callback_args=agent)
+                cprint(f'subscribing to: {topic_name}', self._logger, msg_type=MessageType.debug)
         else:
             raise NotImplemented(f'[modified_state_publisher]: type of mode for modification is not implemented: '
                                  f'{self._mode}')
         self._fsm_state = FsmState.Unknown
         self._rate_fps = rospy.get_param('/modified_state_publisher/rate_fps', 60)
-        self._subscribe()
         rospy.init_node('modified_state_publisher')
-
-    def _subscribe(self):
-        rospy.Subscriber(rospy.get_param('/fsm/state_topic', '/fsm/state'), String, self._fsm_state_update)
-        for agent in ['tracking',
-                      'fleeing']:
-            topic_name = rospy.get_param(f'/robot/tf_{agent}_topic', '/tracking/ground_truth_to_tf/pose')
-            type_name = rospy.get_param(f'/robot/tf_{agent}_type', 'PoseStamped')
-            rospy.Subscriber(topic_name, eval(type_name), self._set_pose, callback_args=agent)
-            cprint(f'subscribing to: {topic_name}', self._logger, msg_type=MessageType.debug)
 
     def _fsm_state_update(self, msg: String):
         if self._fsm_state != FsmState[msg.data]:
@@ -65,17 +65,21 @@ class ModifiedStatePublisher:
         agent = args
         if isinstance(msg, PoseStamped):
             pose = process_pose_stamped(msg)
+            cprint(f'received pose of agent {agent} with value {pose}', self._logger)
             if agent == 'tracking':
-                self._state[0:3] = pose[0:3]
-                self._state[7:] = euler_from_quaternion(pose[4:])
+                self.tracking_position = pose[0:3]
+                self.tracking_orientation = euler_from_quaternion(pose[3:])
             elif agent == 'fleeing':
-                self._state[3:] = pose[0:3]
+                self.fleeing_position = pose[0:3]
             else:
                 raise NotImplemented(f'[modified_state_publisher]: unknown agent {agent}')
+            state = np.asarray([*self.tracking_position, *self.fleeing_position, *self.tracking_orientation])
+            cprint(f'current state: {state}', self._logger)
 
     def publish(self):
-        if 999 not in self._state and self._fsm_state == FsmState.Running:
-            self._publisher.publish(array_to_combined_global_pose(self._state))
+        state = np.asarray([*self.tracking_position, *self.fleeing_position, *self.tracking_orientation])
+        if 999 not in state:  # and self._fsm_state == FsmState.Running
+            self._publisher.publish(array_to_combined_global_pose(state))
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)

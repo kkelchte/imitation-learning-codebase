@@ -132,13 +132,13 @@ def process_odometry(msg: Odometry, _=None) -> np.ndarray:
 
 
 def process_pose_stamped(msg: PoseStamped, _=None) -> np.ndarray:
-    return np.asarray([msg.pose.pose.position.x,
-                       msg.pose.pose.position.y,
-                       msg.pose.pose.position.z,
-                       msg.pose.pose.orientation.x,
-                       msg.pose.pose.orientation.y,
-                       msg.pose.pose.orientation.z,
-                       msg.pose.pose.orientation.w])
+    return np.asarray([msg.pose.position.x,
+                       msg.pose.position.y,
+                       msg.pose.position.z,
+                       msg.pose.orientation.x,
+                       msg.pose.orientation.y,
+                       msg.pose.orientation.z,
+                       msg.pose.orientation.w])
 
 
 def process_image(msg, sensor_stats: dict = None) -> np.ndarray:
@@ -190,8 +190,8 @@ def array_to_combined_global_pose(data: np.ndarray) -> CombinedGlobalPoses:
     msg.tracking_y = data[1]
     msg.tracking_z = data[2]
     msg.fleeing_x = data[3]
-    msg.fleeing_x = data[4]
-    msg.fleeing_x = data[5]
+    msg.fleeing_y = data[4]
+    msg.fleeing_z = data[5]
     msg.tracking_roll = data[6]
     msg.tracking_pitch = data[7]
     msg.tracking_yaw = data[8]

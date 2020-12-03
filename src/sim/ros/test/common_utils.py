@@ -68,17 +68,27 @@ def get_fake_laser_scan(ranges=None):
     return scan
 
 
-def get_fake_odometry(x: float = -5., y: float = 100., z: float = 8.):
+def get_fake_odometry(x: float = -5., y: float = 100., z: float = 8.,
+                      xq: float = 0, yq: float = 0, zq: float = 0, wq: float = 1):
     odometry = Odometry()
     odometry.pose.pose.position.x = x
     odometry.pose.pose.position.y = y
     odometry.pose.pose.position.z = z
+    odometry.pose.pose.orientation.x = xq
+    odometry.pose.pose.orientation.y = yq
+    odometry.pose.pose.orientation.z = zq
+    odometry.pose.pose.orientation.w = wq
     return odometry
 
 
-def get_fake_pose_stamped(x: float = -5., y: float = 100., z: float = 8.):
+def get_fake_pose_stamped(x: float = -5., y: float = 100., z: float = 8.,
+                          xq: float = 0, yq: float = 0, zq: float = 0, wq: float = 1):
     pose_stamped = PoseStamped()
-    pose_stamped.pose.pose.position.x = x
-    pose_stamped.pose.pose.position.y = y
-    pose_stamped.pose.pose.position.z = z
+    pose_stamped.pose.position.x = x
+    pose_stamped.pose.position.y = y
+    pose_stamped.pose.position.z = z
+    pose_stamped.pose.orientation.x = xq
+    pose_stamped.pose.orientation.y = yq
+    pose_stamped.pose.orientation.z = zq
+    pose_stamped.pose.orientation.w = wq
     return pose_stamped

@@ -9,6 +9,7 @@ from geometry_msgs.msg import Twist
 from src.core.utils import get_filename_without_extension, get_data_dir
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
+from src.sim.ros.src.utils import euler_from_quaternion
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig, get_fake_pose_stamped
 
 """
@@ -23,6 +24,7 @@ class TestModifiedStatePublisher(unittest.TestCase):
         os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'double_drone_sim',
+            'gazebo': False,
             'fsm': False,
             'control_mapping': False,
             'output_path': self.output_dir,
@@ -61,8 +63,8 @@ class TestModifiedStatePublisher(unittest.TestCase):
         time.sleep(5)
 
         y_pos = 3
-        tracking_pose = get_fake_pose_stamped(0, 0, 1)
-        fleeing_pose = get_fake_pose_stamped(0, y_pos, 1)
+        tracking_pose = get_fake_pose_stamped(1, 2, 3, 0, 0, -0.258819, 0.9659258)
+        fleeing_pose = get_fake_pose_stamped(4, 5, 6)
         self.ros_topic.publishers[self.tracking_pose_topic].publish(tracking_pose)
         self.ros_topic.publishers[self.fleeing_pose_topic].publish(fleeing_pose)
 
@@ -73,9 +75,21 @@ class TestModifiedStatePublisher(unittest.TestCase):
                 and time.time() - stime < max_duration:
             time.sleep(0.1)
         self.assertTrue(time.time()-stime < max_duration)
-
+        time.sleep(1)
+        roll, pitch, yaw = euler_from_quaternion((tracking_pose.pose.orientation.x,
+                                                  tracking_pose.pose.orientation.y,
+                                                  tracking_pose.pose.orientation.z,
+                                                  tracking_pose.pose.orientation.w))
         modified_state = self.ros_topic.topic_values[self.modified_state_topic]
-        self.assertTrue(modified_state.data[1] == y_pos)
+        self.assertTrue(modified_state.tracking_x == tracking_pose.pose.position.x)
+        self.assertTrue(modified_state.tracking_y == tracking_pose.pose.position.y)
+        self.assertTrue(modified_state.tracking_z == tracking_pose.pose.position.z)
+        self.assertTrue(modified_state.fleeing_x == fleeing_pose.pose.position.x)
+        self.assertTrue(modified_state.fleeing_y == fleeing_pose.pose.position.y)
+        self.assertTrue(modified_state.fleeing_z == fleeing_pose.pose.position.z)
+        self.assertTrue(modified_state.tracking_roll == roll)
+        self.assertTrue(modified_state.tracking_pitch == pitch)
+        self.assertAlmostEqual(modified_state.tracking_yaw, yaw)
 
     def tearDown(self) -> None:
         self._ros_process.terminate()
