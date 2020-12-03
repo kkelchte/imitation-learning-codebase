@@ -5,6 +5,7 @@ from typing import Union, List, Tuple
 import numpy as np
 import rospy
 from cv2 import cv2
+from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
@@ -181,6 +182,20 @@ def process_laser_scan(msg, sensor_stats: dict = None) -> np.ndarray:
 
     # make it a numpy array
     return np.asarray(ranges)
+
+
+def array_to_combined_global_pose(data: np.ndarray) -> CombinedGlobalPoses:
+    msg = CombinedGlobalPoses()
+    msg.tracking_x = data[0]
+    msg.tracking_y = data[1]
+    msg.tracking_z = data[2]
+    msg.fleeing_x = data[3]
+    msg.fleeing_x = data[4]
+    msg.fleeing_x = data[5]
+    msg.tracking_roll = data[6]
+    msg.tracking_pitch = data[7]
+    msg.tracking_yaw = data[8]
+    return msg
 
 
 def euler_from_quaternion(quaternion: tuple) -> tuple:

@@ -74,3 +74,11 @@ def get_fake_odometry(x: float = -5., y: float = 100., z: float = 8.):
     odometry.pose.pose.position.y = y
     odometry.pose.pose.position.z = z
     return odometry
+
+
+def get_fake_pose_stamped(x: float = -5., y: float = 100., z: float = 8.):
+    pose_stamped = PoseStamped()
+    pose_stamped.pose.pose.position.x = x
+    pose_stamped.pose.pose.position.y = y
+    pose_stamped.pose.pose.position.z = z
+    return pose_stamped

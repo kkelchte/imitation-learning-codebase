@@ -9,6 +9,7 @@ sensors:
   - tracking_tf
   - fleeing_forward_camera
   - fleeing_tf
+  - modified_state
 tracking_forward_camera_topic: /tracking/forward/camera/image
 tracking_forward_camera_type: Image
 tracking_forward_camera_stats:
@@ -25,3 +26,5 @@ fleeing_forward_camera_stats:
   depth: 3
 fleeing_tf_topic: /fleeing/ground_truth_to_tf/pose
 fleeing_tf_type: PoseStamped
+modified_state_topic: /modified_state
+modified_state_type: CombinedGlobalPoses

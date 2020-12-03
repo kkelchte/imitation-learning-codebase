@@ -21,6 +21,7 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIRS}
 add_message_files(
     FILES
     RosReward.msg
+    CombinedGlobalPoses.msg
 )
 generate_messages(
   DEPENDENCIES

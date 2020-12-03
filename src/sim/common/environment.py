@@ -38,6 +38,8 @@ class RosLaunchConfig(Config):
     fsm_config: str = 'single_run'
     control_mapping: bool = True
     control_mapping_config: str = 'default'
+    modified_state_publisher: bool = False
+    modified_state_publisher_config: str = 'default'
     waypoint_indicator: bool = False
     x_pos: float = 0.
     y_pos: float = 0.

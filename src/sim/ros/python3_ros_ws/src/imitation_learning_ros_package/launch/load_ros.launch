@@ -138,11 +138,15 @@
               output="screen"/>
     </group>
 
-    <arg name="bounding_box_indicator" default="false"/>
-    <group if="$(arg bounding_box_indicator)">
+    <arg name="modified_state_publisher" default="false"/>
+    <arg name="modified_state_publisher_config" default="default"/>
+    <group if="$(arg modified_state_publisher)">
+        <rosparam command="load"
+                  file="$(env CODEDIR)/src/sim/ros/config/modified_state_publisher/$(arg modified_state_publisher_config).yml"
+                  ns="modified_state_publisher"/>
         <node pkg="imitation_learning_ros_package"
-              name="bounding_box_indicator"
-              type="bounding_box_indicator.py"
+              name="modified_state_publisher"
+              type="modified_state_publisher.py"
               output="screen"/>
     </group>
     <!--######################## ACTOR NODES ########################-->
