@@ -18,7 +18,7 @@ from src.core.utils import get_filename_without_extension, get_data_dir
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.core.data_types import TerminationType
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
+from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber, get_fake_odometry, get_fake_laser_scan
 
 """ Test FSM in take off mode with reward for multiple resets
 """
@@ -28,10 +28,10 @@ class TestFsm(unittest.TestCase):
 
     def setUp(self) -> None:
         self.config = {
-            'robot_name': 'dummy',
+            'robot_name': 'test_fsm_robot',
             'fsm': True,
             'fsm_config': 'single_run',
-            'world_name': 'debug_drone',
+            'world_name': 'test_fsm_world',
             'control_mapping': False,
             'waypoint_indicator': False,
         }
@@ -46,28 +46,40 @@ class TestFsm(unittest.TestCase):
         self.delay_evaluation = rospy.get_param('/world/delay_evaluation')
         self.state_topic = rospy.get_param('/fsm/state_topic')
         self.reward_topic = rospy.get_param('/fsm/reward_topic')
+        self.reset_topic = rospy.get_param('/fsm/reset_topic')
+        self.pose_topic = rospy.get_param('/robot/odom_topic')
+        self.depth_scan_topic = rospy.get_param('/robot/depth_scan_topic')
 
         # subscribe to fsm state and reward (fsm's output)
         subscribe_topics = [
             TopicConfig(topic_name=self.state_topic, msg_type="String"),
             TopicConfig(topic_name=self.reward_topic, msg_type="RosReward"),
         ]
-        # create publishers for all relevant sensors < FSM
-        self._pose_topic = rospy.get_param('/robot/odometry_topic')
-        self._pose_type = rospy.get_param('/robot/odometry_type')
-        self._reset_topic = rospy.get_param('/fsm/reset_topic', '/fsm/reset')
-        publish_topics = [
-            TopicConfig(topic_name=self._pose_topic, msg_type=self._pose_type),
-            TopicConfig(topic_name=self._reset_topic, msg_type='Empty'),
 
+        # create publishers for all relevant sensors < FSM
+        publish_topics = [
+            TopicConfig(topic_name=self.reset_topic, msg_type='Empty'),
         ]
+        for sensor in rospy.get_param('/robot/sensors'):
+            publish_topics.append(
+                TopicConfig(topic_name=eval(f'rospy.get_param("{sensor}_topic")'),
+                            msg_type=eval(f'rospy.get_param("{sensor}_type")'))
+            )
 
         self.ros_topic = TestPublisherSubscriber(
             subscribe_topics=subscribe_topics,
             publish_topics=publish_topics
         )
 
-    def test_run_and_reach_goal(self):
+    def test_occasions(self):
+        self._test_start_up()
+        self._test_delay_evaluation()
+        self._test_step()
+        self._test_on_collision()
+        self._test_goal_reached()
+        self._test_out_of_time()
+
+    def _test_start_up(self):
         # FSM should start in unknown state, waiting for reset
         # @ startup (before reset)
         while self.state_topic not in self.ros_topic.topic_values.keys():
@@ -78,39 +90,71 @@ class TestFsm(unittest.TestCase):
         self.assertEqual(0, self.ros_topic.topic_values[self.reward_topic].reward)
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.reward_topic].termination)
 
-        for _ in range(2):
-            print(f'{rospy.get_time()}: iteration {_}')
-            # @ reset -> delay evaluation -> running
-            self.ros_topic.publishers[self._pose_topic].publish(Odometry())
-            self.ros_topic.publishers[self._reset_topic].publish(Empty())
-            # @ second iteration: wait for reset to be received at fsm
-            while self.ros_topic.topic_values[self.state_topic] == 'Terminated':
-                rospy.sleep(0.01)
-            start_time = rospy.get_time()
-            while self.ros_topic.topic_values[self.state_topic] == 'Unknown':
-                rospy.sleep(0.01)
-            delay_duration = rospy.get_time() - start_time
-            self.assertLess(abs(self.delay_evaluation - delay_duration), 0.1)
+    def _test_delay_evaluation(self):
+        self.ros_topic.publishers[self.reset_topic].publish(Empty())
+        start_time = rospy.get_time()
+        while self.ros_topic.topic_values[self.state_topic] == 'Unknown':
+            rospy.sleep(0.01)
+        delay_duration = rospy.get_time() - start_time
+        self.assertLess(abs(self.delay_evaluation - delay_duration), 0.1)
+        self.assertEqual('Running', self.ros_topic.topic_values[self.state_topic])
 
-            self.assertEqual('Running', self.ros_topic.topic_values[self.state_topic])
-            self.assertEqual('NotDone', self.ros_topic.topic_values[self.reward_topic].termination)
-            self.assertEqual(-1, self.ros_topic.topic_values[self.reward_topic].reward)
+    def _test_step(self):
+        self.ros_topic.publishers[self.pose_topic].publish(Odometry())
+        rospy.sleep(0.1)
+        self.ros_topic.publishers[self.pose_topic].publish(get_fake_odometry(1))
+        while self.ros_topic.topic_values[self.reward_topic].reward == 0:
+            rospy.sleep(0.1)
+        self.assertEqual(rospy.get_param('/world/reward/step/termination'),
+                         self.ros_topic.topic_values[self.reward_topic].termination)
+        reward_distance_travelled = rospy.get_param('/world/reward/step/weight/distance_travelled') * 1
+        self.assertEqual(reward_distance_travelled,
+                         self.ros_topic.topic_values[self.reward_topic].reward)
+        self.ros_topic.publishers[self.pose_topic].publish(get_fake_odometry(1, 1))
+        while self.ros_topic.topic_values[self.reward_topic].reward == reward_distance_travelled:
+            rospy.sleep(0.1)
+        reward_distance_travelled = rospy.get_param('/world/reward/step/weight/distance_travelled') * 1.414
+        self.assertAlmostEqual(reward_distance_travelled,
+                               self.ros_topic.topic_values[self.reward_topic].reward,
+                               places=2)
 
-            # FSM should @ max distance crossed switch to terminated state and return finish success and big reward
-            odom = Odometry()
-            odom.pose.pose.position.x = 2
-            odom.pose.pose.position.y = 2
-            odom.pose.pose.position.z = 1
-            self.ros_topic.publishers[self._pose_topic].publish(odom)
-            max_duration = 5
-            start_time = rospy.get_time()
-            while self.ros_topic.topic_values[self.reward_topic].termination == "NotDone" and \
-                    rospy.get_time() - start_time < max_duration:
-                rospy.sleep(0.5)
-            self.assertLess(rospy.get_time() - start_time, max_duration)
-            self.assertEqual('Terminated', self.ros_topic.topic_values[self.state_topic])
-            self.assertEqual('Success', self.ros_topic.topic_values[self.reward_topic].termination)
-            self.assertEqual(100, self.ros_topic.topic_values[self.reward_topic].reward)
+    def _test_on_collision(self):
+        self.ros_topic.publishers[self.depth_scan_topic].publish(get_fake_laser_scan([.3] * 360))
+        while self.ros_topic.topic_values[self.state_topic].termination != 'Terminated':
+            rospy.sleep(0.1)
+        self.assertEqual(rospy.get_param('/world/reward/on_collision/weight/constant'),
+                         self.ros_topic.topic_values[self.reward_topic].reward)
+        self.assertEqual(rospy.get_param('/world/reward/on_collision/termination'),
+                         self.ros_topic.topic_values[self.reward_topic].termination)
+
+    def _test_goal_reached(self):
+        # reset
+        self.ros_topic.publishers[self.reset_topic].publish(Empty())
+        while self.ros_topic.topic_values[self.state_topic] == 'Unknown':
+            rospy.sleep(0.01)
+        self.ros_topic.publishers[self.pose_topic].publish(Odometry())
+        rospy.sleep(0.5)
+        self.ros_topic.publishers[self.pose_topic].publish(
+            get_fake_odometry(2, 2, 1)
+        )
+        while self.ros_topic.topic_values[self.state_topic].termination != 'Terminated':
+            rospy.sleep(0.1)
+        self.assertEqual(rospy.get_param('/world/reward/goal_reached/weight/constant'),
+                         self.ros_topic.topic_values[self.reward_topic].reward)
+        self.assertEqual(rospy.get_param('/world/reward/goal_reached/termination'),
+                         self.ros_topic.topic_values[self.reward_topic].termination)
+
+    def _test_out_of_time(self):
+        # reset
+        self.ros_topic.publishers[self.reset_topic].publish(Empty())
+        while self.ros_topic.topic_values[self.state_topic] == 'Unknown':
+            rospy.sleep(0.01)
+        while self.ros_topic.topic_values[self.state_topic].termination != 'Terminated':
+            rospy.sleep(0.1)
+        self.assertEqual(rospy.get_param('/world/reward/out_of_time/weight/constant'),
+                         self.ros_topic.topic_values[self.reward_topic].reward)
+        self.assertEqual(rospy.get_param('/world/reward/out_of_time/termination'),
+                         self.ros_topic.topic_values[self.reward_topic].termination)
 
     def tearDown(self) -> None:
         self._ros_process.terminate()

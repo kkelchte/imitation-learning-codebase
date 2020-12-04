@@ -399,6 +399,9 @@ class RosEnvironment(Environment):
     def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:
         self._step += 1
         if action is not None:
+            # TODO allow for two action publishers
+            # modify adapt action to twist so it can adapt to 'twists'
+            # let cyriel define action space
             self._action_publisher.publish(adapt_action_to_twist(action))
         self._run_and_update_experience()
         return self._current_experience, deepcopy(self._observation)

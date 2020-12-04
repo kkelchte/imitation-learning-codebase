@@ -1,4 +1,4 @@
-world_name: debug
+world_name: test_fsm_world
 max_duration: 60
 delay_evaluation: 1.0
 goal:
@@ -15,16 +15,22 @@ waypoints:
   - [0, 2]
   - [2, 2]
 waypoint_reached_distance: 0.2
+max_collision_depth: 0.5
 reward:
+  out_of_time:
+    termination: 'Failure'
+    weights:
+      iou: 1
   on_collision:
     termination: 'Failure'
     weights:
-      constant: -100
+      distance_between_agents: 1
   goal_reached:
     termination: 'Success'
     weights:
-      constant: 100
+      distance_from_start: 100
   step:
     termination: 'NotDone'
     weights:
       distance_travelled: 10
+

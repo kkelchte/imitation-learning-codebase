@@ -4,6 +4,7 @@ import time
 import unittest
 
 import numpy as np
+import matplotlib.pyplot as plt
 import rospy
 
 from src.core.utils import get_filename_without_extension, get_to_root_dir
@@ -11,14 +12,15 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
+MAXSTEPS = 10
 
 config_dict = {
     "output_path": "/tmp",
     "factory_key": "ROS",
-    "max_number_of_steps": -1,
+    "max_number_of_steps": MAXSTEPS,
     "ros_config": {
         "info": ['frame'],
-        "observation": "bounding_boxes",
+        "observation": "modified_state",
         "max_update_wait_period_s": 10,
         "store_action": False,
         "store_reward": True,
@@ -33,7 +35,6 @@ config_dict = {
           "control_mapping": True,
           "control_mapping_config": "tracking_fleeing",
           "waypoint_indicator": False,
-          "bounding_box_indicator": True,
           "world_name": "empty",
           "x_pos": 0.0,
           "y_pos": 0.0,
@@ -72,11 +73,14 @@ class TestRosIntegrated(unittest.TestCase):
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
                 if experience.done == TerminationType.NotDone:
-                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/step'))
+                    self.assertNotEqual(experience.reward, 0)
                 else:
-                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/goal'))
-            self.assertGreater(np.sum(experience.info['odometry'][:3]), 1)
-            self.assertEqual(experience.done, TerminationType.Success)
+                    self.assertNotEqual(experience.reward, 0)
+            print(f'{count} vs {MAXSTEPS}')
+            self.assertEqual(count, MAXSTEPS)
+            # self.assertTrue('frame' in experience.info.keys())
+            # plt.imshow(experience.info['frame'])
+            # plt.show()
 
     def tearDown(self) -> None:
         self._environment.remove()

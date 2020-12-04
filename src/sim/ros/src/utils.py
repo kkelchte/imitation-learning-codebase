@@ -1,6 +1,7 @@
 #!/usr/bin/python3.8
 import os
-from typing import Union, List, Tuple
+from math import sqrt, cos, sin
+from typing import Union, List, Tuple, Iterable
 
 import numpy as np
 import rospy
@@ -245,4 +246,79 @@ def project(points: List[np.ndarray],
     pixel_coordinates = [np.matmul(intrinsic_camera_matrix, p) for p in points]
     return [p / p[2] for p in pixel_coordinates]
 
+
+def calculate_bounding_box(state: Iterable,
+                           resolution: tuple = (100, 100),
+                           focal_length: int = 30,
+                           kx: int = 50,
+                           ky: int = 50,
+                           skew: float = 0) -> Tuple[Tuple[int, int], int, int]:
+    """
+    Fleeing agent in the frame of tracking agent is represented as a bounding box
+    according to the relative pose of the fleeing with respect to the tracking agent.
+    state: iterable with 9 values see CombinedGlobalPoses [position_tracking, position_fleeing, orientation_tracking]
+    resolution: the size of the frame of the tracking agent
+    focal_length, kx, ky, skew: intrinsic camera parameters of constructed frame of tracking agent.
+    returns: (pos, w, h) pixel coordinates, height and width ounding box of fleeing agent.
+    """
+    x0 = resolution[0]//2
+    y0 = resolution[1]//2
+    agent0 = state[:3]
+    agent1 = state[3:6]
+    yaw = state[6]
+    pitch = state[7]
+    roll = state[8]
+    rel_pos = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
+    X = rel_pos[0]
+    Y = rel_pos[1]
+    Z = rel_pos[2]
+
+    u = focal_length*X/Z
+    v = focal_length*Y/Z
+
+    # width and height of drone in meters
+    w_drone = 0.2
+    h_drone = 0.2
+
+    pos = (u*kx+v*skew+x0, v*ky+y0)
+
+    mx = Z/sqrt(Z**2 + X**2)
+    my = Z/sqrt(Z**2 + Y**2)
+    w = int(mx*kx*w_drone*focal_length/Z)
+    h = int(my*ky*h_drone*focal_length/Z)
+    return pos, w, h
+
+
+def get_relative_coordinates(pos_agent0: np.ndarray,
+                             pos_agent1: np.ndarray,
+                             yaw: float,
+                             pitch: float,
+                             roll: float) -> np.ndarray:
+    """
+    pos_agent0: 3d global coordinates of agent 0 (tracking)
+    pos_agent1: 3d global coordinates of agent 1 (fleeing)
+    yaw: float global yaw turn pos_agent0
+    roll: float global roll turn pos_agent0
+    pitch: float global pitch turn pos_agent0
+    return relative pose (rotation and translation) of agent1 (fleeing) in the frame of agent0 (tracking)
+    """
+    rot = np.array([[cos(yaw)*cos(pitch), cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*cos(roll),
+                     cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll)],
+                    [sin(yaw)*cos(pitch), sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*cos(roll),
+                     sin(yaw)*sin(pitch)*sin(roll)-cos(yaw)*sin(roll)],
+                    [-sin(pitch), cos(pitch)*sin(roll), cos(pitch)*cos(roll)]])
+    relative_pos = np.squeeze(np.transpose(rot.dot(np.transpose(np.array(pos_agent1 - pos_agent0)))))
+    return relative_pos
+
+
+def get_iou():
+    raise NotImplemented
+
+
+def get_distance_from_start():
+    raise NotImplemented
+
+
+def get_distance_between_agents():
+    raise NotImplemented
 

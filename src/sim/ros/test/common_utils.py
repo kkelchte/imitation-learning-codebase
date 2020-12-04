@@ -62,13 +62,12 @@ def get_fake_image():
 
 
 def get_fake_laser_scan(ranges=None):
-    # DEPRECATED
     scan = LaserScan()
     scan.ranges = [1.5]*360 if ranges is None else ranges
     return scan
 
 
-def get_fake_odometry(x: float = -5., y: float = 100., z: float = 8.,
+def get_fake_odometry(x: float = 0, y: float = 0, z: float = 0,
                       xq: float = 0, yq: float = 0, zq: float = 0, wq: float = 1):
     odometry = Odometry()
     odometry.pose.pose.position.x = x
@@ -81,7 +80,7 @@ def get_fake_odometry(x: float = -5., y: float = 100., z: float = 8.,
     return odometry
 
 
-def get_fake_pose_stamped(x: float = -5., y: float = 100., z: float = 8.,
+def get_fake_pose_stamped(x: float = 0, y: float = 0, z: float = 0,
                           xq: float = 0, yq: float = 0, zq: float = 0, wq: float = 1):
     pose_stamped = PoseStamped()
     pose_stamped.pose.position.x = x
