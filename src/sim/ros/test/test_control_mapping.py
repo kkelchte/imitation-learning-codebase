@@ -19,7 +19,7 @@ For each FSM state, test correct mapping of control.
 class TestControlMapper(unittest.TestCase):
 
     def start(self, control_mapper_config: str) -> None:
-        self.output_dir = f'{get_data_dir(os.environ["HOME"])}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'drone_sim',

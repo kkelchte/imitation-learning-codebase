@@ -9,11 +9,12 @@ job_configs:
     disk_mem_gb: 52
     wall_time_s: 60 * 60
     nice: true
+    priority: -10
     use_singularity: true
     check_if_ros_already_in_use: true
     save_locally: true
     extra_requirements: ( Mips >= 26000 )
 number_of_jobs:
-  - 3
+  - 5
 base_config_files:
   - src/scripts/config/il_data_collection_cube_world.yml

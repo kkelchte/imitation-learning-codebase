@@ -34,12 +34,8 @@ class TestGymEnvironment(unittest.TestCase):
 
         environment = GymEnvironment(EnvironmentConfig().create(config_dict=config))
         experience, _ = environment.reset()
-        #import matplotlib.pyplot as plt
         while experience.done != TerminationType.Done:
-            #print(experience)
             experience, _ = environment.step(environment.get_random_action())
-        #    plt.imshow(experience.info['frame'])
-        #    plt.show()
         return environment.remove() == ProcessState.Terminated
 
     def test_environments(self):
@@ -48,7 +44,6 @@ class TestGymEnvironment(unittest.TestCase):
         self.assertTrue(True, self._test_environment_by_name('Pendulum-v0'))
         self.assertTrue(True, self._test_environment_by_name('MountainCarContinuous-v0'))
         self.assertTrue(True, self._test_environment_by_name('Pong-v0'))
-
 
     def tearDown(self):
         shutil.rmtree(self.output_dir, ignore_errors=True)

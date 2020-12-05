@@ -85,10 +85,7 @@ class BaseNet(nn.Module):
             self.to(self._device)
 
     def set_mode(self, train: bool = False):
-        if train:
-            self.train()
-        else:
-            self.eval()
+        self.train(train)
 
     def process_inputs(self, inputs: Union[torch.Tensor, np.ndarray, list, int, float]) -> torch.Tensor:
         if isinstance(inputs, list):
@@ -108,6 +105,7 @@ class BaseNet(nn.Module):
                 # check for scope
                 if inputs.max() > 1 or inputs.min() < 0:
                     inputs += inputs.min()
+                    inputs = torch.as_tensor(inputs, dtype=torch.float32)
                     inputs /= inputs.max()
                 if self.input_scope == 'zero_centered':
                     inputs *= 2
@@ -165,3 +163,4 @@ class BaseNet(nn.Module):
         self.global_step = checkpoint['global_step']
         self.load_state_dict(checkpoint['model_state'])
         self.set_device(self._device)
+        cprint(f'checksum: {self.get_checksum()}', self._logger)

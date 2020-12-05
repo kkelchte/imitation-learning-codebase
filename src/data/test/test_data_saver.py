@@ -9,13 +9,13 @@ from src.data.data_loader import DataLoader, DataLoaderConfig
 from src.data.data_saver import DataSaver, DataSaverConfig
 from src.data.test.common_utils import experience_generator, generate_dummy_dataset
 from src.core.data_types import TerminationType, Experience
-from src.core.utils import get_filename_without_extension
+from src.core.utils import get_filename_without_extension, get_data_dir
 
 
 class TestDataSaver(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.output_dir = f'{os.environ["PWD"]}/test_dir/{get_filename_without_extension(__file__)}'
+        self.output_dir = f'{get_data_dir(os.environ["PWD"])}/test_dir/{get_filename_without_extension(__file__)}'
         if not os.path.isdir(self.output_dir):
             os.makedirs(self.output_dir)
         self.data_saver = None
@@ -29,6 +29,7 @@ class TestDataSaver(unittest.TestCase):
     def test_data_storage_in_raw_data(self):
         config_dict = {
             'output_path': self.output_dir,
+            'separate_raw_data_runs': True
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         self.data_saver = DataSaver(config=config)
@@ -43,7 +44,8 @@ class TestDataSaver(unittest.TestCase):
     def test_data_storage_in_raw_data_with_data_size_limit(self):
         config_dict = {
             'output_path': self.output_dir,
-            'max_size': 25
+            'max_size': 25,
+            'separate_raw_data_runs': True
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         self.data_saver = DataSaver(config=config)
@@ -65,7 +67,8 @@ class TestDataSaver(unittest.TestCase):
         config_dict = {
             'output_path': self.output_dir,
             'training_validation_split': split,
-            'store_hdf5': True
+            'store_hdf5': True,
+            'separate_raw_data_runs': True
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         self.data_saver = DataSaver(config=config)
@@ -97,7 +100,8 @@ class TestDataSaver(unittest.TestCase):
             'output_path': self.output_dir,
             'training_validation_split': split,
             'store_hdf5': True,
-            'subsample_hdf5': subsample
+            'subsample_hdf5': subsample,
+            'separate_raw_data_runs': True
         }
         config = DataSaverConfig().create(config_dict=config_dict)
         self.data_saver = DataSaver(config=config)
@@ -114,7 +118,8 @@ class TestDataSaver(unittest.TestCase):
 
     def test_empty_saving_directory(self):
         config_dict = {
-            'output_path': self.output_dir
+            'output_path': self.output_dir,
+            'separate_raw_data_runs': True
         }
         number_of_runs = 5
         config = DataSaverConfig().create(config_dict=config_dict)

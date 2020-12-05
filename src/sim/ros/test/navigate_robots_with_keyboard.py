@@ -20,7 +20,7 @@ class TestRobots(unittest.TestCase):
             'max_number_of_steps': -1,
             'ros_config': {
                 'ros_launch_config': {
-                    'control_mapping_config': 'takeover',
+                    'control_mapping_config': 'keyboard',
                     'fsm_config': fsm_config,
                     'gazebo': 'sim' in robot_name,
                     'random_seed': 123,
@@ -62,6 +62,12 @@ class TestRobots(unittest.TestCase):
 
     def test_bebop_real(self):
         self.start(robot_name='bebop_real', fsm_config='takeover_run')
+        self._environment.reset()
+        while True:
+            self._environment.step()
+
+    def test_tello_real(self):
+        self.start(robot_name='tello_real', fsm_config='takeover_run')
         self._environment.reset()
         while True:
             self._environment.step()

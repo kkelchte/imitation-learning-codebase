@@ -204,3 +204,20 @@ class Dataset:  # Preparation for training DNN's in torch => only accept torch t
         self.actions = [self.actions[i] for i in indices]
         self.rewards = [self.rewards[i] for i in indices]
         self.done = [self.done[i] for i in indices]
+
+    def plot(self):
+        import matplotlib.pyplot as plt
+        print(f'observations: min: {min([d.min().item() for d in self.observations])}, '
+              f'max: {max([d.max().item() for d in self.observations])}')
+        print(f'actions: min: {min([d.min().item() for d in self.actions])}, '
+              f'max: {max([d.max().item() for d in self.actions])}')
+        n = 5
+        fig, axes = plt.subplots(2, n + 1)
+        for axe_index, point_index in enumerate(np.random.randint(low=0, high=len(self), size=n)):
+            ob = axes[0, axe_index].imshow(self.observations[point_index].permute(1, 2, 0).squeeze())
+            ac = axes[1, axe_index].imshow(self.actions[point_index])
+            axes[0, axe_index].axis('off')
+            axes[1, axe_index].axis('off')
+        fig.colorbar(ob, cax=axes[0, n], orientation='horizontal')
+        fig.colorbar(ac, cax=axes[1, n], orientation='horizontal')
+        plt.show()

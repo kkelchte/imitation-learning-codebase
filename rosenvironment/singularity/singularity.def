@@ -15,6 +15,7 @@ export LC_ALL=C
 apt-get update && \
  export DEBIAN_FRONTEND=noninteractive && apt-get install -yq\
     dialog \
+    iproute2 \
     apt-utils \
     xvfb \
     udev \
@@ -63,6 +64,7 @@ apt-get update && apt-get install -yq\
     python3-yaml \
     python3-rospkg-modules \
     ros-melodic-joystick-drivers \
+    ros-melodic-realsense2-camera \
     ros-melodic-roslint \
     ros-melodic-parrot-arsdk \
     ros-melodic-hector-sensors-gazebo \
@@ -89,6 +91,7 @@ apt-get update && apt-get install -yq\
     ros-melodic-common-msgs \
     ros-melodic-geometry2 \
     python-catkin-tools \
+    ffmpeg \
     libglew-dev \
     libsuitesparse-dev libeigen3-dev libboost-all-dev \
     ros-melodic-rqt \
@@ -113,3 +116,6 @@ cudnn-7.1 /usr/lib/local
 
 %post
 apt -y -q upgrade
+
+# ---- remove opencv QT to make pycharm debugger work
+rm /usr/local/lib/python3.8/dist-packages/cv2/qt/plugins/platforms/libqxcb.so

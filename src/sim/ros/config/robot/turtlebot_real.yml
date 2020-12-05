@@ -1,13 +1,7 @@
 robot_type: 'turtlebot'
 command_topic: '/cmd_vel'
 sensors:
-#  - 'forward_camera'
-#forward_camera_topic: '/wa/camera/image_raw'
-#forward_camera_type: 'Image'
-#forward_camera_stats:
-#  height: 128
-#  width: 128
-#  depth: 3
+  - 'forward_camera'
   - 'odometry'
 #  - 'depth_scan'
 #depth_scan_topic: '/scan'
@@ -19,3 +13,9 @@ sensors:
 #  min_depth: 0.1
 odometry_topic: '/odom'
 odometry_type: 'Odometry'
+forward_camera_topic: '/raspicam_node/image/compressed'
+forward_camera_type: 'CompressedImage'
+forward_camera_stats:
+  height: 200
+  width: 200
+  depth: 1

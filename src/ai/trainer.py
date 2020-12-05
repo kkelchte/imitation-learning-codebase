@@ -15,6 +15,7 @@ from src.core.config_loader import Config
 from src.core.data_types import Distribution
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
+from src.data.data_loader import DataLoaderConfig
 
 """Given model, config, data_loader, trains a model and logs relevant training information
 
@@ -39,22 +40,27 @@ class TrainerConfig(EvaluatorConfig):
     scheduler_config: Optional[SchedulerConfig] = None
     entropy_coefficient: float = 0
     weight_decay: float = 0
+    confidence_weight: float = 0
     gradient_clip_norm: float = -1
     factory_key: str = "BASE"
     phi_key: str = "default"
     discount: Union[str, float] = "default"
     gae_lambda: Union[str, float] = "default"
-    ppo_epsilon: Union[str, float] = "default"
+    epsilon: Union[str, float] = "default"
     use_kl_stop: bool = False
     kl_target: Union[str, float] = "default"
     max_actor_training_iterations: Union[str, int] = "default"
     max_critic_training_iterations: Union[str, int] = "default"
     add_KL_divergence_loss: bool = False
+    target_data_loader_config: DataLoaderConfig = None
+    domain_adaptation_criterion: str = "default"
 
     def __post_init__(self):
         # add options in post_init so they are easy to find
         if self.scheduler_config is None:
             del self.scheduler_config
+        if self.target_data_loader_config is None:
+            del self.target_data_loader_config
         assert self.phi_key in ["default", "gae", "reward-to-go", "return", "value-baseline"]
 
 
@@ -65,10 +71,6 @@ class Trainer(Evaluator):
         super().__init__(config, network, quiet=True)
 
         if not quiet:
-            self._logger = get_logger(name=get_filename_without_extension(__file__),
-                                      output_path=config.output_path,
-                                      quiet=False)
-            cprint(f'Started.', self._logger)
             self._optimizer = eval(f'torch.optim.{self._config.optimizer}')(params=self._net.parameters(),
                                                                             lr=self._config.learning_rate,
                                                                             weight_decay=self._config.weight_decay)
@@ -76,6 +78,10 @@ class Trainer(Evaluator):
             lambda_function = lambda f: 1 - f / self._config.scheduler_config.number_of_epochs
             self._scheduler = torch.optim.lr_scheduler.LambdaLR(self._optimizer, lr_lambda=lambda_function) \
                 if self._config.scheduler_config is not None else None
+            self._logger = get_logger(name=get_filename_without_extension(__file__),
+                                      output_path=config.output_path,
+                                      quiet=False)
+            cprint(f'Started.', self._logger)
 
     def train(self, epoch: int = -1, writer=None) -> str:
         self.put_model_on_device()

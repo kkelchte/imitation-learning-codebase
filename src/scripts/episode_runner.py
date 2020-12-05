@@ -104,7 +104,8 @@ class EpisodeRunner:
                                       f'{"" if not test else "test_"}episode_lengths{"_"+tag if tag is not "" else ""}')
             self._writer.write_distribution(return_distribution,
                                             f'{"" if not test else "test_"}episode_return{"_"+tag if tag is not "" else ""}')
-            self._writer.write_gif(self._frames)
+            self._writer.write_gif(self._frames,
+                                   f'{"" if not test else "test_"}episode{"_"+tag if tag is not "" else ""}')
 
         best_checkpoint = False
         if self._max_mean_return is None or return_distribution.mean > self._max_mean_return:
