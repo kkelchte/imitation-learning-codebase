@@ -29,9 +29,9 @@ tensorboard: true
 trainer_config:
   criterion: MSELoss
   critic_learning_rate: 0.0001
-  actor_learning_rate: 0.000001
+  actor_learning_rate: 0.00001
   gradient_clip_norm: 3
-  optimizer: Adam
+  optimizer: RMSprop
   data_loader_config:
     batch_size: 1000
     random_seed: 5346
