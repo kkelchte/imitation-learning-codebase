@@ -24,7 +24,7 @@ def get_slow_run(state: np.ndarray) -> np.ndarray:
         if diff == 0:
             difference += (np.random.rand(2) - 0.5)/10
     difference = np.sign(difference)
-    return 0.4 * difference
+    return 0.2 * difference
 
 
 def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
