@@ -8,25 +8,21 @@ architecture_config:
   device: cpu
   initialisation_type: orthogonal
 environment_config:
-  normalize_observations: false
-  normalize_rewards: false
-  observation_clipping: -1
-  reward_clipping: -1
   factory_key: ROS
-  max_number_of_steps: -1
+  max_number_of_steps: 10
   ros_config:
     info:
-      -frame
+      - /tracking/cmd_vel
+      - /fleeing/cmd_vel
     observation: modified_state
-
-    store_reward: true
+    action_topic: python
+    num_action_publishers: 2
     visible_xterm: false
     step_rate_fps: 100
-    actor_configs: {}
     ros_launch_config:
       random_seed: 123
       robot_name: double_drone_sim
-      fsm_config: single_run
+      fsm_mode: SingleRun
       fsm: true
       control_mapping: true
       waypoint_indicator: false

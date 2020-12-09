@@ -44,11 +44,10 @@ class RosExpert(Actor):
         cprint(f'ros specifications: {self._specs}', self._logger)
         with open(os.path.join(self._output_path, 'ros_expert_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)
-
+        self._reference_height  = rospy.get_param('/world//flying_height', 1)
         self._adjust_height = 0
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
-        self._reference_height = -1
         self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 10
         self._next_waypoint = []
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
@@ -123,9 +122,6 @@ class RosExpert(Actor):
         # TODO set adjust_height from depth map < vertical field-of-view and vertical frontwidth
 
     def _set_height(self, z: float):
-        if self._reference_height == -1:
-            self._reference_height = z
-            return
         if z < (self._reference_height - 0.1):
             self._adjust_height = self._specs['height_speed'] if 'height_speed' in self._specs.keys() else +0.5
         elif z > (self._reference_height + 0.1):

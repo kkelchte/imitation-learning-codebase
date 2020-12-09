@@ -121,7 +121,7 @@ class Fsm:
         self.success = None
         # Params to define success and failure
         self._max_duration = rospy.get_param('/world/max_duration', -1)
-        self._collision_depth = rospy.get_param('/robot/max_collision_depth', 0.4)
+        self._collision_depth = rospy.get_param('/robot/min_collision_depth', 0.3)
         self._goal = rospy.get_param('world/goal', {})
         self._reward_calculator.reset()
 

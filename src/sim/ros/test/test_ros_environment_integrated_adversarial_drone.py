@@ -24,7 +24,7 @@ config_dict = {
         "action_topic": 'python',
         "num_action_publishers": 2,
         "max_update_wait_period_s": 10,
-        "visible_xterm": True,
+        "visible_xterm": False,
         "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,

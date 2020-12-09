@@ -69,7 +69,8 @@ class RosConfig(Config):
     step_rate_fps: float = 10.
     visible_xterm: bool = False  # make xterm window in which launch load_ros is launched visible
     ros_launch_config: RosLaunchConfig = None
-    actor_configs: List[ActorConfig] = None  # list of all actors that will be started by load_ros.launch + config files
+    actor_configs: Optional[List[ActorConfig]] = None
+    # list of all actors that will be started by load_ros.launch + config files
     max_update_wait_period_s: float = 10  # max wall time waiting duration till update.
     # define number of action publishers used by adversarial or multi-agent training
     # result in topics: /ros_python_interface/cmd_vel, /ros_python_interface/cmd_vel_1 ...

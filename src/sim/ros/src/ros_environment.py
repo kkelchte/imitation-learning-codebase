@@ -214,6 +214,12 @@ class RosEnvironment(Environment):
         model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
             model_state.pose.orientation.w = quaternion_from_euler(
                 (0, 0, self._config.ros_config.ros_launch_config.yaw_or))
+        model_state.twist.linear.x = 0
+        model_state.twist.linear.y = 0
+        model_state.twist.linear.z = 0
+        model_state.twist.angular.x = 0
+        model_state.twist.angular.y = 0
+        model_state.twist.angular.z = 0
         self._set_model_state.wait_for_service()
         self._set_model_state(model_state)
         #os.system(f"rosservice call /gazebo/set_model_state '{{model_state: "
@@ -319,13 +325,14 @@ class RosEnvironment(Environment):
         self._reset_filters()
         self._step = 0
         self._return = 0
-        self._reset_publisher.publish(Empty())
         if self._config.ros_config.ros_launch_config.gazebo:
             self._reset_gazebo()
+        self._reset_publisher.publish(Empty())
         self._clear_experience_values()
         while self.fsm_state != FsmState.Running \
                 or self.observation is None \
-                or self.terminal_state is None:
+                or self.terminal_state is None \
+                or self.terminal_state is TerminationType.Unknown:
             self._run_shortly()
         self.observation = self._filter_observation(self.observation)
         self._current_experience = Experience(

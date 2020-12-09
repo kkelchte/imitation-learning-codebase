@@ -15,7 +15,7 @@ waypoints:
   - [0, 2]
   - [2, 2]
 waypoint_reached_distance: 0.2
-max_collision_depth: 0.5
+min_collision_depth: 0.3
 reward:
   step:
     termination: 'NotDone'

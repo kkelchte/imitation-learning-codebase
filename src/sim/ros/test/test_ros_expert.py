@@ -33,7 +33,7 @@ class TestRosExpert(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
 
         # subscribe to command control
         self.command_topic = '/actor/ros_expert/cmd_vel'
