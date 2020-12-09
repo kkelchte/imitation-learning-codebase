@@ -22,6 +22,7 @@ config_dict = {
         "info": ['/tracking/cmd_vel', '/fleeing/cmd_vel'],
         "observation": 'modified_state',
         "action_topic": 'python',
+        "num_action_publishers": 2,
         "max_update_wait_period_s": 10,
         "visible_xterm": True,
         "step_rate_fps": 100,
@@ -58,7 +59,6 @@ class TestRosIntegrated(unittest.TestCase):
         self._environment = RosEnvironment(
             config=config
         )
-        time.sleep(1)
 
     def test_multiple_resets(self):
         time.sleep(rospy.get_param('/world/delay_evaluation') + 2)
@@ -78,10 +78,9 @@ class TestRosIntegrated(unittest.TestCase):
                 count += 1
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
-                self.assertEqual(experience.info['/tracking/cmd_vel'][2], 5)
-                self.assertEqual(experience.info['/fleeing/cmd_vel'][1], 3)
-                self.assertNotEqual(experience.reward, 0)
-                print(f'{count} vs {MAXSTEPS}')
+                self.assertEqual(experience.info['/tracking/cmd_vel'].value[2], 5)
+                self.assertEqual(experience.info['/fleeing/cmd_vel'].value[1], 3)
+            print(f'{count} vs {MAXSTEPS}')
             self.assertEqual(count, MAXSTEPS)
             # self.assertTrue('frame' in experience.info.keys())
             # plt.imshow(experience.info['frame'])

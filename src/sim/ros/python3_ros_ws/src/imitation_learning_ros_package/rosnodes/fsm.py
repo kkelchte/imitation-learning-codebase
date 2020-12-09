@@ -136,8 +136,7 @@ class Fsm:
             rate.sleep()
             self._step_count += 1
             if self._step_count % self._rate_fps == 0:
-                msg = f"{rospy.get_time(): 0.0f}ms, state: {self._state.name}, " \
-                      f"occasion: {self._occasion}"
+                msg = f"{rospy.get_time(): 0.0f}ms, state: {self._state.name}, occasion: {self._occasion}"
                 cprint(msg, self._logger)
 
     ###############################
@@ -281,6 +280,18 @@ class Fsm:
 
 
 class RewardCalculator:
+    default_reward = {
+        'unk': {'weights': {'constant': 0},
+                'termination': TerminationType.Unknown.name},
+        'step': {'weights': {'constant': 0},
+                 'termination': TerminationType.NotDone.name},
+        'on_collision': {'weights': {'constant': 0},
+                         'termination': TerminationType.Failure.name},
+        'goal_reached': {'weights': {'constant': 0},
+                         'termination': TerminationType.Success.name},
+        'out_of_time': {'weights': {'constant': 0},
+                        'termination': TerminationType.Done.name},
+    }
     """
     Create reward calculator which provides rewards depending on reward occasion according to reward mapping.
     Reward occasions: 'goal_reached', 'step', 'on_collision', 'out_of_time'
@@ -290,10 +301,12 @@ class RewardCalculator:
     """
     def __init__(self):
         self._logger = get_logger(get_filename_without_extension(__file__), get_output_path())
-        self._mapping = rospy.get_param('/world/reward', {})
+        self._mapping = rospy.get_param('/world/reward', self.default_reward)
         if 'unk' not in self._mapping.keys():  # add default unknown reward
             self._mapping['unk'] = {'weights': {'constant': 0},
                                     'termination': TerminationType.Unknown.name}
+        cprint(f'starting with mapping: {self._mapping}', self._logger)
+        self._count = 0
 
     def get_reward(self, occasion: str, kwargs: dict) -> RosReward:
         if occasion not in self._mapping.keys():
@@ -305,13 +318,18 @@ class RewardCalculator:
             value = eval(f'get_{reward_type}(kwargs)') if reward_type != 'constant' else 1
             if value is not None:
                 reward += reward_weight * value
+        self._count += 1
+        if self._count % 60 == 0:
+            cprint(f'reward: {reward}, termination: {termination_type}', self._logger, msg_type=MessageType.debug)
         return RosReward(
             reward=reward,
             termination=termination_type
         )
 
     def reset(self):
-        self._mapping = rospy.get_param('/world/reward', {})
+        self._count = 0
+        cprint('resetting', self._logger)
+        self._mapping = rospy.get_param('/world/reward', self.default_reward)
         if 'unk' not in self._mapping.keys():  # add default unknown reward
             self._mapping['unk'] = {'weights': {'constant': 0},
                                     'termination': TerminationType.Unknown.name}

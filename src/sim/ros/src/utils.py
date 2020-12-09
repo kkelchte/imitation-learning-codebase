@@ -250,6 +250,23 @@ def rotation_from_quaternion(quaternion: tuple) -> np.ndarray:
     return np.asarray(R.from_quat(quaternion).as_matrix())
 
 
+def project(points: List[np.ndarray],
+            fx: float = 1,
+            fy: float = 1,
+            cx: float = 1,
+            cy: float = 1) -> List[np.ndarray]:
+    lengths = [len(p) for p in points]
+    assert min(lengths) == max(lengths)
+    if points[0].shape[0] == 3:
+        points = [p[:3] for p in points]
+    intrinsic_camera_matrix = np.asarray([
+        [fx, 0, cx],
+        [0, fy, cy],
+        [0, 0, 1]])
+    pixel_coordinates = [np.matmul(intrinsic_camera_matrix, p) for p in points]
+    return [p / p[2] for p in pixel_coordinates]
+
+
 def transform(points: List[np.ndarray],
               orientation: np.ndarray = np.eye(3),
               translation: np.ndarray = np.zeros((3,)),
@@ -267,23 +284,6 @@ def transform(points: List[np.ndarray],
     if invert:
         transformation = np.linalg.inv(transformation)
     return [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p) for p in points]
-
-
-def project(points: List[np.ndarray],
-            fx: float = 1,
-            fy: float = 1,
-            cx: float = 1,
-            cy: float = 1) -> List[np.ndarray]:
-    lengths = [len(p) for p in points]
-    assert min(lengths) == max(lengths)
-    if points[0].shape[0] == 3:
-        points = [p[:3] for p in points]
-    intrinsic_camera_matrix = np.asarray([
-        [fx, 0, cx],
-        [0, fy, cy],
-        [0, 0, 1]])
-    pixel_coordinates = [np.matmul(intrinsic_camera_matrix, p) for p in points]
-    return [p / p[2] for p in pixel_coordinates]
 
 
 def calculate_bounding_box(state: Sequence,

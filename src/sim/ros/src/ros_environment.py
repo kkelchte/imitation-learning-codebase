@@ -341,9 +341,14 @@ class RosEnvironment(Environment):
         self._step += 1
         if action is not None:
             for index, msg in enumerate(adapt_action_to_twist(action)):
-                self._action_publishers[index].publish(msg)
+                try:
+                    self._action_publishers[index].publish(msg)
+                except IndexError:
+                    raise IndexError(f'action of {action.actor_name} requires '
+                                     f'self._config.ros_config.num_action_publishers set to 2 '
+                                     f'instead of {self._config.ros_config.num_action_publishers}')
             if self._config.ros_config.action_topic == 'python':
-                self._action = deepcopy(action)
+                self.action = deepcopy(action)
         self._run_and_update_experience()
         return self._current_experience, deepcopy(self.observation)
 

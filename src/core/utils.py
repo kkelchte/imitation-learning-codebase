@@ -96,6 +96,13 @@ def tensorboard_write_distribution(writer, distribution, tag, step) -> None:
     writer.add_scalar(f"{tag} mean", distribution.mean, global_step=step)
     writer.add_scalar(f"{tag} std", distribution.std, global_step=step)
 
+
+def to_file_name(name: str) -> str:
+    """pull out spaces and backslashes from name, returning an approriate filename"""
+    name = name.replace(' ', '_')
+    name = name.replace('/', '-')
+    return name
+
 #######################################
 # Extensive evaluation helper functions
 #######################################
