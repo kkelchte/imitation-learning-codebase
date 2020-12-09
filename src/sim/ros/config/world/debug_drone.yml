@@ -27,4 +27,4 @@ reward:
   step:
     termination: 'NotDone'
     weights:
-      distance_travelled: 10
+      constant: 10

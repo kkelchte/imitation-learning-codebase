@@ -2,7 +2,7 @@ import os
 from enum import IntEnum
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 import numpy as np
 
 from dataclasses_json import dataclass_json
@@ -11,7 +11,7 @@ from src.core.config_loader import Config
 from src.core.filters import NormalizationFilter, ReturnFilter
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
-from src.core.data_types import Action, Experience, ProcessState
+from src.core.data_types import Action, Experience, ProcessState, SensorType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 
 
@@ -32,25 +32,24 @@ class GymConfig(Config):
 @dataclass
 class RosLaunchConfig(Config):
     random_seed: int = 123
+    world_name: str = None
+    robot_name: str = None
     gazebo: bool = False
     robot_display: bool = False
     fsm: bool = True
-    fsm_config: str = 'single_run'
+    fsm_mode: str = 'SingleRun'
+    robot_mapping: bool = False  # map trajectory on top down map specified by 'background image' in world config
     control_mapping: bool = True
     control_mapping_config: str = 'default'
     modified_state_publisher: bool = False
-    modified_state_publisher_config: str = 'default'
-    waypoint_indicator: bool = False
+    modified_state_publisher_mode: str = 'CombinedGlobalPoses'
+    waypoint_indicator: bool = False  # configuration is specified in world
     x_pos: float = 0.
     y_pos: float = 0.
     z_pos: float = 1.
     yaw_or: float = 1.57
-    world_name: str = None
-    robot_name: str = None
-    robot_mapping: bool = False
 
     def __post_init__(self):
-        assert os.path.isfile(f'src/sim/ros/config/fsm/{self.fsm_config}.yml')
         assert os.path.isfile(f'src/sim/ros/config/control_mapping/{self.control_mapping_config}.yml')
 
 
@@ -61,17 +60,20 @@ class RosConfig(Config):
     Configuration specific for ROS environment,
     specified here to avoid circular dependencies environment <> ros_environment
     """
-    store_action: bool = True
-    store_reward: bool = False
-    observation: str = ''
-    action: str = ''
-    # sensor/sensor_name_0, sensor/sensor_name_1, actor/actor_name_0, ..., current_waypoint, supervised_action
-    info: Optional[List[str]] = None
+    # sensor_type which has to be specified by robot
+    observation: str = 'camera'
+    # control_topic which corresponds to the published action or python then it returns action from step argument
+    action_topic: str = '/cmd_vel'
+    # sensor_type_0, current_waypoint, actor_topic_0
+    info: Optional[List[Union[SensorType, str]]] = None
     step_rate_fps: float = 10.
-    visible_xterm: bool = False
+    visible_xterm: bool = False  # make xterm window in which launch load_ros is launched visible
     ros_launch_config: RosLaunchConfig = None
-    actor_configs: List[ActorConfig] = None  # extra ros nodes that can act on robot.
+    actor_configs: List[ActorConfig] = None  # list of all actors that will be started by load_ros.launch + config files
     max_update_wait_period_s: float = 10  # max wall time waiting duration till update.
+    # define number of action publishers used by adversarial or multi-agent training
+    # result in topics: /ros_python_interface/cmd_vel, /ros_python_interface/cmd_vel_1 ...
+    num_action_publishers: int = 1
 
     def __post_init__(self):
         if self.info is None:

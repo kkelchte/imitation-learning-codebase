@@ -16,10 +16,10 @@ from hector_uav_msgs.msg import *
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
 from src.sim.common.noise import *
-from src.core.data_types import Action
+from src.core.data_types import Action, SensorType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
-    get_output_path, apply_noise_to_twist
+from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_quaternion, \
+    get_output_path, apply_noise_to_twist, process_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 
@@ -54,19 +54,21 @@ class RosExpert(Actor):
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
 
-        self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
+        self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
 
     def _subscribe(self):
         # Robot sensors:
-        for sensor in ['/robot/depth_scan', '/robot/odometry']:
-            if rospy.has_param(f'{sensor}_topic'):
-                sensor_topic = rospy.get_param(f'{sensor}_topic')
-                sensor_type = rospy.get_param(f'{sensor}_type')
+        for sensor in [SensorType.depth,
+                       SensorType.position]:
+            if rospy.has_param(f'/robot/{sensor.name}_sensor/topic'):
+                sensor_topic = rospy.get_param(f'/robot/{sensor.name}_sensor/topic')
+                sensor_type = rospy.get_param(f'/robot/{sensor.name}_sensor/type')
                 sensor_callback = f'_process_{camelcase_to_snake_format(sensor_type)}'
                 if sensor_callback not in self.__dir__():
                     cprint(f'Could not find sensor_callback {sensor_callback}', self._logger)
-                sensor_stats = rospy.get_param(f'{sensor}_stats') if rospy.has_param(f'{sensor}_stats') else {}
+                sensor_stats = rospy.get_param(f'/robot/{sensor.name}_sensor/stats') \
+                    if rospy.has_param(f'/robot/{sensor.name}_sensor/stats') else {}
                 rospy.Subscriber(name=sensor_topic,
                                  data_class=eval(sensor_type),
                                  callback=eval(f'self.{sensor_callback}'),
@@ -193,7 +195,7 @@ class RosExpert(Actor):
 
     def get_action(self, sensor_data: dict = None) -> Action:
         assert sensor_data is None
-        action = adapt_twist_to_action(self._update_twist())
+        action = process_twist(self._update_twist())
         action.actor_name = self._name
         # cprint(f'action: {action}', self._logger, msg_type=MessageType.debug)
         return action

@@ -10,14 +10,14 @@ environment_config:
   factory_key: ROS
   max_number_of_steps: -1
   ros_config:
-    observation: forward_camera
+    observation: camera
     visible_xterm: true
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
       robot_name: bebop_real
       robot_display: true
-      fsm_config: takeover_run
+      fsm_mode: TakeOverRun
       fsm: true
       control_mapping: true
       waypoint_indicator: false

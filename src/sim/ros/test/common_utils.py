@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Iterable, Sequence
 
 from dataclasses import dataclass
 import numpy as np
@@ -59,6 +59,20 @@ def get_fake_image():
     image.width = 300
     image.encoding = 'rgb8'
     return image
+
+
+def get_fake_modified_state(data: Sequence = np.zeros((9,))) -> CombinedGlobalPoses:
+    msg = CombinedGlobalPoses()
+    msg.tracking_x = data[0]
+    msg.tracking_y = data[1]
+    msg.tracking_z = data[2]
+    msg.fleeing_x = data[3]
+    msg.fleeing_y = data[4]
+    msg.fleeing_z = data[5]
+    msg.tracking_roll = data[6]
+    msg.tracking_pitch = data[7]
+    msg.tracking_yaw = data[8]
+    return msg
 
 
 def get_fake_laser_scan(ranges=None):

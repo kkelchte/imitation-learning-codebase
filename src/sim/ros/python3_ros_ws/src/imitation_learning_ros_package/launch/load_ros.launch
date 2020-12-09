@@ -92,9 +92,9 @@
     </group>
 
     <!--######################## HELPER NODES ########################-->
-    <arg name="fsm" default="true"/>
-    <arg name="fsm_config" default="debug"/>
-    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
+    <arg name="fsm" default="false"/>
+    <arg name="fsm_mode" default="SingleRun"/>
+    <param name="/fsm/mode" value="$(arg fsm_mode)"/>
     <group if="$(arg fsm)">
         <node pkg="imitation_learning_ros_package"
               name="fsm"
@@ -102,7 +102,7 @@
               output="screen"/>
     </group>
 
-    <arg name="control_mapping" default="true"/>
+    <arg name="control_mapping" default="false"/>
     <arg name="control_mapping_config" default="default"/>
     <rosparam command="load"
                   file="$(env CODEDIR)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
@@ -139,11 +139,9 @@
     </group>
 
     <arg name="modified_state_publisher" default="false"/>
-    <arg name="modified_state_publisher_config" default="default"/>
+    <arg name="modified_state_publisher_mode" default="CombinedGlobalPoses"/>
+    <param name="/modified_state_publisher/mode" value="$(arg modified_state_publisher_mode)"/>
     <group if="$(arg modified_state_publisher)">
-        <rosparam command="load"
-                  file="$(env CODEDIR)/src/sim/ros/config/modified_state_publisher/$(arg modified_state_publisher_config).yml"
-                  ns="modified_state_publisher"/>
         <node pkg="imitation_learning_ros_package"
               name="modified_state_publisher"
               type="modified_state_publisher.py"

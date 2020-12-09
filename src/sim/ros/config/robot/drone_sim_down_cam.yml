@@ -1,17 +1,16 @@
 robot_type: quadrotor_sim
 takeoff_action: /action/takeoff
 command_topic: /cmd_vel
-sensors:
-  - downward_camera
-  - odometry
-downward_camera_topic: /down/camera/image
-downward_camera_type: Image
-downward_camera_stats:
-  height: 200
-  width: 200
-  depth: 1
-#imu_topic: /raw_imu
-#imu_type: Imu
-odometry_topic: /ground_truth/state
-odometry_type: Odometry
-wrench_topic: /command/wrench
+camera_sensor:
+  topic: /down/camera/image
+  type: Image
+  stats:
+    height: 200
+    width: 200
+    depth: 1
+position_sensor:
+  topic: /ground_truth/state
+  type: Odometry
+collision_sensor:
+  topic: /command/wrench
+  type: WrenchStamped

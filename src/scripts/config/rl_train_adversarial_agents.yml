@@ -1,23 +1,23 @@
-output_path: straight_corridor
-number_of_epochs: 100
+output_path: adversarial_agents_ros
+number_of_epochs: 1
 episode_runner_config:
   number_of_episodes: 5
   train_every_n_steps: -1
 architecture_config:
-  architecture: straight_corridor_depth_30_1c
+  architecture: adversarial_agents_side_ways
   device: cpu
   initialisation_type: orthogonal
 environment_config:
-  normalize_observations: true
-  normalize_rewards: true
-  observation_clipping: 10
-  reward_clipping: 10
+  normalize_observations: false
+  normalize_rewards: false
+  observation_clipping: -1
+  reward_clipping: -1
   factory_key: ROS
   max_number_of_steps: -1
   ros_config:
     info:
-      -sensor/odometry
-    observation: depth_scan
+      -frame
+    observation: modified_state
 
     store_reward: true
     visible_xterm: false
@@ -25,13 +25,13 @@ environment_config:
     actor_configs: {}
     ros_launch_config:
       random_seed: 123
-      robot_name: turtlebot_sim
+      robot_name: double_drone_sim
       fsm_config: single_run
       fsm: true
       control_mapping: true
-      waypoint_indicator: true
-      control_mapping_config: evaluation
-      world_name: straight_corridor
+      waypoint_indicator: false
+      control_mapping_config: tracking_fleeing
+      world_name: tracking_y_axis
       x_pos: 0.0
       y_pos: 0.0
       z_pos: 0.0
@@ -44,7 +44,7 @@ tensorboard: true
 save_checkpoint_every_n: 25
 trainer_config:
   criterion: MSELoss
-  actor_learning_rate: 0.05
+  actor_learning_rate: 0.01
   critic_learning_rate: 0.1
   scheduler_config:
     number_of_epochs: 100

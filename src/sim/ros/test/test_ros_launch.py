@@ -56,7 +56,7 @@ class TestRos(unittest.TestCase):
         ros_process = RosWrapper(launch_file='load_ros.launch',
                                  config=config,
                                  visible=True)
-        self.assertEqual(rospy.get_param('/robot/forward_camera_topic'), '/wa/camera/image_raw')
+        self.assertEqual(rospy.get_param('/robot/camera_sensor/topic'), '/wa/camera/image_raw')
         ros_process.terminate()
 
     def test_full_config(self):
@@ -64,7 +64,7 @@ class TestRos(unittest.TestCase):
           "output_path": self.output_dir,
           "random_seed": 123,
           "robot_name": "turtlebot_sim",
-          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
+          "fsm_mode": "SingleRun",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,

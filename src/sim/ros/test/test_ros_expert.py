@@ -33,7 +33,7 @@ class TestRosExpert(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=False)
+                                       visible=True)
 
         # subscribe to command control
         self.command_topic = '/actor/ros_expert/cmd_vel'
@@ -41,10 +41,10 @@ class TestRosExpert(unittest.TestCase):
             TopicConfig(topic_name=self.command_topic, msg_type="Twist"),
         ]
         # create publishers for all relevant sensors < sensor expert
-        self._depth_topic = rospy.get_param('/robot/depth_scan_topic')
-        self._depth_type = rospy.get_param('/robot/depth_scan_type')
-        self._pose_topic = rospy.get_param('/robot/odometry_topic')
-        self._pose_type = rospy.get_param('/robot/odometry_type')
+        self._depth_topic = rospy.get_param('/robot/depth_sensor/topic')
+        self._depth_type = rospy.get_param('/robot/depth_sensor/type')
+        self._pose_topic = rospy.get_param('/robot/position_sensor/topic')
+        self._pose_type = rospy.get_param('/robot/position_sensor/type')
 
         publish_topics = [
             TopicConfig(topic_name=self._depth_topic, msg_type=self._depth_type),

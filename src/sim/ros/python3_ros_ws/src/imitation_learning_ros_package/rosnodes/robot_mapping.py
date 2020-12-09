@@ -57,19 +57,14 @@ class RobotMapper:
         self._output_path = get_output_path()
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
 
-        # subscribe to fsm state
-        if not rospy.has_param('/fsm/state_topic'):
-            cprint(f'failed to find fsm topic so quit', self._logger)
-            sys.exit(1)
-
-        rospy.Subscriber(name=rospy.get_param('/fsm/state_topic'),
+        rospy.Subscriber(name='/fsm/state',
                          data_class=String,
                          callback=self._update_fsm_state)
         # subscribe to odometry or other pose estimation type (such as GPS, gt_pose, ...)
-        odometry_type = rospy.get_param('/robot/odometry_type')
+        odometry_type = rospy.get_param('/robot/position_sensor/type')
         callback = f'_{camelcase_to_snake_format(odometry_type)}_callback'
         assert callback in self.__dir__()
-        rospy.Subscriber(name=rospy.get_param('/robot/odometry_topic'),
+        rospy.Subscriber(name=rospy.get_param('/robot/position_sensor/topic'),
                          data_class=eval(odometry_type),
                          callback=eval(f'self.{callback}'))
 
@@ -131,6 +126,8 @@ class RobotMapper:
     def _update_fsm_state(self, msg: String):
         if self._fsm_state == FsmState.Running and FsmState[msg.data] == FsmState.Terminated:
             self._write_image()
+        if self._fsm_state != FsmState[msg.data]:
+            cprint(f'update fsm state {msg.data}', self._logger)
         self._fsm_state = FsmState[msg.data]
 
     def _odometry_callback(self, msg: Odometry):
@@ -165,7 +162,7 @@ class RobotMapper:
             self._frame_points.append(points_image_frame)
 
     def _write_image(self):
-        cprint("writing image away...")
+        cprint("writing image away...", self._logger)
         fig, ax = plt.subplots()
         ax.imshow(self._background_image)
         for _frame in self._frame_points:

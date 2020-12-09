@@ -61,12 +61,8 @@ class ControlMapper:
             else:
                 control_types.extend(self._mapping[fsm_state].keys())
         for control_type in set(control_types):
-            if control_type == 'supervision':
-                self._publishers[control_type] = rospy.Publisher(rospy.get_param('/control_mapping/supervision_topic'),
-                                                                 Twist, queue_size=10)
-            else:
-                self._publishers[control_type] = rospy.Publisher(rospy.get_param(f'/robot/{control_type}_topic'),
-                                                                 Twist, queue_size=10)
+            self._publishers[control_type] = rospy.Publisher(rospy.get_param(f'/robot/{control_type}_topic'),
+                                                             Twist, queue_size=10)
 
         noise_config = rospy.get_param('/control_mapping/noise', None)
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config is not None else None
@@ -79,7 +75,7 @@ class ControlMapper:
         rospy.init_node('control_mapper')
 
     def _subscribe(self):
-        rospy.Subscriber(rospy.get_param('/fsm/state_topic', '/fsm/state'), String, self._fsm_state_update)
+        rospy.Subscriber('/fsm/state', String, self._fsm_state_update)
         # For each actor add subscriber < actor config
         actor_topics = []
         for state, controls in self._mapping.items():
@@ -103,13 +99,13 @@ class ControlMapper:
         self._messages[topic_name] = msg
 
     def publish(self):
-        for robot_control, actor_topic in self._mapping[self._fsm_state.name].items():
+        for control_type, actor_topic in self._mapping[self._fsm_state.name].items():
             if actor_topic in self._messages.keys():
                 control_msg = self._messages[actor_topic]
-                if 'command' in robot_control and self._noise is not None:
+                if self._noise is not None:
                     control_msg = apply_noise_to_twist(twist=deepcopy(control_msg),
                                                        noise=self._noise.sample())
-                self._publishers[robot_control].publish(control_msg)
+                self._publishers[control_type].publish(control_msg)
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)

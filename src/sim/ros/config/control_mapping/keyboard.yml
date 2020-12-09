@@ -1,4 +1,4 @@
-supervision_topic: '/control_mapper/supervision'
+
 rate_fps: 60
 mapping:
   Unknown:

@@ -1,6 +1,7 @@
 #!/usr/bin/python3.8
 import os
 import time
+from copy import deepcopy
 from enum import IntEnum
 
 import actionlib
@@ -18,15 +19,16 @@ from std_msgs.msg import String
 from imitation_learning_ros_package.msg import RosReward, CombinedGlobalPoses
 from cv_bridge import CvBridge
 from src.core.logger import get_logger, cprint, MessageType
-from src.core.utils import get_filename_without_extension
-from src.core.data_types import TerminationType
-from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path
+from src.core.utils import get_filename_without_extension, camelcase_to_snake_format
+from src.core.data_types import TerminationType, SensorType, FsmMode
+from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path, get_travelled_distance, \
+    get_distance_from_start, get_iou, get_distance_between_agents  # do not remove, used by reward.
 
 bridge = CvBridge()
 
 """FSM is a node that structures one episode of an ROS experiment.
 
-The structure of the FSM is defined by the rosparam fsm_mode
+The structure of the FSM is defined by the rosparam /fsm/mode
 SingleRun = 0 # start -(a)> Running -(b)> terminate
 [DEPRECATED] TakeOffRun = 1 # start -(a)> TakeOff -(c)> Running -(b)> terminate
 TakeOverRun = 2 # start -(a)> TakeOver (-(f)> terminate) <(e)-(d)> Running  
@@ -59,19 +61,13 @@ class FsmState(IntEnum):
         return list(cls.__members__.keys())
 
 
-class FsmMode(IntEnum):
-    SingleRun = 0
-    TakeOverRun = 2
-    TakeOverRunDriveBack = 3
-
-
 class Fsm:
 
     def __init__(self):
         # wait for ROS to be ready
         stime = time.time()
         max_duration = 60
-        while not rospy.has_param('/fsm/fsm_mode') and time.time() < stime + max_duration:
+        while not rospy.has_param('/fsm/mode') and time.time() < stime + max_duration:
             time.sleep(0.01)
 
         self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
@@ -81,59 +77,51 @@ class Fsm:
         self._reward_calculator = RewardCalculator()
 
         self._init_fields()  # define fields which require a resetting at each run
-        self._state_pub = rospy.Publisher(rospy.get_param('/fsm/state_topic'), String, queue_size=10)
-        self._rewards_pub = rospy.Publisher(rospy.get_param('/fsm/reward_topic'), RosReward, queue_size=10)
+        self._state_pub = rospy.Publisher('/fsm/state', String, queue_size=10)
+        self._rewards_pub = rospy.Publisher('/fsm/reward', RosReward, queue_size=10)
         self._subscribe()
         rospy.init_node('fsm', anonymous=True)
         self.run()
 
     def _subscribe(self):
         """Subscribe to relevant topics depending on the mode"""
-        rospy.Subscriber(rospy.get_param('/fsm/finish_topic', '/finish'), Empty, self._shutdown_run,
+        rospy.Subscriber('/fsm/finish', Empty, self._shutdown_run,
                          callback_args=TerminationType.Unknown)
-        rospy.Subscriber(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, self._reset)
-        if rospy.has_param('/robot/depth_scan_topic'):
-            rospy.Subscriber(rospy.get_param('/robot/depth_scan_topic'),
-                             eval(rospy.get_param('/robot/depth_scan_type')),
-                             self._check_laser_scan)
-        if rospy.has_param('/robot/depth_image_topic'):
-            rospy.Subscriber(rospy.get_param('/robot/depth_image_topic'),
-                             eval(rospy.get_param('/robot/depth_image_type')),
-                             self._check_depth_image)
-        if rospy.has_param('/robot/odometry_topic'):
-            rospy.Subscriber(rospy.get_param('/robot/odometry_topic'),
-                             eval(rospy.get_param('/robot/odometry_type')),
-                             self._check_position)
-        if rospy.has_param('/robot/modified_state_topic'):
-            rospy.Subscriber(rospy.get_param('/robot/modified_state_topic'),
-                             eval(rospy.get_param('/robot/modified_state_type')),
-                             self._set_modified_state)
-        if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
-            rospy.Subscriber(rospy.get_param('/fsm/go_topic', '/go'), Empty, self._running)
-            rospy.Subscriber(rospy.get_param('/fsm/overtake_topic', '/overtake'), Empty, self._takeover)
+        rospy.Subscriber('/fsm/reset', Empty, self._reset)
+        for sensor_type in [SensorType.position,
+                            SensorType.collision,
+                            SensorType.depth,
+                            SensorType.modified_state]:
+            if rospy.has_param(f'/robot/{sensor_type.name}_sensor'):
+                msg_type = rospy.get_param(f'/robot/{sensor_type.name}_sensor/type')
+                rospy.Subscriber(rospy.get_param(f'/robot/{sensor_type.name}_sensor/topic'),
+                                 eval(msg_type),
+                                 eval(f"self._check_{camelcase_to_snake_format(msg_type)}"))
 
-        # used to detect whether motors are still running as they shutdown on flip over.
-        if rospy.has_param('/robot/wrench_topic'):
-            rospy.Subscriber(rospy.get_param('/robot/wrench_topic'), WrenchStamped, self._check_wrench)
+        if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
+            rospy.Subscriber('/fsm/go', Empty, self._running)
+            rospy.Subscriber('/fsm/overtake', Empty, self._takeover)
 
     def _init_fields(self):
-        self.mode = rospy.get_param('/fsm/fsm_mode')
+        self.mode = FsmMode[rospy.get_param('/fsm/mode')]
         self._state = FsmState.Unknown
         self._occasion = 'unk'
         self._step_count = 0
-        self._delay_evaluation = rospy.get_param('world/delay_evaluation')
+        self._delay_evaluation_time = rospy.get_param('/world/delay_evaluation')
         self._is_shuttingdown = False
         self._set_state(FsmState.Unknown)
         self._start_time = -1
         self._robot_info = {
             'current_position': None,
-            'starting_position': None,
-            'combined_global_poses': None
+            'previous_position': None,
+            'start_position': None,
+            'combined_global_poses': None,
+            'travelled_distance': None
         }
         self.success = None
         # Params to define success and failure
         self._max_duration = rospy.get_param('/world/max_duration', -1)
-        self._collision_depth = rospy.get_param('/robot/max_collision_depth', 0)
+        self._collision_depth = rospy.get_param('/robot/max_collision_depth', 0.4)
         self._goal = rospy.get_param('world/goal', {})
         self._reward_calculator.reset()
 
@@ -148,7 +136,8 @@ class Fsm:
             rate.sleep()
             self._step_count += 1
             if self._step_count % self._rate_fps == 0:
-                msg = f"{rospy.get_time(): 0.0f}ms, state: {self._state.name}, shutting down:{self._is_shuttingdown}"
+                msg = f"{rospy.get_time(): 0.0f}ms, state: {self._state.name}, " \
+                      f"occasion: {self._occasion}"
                 cprint(msg, self._logger)
 
     ###############################
@@ -182,7 +171,6 @@ class Fsm:
                 # rospy.wait_for_service('/enable_motors')
                 # enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
                 # enable_motors_service.call(True)
-
             self._running()
         if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
             self._takeover()
@@ -196,7 +184,7 @@ class Fsm:
             while rospy.get_time() == 0:
                 time.sleep(0.1)
             self._start_time = rospy.get_time()
-        while rospy.get_time() - self._start_time < self._delay_evaluation:
+        while rospy.get_time() - self._start_time < self._delay_evaluation_time:
             rospy.sleep(0.01)
         self._set_state(FsmState.Running)
         self._run_number += 1
@@ -216,22 +204,16 @@ class Fsm:
     ###############################
     # Callback functions
     ###############################
-    def _set_modified_state(self, msg) -> None:
-        if isinstance(msg, CombinedGlobalPoses):
-            self._robot_info['combined_global_poses'] = msg
-        else:
-            raise NotImplemented(f'[FSM] failed to understand message of type {type(msg)}: \n {msg}')
-
     def _delay_evaluation(self) -> bool:
         """all reasons not to evaluate input at callback"""
         duration_s = rospy.get_time() - self._start_time if self._start_time != -1 else 0
         if self._is_shuttingdown or self._state != FsmState.Running:
             return True
-        elif duration_s >= self._max_duration:
+        elif duration_s >= self._max_duration != -1:
             self._occasion = 'out_of_time'
             self._shutdown_run()
             return True
-        elif duration_s < self._delay_evaluation:
+        elif duration_s < self._delay_evaluation_time:
             return True
         else:
             return False
@@ -240,11 +222,10 @@ class Fsm:
         if self._delay_evaluation():
             return
         if np.amin(data) < self._collision_depth:
-            cprint(f'Depth value {np.amin(data)} < {self._collision_depth}', self._logger)
             self._occasion = 'on_collision'
             self._shutdown_run()
 
-    def _check_depth_image(self, msg: Image) -> None:
+    def _check_image(self, msg: Image) -> None:
         sensor_stats = {
             'depth': 1,
             'min_depth': 0.1,
@@ -263,7 +244,7 @@ class Fsm:
         scan = process_laser_scan(msg, sensor_stats)
         self._check_depth(scan)
 
-    def _check_wrench(self, msg: WrenchStamped) -> None:
+    def _check_wrench_stamped(self, msg: WrenchStamped) -> None:
         if self._delay_evaluation():
             return
         if msg.wrench.force.z < 0:
@@ -271,13 +252,17 @@ class Fsm:
             self._occasion = 'on_collision'
             self._shutdown_run()
 
-    def _check_position(self, msg: Odometry) -> None:
-        if not self._delay_evaluation():
+    def _check_odometry(self, msg: Odometry) -> None:
+        if self._delay_evaluation():
             return
         current_pos = np.asarray([msg.pose.pose.position.x,
                                   msg.pose.pose.position.y,
                                   msg.pose.pose.position.z])
-
+        if self._robot_info['current_position'] is not None:
+            self._robot_info['previous_position'] = deepcopy(self._robot_info['current_position'])
+        self._robot_info['current_position'] = deepcopy(current_pos)
+        if self._robot_info['start_position'] is None:
+            self._robot_info['start_position'] = deepcopy(current_pos)
         if self._goal is not None and \
                 self._goal['x']['max'] > current_pos[0] > self._goal['x']['min'] and \
                 self._goal['y']['max'] > current_pos[1] > self._goal['y']['min'] and \
@@ -286,37 +271,50 @@ class Fsm:
             self._occasion = 'goal_reached'
             self._shutdown_run()
 
+    def _check_combined_global_poses(self, msg: CombinedGlobalPoses) -> None:
+        if self._delay_evaluation():
+            return
+        if isinstance(msg, CombinedGlobalPoses):
+            self._robot_info['combined_global_poses'] = msg
+        else:
+            raise NotImplemented(f'[FSM] failed to understand message of type {type(msg)}: \n {msg}')
+
 
 class RewardCalculator:
     """
     Create reward calculator which provides rewards depending on reward occasion according to reward mapping.
     Reward occasions: 'goal_reached', 'step', 'on_collision', 'out_of_time'
-    Reward value types: 'iou' (requires CombinedGlobalPoses states), 'distance_from_start', 'distance_between_agents'
+    Reward value types: 'constant', 'iou' (requires CombinedGlobalPoses states),
+    'distance_from_start', 'distance_between_agents'
     Values are combined in weighted sum with weights specified by world.
     """
     def __init__(self):
+        self._logger = get_logger(get_filename_without_extension(__file__), get_output_path())
         self._mapping = rospy.get_param('/world/reward', {})
-        self.travelled_distance = 0
-        self.distance_from_start = 0
+        if 'unk' not in self._mapping.keys():  # add default unknown reward
+            self._mapping['unk'] = {'weights': {'constant': 0},
+                                    'termination': TerminationType.Unknown.name}
 
     def get_reward(self, occasion: str, kwargs: dict) -> RosReward:
-        # self.travelled_distance += np.sqrt(np.sum((previous_pos - self._current_pos) ** 2))
-        # self.distance_from_start = np.sqrt(np.sum(self._current_pos ** 2))
-
+        if occasion not in self._mapping.keys():
+            occasion = 'unk'
         reward_mapping = self._mapping[occasion]
         termination_type = reward_mapping['termination']
         reward = 0
         for reward_type, reward_weight in reward_mapping['weights'].items():
             value = eval(f'get_{reward_type}(kwargs)') if reward_type != 'constant' else 1
-            reward += reward_weight * value
+            if value is not None:
+                reward += reward_weight * value
         return RosReward(
             reward=reward,
             termination=termination_type
         )
 
     def reset(self):
-        self.travelled_distance = 0
-        self.distance_from_start = 0
+        self._mapping = rospy.get_param('/world/reward', {})
+        if 'unk' not in self._mapping.keys():  # add default unknown reward
+            self._mapping['unk'] = {'weights': {'constant': 0},
+                                    'termination': TerminationType.Unknown.name}
 
 
 if __name__ == "__main__":

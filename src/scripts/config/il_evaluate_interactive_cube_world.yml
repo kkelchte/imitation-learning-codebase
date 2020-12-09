@@ -13,7 +13,7 @@ environment_config:
     info:
       -current_waypoint
       -sensor/odometry
-    observation: forward_camera
+    observation: camera
     visible_xterm: false
     step_rate_fps: 100
     ros_launch_config:

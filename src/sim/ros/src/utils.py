@@ -1,7 +1,7 @@
 #!/usr/bin/python3.8
 import os
 from math import sqrt, cos, sin
-from typing import Union, List, Tuple, Iterable
+from typing import Union, List, Tuple, Iterable, Sequence
 
 import numpy as np
 import rospy
@@ -68,29 +68,21 @@ def adapt_vector_to_odometry(data: Union[np.ndarray, list, tuple]) -> Odometry:
     return odometry
 
 
-def adapt_twist_to_action(msg: Twist) -> Action:
-    return Action(
-        value=np.asarray(
-            [
-                msg.linear.x,
-                msg.linear.y,
-                msg.linear.z,
-                msg.angular.x,
-                msg.angular.y,
-                msg.angular.z
-            ]
-        )
-    )
-
-
-def adapt_action_to_twist(action: Action) -> Union[Twist, None]:
-    if action.value is None:
-        return None
+def adapt_action_to_twist(action: Action) -> List[Twist]:
     values = action.value.flatten()
-    twist = Twist()
-    twist.linear.x, twist.linear.y, twist.linear.z, twist.angular.x, twist.angular.y, twist.angular.z = \
-        tuple(values)
-    return twist
+    if action.actor_name == 'tracking_fleeing_agent':
+        twist_tracking = Twist()
+        twist_fleeing = Twist()
+        twist_tracking.linear.x, twist_tracking.linear.y, twist_tracking.linear.z = tuple(values[:3])
+        twist_fleeing.linear.x, twist_fleeing.linear.y, twist_fleeing.linear.z = tuple(values[3:6])
+        twist_tracking.angular.z = values[6]
+        twist_fleeing.angular.z = values[7]
+        return [twist_tracking, twist_fleeing]
+    else:
+        twist = Twist()
+        twist.linear.x, twist.linear.y, twist.linear.z, twist.angular.x, twist.angular.y, twist.angular.z = \
+            tuple(values)
+        return [twist]
 
 
 def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
@@ -185,7 +177,54 @@ def process_laser_scan(msg, sensor_stats: dict = None) -> np.ndarray:
     return np.asarray(ranges)
 
 
-def array_to_combined_global_pose(data: np.ndarray) -> CombinedGlobalPoses:
+def process_twist(msg, sensor_stats: dict = None) -> Action:
+    return Action(
+        actor_name=sensor_stats['name'] if sensor_stats is not None and 'name' in sensor_stats.keys() else '',
+        value=np.asarray(
+            [
+                msg.linear.x,
+                msg.linear.y,
+                msg.linear.z,
+                msg.angular.x,
+                msg.angular.y,
+                msg.angular.z
+            ]
+        )
+    )
+
+
+def process_float32multi_array(msg: Float32MultiArray, stats: dict = None) -> np.ndarray:
+    return np.asarray(msg.data)
+
+
+def process_combined_global_poses(msg: CombinedGlobalPoses, sensor_stats: dict = None) -> np.ndarray:
+    return np.asarray([msg.tracking_x,
+                       msg.tracking_y,
+                       msg.tracking_z,
+                       msg.fleeing_x,
+                       msg.fleeing_y,
+                       msg.fleeing_z,
+                       msg.tracking_roll,
+                       msg.tracking_pitch,
+                       msg.tracking_yaw])
+    # resolution = (100, 100) if 'resolution' not in sensor_stats.keys() else sensor_stats['resolution']
+    # position, width, height = calculate_bounding_box(state=[msg.tracking_x,
+    #                                                         msg.tracking_y,
+    #                                                         msg.tracking_z,
+    #                                                         msg.fleeing_x,
+    #                                                         msg.fleeing_y,
+    #                                                         msg.fleeing_z,
+    #                                                         msg.tracking_roll,
+    #                                                         msg.tracking_pitch,
+    #                                                         msg.tracking_yaw],
+    #                                                  resolution=resolution)
+    # frame = np.zeros(resolution)
+    # frame[position[0]:position[0] + width,
+    #       position[1]:position[1] + height] = 1
+    # return frame
+
+
+def array_to_combined_global_pose(data: Sequence) -> CombinedGlobalPoses:
     msg = CombinedGlobalPoses()
     msg.tracking_x = data[0]
     msg.tracking_y = data[1]
@@ -247,7 +286,7 @@ def project(points: List[np.ndarray],
     return [p / p[2] for p in pixel_coordinates]
 
 
-def calculate_bounding_box(state: Iterable,
+def calculate_bounding_box(state: Sequence,
                            resolution: tuple = (100, 100),
                            focal_length: int = 30,
                            kx: int = 50,
@@ -263,8 +302,8 @@ def calculate_bounding_box(state: Iterable,
     """
     x0 = resolution[0]//2
     y0 = resolution[1]//2
-    agent0 = state[:3]
-    agent1 = state[3:6]
+    agent0 = np.asarray(state[:3])
+    agent1 = np.asarray(state[3:6])
     yaw = state[6]
     pitch = state[7]
     roll = state[8]
@@ -311,14 +350,54 @@ def get_relative_coordinates(pos_agent0: np.ndarray,
     return relative_pos
 
 
-def get_iou():
-    raise NotImplemented
+def distance(a: Sequence, b: Sequence) -> float:
+    assert len(a) == len(b)
+    return np.sqrt(sum((np.asarray(a).squeeze() - np.asarray(b).squeeze())**2)).item()
 
 
-def get_distance_from_start():
-    raise NotImplemented
+def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
+    #  TODO calculate intersection over union from bounding boxes
+    return 5
+
+#########################################
+# Helper functions for reward calculation
+#########################################
 
 
-def get_distance_between_agents():
-    raise NotImplemented
+def get_iou(info: dict) -> float:
+    state = [info['combined_global_poses'].tracking_x,
+             info['combined_global_poses'].tracking_y,
+             info['combined_global_poses'].tracking_z,
+             info['combined_global_poses'].fleeing_x,
+             info['combined_global_poses'].fleeing_y,
+             info['combined_global_poses'].fleeing_z,
+             info['combined_global_poses'].tracking_roll,
+             info['combined_global_poses'].tracking_pitch,
+             info['combined_global_poses'].tracking_yaw]
+    try:
+        bounding_boxes = calculate_bounding_box(state=np.asarray(state))
+        result = calculate_iou_from_bounding_boxes(bounding_boxes)
+    except:
+        result = 5
+    return result
 
+
+def get_travelled_distance(info: dict) -> float:
+    if info['previous_position'] is not None:
+        increment = distance(info['current_position'],
+                             info['previous_position'])
+        info['travelled_distance'] = increment + info['travelled_distance'] \
+            if info['travelled_distance'] is not None else increment
+    info['previous_position'] = None  # make sure difference between the two is not calculated twice
+    return info['travelled_distance']
+
+
+def get_distance_from_start(info: dict) -> float:
+    return distance(info['current_position'],
+                    info['start_position'])
+
+
+def get_distance_between_agents(info: dict) -> float:
+    msg = info['combined_global_poses']
+    return distance([msg.tracking_x, msg.tracking_y, msg.tracking_z],
+                    [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z])

@@ -28,7 +28,6 @@ class TestModifiedStatePublisher(unittest.TestCase):
             'fsm': False,
             'control_mapping': False,
             'output_path': self.output_dir,
-            'waypoint_indicator': False,
             'modified_state_publisher': True,
             'modified_state_publisher_config': 'default',
         }
@@ -36,22 +35,22 @@ class TestModifiedStatePublisher(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=config,
-                                       visible=True)
+                                       visible=False)
 
         # subscribe to modified_state_topic
-        self.modified_state_topic = rospy.get_param('/robot/modified_state_topic')
+        self.modified_state_topic = rospy.get_param('/robot/modified_state_sensor/topic')
         subscribe_topics = [
             TopicConfig(topic_name=self.modified_state_topic,
-                        msg_type=rospy.get_param('/robot/modified_state_type')),
+                        msg_type=rospy.get_param('/robot/modified_state_sensor/type')),
         ]
         # create publishers for all topics upon which modified state publisher depends
-        self.tracking_pose_topic = rospy.get_param('/robot/tracking_tf_topic')
-        self.fleeing_pose_topic = rospy.get_param('/robot/fleeing_tf_topic')
+        self.tracking_pose_topic = rospy.get_param('/robot/tracking_position_sensor/topic')
+        self.fleeing_pose_topic = rospy.get_param('/robot/fleeing_position_sensor/topic')
         publish_topics = [
             TopicConfig(topic_name=self.tracking_pose_topic,
-                        msg_type=rospy.get_param('/robot/tracking_tf_type')),
+                        msg_type=rospy.get_param('/robot/tracking_position_sensor/type')),
             TopicConfig(topic_name=self.fleeing_pose_topic,
-                        msg_type=rospy.get_param('/robot/fleeing_tf_type'))
+                        msg_type=rospy.get_param('/robot/fleeing_position_sensor/type'))
         ]
         self.ros_topic = TestPublisherSubscriber(
             subscribe_topics=subscribe_topics,

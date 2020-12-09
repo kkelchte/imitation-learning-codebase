@@ -1,4 +1,4 @@
-supervision_topic: '/control_mapper/supervision'
+
 rate_fps: 60
 noise:
   name: OUNoise
@@ -17,7 +17,6 @@ mapping:
     command: '/actor/keyboard/cmd_vel'
   Running:
     command: '/actor/ros_expert/cmd_vel'
-    supervision: '/actor/ros_expert/cmd_vel'
   TakenOver:
     command: '/actor/keyboard/cmd_vel'
   DriveBack: {}

@@ -14,7 +14,7 @@ from std_msgs.msg import String, Empty, Float32MultiArray
 from src.core.data_types import Action, TerminationType
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import process_image, process_compressed_image, get_output_path, adapt_twist_to_action
+from src.sim.ros.src.utils import process_image, process_compressed_image, get_output_path, process_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 JOYSTICK_BUTTON_MAPPING = {
@@ -123,7 +123,7 @@ class RobotDisplay:
                              data_class=eval(sensor_type),
                              callback=eval(f'self.{sensor_callback}'),
                              callback_args=(sensor_topic, sensor_stats))
-        rospy.Subscriber(rospy.get_param('/fsm/reset_topic', '/reset'), Empty, self._reset)
+        rospy.Subscriber('/fsm/reset', Empty, self._reset)
 
         # Applied action
         self._action = None
@@ -190,7 +190,7 @@ class RobotDisplay:
             self._fsm_state = FsmState[msg.data]
         elif field_name == 'action':
             self._action = Action(actor_name='applied_action',
-                                  value=adapt_twist_to_action(msg).value)
+                                  value=process_twist(msg).value)
         elif field_name == 'reward':
             self._reward = msg.reward
             self._terminal_state = TerminationType[msg.termination]

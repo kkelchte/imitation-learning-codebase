@@ -52,6 +52,10 @@ def camelcase_to_snake_format(input: str) -> str:
     return output
 
 
+def ros_message_to_type_str(msg) -> str:
+    return type(msg).__name__
+
+
 def get_filename_without_extension(filename: str) -> str:
     return str(os.path.basename(filename).split('.')[0])
 

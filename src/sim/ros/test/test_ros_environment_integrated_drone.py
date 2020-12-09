@@ -7,7 +7,7 @@ import numpy as np
 import rospy
 
 from src.core.utils import get_filename_without_extension, get_to_root_dir
-from src.core.data_types import TerminationType
+from src.core.data_types import TerminationType, SensorType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
@@ -19,18 +19,17 @@ config_dict = {
     "ros_config": {
         "info": [
             "current_waypoint",
-            "sensor/odometry"
+            "position",
+            "/cmd_vel"  # get actual applied velocity
         ],
-        "observation": "forward_camera",
+        "observation": "camera",
         "max_update_wait_period_s": 10,
-        "store_action": True,
-        "store_reward": True,
-        "visible_xterm": False,
+        "visible_xterm": True,
         "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "drone_sim",
-          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
+          "fsm_mode": "SingleRun",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "robot_display": False,
           "control_mapping": True,
@@ -77,15 +76,16 @@ class TestRosIntegrated(unittest.TestCase):
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
                 if experience.done == TerminationType.NotDone:
-                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/step'))
+                    self.assertEqual(experience.reward,
+                                     rospy.get_param('/world/reward/step/weights/constant'))
                 else:
-                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/goal'))
-            self.assertGreater(np.sum(experience.info['odometry'][:3]), 1)
+                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/goal_reached/weights/constant'))
+            self.assertGreater(np.sum(experience.info['position'][:3]), 1)
             self.assertEqual(experience.done, TerminationType.Success)
 
     def tearDown(self) -> None:
         self._environment.remove()
-        shutil.rmtree(self.output_dir, ignore_errors=True)
+        # shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':
