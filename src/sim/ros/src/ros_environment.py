@@ -42,9 +42,11 @@ class RosEnvironment(Environment):
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:
                 roslaunch_arguments[actor_config.name] = True
-                config_file = actor_config.file if actor_config.file.startswith('/') \
-                    else os.path.join(os.environ['CODEDIR'], actor_config.file)
-                roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
+                if actor_config.file is not None:
+                    config_file = actor_config.file if actor_config.file.startswith('/') \
+                        else os.path.join(os.environ['CODEDIR'], actor_config.file)
+                    roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
+        # check if world config file exists
         assert os.path.isfile(os.path.join(os.environ["PWD"], 'src/sim/ros/config/world/',
                                            roslaunch_arguments['world_name']) + '.yml')
         self._ros = RosWrapper(

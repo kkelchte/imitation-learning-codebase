@@ -28,15 +28,19 @@ Game specified action clipping done when agent reaches boundaries of game should
 """
 EPSILON = 1e-6
 
+#  - clip actions when getting out of play field
+
 
 class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
+        self._playfield_size = 10
         self.input_size = (9,)
         self.output_size = (8,)
         self.action_min = -1
         self.action_max = 1
+        self.starting_height = -1
 
         self._actor = mlp_creator(sizes=[self.input_size[0], 10, 1],  # for now actors can only fly sideways
                                   activation=nn.Tanh(),
@@ -66,34 +70,50 @@ class Net(BaseNet):
             cprint(f'Started.', self._logger)
             self.initialize_architecture()
 
-    def get_action(self, inputs, train: bool = False) -> Action:
-        inputs = self.process_inputs(inputs)
-        output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
-        adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
-                                                                                      max=self.action_max)
+    def adjust_height(self, inputs, actions: np.ndarray) -> np.ndarray:
+        if self.starting_height == -1:  # Take average between tracking and fleeing height to be kept constant
+            self.starting_height = (inputs[2] + inputs[5])/2
+        else:
+            for agent in ['tracking', 'fleeing']:
+                height = inputs[2] if agent == 'tracking' else inputs[5]
+                if height < (self.starting_height - 0.1):
+                    actions[2 if agent == 'tracking' else 5] = +0.5
+                elif height > (self.starting_height + 0.1):
+                    actions[2 if agent == 'tracking' else 5] = +0.5
+                else:
+                    actions[2 if agent == 'tracking' else 5] = +0.5
+        return actions
 
-        actions = np.stack([*output.data.cpu().numpy().squeeze(),
-                            *adversarial_output.data.cpu().numpy().squeeze()], axis=-1)
-        return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
-                      value=actions)
+    def clip_action_according_to_playfield_size(self, inputs, actions) -> np.ndarray:
+        for agent in ['tracking', 'fleeing']:
+            state_y = inputs[1] if agent == 'tracking' else inputs[4]
+            if abs(state_y) > self._playfield_size:  # assuming starting at y=0
+                if state_y > 0:  # clip positive action to zero
+                    actions[1 if agent == 'tracking' else 4] = min(0, actions[1 if agent == 'tracking' else 4])
+                else:  # clip negative action to zero
+                    actions[1 if agent == 'tracking' else 4] = max(0, actions[1 if agent == 'tracking' else 4])
+        return actions
 
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
         inputs = self.process_inputs(inputs)
-        if agent_id == 0:
+        if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
-            actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0])
-        elif agent_id == 1:
+            actions = np.stack([0, *output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0])
+        elif agent_id == 1:  # fleeing agent ==> fleeing_linear_y
             output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                               max=self.action_max)
-            actions = np.stack([*get_slow_hunt(inputs.squeeze()),
-                                *output.data.cpu().numpy().squeeze()], axis=-1)
+            actions = np.stack([0, 0, 0, 0, *output.data.cpu().numpy().squeeze(), 0, 0, 0])
         else:
             output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
             adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                                           max=self.action_max)
-            actions = np.stack([*output.data.cpu().numpy().squeeze(),
-                                *adversarial_output.data.cpu().numpy().squeeze()], axis=-1)
-        return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
+
+            actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
+                                0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
+                                0, 0], axis=-1)
+        # actions = self.adjust_height(inputs, actions)  Not necessary
+        # actions = self.clip_action_according_to_playfield_size(inputs, actions)
+        return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
                       value=actions)
 
     def _policy_distribution(self, inputs: torch.Tensor,

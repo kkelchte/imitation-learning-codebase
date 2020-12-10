@@ -41,7 +41,7 @@ config_dict = {
             "y_pos": 0.0,
             "z_pos": 0.1,
             "yaw_or": 1.57,
-"gazebo": True,
+            "gazebo": True,
         },
         "actor_configs": [{
               "name": "ros_expert",

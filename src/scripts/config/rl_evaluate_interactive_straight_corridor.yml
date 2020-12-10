@@ -16,7 +16,6 @@ environment_config:
     info:
       -sensor/odometry
     observation: depth_scan
-
     store_reward: true
     visible_xterm: false
     step_rate_fps: 100

@@ -1,15 +1,15 @@
 output_path: adversarial_agents_ros
-number_of_epochs: 1
+number_of_epochs: 3
 episode_runner_config:
   number_of_episodes: 5
   train_every_n_steps: -1
 architecture_config:
-  architecture: adversarial_agents_side_ways
+  architecture: adversarial_actor_critic_side_ways_ros
   device: cpu
   initialisation_type: orthogonal
 environment_config:
   factory_key: ROS
-  max_number_of_steps: 10
+  max_number_of_steps: 30
   ros_config:
     info:
       - /tracking/cmd_vel
@@ -22,17 +22,19 @@ environment_config:
     ros_launch_config:
       random_seed: 123
       robot_name: double_drone_sim
-      fsm_mode: SingleRun
+      fsm_mode: TakeOverRun
       fsm: true
       control_mapping: true
+      distance_tracking_fleeing_m: 3
+      modified_state_publisher: true
+      modified_state_publisher_mode: CombinedGlobalPoses
       waypoint_indicator: false
-      control_mapping_config: tracking_fleeing
+      control_mapping_config: python_adversarial
       world_name: tracking_y_axis
-      x_pos: 0.0
-      y_pos: 0.0
-      z_pos: 0.0
-      yaw_or: 1.57
       gazebo: True
+      starting_height: 0.5
+    actor_configs:
+      - name: altitude_control
 data_saver_config:
   clear_buffer_before_episode: true
   store_on_ram_only: true

@@ -365,6 +365,8 @@ def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
 
 
 def get_iou(info: dict) -> float:
+    if info['combined_global_poses'] is None:
+        return None
     state = [info['combined_global_poses'].tracking_x,
              info['combined_global_poses'].tracking_y,
              info['combined_global_poses'].tracking_z,

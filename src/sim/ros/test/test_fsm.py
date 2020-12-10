@@ -104,7 +104,9 @@ class TestFsm(unittest.TestCase):
         rospy.sleep(0.1)
         self.ros_topic.publishers[self.reset_topic].publish(Empty())
         start_time = rospy.get_time()
-        while self.ros_topic.topic_values[self.state_topic] == 'Unknown':
+        max_duration = 20
+        while self.ros_topic.topic_values[self.state_topic] == 'Unknown' \
+                and rospy.get_time() - start_time < max_duration:
             rospy.sleep(0.01)
         delay_duration = rospy.get_time() - start_time
         self.assertLess(abs(self.delay_evaluation - delay_duration), 0.1)
@@ -132,9 +134,10 @@ class TestFsm(unittest.TestCase):
         offset = 3
         self.ros_topic.publishers[self.modified_state_topic].publish(
             get_fake_modified_state([1, 0, 1, 1, offset, 1, 0, 0, 0]))
+        time.sleep(0.5)  # make sure modified state is received before collision
         self.ros_topic.publishers[self.depth_scan_topic].publish(get_fake_laser_scan([.2] * 360))
-        while self.ros_topic.topic_values[self.reward_topic].termination == 'NotDone':
-            rospy.sleep(0.1)
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/reward"].termination',
+                            TerminationType.Failure.name, 4, 0.1, ros_topic=self.ros_topic)
         self.assertAlmostEqual(rospy.get_param('/world/reward/on_collision/weights/distance_between_agents') * offset,
                                self.ros_topic.topic_values[self.reward_topic].reward, places=5)
         self.assertEqual(rospy.get_param('/world/reward/on_collision/termination'),
@@ -144,16 +147,16 @@ class TestFsm(unittest.TestCase):
         # reset
         self.ros_topic.publishers[self.reset_topic].publish(Empty())
         time.sleep(0.1)
-        while self.ros_topic.topic_values[self.state_topic] != 'Running':
-            time.sleep(0.1)
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+                            FsmState.Running.name, 3, 0.1, ros_topic=self.ros_topic)
         self.ros_topic.publishers[self.pose_topic].publish(Odometry())
         rospy.sleep(0.1)
         goal_pos = [2, 2, 1]
         self.ros_topic.publishers[self.pose_topic].publish(
             get_fake_odometry(*goal_pos)
         )
-        while self.ros_topic.topic_values[self.state_topic] != 'Terminated':
-            rospy.sleep(0.1)
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+                            FsmState.Terminated.name, 3, 0.1, ros_topic=self.ros_topic)
         distance = np.sqrt(sum(np.asarray(goal_pos)**2))
         self.assertEqual(rospy.get_param('/world/reward/goal_reached/weights/distance_from_start') * distance,
                          self.ros_topic.topic_values[self.reward_topic].reward)
@@ -163,14 +166,14 @@ class TestFsm(unittest.TestCase):
     def _test_out_of_time(self):
         # reset
         self.ros_topic.publishers[self.reset_topic].publish(Empty())
-        while self.ros_topic.topic_values[self.state_topic] != 'Running':
-            rospy.sleep(0.1)
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+                            FsmState.Running.name, 4, 0.1, ros_topic=self.ros_topic)
         offset = 3
         while self.ros_topic.topic_values[self.reward_topic].termination == 'NotDone':
             rospy.sleep(1)
             self.ros_topic.publishers[self.modified_state_topic].publish(
                 get_fake_modified_state([1, 0, 1, 1, offset, 1, 0, 0, 0]))
-
+            rospy.sleep(1)
         iou = 5  # TODO define correct IOU when this is implemented
         self.assertEqual(rospy.get_param('/world/reward/out_of_time/weights/iou') * iou,
                          self.ros_topic.topic_values[self.reward_topic].reward)

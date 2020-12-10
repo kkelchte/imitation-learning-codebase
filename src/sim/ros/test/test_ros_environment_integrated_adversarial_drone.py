@@ -29,7 +29,7 @@ config_dict = {
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "double_drone_sim",
-          "fsm_mode": "SingleRun",  # file with fsm params loaded from config/fsm
+          "fsm_mode": "TakeOverRun",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "robot_display": False,
           "control_mapping": True,
@@ -41,7 +41,9 @@ config_dict = {
           "distance_tracking_fleeing_m": 10,
           "gazebo": True,
         },
-        "actor_configs": [],
+        "actor_configs": [{
+              "name": "altitude_control"
+        }],
     }
 }
 
