@@ -29,7 +29,7 @@ class TestModifiedStatePublisher(unittest.TestCase):
             'control_mapping': False,
             'output_path': self.output_dir,
             'modified_state_publisher': True,
-            'modified_state_publisher_config': 'default',
+            'modified_state_publisher_mode': 'CombinedGlobalPoses',
         }
 
         # spinoff roslaunch

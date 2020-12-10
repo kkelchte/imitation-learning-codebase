@@ -24,23 +24,24 @@ config_dict = {
         ],
         "observation": "camera",
         "max_update_wait_period_s": 10,
-        "visible_xterm": True,
+        "visible_xterm": False,
         "step_rate_fps": 100,
         "ros_launch_config": {
-          "random_seed": 123,
-          "robot_name": "drone_sim",
-          "fsm_mode": "SingleRun",  # file with fsm params loaded from config/fsm
-          "fsm": True,
-          "robot_display": False,
-          "control_mapping": True,
-          "waypoint_indicator": True,
-          "control_mapping_config": "test_drone_integrated",
-          "world_name": "test_drone_integrated",
-          "x_pos": 0.0,
-          "y_pos": 0.0,
-          "z_pos": 0.1,
-          "yaw_or": 1.57,
-          "gazebo": True,
+            "random_seed": 123,
+            "robot_name": "drone_sim",
+            "fsm_mode": "TakeOverRun",  # file with fsm params loaded from config/fsm
+            "fsm": True,
+            "altitude_control": True,
+            "robot_display": False,
+            "control_mapping": True,
+            "waypoint_indicator": True,
+            "control_mapping_config": "ros_expert",
+            "world_name": "debug_drone",
+            "x_pos": 0.0,
+            "y_pos": 0.0,
+            "z_pos": 0.1,
+            "yaw_or": 1.57,
+"gazebo": True,
         },
         "actor_configs": [{
               "name": "ros_expert",
@@ -85,7 +86,7 @@ class TestRosIntegrated(unittest.TestCase):
 
     def tearDown(self) -> None:
         self._environment.remove()
-        # shutil.rmtree(self.output_dir, ignore_errors=True)
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

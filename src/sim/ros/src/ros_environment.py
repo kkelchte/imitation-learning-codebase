@@ -39,16 +39,12 @@ class RosEnvironment(Environment):
         self._pause_period = 1./config.ros_config.step_rate_fps
         roslaunch_arguments = config.ros_config.ros_launch_config.__dict__
         # Add automatically added values according to robot_name, world_name, actor_configs
-        # if config.ros_config.ros_launch_config.robot_name is not None:
-        #     roslaunch_arguments[config.ros_config.ros_launch_config.robot_name] = True
-
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:
                 roslaunch_arguments[actor_config.name] = True
                 config_file = actor_config.file if actor_config.file.startswith('/') \
                     else os.path.join(os.environ['CODEDIR'], actor_config.file)
                 roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
-
         assert os.path.isfile(os.path.join(os.environ["PWD"], 'src/sim/ros/config/world/',
                                            roslaunch_arguments['world_name']) + '.yml')
         self._ros = RosWrapper(
@@ -67,7 +63,6 @@ class RosEnvironment(Environment):
         if self._config.ros_config.ros_launch_config.gazebo:
             self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
             self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
-            self._reset_simulation = rospy.ServiceProxy('/gazebo/reset_simulation', Emptyservice)
             self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
         # Subscribers
@@ -204,33 +199,28 @@ class RosEnvironment(Environment):
         #os.system("rosservice call gazebo/unpause_physics")
 
     def _reset_gazebo(self):
-        model_state = ModelState()
-        model_state.model_name = 'turtlebot3_burger' \
-            if self._config.ros_config.ros_launch_config.robot_name.startswith('turtle') else 'quadrotor'
-        model_state.pose = Pose()
-        model_state.pose.position.x = self._config.ros_config.ros_launch_config.x_pos
-        model_state.pose.position.y = self._config.ros_config.ros_launch_config.y_pos
-        model_state.pose.position.z = self._config.ros_config.ros_launch_config.z_pos
-        model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
-            model_state.pose.orientation.w = quaternion_from_euler(
-                (0, 0, self._config.ros_config.ros_launch_config.yaw_or))
-        model_state.twist.linear.x = 0
-        model_state.twist.linear.y = 0
-        model_state.twist.linear.z = 0
-        model_state.twist.angular.x = 0
-        model_state.twist.angular.y = 0
-        model_state.twist.angular.z = 0
-        self._set_model_state.wait_for_service()
-        self._set_model_state(model_state)
-        #os.system(f"rosservice call /gazebo/set_model_state '{{model_state: "
-        #          f"{{ model_name: {model_state.model_name},"
-        #          f"pose: {{ position: {{ x: {model_state.pose.position.x},"
-        #          f"                      y: {model_state.pose.position.y},"
-        #          f"                      z: {model_state.pose.position.z}, }},"
-        #          f"         orientation: {{ x: { model_state.pose.orientation.x},"
-        #          f"                         y: { model_state.pose.orientation.y},"
-        #          f"                         z: { model_state.pose.orientation.z},"
-        #          f"                         w: { model_state.pose.orientation.w},}} }} }} }}'")
+        def set_model_state(name: str):
+            model_state = ModelState()
+            model_state.pose = Pose()
+            model_state.model_name = name
+            model_state.pose.position.x = self._config.ros_config.ros_launch_config.x_pos
+            if 'fleeing' in name:
+                model_state.pose.position.x += self._config.ros_config.ros_launch_config.distance_tracking_fleeing_m
+            model_state.pose.position.y = self._config.ros_config.ros_launch_config.y_pos
+            model_state.pose.position.z = self._config.ros_config.ros_launch_config.z_pos
+            yaw = self._config.ros_config.ros_launch_config.yaw_or if 'fleeing' not in name else \
+                self._config.ros_config.ros_launch_config.yaw_or + 3.14
+            model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
+                model_state.pose.orientation.w = quaternion_from_euler((0, 0, yaw))
+            self._set_model_state.wait_for_service()
+            self._set_model_state(model_state)
+
+        model_name = rospy.get_param('/robot/model_name')
+        if isinstance(model_name, list):
+            for model in model_name:
+                set_model_state(model)
+        else:
+            set_model_state(model_name)
 
     def _clear_experience_values(self):
         """Set all experience fields to None"""

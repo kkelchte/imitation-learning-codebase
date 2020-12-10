@@ -44,7 +44,7 @@ class RosExpert(Actor):
         cprint(f'ros specifications: {self._specs}', self._logger)
         with open(os.path.join(self._output_path, 'ros_expert_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)
-        self._reference_height  = rospy.get_param('/world//flying_height', 1)
+        self._reference_height = rospy.get_param('/world/starting_height', 1)
         self._adjust_height = 0
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
@@ -200,13 +200,13 @@ class RosExpert(Actor):
         rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
             self._publisher.publish(self._update_twist())
-            # self.count += 1
-            # if self.count % 10 * self._rate_fps == 0:
-            #     msg = f'waypoint yaw adjustment: {self._adjust_yaw_waypoint_following} \n'
-            #     msg += f' collision yaw adjustment: {self._adjust_yaw_collision_avoidance} \n'
-            #     msg += f' next waypoint: {self._next_waypoint} \n'
-            #     msg += f' cmd: {self._update_twist()}'
-            #     cprint(msg, self._logger, msg_type=MessageType.info)
+            self.count += 1
+            if self.count % 10 * self._rate_fps == 0:
+                msg = f'waypoint yaw adjustment: {self._adjust_yaw_waypoint_following} \n'
+                msg += f' collision yaw adjustment: {self._adjust_yaw_collision_avoidance} \n'
+                msg += f' next waypoint: {self._next_waypoint} \n'
+                msg += f' cmd: {self._update_twist()}'
+                cprint(msg, self._logger, msg_type=MessageType.info)
             rate.sleep()
 
 

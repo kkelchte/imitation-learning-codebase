@@ -1,0 +1,26 @@
+
+rate_fps: 60
+noise:
+  name: OUNoise
+  args:
+    dimension:
+      - 6
+      - 1
+      seed: 1234
+      mean: 0
+      std: 0.2
+      pullback: 0.6
+mapping:
+  Unknown: {}
+  Terminated: {}
+  Running:
+    command: /actor/ros_expert/cmd_vel
+  TakenOver:
+    command: /actor/altitude_control/cmd_vel
+  DriveBack: {}
+
+
+#max_time
+#current_time
+#control_time
+#aggressiveness

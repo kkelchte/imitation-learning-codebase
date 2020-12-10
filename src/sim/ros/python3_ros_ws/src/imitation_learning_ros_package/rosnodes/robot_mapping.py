@@ -29,6 +29,7 @@ from typing import Tuple
 
 import numpy as np
 from PIL import Image
+from geometry_msgs.msg import Pose, PoseStamped
 
 from numpy.linalg import inv
 import matplotlib
@@ -71,13 +72,12 @@ class RobotMapper:
         # fields
         self._fsm_state = FsmState.Unknown
         self._world_name = rospy.get_param('/world/world_name')
-        self._robot_type = rospy.get_param('/robot/robot_type', 'turtlebot_sim')
+        self._model_name = rospy.get_param('/robot/model_name', 'default')
+
         self._gui_camera_height = rospy.get_param('/world/gui_camera_height',
-                                                  20 if 'turtle' in self._robot_type else 50)
-        self._background_file = rospy.get_param('/world/background_file', None)
-        if self._background_file is None:
-            cprint('Could not find background file so exit.', self._logger)
-            sys.exit(0)
+                                                  20 if 'Turtle' in self._model_name else 50)
+        self._background_file = rospy.get_param('/world/background_file',
+                                                f'src/sim/ros/gazebo/background_images/default_2_2_10.jpg')
         if not self._background_file.startswith('/'):
             self._background_file = os.path.join(os.environ['CODEDIR'], self._background_file)
         self._background_image = Image.open(self._background_file)
@@ -133,15 +133,23 @@ class RobotMapper:
     def _odometry_callback(self, msg: Odometry):
         if self._fsm_state != FsmState.Running:
             return
+        self._process_position(msg.pose.pose)
+
+    def _pose_stamped_callback(self, msg: PoseStamped):
+        if self._fsm_state != FsmState.Running:
+            return
+        self._process_position(msg.pose)
+
+    def _process_position(self, pose: Pose):
         if float(f"{rospy.get_time()}".split('.')[-1][0]) % 5 == 0:  # print every 500ms
-            cprint(f'received pose {msg.pose.pose}', self._logger, msg_type=MessageType.debug)
-        robot_global_translation = np.asarray([msg.pose.pose.position.x,
-                                               msg.pose.pose.position.y,
-                                               msg.pose.pose.position.z])
-        robot_global_orientation = rotation_from_quaternion((msg.pose.pose.orientation.x,
-                                                             msg.pose.pose.orientation.y,
-                                                             msg.pose.pose.orientation.z,
-                                                             msg.pose.pose.orientation.w))
+            cprint(f'received pose {pose}', self._logger, msg_type=MessageType.debug)
+        robot_global_translation = np.asarray([pose.position.x,
+                                               pose.position.y,
+                                               pose.position.z])
+        robot_global_orientation = rotation_from_quaternion((pose.orientation.x,
+                                                             pose.orientation.y,
+                                                             pose.orientation.z,
+                                                             pose.orientation.w))
         points_global_frame = transform(points=self._local_frame,
                                         orientation=robot_global_orientation,
                                         translation=robot_global_translation)

@@ -11,34 +11,29 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-WORLDNAME = 'line_worlds/model_009'
+WORLD_NAME = 'cube_world'
+
 config_dict = {
     "output_path": "/tmp",
     "factory_key": "ROS",
     "max_number_of_steps": -1,
     "ros_config": {
         "info": [
-            "sensor/odometry"
+            "position"
         ],
-        "observation": "forward_camera",
-        "max_update_wait_period_s": 120,
-        "store_action": True,
-        "store_reward": False,
+        "observation": "camera",
+        "max_update_wait_period_s": 10,
         "visible_xterm": True,
-        "step_rate_fps": 30,
+        "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "drone_sim",
-          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
+          "fsm_mode": "SingleRun",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
-          "control_mapping_config": "noisy_line_worlds",  # default
-          "world_name": WORLDNAME,
-          "x_pos": 0.0,
-          "y_pos": 0.0,
-          "z_pos": 0.5,
-          "yaw_or": 1.57,
+          "control_mapping_config": "noisy_ros_expert",  # default
+          "world_name": WORLD_NAME,
           "gazebo": True,
         },
         "actor_configs": [{
@@ -75,7 +70,7 @@ class ValidateExpert(unittest.TestCase):
 
     def tearDown(self) -> None:
         self._environment.remove()
-        #shutil.rmtree(self.output_dir, ignore_errors=True)
+        shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

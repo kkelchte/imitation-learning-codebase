@@ -1,4 +1,6 @@
-robot_type: double_quadrotor_sim
+model_name: # used by rosenvironment to reset drone state
+  - tracking_quadrotor
+  - fleeing_quadrotor
 takeoff_action:
   - /tracking/action/takeoff
   - /fleeing/action/takeoff

@@ -15,7 +15,7 @@ from sensor_msgs.msg import LaserScan  # Do not remove!
 
 from imitation_learning_ros_package.msg import RosReward
 
-from src.core.utils import get_filename_without_extension, get_data_dir
+from src.core.utils import get_filename_without_extension, get_data_dir, safe_wait_till_true
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.core.data_types import TerminationType, SensorType
 from src.sim.ros.src.process_wrappers import RosWrapper
@@ -92,11 +92,11 @@ class TestFsm(unittest.TestCase):
     def _test_start_up(self):
         # FSM should start in unknown state, waiting for reset
         # @ startup (before reset)
-        while self.state_topic not in self.ros_topic.topic_values.keys():
-            rospy.sleep(0.1)
+        safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 3, 0.1, ros_topic=self.ros_topic)
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.state_topic])
-        while self.reward_topic not in self.ros_topic.topic_values.keys():
-            rospy.sleep(0.1)
+        safe_wait_till_true('"/fsm/reward" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 3, 0.1, ros_topic=self.ros_topic)
         self.assertEqual(0, self.ros_topic.topic_values[self.reward_topic].reward)
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.reward_topic].termination)
 

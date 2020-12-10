@@ -1,6 +1,6 @@
 # specify at which depth a collision takes is detected, note that sensor does not measure bellow 0.1m
 collision_depth: 0.2
-robot_type: turtlebot_sim
+model_name: turtlebot3_burger
 command_topic: /cmd_vel
 camera_sensor:
   topic: /wa/camera/image_raw

@@ -8,7 +8,7 @@ import actionlib
 import numpy as np
 import rospy
 
-from geometry_msgs.msg import WrenchStamped
+from geometry_msgs.msg import WrenchStamped, PoseStamped, Pose, Point
 from hector_uav_msgs.msg import TakeoffAction, TakeoffActionGoal
 from std_msgs.msg import Empty, Float32
 from sensor_msgs.msg import LaserScan
@@ -122,7 +122,7 @@ class Fsm:
         # Params to define success and failure
         self._max_duration = rospy.get_param('/world/max_duration', -1)
         self._collision_depth = rospy.get_param('/robot/min_collision_depth', 0.3)
-        self._goal = rospy.get_param('world/goal', {})
+        self._goal = rospy.get_param('/world/goal', None)
         self._reward_calculator.reset()
 
     def run(self):
@@ -152,24 +152,6 @@ class Fsm:
     def _start(self):
         """Define correct initial state depending on mode"""
         if self.mode == FsmMode.SingleRun:
-            self._robot = rospy.get_param('/robot/robot_type', '')
-            if 'quadrotor_sim' in self._robot:
-                action_name = rospy.get_param('/robot/takeoff_action', '/action/takeoff')
-
-                def call_takeoff_action(n):
-                    client = actionlib.SimpleActionClient(n, TakeoffAction)
-                    cprint(f'waiting for takeoff', self._logger)
-                    client.wait_for_server()
-                    client.send_goal(goal=TakeoffActionGoal())
-
-                if isinstance(action_name, list):
-                    for name in action_name:
-                        call_takeoff_action(name)
-                else:
-                    call_takeoff_action(action_name)
-                # rospy.wait_for_service('/enable_motors')
-                # enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
-                # enable_motors_service.call(True)
             self._running()
         if self.mode == FsmMode.TakeOverRun or self.mode == FsmMode.TakeOverRunDriveBack:
             self._takeover()
@@ -224,6 +206,28 @@ class Fsm:
             self._occasion = 'on_collision'
             self._shutdown_run()
 
+    def _check_position(self, position: Point) -> None:
+        """
+        position is point with three dimension: x, y, z
+        """
+        if self._delay_evaluation():
+            return
+        current_pos = np.asarray([position.x,
+                                  position.y,
+                                  position.z])
+        if self._robot_info['current_position'] is not None:
+            self._robot_info['previous_position'] = deepcopy(self._robot_info['current_position'])
+        self._robot_info['current_position'] = deepcopy(current_pos)
+        if self._robot_info['start_position'] is None:
+            self._robot_info['start_position'] = deepcopy(current_pos)
+        if self._goal is not None and \
+                self._goal['x']['max'] > current_pos[0] > self._goal['x']['min'] and \
+                self._goal['y']['max'] > current_pos[1] > self._goal['y']['min'] and \
+                self._goal['z']['max'] > current_pos[2] > self._goal['z']['min']:
+            cprint(f'Reached goal on location {current_pos}', self._logger)
+            self._occasion = 'goal_reached'
+            self._shutdown_run()
+
     def _check_image(self, msg: Image) -> None:
         sensor_stats = {
             'depth': 1,
@@ -251,24 +255,11 @@ class Fsm:
             self._occasion = 'on_collision'
             self._shutdown_run()
 
+    def _check_pose_stamped(self, msg: PoseStamped) -> None:
+        self._check_position(msg.pose.position)
+
     def _check_odometry(self, msg: Odometry) -> None:
-        if self._delay_evaluation():
-            return
-        current_pos = np.asarray([msg.pose.pose.position.x,
-                                  msg.pose.pose.position.y,
-                                  msg.pose.pose.position.z])
-        if self._robot_info['current_position'] is not None:
-            self._robot_info['previous_position'] = deepcopy(self._robot_info['current_position'])
-        self._robot_info['current_position'] = deepcopy(current_pos)
-        if self._robot_info['start_position'] is None:
-            self._robot_info['start_position'] = deepcopy(current_pos)
-        if self._goal is not None and \
-                self._goal['x']['max'] > current_pos[0] > self._goal['x']['min'] and \
-                self._goal['y']['max'] > current_pos[1] > self._goal['y']['min'] and \
-                self._goal['z']['max'] > current_pos[2] > self._goal['z']['min']:
-            cprint(f'Reached goal on location {current_pos}', self._logger)
-            self._occasion = 'goal_reached'
-            self._shutdown_run()
+        self._check_position(msg.pose.pose.position)
 
     def _check_combined_global_poses(self, msg: CombinedGlobalPoses) -> None:
         if self._delay_evaluation():
@@ -300,7 +291,7 @@ class RewardCalculator:
     Values are combined in weighted sum with weights specified by world.
     """
     def __init__(self):
-        self._logger = get_logger(get_filename_without_extension(__file__), get_output_path())
+        self._logger = get_logger('reward', get_output_path())
         self._mapping = rospy.get_param('/world/reward', self.default_reward)
         if 'unk' not in self._mapping.keys():  # add default unknown reward
             self._mapping['unk'] = {'weights': {'constant': 0},

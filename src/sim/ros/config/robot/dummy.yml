@@ -1,5 +1,0 @@
-# Used by test_empty_config in test_ros_environment
-command_topic: '/cmd_vel'
-sensors:
-odometry_topic: '/odom'
-odometry_type: 'Odometry'

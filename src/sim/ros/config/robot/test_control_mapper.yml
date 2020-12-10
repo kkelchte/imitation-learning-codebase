@@ -1,4 +1,4 @@
-robot_type: debug
+model_name: debug
 command_a_topic: /cmd_vel_a
 command_b_topic: /cmd_vel_b
 command_c_topic: /cmd_vel_c

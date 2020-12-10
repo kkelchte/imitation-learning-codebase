@@ -1,0 +1,6 @@
+rate_fps: 60
+mapping:
+  Running:
+    command: /actor/ros_expert/cmd_vel
+  TakenOver:
+    command: /actor/altitude_control/cmd_vel

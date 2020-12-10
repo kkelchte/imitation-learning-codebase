@@ -1,7 +1,6 @@
 world_name: debug
 max_duration: 60
-delay_evaluation: 3.0
-flying_height: 1
+delay_evaluation: 1.0
 goal:
   x:
     min: 1.7

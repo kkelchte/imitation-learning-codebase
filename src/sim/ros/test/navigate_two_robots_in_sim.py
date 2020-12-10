@@ -27,12 +27,8 @@ class TestRobots(unittest.TestCase):
                     'gazebo': 'sim' in robot_name,
                     'random_seed': 123,
                     'robot_name': robot_name,
-                    'world_name': 'debug_turtle' if 'sim' in robot_name else 'empty',
+                    'world_name': 'empty',
                     'robot_display': True,
-                    'x_pos': 0.0,
-                    'y_pos': 0.0,
-                    'yaw_or': 0.0,
-                    'z_pos': 0.0,
                 },
                 'actor_configs': [
                     {

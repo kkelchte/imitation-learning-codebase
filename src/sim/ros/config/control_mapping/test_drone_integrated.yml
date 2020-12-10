@@ -1,6 +1,0 @@
-rate_fps: 60
-mapping:
-  Unknown:
-    command: '/actor/ros_expert/cmd_vel'
-  Running:
-    command: '/actor/ros_expert/cmd_vel'

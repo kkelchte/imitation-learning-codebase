@@ -20,13 +20,13 @@ config_dict = {
         "info": [
             "current_waypoint",
             "position",
-            "/cmd_vel"
+            "/cmd_vel"  #  if waiting for cmd_vel first experience after reset is much further in location
         ],
         "observation": "camera",
         "action_topic": '/actor/ros_expert/cmd_vel',
         "max_update_wait_period_s": 10,
-        "visible_xterm": True,
-        "step_rate_fps": 15,
+        "visible_xterm": False,
+        "step_rate_fps": 60,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",
@@ -34,11 +34,8 @@ config_dict = {
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
-          "control_mapping_config": "debug",
+          "control_mapping_config": "ros_expert",
           "world_name": "debug_turtle",
-          "x_pos": 0.0,
-          "y_pos": 0.0,
-          "z_pos": 0.0,
           "yaw_or": 1.57,
           "gazebo": True,
         },
@@ -74,7 +71,8 @@ class TestRosIntegrated(unittest.TestCase):
                 count += 1
                 if count == 1:
                     self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
-                    self.assertLess(np.sum(experience.info['position'][:3]), 0.5)
+                    print(f'offset starting position: {np.sum(experience.info["position"][:3])}')
+                    self.assertLess(np.sum(experience.info['position'][:3]), 0.7)
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
                 if experience.done == TerminationType.NotDone:

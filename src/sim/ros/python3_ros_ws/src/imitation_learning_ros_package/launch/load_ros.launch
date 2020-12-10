@@ -5,7 +5,7 @@
     <param name="random_seed" value="$(arg random_seed)"/>
     <arg name="output_path" default="/tmp"/>
     <param name="output_path" value="$(arg output_path)"/>
-    <arg name="world_name" default="debug_drone"/>
+    <arg name="world_name" default="default"/>
     <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
 
     <!--######################## GAZEBO ########################-->
@@ -25,10 +25,11 @@
     <arg name="x_pos" default="0"/>
     <arg name="y_pos" default="0"/>
     <arg name="z_pos" default="0."/>
-    <arg name="yaw_or" default="1.57"/>
-<!--    Distance between two drones used for double_drone_sim-->
-    <arg name="distance" default="3"/>
-
+    <arg name="yaw_or" default="0"/>
+    <!--    Distance between two drones used for double_drone_sim-->
+    <arg name="distance_tracking_fleeing_m" default="3"/>
+    <arg name="starting_height" default="1"/>
+    <param name="starting_height" value="$(arg starting_height)" />
 
     <group if="$(eval arg('robot_name') == 'turtlebot_sim')">
           <param name="robot_description"
@@ -83,7 +84,7 @@
         <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="fleeing">
             <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
             <arg name="name" default="fleeing_quadrotor"/>
-            <arg name="x" value="$(eval arg('x_pos') + arg('distance'))"/>
+            <arg name="x" value="$(eval arg('x_pos') + arg('distance_tracking_fleeing_m'))"/>
             <arg name="y" value="$(arg y_pos)"/>
             <arg name="z" value="$(arg z_pos)"/>
             <arg name="Y" default="$(eval 3.14 + arg('yaw_or'))"/>
@@ -195,6 +196,15 @@
               type="ros_expert.py"
               output="screen"
               ns="/actor/ros_expert"/>
+    </group>
+
+    <arg name="altitude_control" default="false"/>
+    <group if="$(arg altitude_control)">
+        <node pkg="imitation_learning_ros_package"
+              name="altitude_control"
+              type="altitude_control.py"
+              output="screen"
+              ns="/actor/altitude_control"/>
     </group>
 
     <arg name="dnn_actor" default="false"/>

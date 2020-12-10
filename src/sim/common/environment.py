@@ -32,7 +32,9 @@ class GymConfig(Config):
 @dataclass
 class RosLaunchConfig(Config):
     random_seed: int = 123
-    world_name: str = None
+    # defines world params and if gazebo world to spaw
+    world_name: str = 'default'
+    # selects driver node and robot params: turtlebot_sim, turtlebot_real, bebop_real, drone_sim, ...
     robot_name: str = None
     gazebo: bool = False
     robot_display: bool = False
@@ -46,8 +48,11 @@ class RosLaunchConfig(Config):
     waypoint_indicator: bool = False  # configuration is specified in world
     x_pos: float = 0.
     y_pos: float = 0.
-    z_pos: float = 1.
-    yaw_or: float = 1.57
+    z_pos: float = 0.
+    yaw_or: float = 0.
+    starting_height: float = 1.
+    distance_tracking_fleeing_m: float = 3.
+    altitude_control: bool = False
 
     def __post_init__(self):
         assert os.path.isfile(f'src/sim/ros/config/control_mapping/{self.control_mapping_config}.yml')

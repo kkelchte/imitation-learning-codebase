@@ -1,18 +1,1 @@
-
 rate_fps: 60
-mapping:
-  Unknown:
-    command: '/actor/keyboard/cmd_vel'
-  Terminated:
-    command: '/actor/keyboard/cmd_vel'
-  Running:
-    command: '/actor/ros_expert/cmd_vel'
-  TakenOver:
-    command: '/actor/keyboard/cmd_vel'
-  DriveBack: {}
-
-
-#max_time
-#current_time
-#control_time
-#aggressiveness

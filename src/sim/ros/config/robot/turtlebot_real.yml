@@ -1,19 +1,19 @@
-robot_type: 'turtlebot'
-command_topic: '/cmd_vel'
+model_name: turtlebot3_burger_real
+command_topic: /cmd_vel
 depth_sensor:
-  topic: '/scan'
-  type: 'LaserScan'
+  topic: /scan
+  type: LaserScan
   stats:
     field_of_view: 120
     num_smooth_bins: 4
     max_depth: 4
     min_depth: 0.1
 position_sensor:
-  topic: '/odom'
-  type: 'Odometry'
+  topic: /odom
+  type: Odometry
 camera_sensor:
-  topic: '/raspicam_node/image/compressed'
-  type: 'CompressedImage'
+  topic: /raspicam_node/image/compressed
+  type: CompressedImage
   stats:
     height: 200
     width: 200

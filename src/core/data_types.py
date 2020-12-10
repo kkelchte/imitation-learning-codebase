@@ -87,6 +87,9 @@ class Action:
     def __len__(self):
         return len(self.value) if self.value is not None else 0
 
+    def norm(self):
+        return np.sqrt((np.asarray(self.value)**2).sum())
+
 
 @dataclass
 class Experience:

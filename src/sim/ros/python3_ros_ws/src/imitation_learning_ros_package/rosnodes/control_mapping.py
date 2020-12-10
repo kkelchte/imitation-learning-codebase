@@ -27,9 +27,11 @@ import os
 import time
 from copy import deepcopy
 
+import actionlib
 import rospy
 from geometry_msgs.msg import Twist
-from std_msgs.msg import String
+from hector_uav_msgs.msg import TakeoffAction, TakeoffActionGoal
+from std_msgs.msg import String, Empty
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -66,7 +68,6 @@ class ControlMapper:
 
         noise_config = rospy.get_param('/control_mapping/noise', None)
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config is not None else None
-
         self._fsm_state = FsmState.Unknown
         self._messages = {}  # contains all controls comin from actors
         self._rate_fps = rospy.get_param('/control_mapping/rate_fps', 60)

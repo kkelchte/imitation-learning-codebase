@@ -26,7 +26,6 @@ class TestRobotMapper(unittest.TestCase):
 
         config = {
             'output_path': self.output_dir,
-            'world_name': 'test_robot_mapper',
             'robot_name': 'turtlebot_sim',
             'gazebo': False,
             'fsm': False,

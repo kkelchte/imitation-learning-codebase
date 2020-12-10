@@ -1,4 +1,4 @@
-robot_type: quadrotor_sim
+model_name: quadrotor
 takeoff_action: /action/takeoff
 command_topic: /cmd_vel
 camera_sensor:

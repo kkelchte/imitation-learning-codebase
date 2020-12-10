@@ -15,6 +15,9 @@ from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
 
 class TestRos(unittest.TestCase):
+    """
+    Basic test that validates position, depth, camera sensors are updated
+    """
 
     def setUp(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'

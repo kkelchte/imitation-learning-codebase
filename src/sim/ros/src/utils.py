@@ -400,4 +400,4 @@ def get_distance_from_start(info: dict) -> float:
 def get_distance_between_agents(info: dict) -> float:
     msg = info['combined_global_poses']
     return distance([msg.tracking_x, msg.tracking_y, msg.tracking_z],
-                    [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z])
+                    [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z]) if msg is not None else None

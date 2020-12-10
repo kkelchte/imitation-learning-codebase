@@ -1,9 +1,0 @@
-
-rate_fps: 60
-mapping:
-  Unknown: {}
-  Terminated: {}
-  Running:
-    command: '/ros_python_interface/cmd_vel'
-  TakenOver: {}
-  DriveBack: {}

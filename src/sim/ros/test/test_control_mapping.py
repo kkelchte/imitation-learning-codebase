@@ -23,7 +23,6 @@ class TestControlMapper(unittest.TestCase):
         os.makedirs(self.output_dir, exist_ok=True)
         config = {
             'robot_name': 'test_control_mapper',
-            'world_name': 'test_control_mapper',
             'fsm': False,
             'control_mapping': True,
             'control_mapping_config': 'test_control_mapper',

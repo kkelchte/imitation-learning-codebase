@@ -1,6 +1,6 @@
 world_name: debug_turtle
 max_duration: -1
-delay_evaluation: 1.0
+delay_evaluation: 1.
 goal:
   x:
     min: 1.7
