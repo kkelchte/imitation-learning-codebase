@@ -19,7 +19,7 @@ config_dict = {
     "factory_key": "ROS",
     "max_number_of_steps": MAXSTEPS,
     "ros_config": {
-        "info": ['/tracking/cmd_vel', '/fleeing/cmd_vel'],
+        "info": ['/tracking/cmd_vel', '/fleeing/cmd_vel', 'frame'],
         "observation": 'modified_state',
         "action_topic": 'python',
         "num_action_publishers": 2,
@@ -36,6 +36,7 @@ config_dict = {
           "control_mapping_config": "python_adversarial",
           "modified_state_publisher": True,
           "modified_state_publisher_mode": 'CombinedGlobalPoses',
+          "modified_state_frame_visualizer": True,
           "waypoint_indicator": False,
           "world_name": "empty",
           "distance_tracking_fleeing_m": 10,
@@ -78,6 +79,7 @@ class TestRosIntegrated(unittest.TestCase):
                 count += 1
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
+                self.assertTrue('frame' in experience.info.keys())
                 self.assertEqual(experience.info['/tracking/cmd_vel'].value[2], 5)
                 self.assertEqual(experience.info['/fleeing/cmd_vel'].value[1], 3)
             print(f'{count} vs {MAXSTEPS}')

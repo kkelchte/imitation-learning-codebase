@@ -29,3 +29,6 @@ fleeing_position_sensor:
 modified_state_sensor:
   topic: /modified_state
   type: CombinedGlobalPoses
+frame_sensor:
+  topic: /modified_state_frame
+  type: Image

@@ -45,6 +45,7 @@ class RosLaunchConfig(Config):
     control_mapping_config: str = 'default'
     modified_state_publisher: bool = False
     modified_state_publisher_mode: str = 'CombinedGlobalPoses'
+    modified_state_frame_visualizer: bool = False
     waypoint_indicator: bool = False  # configuration is specified in world
     x_pos: float = 0.
     y_pos: float = 0.

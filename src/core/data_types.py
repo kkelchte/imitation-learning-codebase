@@ -19,6 +19,7 @@ class SensorType(IntEnum):
     Fixed set of sensor types which are expected to be on robot and used by ros nodes.
     Corresponding topic and type is found as rosparam get /robot/sensor_{sensor_type}
     """
+    frame = -1
     position = 0
     camera = 1
     collision = 2

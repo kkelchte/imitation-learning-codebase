@@ -86,11 +86,12 @@ def adapt_action_to_twist(action: Action) -> List[Twist]:
 
 
 def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
-    size = [
-        sensor_stats['height'],
-        sensor_stats['width'],
-        sensor_stats['depth'],
-    ]
+    if 'height' in sensor_stats.keys() and 'width' in sensor_stats.keys():
+        size = [sensor_stats['height'], sensor_stats['width'], 3]
+    else:
+        return img
+    if 'depth' in sensor_stats.keys():
+        size[2] = sensor_stats['depth']
     scale = [max(int(img.shape[i] / size[i]), 1) for i in range(2)]
     img = img[::scale[0],
               ::scale[1],
