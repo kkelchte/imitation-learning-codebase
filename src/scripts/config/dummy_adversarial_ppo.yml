@@ -20,7 +20,7 @@ environment_config:
   max_number_of_steps: 300  # let number of steps depend on environment
 episode_runner_config:
   train_every_n_steps: 1000
-number_of_epochs: 5000
+number_of_epochs: 1000
 run_test_episodes: true
 output_path: test_adversarial
 save_checkpoint_every_n: 100

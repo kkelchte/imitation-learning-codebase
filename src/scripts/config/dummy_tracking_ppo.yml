@@ -13,14 +13,14 @@ environment_config:
   invert_reward: false
   factory_key: GYM
   gym_config:
-    random_seed: 5100
+    random_seed: 5723
     render: false
     world_name: tracking-v0
     args: 'random_location=True'
   max_number_of_steps: 300  # let number of steps depend on environment
 episode_runner_config:
   train_every_n_steps: 1000
-number_of_epochs: 10000
+number_of_epochs: 1000
 output_path: test_tracking
 save_checkpoint_every_n: 100
 tb_render_every_n_epochs: 100
@@ -42,7 +42,7 @@ trainer_config:
   factory_key: PPO
   gae_lambda: 0.95
   phi_key: gae
-  entropy_coefficient: 0.0
+  entropy_coefficient: 0.01
   max_actor_training_iterations: 50
   max_critic_training_iterations: 10
   epsilon: 0.2
