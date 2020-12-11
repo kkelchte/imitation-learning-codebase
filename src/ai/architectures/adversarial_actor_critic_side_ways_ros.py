@@ -8,7 +8,7 @@ from torch.distributions import Normal
 
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator, get_slow_hunt
+from src.ai.utils import mlp_creator, get_slow_hunt, clip_action_according_to_playfield_size
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -35,7 +35,7 @@ class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
-        self._playfield_size = 10
+        self._playfield_size = (0, 1, 0)
         self.input_size = (9,)
         self.output_size = (8,)
         self.action_min = -1
@@ -84,16 +84,6 @@ class Net(BaseNet):
                     actions[2 if agent == 'tracking' else 5] = +0.5
         return actions
 
-    def clip_action_according_to_playfield_size(self, inputs, actions) -> np.ndarray:
-        for agent in ['tracking', 'fleeing']:
-            state_y = inputs[1] if agent == 'tracking' else inputs[4]
-            if abs(state_y) > self._playfield_size:  # assuming starting at y=0
-                if state_y > 0:  # clip positive action to zero
-                    actions[1 if agent == 'tracking' else 4] = min(0, actions[1 if agent == 'tracking' else 4])
-                else:  # clip negative action to zero
-                    actions[1 if agent == 'tracking' else 4] = max(0, actions[1 if agent == 'tracking' else 4])
-        return actions
-
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
         inputs = self.process_inputs(inputs)
         if agent_id == 0:  # tracking agent ==> tracking_linear_y
@@ -107,12 +97,16 @@ class Net(BaseNet):
             output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
             adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                                           max=self.action_max)
-
-            actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
-                                0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
+            # actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
+            #                     0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
+            #                     0, 0], axis=-1)
+            actions = np.stack([0, 1, 0,
+                                0, 1, 0,
                                 0, 0], axis=-1)
-        # actions = self.adjust_height(inputs, actions)  Not necessary
-        # actions = self.clip_action_according_to_playfield_size(inputs, actions)
+
+        # actions = self.adjust_height(inputs, actions)  Not necessary, hector quadrotor controller keeps altitude fixed
+        actions = clip_action_according_to_playfield_size(inputs.detach().numpy().squeeze(),
+                                                          actions, self._playfield_size)
         return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
                       value=actions)
 
