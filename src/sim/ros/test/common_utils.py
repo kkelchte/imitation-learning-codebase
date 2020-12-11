@@ -105,3 +105,25 @@ def get_fake_pose_stamped(x: float = 0, y: float = 0, z: float = 0,
     pose_stamped.pose.orientation.z = zq
     pose_stamped.pose.orientation.w = wq
     return pose_stamped
+
+
+def get_fake_combined_global_poses(tx: float = 0,
+                                   ty: float = 0,
+                                   tz: float = 0,
+                                   fx: float = 0,
+                                   fy: float = 0,
+                                   fz: float = 0,
+                                   troll: float = 0,
+                                   tpitch: float = 0,
+                                   tyaw: float = 0) -> CombinedGlobalPoses:
+    msg = CombinedGlobalPoses()
+    msg.tracking_x = tx
+    msg.tracking_y = ty
+    msg.tracking_z = tz
+    msg.fleeing_x = fx
+    msg.fleeing_y = fy
+    msg.fleeing_z = fz
+    msg.tracking_roll = troll
+    msg.tracking_pitch = tpitch
+    msg.tracking_yaw = tyaw
+    return msg

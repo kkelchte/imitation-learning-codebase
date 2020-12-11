@@ -38,7 +38,7 @@ class ModifiedStatePublisher:
         cprint(f'mode: {self._mode}', self._logger)
         self._fsm_state = FsmState.Unknown
         self._rate_fps = rospy.get_param('/modified_state_publisher/rate_fps', 60)
-        rospy.Subscriber(rospy.get_param('/fsm/state_topic', '/fsm/state'), String, self._fsm_state_update)
+        rospy.Subscriber('/fsm/state', String, self._fsm_state_update)
         self._setup()
         rospy.init_node('modified_state_publisher')
 

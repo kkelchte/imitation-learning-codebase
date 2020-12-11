@@ -45,6 +45,8 @@ catkin_install_python(PROGRAMS
   rosnodes/altitude_control.py
   rosnodes/teleop_twist_keyboard.py
   rosnodes/waypoint_indicator.py
+  rosnodes/modified_state_publisher.py
+  rosnodes/modified_state_frame_visualizer.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch

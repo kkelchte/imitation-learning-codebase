@@ -48,18 +48,6 @@ class TestUtils(unittest.TestCase):
         result = get_iou(info)
         self.assertEqual(result, 5)  # TODO replace 0 with desired result
 
-    def test_process_combined_global_poses(self):
-        tracking_agent_position = [0, 0, 1]
-        tracking_agent_orientation = [0, 0, 0]
-        fleeing_agent_position = [1, 1, 1]
-        msg = array_to_combined_global_pose([*tracking_agent_position,
-                                             *fleeing_agent_position,
-                                             *tracking_agent_orientation])
-        sensor_stats = {'resolution': (200, 200)}
-        frame = process_combined_global_poses(msg, sensor_stats)
-        plt.imshow(frame)
-        plt.show()
-
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

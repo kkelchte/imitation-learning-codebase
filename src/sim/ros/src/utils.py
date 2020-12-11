@@ -194,6 +194,7 @@ def process_twist(msg, sensor_stats: dict = None) -> Action:
 
 
 def process_float32multi_array(msg: Float32MultiArray, stats: dict = None) -> np.ndarray:
+    # TODO get layout out of msg
     return np.asarray(msg.data)
 
 
@@ -207,21 +208,6 @@ def process_combined_global_poses(msg: CombinedGlobalPoses, sensor_stats: dict =
                        msg.tracking_roll,
                        msg.tracking_pitch,
                        msg.tracking_yaw])
-    # resolution = (100, 100) if 'resolution' not in sensor_stats.keys() else sensor_stats['resolution']
-    # position, width, height = calculate_bounding_box(state=[msg.tracking_x,
-    #                                                         msg.tracking_y,
-    #                                                         msg.tracking_z,
-    #                                                         msg.fleeing_x,
-    #                                                         msg.fleeing_y,
-    #                                                         msg.fleeing_z,
-    #                                                         msg.tracking_roll,
-    #                                                         msg.tracking_pitch,
-    #                                                         msg.tracking_yaw],
-    #                                                  resolution=resolution)
-    # frame = np.zeros(resolution)
-    # frame[position[0]:position[0] + width,
-    #       position[1]:position[1] + height] = 1
-    # return frame
 
 
 def array_to_combined_global_pose(data: Sequence) -> CombinedGlobalPoses:

@@ -148,6 +148,14 @@
               type="modified_state_publisher.py"
               output="screen"/>
     </group>
+
+    <arg name="modified_state_frame_visualizer" default="false"/>
+    <group if="$(arg modified_state_frame_visualizer)">
+        <node pkg="imitation_learning_ros_package"
+              name="modified_state_frame_visualizer"
+              type="modified_state_frame_visualizer.py"
+              output="screen"/>
+    </group>
     <!--######################## ACTOR NODES ########################-->
     <arg name="joystick" default="false"/>
     <group if="$(arg joystick)" ns="/actor/joystick">
