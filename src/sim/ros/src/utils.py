@@ -11,7 +11,7 @@ from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
 from geometry_msgs.msg import Twist, PoseStamped
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, Image
 from std_msgs.msg import Float32MultiArray
 
 from src.core.data_types import Action
@@ -134,7 +134,7 @@ def process_pose_stamped(msg: PoseStamped, _=None) -> np.ndarray:
                        msg.pose.orientation.w])
 
 
-def process_image(msg, sensor_stats: dict = None) -> np.ndarray:
+def process_image(msg: Image, sensor_stats: dict = None) -> np.ndarray:
     # if sensor_stats['depth'] == 1:
     #     img = bridge.imgmsg_to_cv2(msg, 'passthrough')
     #     max_depth = float(sensor_stats['max_depth']) if 'max_depth' in sensor_stats.keys() else 4
@@ -144,9 +144,8 @@ def process_image(msg, sensor_stats: dict = None) -> np.ndarray:
     #     print('WARNING: utils.py: depth image is not resized.')
     #     return img
     # else:
-    img = bridge.imgmsg_to_cv2(msg, 'rgb8')
-    # TODO make automatic scale optional
-    return resize_image(img, sensor_stats)
+    img = bridge.imgmsg_to_cv2(msg, msg.encoding)
+    return resize_image(img, sensor_stats) if sensor_stats is not None else img
 
 
 def process_compressed_image(msg, sensor_stats: dict = None) -> np.ndarray:

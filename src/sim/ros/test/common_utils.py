@@ -43,7 +43,7 @@ class TestPublisherSubscriber:
                                                                        queue_size=10)
 
     def _store(self, msg, topic_name: str):
-        self.topic_values[topic_name] = msg if not hasattr(msg, 'data') else msg.data
+        self.topic_values[topic_name] = msg
 
 
 def compare_odometry(first_msg: Odometry, second_msg: Odometry) -> bool:

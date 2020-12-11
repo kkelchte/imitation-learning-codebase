@@ -19,7 +19,7 @@
     </group>
 
     <!--######################## ROBOTS ########################-->
-    <arg name="robot_name" default="dummy"/>
+    <arg name="robot_name" default="default"/>
     <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
 
     <arg name="x_pos" default="0"/>
