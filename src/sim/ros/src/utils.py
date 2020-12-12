@@ -2,6 +2,7 @@
 import os
 from math import sqrt, cos, sin
 from typing import Union, List, Tuple, Iterable, Sequence
+from collections import namedtuple
 
 import numpy as np
 import rospy
@@ -94,8 +95,8 @@ def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
         size[2] = sensor_stats['depth']
     scale = [max(int(img.shape[i] / size[i]), 1) for i in range(2)]
     img = img[::scale[0],
-              ::scale[1],
-              :]
+          ::scale[1],
+          :]
     img = sm.resize(img, size, mode='constant').astype(np.float32)
     if size[-1] == 1:
         img = img.mean(axis=-1, keepdims=True)
@@ -151,7 +152,7 @@ def process_image(msg: Image, sensor_stats: dict = None) -> np.ndarray:
 
 def process_compressed_image(msg, sensor_stats: dict = None) -> np.ndarray:
     img = bridge.compressed_imgmsg_to_cv2(msg, desired_encoding='passthrough')
-    #img = cv2.flip(img, 0)
+    # img = cv2.flip(img, 0)
     return resize_image(img, sensor_stats)
 
 
@@ -262,7 +263,7 @@ def transform(points: List[np.ndarray],
     assert min(lengths) == max(lengths)
     if points[0].shape[0] == 3:
         augmented = False
-        points = [np.concatenate([p, np.ones(1,)]) for p in points]
+        points = [np.concatenate([p, np.ones(1, )]) for p in points]
     transformation = np.zeros((4, 4))
     transformation[0:3, 0:3] = orientation
     transformation[0:3, 3] = translation
@@ -273,7 +274,7 @@ def transform(points: List[np.ndarray],
 
 
 def calculate_bounding_box(state: Sequence,
-                           resolution: tuple = (100, 100),
+                           resolution: tuple = (1000, 1000),
                            focal_length: int = 20,
                            kx: int = 50,
                            ky: int = 50,
@@ -286,20 +287,17 @@ def calculate_bounding_box(state: Sequence,
     focal_length, kx, ky, skew: intrinsic camera parameters of constructed frame of tracking agent.
     returns: (pos, w, h) pixel coordinates, height and width bounding box of fleeing agent.
     """
-    x0 = resolution[0]//2
-    y0 = resolution[1]//2
+    x0 = resolution[0] // 2
+    y0 = resolution[1] // 2
     agent0 = np.asarray(state[:3])
     agent1 = np.asarray(state[3:6])
     yaw = state[6]
     pitch = state[7]
     roll = state[8]
-    rel_pos = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
-    x = rel_pos[0]
-    z = rel_pos[1]
-    y = rel_pos[2]
+    x, z, y = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
 
-    u = focal_length*x/z
-    v = focal_length*y/z
+    u = focal_length * x / z
+    v = focal_length * y / z
 
     # width and height of drone in meters
     min_dist = 3
@@ -307,14 +305,14 @@ def calculate_bounding_box(state: Sequence,
     h_drone = 0.2
 
     pos0 = (x0, y0)
-    pos1 = (int(u*kx+v*skew+x0), int(y0-v*ky))
+    pos1 = (int(u * kx + v * skew + x0), int(y0 + v * ky))
 
-    mx = z/sqrt(z**2 + x**2)
-    my = z/sqrt(z**2 + y**2)
+    mx = z / sqrt(z ** 2 + x ** 2)
+    my = z / sqrt(z ** 2 + y ** 2)
     w0 = int(kx * w_drone * focal_length / min_dist)
     h0 = int(ky * h_drone * focal_length / min_dist)
-    w1 = int(mx*kx*w_drone*focal_length/z)
-    h1 = int(my*ky*h_drone*focal_length/z)
+    w1 = int(mx * kx * w_drone * focal_length / z)
+    h1 = int(my * ky * h_drone * focal_length / z)
     return pos0, w0, h0, pos1, w1, h1
 
 
@@ -331,24 +329,41 @@ def get_relative_coordinates(pos_agent0: np.ndarray,
     pitch: float global pitch turn pos_agent0
     return relative pose (rotation and translation) of agent1 (fleeing) in the frame of agent0 (tracking)
     """
-    rot = np.array([[cos(yaw)*cos(pitch), cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*cos(roll),
-                     cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll)],
-                    [sin(yaw)*cos(pitch), sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*cos(roll),
-                     sin(yaw)*sin(pitch)*sin(roll)-cos(yaw)*sin(roll)],
-                    [-sin(pitch), cos(pitch)*sin(roll), cos(pitch)*cos(roll)]])
+    rot = np.array([[cos(yaw) * cos(pitch), cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll),
+                     cos(yaw) * sin(pitch) * cos(roll) + sin(yaw) * sin(roll)],
+                    [sin(yaw) * cos(pitch), sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll),
+                     sin(yaw) * sin(pitch) * sin(roll) - cos(yaw) * sin(roll)],
+                    [-sin(pitch), cos(pitch) * sin(roll), cos(pitch) * cos(roll)]])
     relative_pos = np.squeeze(np.transpose(rot.dot(np.transpose(np.array(pos_agent1 - pos_agent0)))))
     return relative_pos
 
 
 def distance(a: Sequence, b: Sequence) -> float:
     assert len(a) == len(b)
-    return np.sqrt(sum((np.asarray(a).squeeze() - np.asarray(b).squeeze())**2)).item()
+    return np.sqrt(sum((np.asarray(a).squeeze() - np.asarray(b).squeeze()) ** 2)).item()
 
 
 def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
-    #  TODO calculate intersection over union from bounding boxes
+    pos0, w0, h0, pos1, w1, h1 = bounding_boxes
 
-    return 5
+    square = namedtuple('square', 'xmin ymin xmax ymax')
+
+    square0 = square(pos0[0] - w0 // 2, pos0[1] - h0 // 2,
+                     pos0[0] + w0 // 2, pos0[1] + h0 // 2)
+    square1 = square(pos1[0] - w1 // 2, pos1[1] - h1 // 2,
+                     pos1[0] + w1 // 2, pos1[1] + h1 // 2)
+
+    dx = min(square0.xmax, square1.xmax) - max(square0.xmin, square1.xmin)
+    dy = min(square0.ymax, square1.ymax) - max(square0.ymin, square1.ymin)
+    if (dx >= 0) and (dy >= 0):
+        intersection = dx * dy
+    else:
+        intersection = 0
+
+    union = w0 * h0 + w1 * h1 - intersection
+
+    return intersection / union
+
 
 #########################################
 # Helper functions for reward calculation
