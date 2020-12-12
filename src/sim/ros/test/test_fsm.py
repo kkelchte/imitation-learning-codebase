@@ -44,7 +44,7 @@ class TestFsm(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=self.config,
-                                       visible=True)
+                                       visible=False)
 
         self.delay_evaluation = rospy.get_param('/world/delay_evaluation')
         self.state_topic = '/fsm/state'
@@ -96,7 +96,7 @@ class TestFsm(unittest.TestCase):
                             True, 5, 0.1, ros_topic=self.ros_topic)
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.state_topic].data)
         safe_wait_till_true('"/fsm/reward" in kwargs["ros_topic"].topic_values.keys()',
-                            True, 3, 0.1, ros_topic=self.ros_topic)
+                            True, 5, 0.1, ros_topic=self.ros_topic)
         self.assertEqual(0, self.ros_topic.topic_values[self.reward_topic].reward)
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.reward_topic].termination)
 
@@ -104,13 +104,11 @@ class TestFsm(unittest.TestCase):
         rospy.sleep(0.1)
         self.ros_topic.publishers[self.reset_topic].publish(Empty())
         start_time = rospy.get_time()
-        max_duration = 20
-        while self.ros_topic.topic_values[self.state_topic] == 'Unknown' \
-                and rospy.get_time() - start_time < max_duration:
+        while self.ros_topic.topic_values[self.state_topic].data == 'Unknown':
             rospy.sleep(0.01)
         delay_duration = rospy.get_time() - start_time
         self.assertLess(abs(self.delay_evaluation - delay_duration), 0.2)
-        self.assertEqual('Running', self.ros_topic.topic_values[self.state_topic])
+        self.assertEqual('Running', self.ros_topic.topic_values[self.state_topic].data)
 
     def _test_step(self):
         self.ros_topic.publishers[self.pose_topic].publish(get_fake_odometry())
@@ -147,7 +145,7 @@ class TestFsm(unittest.TestCase):
         # reset
         self.ros_topic.publishers[self.reset_topic].publish(Empty())
         time.sleep(0.1)
-        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.Running.name, 3, 0.1, ros_topic=self.ros_topic)
         self.ros_topic.publishers[self.pose_topic].publish(Odometry())
         rospy.sleep(0.1)
@@ -155,7 +153,7 @@ class TestFsm(unittest.TestCase):
         self.ros_topic.publishers[self.pose_topic].publish(
             get_fake_odometry(*goal_pos)
         )
-        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.Terminated.name, 3, 0.1, ros_topic=self.ros_topic)
         distance = np.sqrt(sum(np.asarray(goal_pos)**2))
         self.assertEqual(rospy.get_param('/world/reward/goal_reached/weights/distance_from_start') * distance,
@@ -166,7 +164,7 @@ class TestFsm(unittest.TestCase):
     def _test_out_of_time(self):
         # reset
         self.ros_topic.publishers[self.reset_topic].publish(Empty())
-        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.Running.name, 4, 0.1, ros_topic=self.ros_topic)
         offset = 3
         while self.ros_topic.topic_values[self.reward_topic].termination == 'NotDone':
