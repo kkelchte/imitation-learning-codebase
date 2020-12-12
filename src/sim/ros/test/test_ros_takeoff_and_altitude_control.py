@@ -74,7 +74,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
 
         safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
                             True, 10, 0.1, ros_topic=self.ros_topic)
-        self.assertEqual(self.ros_topic.topic_values['/fsm/state'], FsmState.Unknown.name)
+        self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data, FsmState.Unknown.name)
 
         # pause again before start
         self._pause_client.wait_for_service()
@@ -99,11 +99,11 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
             self._unpause_client.call()
 
             # gets fsm in taken over state
-            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                                 FsmState.TakenOver.name, 2, 0.1, ros_topic=self.ros_topic)
 
             # altitude control brings drone to starting_height
-            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                                 FsmState.Running.name, 45, 0.1, ros_topic=self.ros_topic)
             # check current height
             z_pos = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')].pose.pose.position.z
@@ -166,7 +166,8 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
 
         safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
                             True, 10, 0.1, ros_topic=self.ros_topic)
-        self.assertEqual(self.ros_topic.topic_values['/fsm/state'], FsmState.Unknown.name)
+        self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data,
+                         FsmState.Unknown.name)
 
         # pause again before start
         self._pause_client.wait_for_service()
@@ -201,11 +202,11 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
             self._unpause_client.call()
 
             # gets fsm in taken over state
-            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                                 FsmState.TakenOver.name, 2, 0.1, ros_topic=self.ros_topic)
 
             # altitude control brings drone to starting_height
-            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"]',
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                                 FsmState.Running.name, 45, 0.1, ros_topic=self.ros_topic)
 
             # check current height

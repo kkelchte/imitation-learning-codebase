@@ -63,9 +63,9 @@ class TestModifiedStatePublisher(unittest.TestCase):
                             True, 3, 0.1, ros_topic=self.ros_topic)
         frame = process_image(self.ros_topic.topic_values['/modified_state_frame'])
         # TODO: self.assertEqual(frame.sum(), CORRECT SUM)
-        plt.imshow(frame)
-        plt.show()
-        a = 100
+        # plt.imshow(frame)
+        # plt.show()
+        # a = 100
 
     def tearDown(self) -> None:
         self._ros_process.terminate()

@@ -44,7 +44,7 @@ class TestFsm(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=self.config,
-                                       visible=False)
+                                       visible=True)
 
         self.delay_evaluation = rospy.get_param('/world/delay_evaluation')
         self.state_topic = '/fsm/state'
@@ -93,8 +93,8 @@ class TestFsm(unittest.TestCase):
         # FSM should start in unknown state, waiting for reset
         # @ startup (before reset)
         safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
-                            True, 3, 0.1, ros_topic=self.ros_topic)
-        self.assertEqual('Unknown', self.ros_topic.topic_values[self.state_topic])
+                            True, 5, 0.1, ros_topic=self.ros_topic)
+        self.assertEqual('Unknown', self.ros_topic.topic_values[self.state_topic].data)
         safe_wait_till_true('"/fsm/reward" in kwargs["ros_topic"].topic_values.keys()',
                             True, 3, 0.1, ros_topic=self.ros_topic)
         self.assertEqual(0, self.ros_topic.topic_values[self.reward_topic].reward)
@@ -109,7 +109,7 @@ class TestFsm(unittest.TestCase):
                 and rospy.get_time() - start_time < max_duration:
             rospy.sleep(0.01)
         delay_duration = rospy.get_time() - start_time
-        self.assertLess(abs(self.delay_evaluation - delay_duration), 0.1)
+        self.assertLess(abs(self.delay_evaluation - delay_duration), 0.2)
         self.assertEqual('Running', self.ros_topic.topic_values[self.state_topic])
 
     def _test_step(self):
