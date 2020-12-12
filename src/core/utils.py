@@ -2,6 +2,7 @@
 import glob
 import os
 import subprocess
+import time
 from datetime import datetime
 from typing import List
 
@@ -52,6 +53,10 @@ def camelcase_to_snake_format(input: str) -> str:
     return output
 
 
+def ros_message_to_type_str(msg) -> str:
+    return type(msg).__name__
+
+
 def get_filename_without_extension(filename: str) -> str:
     return str(os.path.basename(filename).split('.')[0])
 
@@ -91,6 +96,27 @@ def generate_random_image(size: tuple) -> np.ndarray:
 def tensorboard_write_distribution(writer, distribution, tag, step) -> None:
     writer.add_scalar(f"{tag} mean", distribution.mean, global_step=step)
     writer.add_scalar(f"{tag} std", distribution.std, global_step=step)
+
+
+def to_file_name(name: str) -> str:
+    """pull out spaces and backslashes from name, returning an approriate filename"""
+    name = name.replace(' ', '_')
+    name = name.replace('/', '-')
+    return name
+
+
+def safe_wait_till_true(expression_a, solution,
+                        duration_s: float = 60,
+                        period_s: float = 0.1,
+                        **kwargs):
+    """wait till expression_a is equal to expression b of the equation
+    make sure all required arguments are provided in kwargs
+    """
+    start_time = time.time()
+    while eval(expression_a) != solution and time.time() - start_time < duration_s:
+        time.sleep(period_s)
+    assert time.time() - start_time < duration_s
+
 
 #######################################
 # Extensive evaluation helper functions

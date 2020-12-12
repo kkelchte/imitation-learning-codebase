@@ -11,7 +11,7 @@ from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm 
 
 class TestRobots(unittest.TestCase):
 
-    def start(self, robot_name: str, fsm_config: str = 'single_run') -> None:
+    def start(self, robot_name: str, fsm_config: str = 'SingleRun') -> None:
         self.output_dir = f'test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
         config_dict = {
@@ -21,11 +21,11 @@ class TestRobots(unittest.TestCase):
             'ros_config': {
                 'ros_launch_config': {
                     'control_mapping_config': 'keyboard',
-                    'fsm_config': fsm_config,
+                    'fsm_mode': fsm_config,
                     'gazebo': 'sim' in robot_name,
                     'random_seed': 123,
                     'robot_name': robot_name,
-                    'world_name': 'debug_turtle' if 'sim' in robot_name else 'empty',
+                    'world_name': 'empty',
                     'robot_display': True,
                     'x_pos': 0.0,
                     'y_pos': 0.0,
@@ -44,8 +44,9 @@ class TestRobots(unittest.TestCase):
         config = EnvironmentConfig().create(config_dict=config_dict)
         self._environment = RosEnvironment(config=config)
 
+    #@unittest.skip
     def test_turtlebot_sim(self):
-        self.start(robot_name='turtlebot_sim', fsm_config='takeover_run')
+        self.start(robot_name='turtlebot_sim', fsm_config='TakeOverRun')
         experience, _ = self._environment.reset()
         # wait delay evaluation time
         while experience.done == TerminationType.Unknown:
@@ -54,23 +55,34 @@ class TestRobots(unittest.TestCase):
         while self._environment.fsm_state != FsmState.Terminated:
             _ = self._environment.step()
 
+    @unittest.skip
     def test_drone_sim(self):
-        self.start(robot_name='drone_sim', fsm_config='takeover_run')
+        self.start(robot_name='drone_sim', fsm_config='TakeOverRun')
         self._environment.reset()
         while True:
             self._environment.step()
 
+    @unittest.skip
     def test_bebop_real(self):
-        self.start(robot_name='bebop_real', fsm_config='takeover_run')
+        self.start(robot_name='bebop_real', fsm_config='TakeOverRun')
         self._environment.reset()
         while True:
             self._environment.step()
 
+    @unittest.skip
     def test_tello_real(self):
-        self.start(robot_name='tello_real', fsm_config='takeover_run')
+        self.start(robot_name='tello_real', fsm_config='TakeOverRun')
         self._environment.reset()
         while True:
             self._environment.step()
+
+    @unittest.skip
+    def test_double_drones_real(self):
+        self.start(robot_name='double_drone_sim', fsm_config='SingleRun')
+        experience = self._environment.reset()
+        while True:
+            self._environment.step()
+            import pdb; pdb.set_trace()
 
     def tearDown(self) -> None:
         if hasattr(self, '_environment'):

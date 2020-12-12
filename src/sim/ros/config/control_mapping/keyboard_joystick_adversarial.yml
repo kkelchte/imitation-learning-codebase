@@ -1,0 +1,17 @@
+rate_fps: 60
+mapping:
+  Unknown:
+    tracking_command: '/actor/keyboard/cmd_vel'
+    fleeing_command: '/actor/joystick/cmd_vel'
+  Terminated:
+    tracking_command: '/actor/keyboard/cmd_vel'
+    fleeing_command: '/actor/joystick/cmd_vel'
+  Running:
+    tracking_command: '/actor/keyboard/cmd_vel'
+    fleeing_command: '/actor/joystick/cmd_vel'
+  TakenOver:
+    tracking_command: '/actor/keyboard/cmd_vel'
+    fleeing_command: '/actor/joystick/cmd_vel'
+  DriveBack:
+    tracking_command: '/actor/keyboard/cmd_vel'
+    fleeing_command: '/actor/joystick/cmd_vel'

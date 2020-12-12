@@ -7,7 +7,7 @@ import numpy as np
 import rospy
 
 from src.core.utils import get_filename_without_extension, get_to_root_dir
-from src.core.data_types import TerminationType
+from src.core.data_types import TerminationType, SensorType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
@@ -19,26 +19,23 @@ config_dict = {
     "ros_config": {
         "info": [
             "current_waypoint",
-            "sensor/odometry"
+            "position",
+            "/cmd_vel"  #  if waiting for cmd_vel first experience after reset is much further in location
         ],
-        "observation": "forward_camera",
+        "observation": "camera",
+        "action_topic": '/actor/ros_expert/cmd_vel',
         "max_update_wait_period_s": 10,
-        "store_action": True,
-        "store_reward": True,
         "visible_xterm": False,
-        "step_rate_fps": 15,
+        "step_rate_fps": 60,
         "ros_launch_config": {
           "random_seed": 123,
           "robot_name": "turtlebot_sim",
-          "fsm_config": "single_run",  # file with fsm params loaded from config/fsm
+          "fsm_mode": "SingleRun",  # file with fsm params loaded from config/fsm
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
-          "control_mapping_config": "debug",
+          "control_mapping_config": "ros_expert",
           "world_name": "debug_turtle",
-          "x_pos": 0.0,
-          "y_pos": 0.0,
-          "z_pos": 0.0,
           "yaw_or": 1.57,
           "gazebo": True,
         },
@@ -74,14 +71,15 @@ class TestRosIntegrated(unittest.TestCase):
                 count += 1
                 if count == 1:
                     self.assertEqual(waypoints[0], experience.info['current_waypoint'].tolist())
-                    self.assertLess(np.sum(experience.info['odometry'][:3]), 0.5)
+                    print(f'offset starting position: {np.sum(experience.info["position"][:3])}')
+                    self.assertLess(np.sum(experience.info['position'][:3]), 0.7)
                 self.assertTrue(experience.observation is not None)
                 self.assertTrue(experience.action is not None)
                 if experience.done == TerminationType.NotDone:
-                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/step'))
+                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/step/weights/constant'))
                 else:
-                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/goal'))
-            self.assertGreater(np.sum(experience.info['odometry'][:3]), 1)
+                    self.assertEqual(experience.reward, rospy.get_param('/world/reward/goal_reached/weights/constant'))
+            self.assertGreater(np.sum(experience.info['position'][:3]), 1)
             self.assertEqual(experience.done, TerminationType.Success)
 
     def tearDown(self) -> None:

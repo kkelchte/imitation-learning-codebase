@@ -40,8 +40,8 @@ class TestWaypointIndicator(unittest.TestCase):
             TopicConfig(topic_name=self._waypoint_topic, msg_type="Float32MultiArray"),
         ]
         # create publishers for all relevant sensors < sensor expert
-        self._pose_topic = rospy.get_param('/robot/odometry_topic')
-        self._pose_type = rospy.get_param('/robot/odometry_type')
+        self._pose_topic = rospy.get_param('/robot/position_sensor/topic')
+        self._pose_type = rospy.get_param('/robot/position_sensor/type')
 
         publish_topics = [
             TopicConfig(topic_name=self._pose_topic, msg_type=self._pose_type)

@@ -16,6 +16,15 @@ waypoints:
   - [2, 2]
 waypoint_reached_distance: 0.2
 reward:
-  collision: -100
-  step: -1
-  goal: 100
+  on_collision:
+    termination: 'Failure'
+    weights:
+      constant: -100
+  goal_reached:
+    termination: 'Success'
+    weights:
+      constant: 100
+  step:
+    termination: 'NotDone'
+    weights:
+      constant: 10

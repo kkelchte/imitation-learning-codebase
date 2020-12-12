@@ -1,0 +1,11 @@
+rate_fps: 60
+mapping:
+  Unknown: {}
+  Terminated: {}
+  Running:
+    tracking_command: /ros_python_interface/cmd_vel
+    fleeing_command: /ros_python_interface/cmd_vel_1
+  TakenOver:
+    tracking_command: /actor/altitude_control/cmd_vel
+    fleeing_command: /actor/altitude_control/cmd_vel_1
+  DriveBack: {}

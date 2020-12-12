@@ -5,7 +5,7 @@
     <param name="random_seed" value="$(arg random_seed)"/>
     <arg name="output_path" default="/tmp"/>
     <param name="output_path" value="$(arg output_path)"/>
-    <arg name="world_name" default="debug_drone"/>
+    <arg name="world_name" default="default"/>
     <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/world/$(arg world_name).yml" ns="world"/>
 
     <!--######################## GAZEBO ########################-->
@@ -19,16 +19,19 @@
     </group>
 
     <!--######################## ROBOTS ########################-->
-    <arg name="robot_name" default="dummy"/>
+    <arg name="robot_name" default="default"/>
     <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
 
     <arg name="x_pos" default="0"/>
     <arg name="y_pos" default="0"/>
     <arg name="z_pos" default="0."/>
-    <arg name="yaw_or" default="1.57"/>
+    <arg name="yaw_or" default="0"/>
+    <!--    Distance between two drones used for double_drone_sim-->
+    <arg name="distance_tracking_fleeing_m" default="3"/>
+    <arg name="starting_height" default="1"/>
+    <param name="starting_height" value="$(arg starting_height)" />
 
-    <arg name="turtlebot_sim" default="false"/>
-    <group if="$(arg turtlebot_sim)">
+    <group if="$(eval arg('robot_name') == 'turtlebot_sim')">
           <param name="robot_description"
                  command="$(find xacro)/xacro --inorder $(env CODEDIR)/src/sim/ros/gazebo/urdf/turtlebot3_burger.urdf.xacro"/>
           <node pkg="gazebo_ros"
@@ -39,45 +42,60 @@
                 output="log"/>
     </group>
 
-    <arg name="drone_sim" default="false"/>
-    <group if="$(arg drone_sim)">
-      <!-- Spawn simulated quadrotor uav -->
-      <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
-        <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
-        <arg name="x" value="$(arg x_pos)"/>
-        <arg name="y" value="$(arg y_pos)"/>
-        <arg name="z" value="$(arg z_pos)"/>
-        <arg name="Y" default="$(arg yaw_or)"/>
-        <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/drone_sim.gazebo.xacro"/>
-      </include>
+    <group if="$(eval arg('robot_name') == 'drone_sim_down_cam' or arg('robot_name') == 'drone_sim')">
+        <arg name="model_name" default="drone_sim"/>
+        <!-- Spawn simulated quadrotor uav -->
+        <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
+            <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+            <arg name="x" value="$(arg x_pos)"/>
+            <arg name="y" value="$(arg y_pos)"/>
+            <arg name="z" value="$(arg z_pos)"/>
+            <arg name="Y" default="$(arg yaw_or)"/>
+            <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
+        </include>
     </group>
 
-    <arg name="bebop_real" default="false"/>
-    <group if="$(arg bebop_real)">
+    <group if="$(eval arg('robot_name') == 'bebop_real')">
         <include file="$(find bebop_driver)/launch/bebop_node.launch"/>
     </group>
 
-    <arg name="ardrone_real" default="false"/>
-    <group if="$(arg ardrone_real)">
-<!--        <include file="$(find ardrone_driver)/launch/ardrone_node.launch"/>-->
-    </group>
-
-    <arg name="turtlebot_real" default="false"/>
-    <group if="$(arg turtlebot_real)">
+    <group if="$(eval arg('robot_name') == 'turtlebot_real')">
         <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
             <arg name="model" value="burger" />
         </include>
     </group>
 
-    <arg name="tello_real" default="false"/>
-    <group if="$(arg tello_real)">
+    <group if="$(eval arg('robot_name') == 'tello_real')">
         <include file="$(find tello_driver)/launch/tello_node.launch"/>
     </group>
 
+
+    <group if="$(eval arg('robot_name') == 'double_drone_sim')">
+        <arg name="model_name" default="drone_sim_wide_angle"/>
+        <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="tracking">
+            <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+            <arg name="name" default="tracking_quadrotor"/>
+            <arg name="x" value="$(arg x_pos)"/>
+            <arg name="y" value="$(arg y_pos)"/>
+            <arg name="z" value="$(arg z_pos)"/>
+            <arg name="Y" default="$(arg yaw_or)"/>
+            <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
+        </include>
+        <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="fleeing">
+            <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+            <arg name="name" default="fleeing_quadrotor"/>
+            <arg name="x" value="$(eval arg('x_pos') + arg('distance_tracking_fleeing_m'))"/>
+            <arg name="y" value="$(arg y_pos)"/>
+            <arg name="z" value="$(arg z_pos)"/>
+            <arg name="Y" default="$(eval 3.14 + arg('yaw_or'))"/>
+            <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
+        </include>
+    </group>
+
     <!--######################## HELPER NODES ########################-->
-    <arg name="fsm" default="true"/>
-    <arg name="fsm_config" default="debug"/>
-    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/fsm/$(arg fsm_config).yml" ns="fsm"/>
+    <arg name="fsm" default="false"/>
+    <arg name="fsm_mode" default="SingleRun"/>
+    <param name="/fsm/mode" value="$(arg fsm_mode)"/>
     <group if="$(arg fsm)">
         <node pkg="imitation_learning_ros_package"
               name="fsm"
@@ -85,7 +103,7 @@
               output="screen"/>
     </group>
 
-    <arg name="control_mapping" default="true"/>
+    <arg name="control_mapping" default="false"/>
     <arg name="control_mapping_config" default="default"/>
     <rosparam command="load"
                   file="$(env CODEDIR)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
@@ -118,6 +136,24 @@
         <node pkg="imitation_learning_ros_package"
               name="robot_display"
               type="robot_display.py"
+              output="screen"/>
+    </group>
+
+    <arg name="modified_state_publisher" default="false"/>
+    <arg name="modified_state_publisher_mode" default="CombinedGlobalPoses"/>
+    <param name="/modified_state_publisher/mode" value="$(arg modified_state_publisher_mode)"/>
+    <group if="$(arg modified_state_publisher)">
+        <node pkg="imitation_learning_ros_package"
+              name="modified_state_publisher"
+              type="modified_state_publisher.py"
+              output="screen"/>
+    </group>
+
+    <arg name="modified_state_frame_visualizer" default="false"/>
+    <group if="$(arg modified_state_frame_visualizer)">
+        <node pkg="imitation_learning_ros_package"
+              name="modified_state_frame_visualizer"
+              type="modified_state_frame_visualizer.py"
               output="screen"/>
     </group>
     <!--######################## ACTOR NODES ########################-->
@@ -168,6 +204,15 @@
               type="ros_expert.py"
               output="screen"
               ns="/actor/ros_expert"/>
+    </group>
+
+    <arg name="altitude_control" default="false"/>
+    <group if="$(arg altitude_control)">
+        <node pkg="imitation_learning_ros_package"
+              name="altitude_control"
+              type="altitude_control.py"
+              output="screen"
+              ns="/actor/altitude_control"/>
     </group>
 
     <arg name="dnn_actor" default="false"/>

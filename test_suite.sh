@@ -4,8 +4,6 @@ echo "
 Test all code base ROS exclusive from low to high dependent code.
 "
 start_time="$(date)"
-
-source virtualenvironment/venv/bin/activate
 export PYTHONPATH=$PWD:$PYTHONPATH
 
 if [ -d test_dir ] ; then
@@ -29,7 +27,7 @@ for group in src/core src/data src/ai src/sim/common src/sim/gym src/scripts src
       if [ -d "$destination" ]; then
         rm -r "$destination"
       fi
-      python "${test}" > "$destination".out 2>&1
+      python3 "${test}" > "$destination".out 2>&1
       exitcode=$?
       if [ $exitcode = 0 ] ; then
         OK=$(cat "$destination".out | grep OK)

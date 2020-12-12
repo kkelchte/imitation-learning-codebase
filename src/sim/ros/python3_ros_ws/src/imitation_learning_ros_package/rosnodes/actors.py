@@ -19,7 +19,7 @@ Depends on ai/architectures/models to call forward pass.
 class ActorConfig(Config):
     name: str = ''
     specs: Optional[dict] = None
-    file: str = None
+    file: Optional[str] = None
 
     def __post_init__(self):
         """Actor either contains a file from which specifications are loaded, used by ROS actors

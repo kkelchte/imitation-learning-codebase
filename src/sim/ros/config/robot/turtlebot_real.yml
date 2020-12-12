@@ -1,21 +1,20 @@
-robot_type: 'turtlebot'
-command_topic: '/cmd_vel'
-sensors:
-  - 'forward_camera'
-  - 'odometry'
-#  - 'depth_scan'
-#depth_scan_topic: '/scan'
-#depth_scan_type: 'LaserScan'
-#depth_scan_stats:
-#  field_of_view: 120
-#  num_smooth_bins: 4
-#  max_depth: 4
-#  min_depth: 0.1
-odometry_topic: '/odom'
-odometry_type: 'Odometry'
-forward_camera_topic: '/raspicam_node/image/compressed'
-forward_camera_type: 'CompressedImage'
-forward_camera_stats:
-  height: 200
-  width: 200
-  depth: 1
+model_name: turtlebot3_burger_real
+command_topic: /cmd_vel
+depth_sensor:
+  topic: /scan
+  type: LaserScan
+  stats:
+    field_of_view: 120
+    num_smooth_bins: 4
+    max_depth: 4
+    min_depth: 0.1
+position_sensor:
+  topic: /odom
+  type: Odometry
+camera_sensor:
+  topic: /raspicam_node/image/compressed
+  type: CompressedImage
+  stats:
+    height: 200
+    width: 200
+    depth: 1

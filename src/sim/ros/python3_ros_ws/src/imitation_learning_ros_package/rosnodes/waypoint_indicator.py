@@ -25,7 +25,7 @@ class WaypointIndicator:
     def __init__(self):
         start_time = time.time()
         max_duration = 60
-        while not rospy.has_param('/robot/odometry_topic') and time.time() < start_time + max_duration:
+        while not rospy.has_param('/robot/position_sensor') and time.time() < start_time + max_duration:
             time.sleep(0.1)
         self._output_path = get_output_path()
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
@@ -39,13 +39,13 @@ class WaypointIndicator:
         self._publisher = rospy.Publisher('/waypoint_indicator/current_waypoint', Float32MultiArray, queue_size=10)
 
         # subscribe
-        odometry_type = rospy.get_param('/robot/odometry_type')
+        odometry_type = rospy.get_param('/robot/position_sensor/type')
         callback = f'_{camelcase_to_snake_format(odometry_type)}_callback'
         assert callback in self.__dir__()
-        rospy.Subscriber(name=rospy.get_param('/robot/odometry_topic'),
+        rospy.Subscriber(name=rospy.get_param('/robot/position_sensor/topic'),
                          data_class=eval(odometry_type),
                          callback=eval(f'self.{callback}'))
-        rospy.Subscriber(name=rospy.get_param('/fsm/reset_topic', '/reset'),
+        rospy.Subscriber(name='/fsm/reset',
                          data_class=Empty,
                          callback=self.reset)
         rospy.init_node('waypoint_indicator')

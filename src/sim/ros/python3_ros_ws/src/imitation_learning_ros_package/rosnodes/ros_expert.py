@@ -16,16 +16,17 @@ from hector_uav_msgs.msg import *
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
 from src.sim.common.noise import *
-from src.core.data_types import Action
+from src.core.data_types import Action, SensorType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import adapt_twist_to_action, process_laser_scan, process_image, euler_from_quaternion, \
-    get_output_path, apply_noise_to_twist
+from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_quaternion, \
+    get_output_path, apply_noise_to_twist, process_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 
 class RosExpert(Actor):
 
     def __init__(self):
+        self.count = 0
         rospy.init_node('ros_expert')
         stime = time.time()
         max_duration = 60
@@ -43,42 +44,30 @@ class RosExpert(Actor):
         cprint(f'ros specifications: {self._specs}', self._logger)
         with open(os.path.join(self._output_path, 'ros_expert_specs.yml'), 'w') as f:
             yaml.dump(self._specs, f)
-
+        self._reference_height = rospy.get_param('/world/starting_height', 1)
         self._adjust_height = 0
         self._adjust_yaw_collision_avoidance = 0
         self._adjust_yaw_waypoint_following = 0
-        self._reference_height = -1
         self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 10
         self._next_waypoint = []
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
 
-        self._publisher = rospy.Publisher(self._specs['command_topic'], Twist, queue_size=10)
+        self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
-
-        self._robot = rospy.get_param('/robot/robot_type')
-
-        if self._robot == 'quadrotor_sim':
-            action_name = '/action/takeoff'
-            client = actionlib.SimpleActionClient(action_name, TakeoffAction)
-            client.wait_for_server()
-            client.send_goal(goal=TakeoffActionGoal())
-            client.wait_for_result()
-            cprint(f'takeoff: {client.get_result()}', self._logger)
-            #rospy.wait_for_service('/enable_motors')
-            #enable_motors_service = rospy.ServiceProxy('/enable_motors', EnableMotors)
-            #enable_motors_service.call(True)
 
     def _subscribe(self):
         # Robot sensors:
-        for sensor in ['/robot/depth_scan', '/robot/odometry']:
-            if rospy.has_param(f'{sensor}_topic'):
-                sensor_topic = rospy.get_param(f'{sensor}_topic')
-                sensor_type = rospy.get_param(f'{sensor}_type')
+        for sensor in [SensorType.depth,
+                       SensorType.position]:
+            if rospy.has_param(f'/robot/{sensor.name}_sensor/topic'):
+                sensor_topic = rospy.get_param(f'/robot/{sensor.name}_sensor/topic')
+                sensor_type = rospy.get_param(f'/robot/{sensor.name}_sensor/type')
                 sensor_callback = f'_process_{camelcase_to_snake_format(sensor_type)}'
                 if sensor_callback not in self.__dir__():
                     cprint(f'Could not find sensor_callback {sensor_callback}', self._logger)
-                sensor_stats = rospy.get_param(f'{sensor}_stats') if rospy.has_param(f'{sensor}_stats') else {}
+                sensor_stats = rospy.get_param(f'/robot/{sensor.name}_sensor/stats') \
+                    if rospy.has_param(f'/robot/{sensor.name}_sensor/stats') else {}
                 rospy.Subscriber(name=sensor_topic,
                                  data_class=eval(sensor_type),
                                  callback=eval(f'self.{sensor_callback}'),
@@ -133,9 +122,6 @@ class RosExpert(Actor):
         # TODO set adjust_height from depth map < vertical field-of-view and vertical frontwidth
 
     def _set_height(self, z: float):
-        if self._reference_height == -1:
-            self._reference_height = z
-            return
         if z < (self._reference_height - 0.1):
             self._adjust_height = self._specs['height_speed'] if 'height_speed' in self._specs.keys() else +0.5
         elif z > (self._reference_height + 0.1):
@@ -199,21 +185,28 @@ class RosExpert(Actor):
 
         if self._noise is not None:
             twist = apply_noise_to_twist(twist=twist, noise=self._noise.sample())
-        cprint(f'twist: {twist.linear.x}, {twist.linear.y}, {twist.linear.z}, '
-               f'{twist.angular.x}, {twist.angular.y}, {twist.angular.z}', self._logger, msg_type=MessageType.debug)
+        # cprint(f'twist: {twist.linear.x}, {twist.linear.y}, {twist.linear.z}, '
+        #        f'{twist.angular.x}, {twist.angular.y}, {twist.angular.z}', self._logger, msg_type=MessageType.debug)
         return twist
 
     def get_action(self, sensor_data: dict = None) -> Action:
         assert sensor_data is None
-        action = adapt_twist_to_action(self._update_twist())
+        action = process_twist(self._update_twist())
         action.actor_name = self._name
-        cprint(f'action: {action}', self._logger, msg_type=MessageType.debug)
+        # cprint(f'action: {action}', self._logger, msg_type=MessageType.debug)
         return action
 
     def run(self):
         rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
             self._publisher.publish(self._update_twist())
+            self.count += 1
+            if self.count % 10 * self._rate_fps == 0:
+                msg = f'waypoint yaw adjustment: {self._adjust_yaw_waypoint_following} \n'
+                msg += f' collision yaw adjustment: {self._adjust_yaw_collision_avoidance} \n'
+                msg += f' next waypoint: {self._next_waypoint} \n'
+                msg += f' cmd: {self._update_twist()}'
+                cprint(msg, self._logger, msg_type=MessageType.info)
             rate.sleep()
 
 

@@ -1,5 +1,4 @@
 specs:
-  command_topic: '/actor/dnn_actor/cmd_vel'
   rate_fps: 20
   model_config:
     architecture: tiny_net_v0

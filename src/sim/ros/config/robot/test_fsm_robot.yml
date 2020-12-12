@@ -1,0 +1,16 @@
+# Used by test_fsm
+command_topic: /cmd_vel
+depth_sensor:
+  topic: /scan
+  type: LaserScan
+  stats:
+    field_of_view: 120
+    num_smooth_bins: 4
+    max_depth: 4
+    min_depth: 0.1
+position_sensor:
+  topic: /odom
+  type: Odometry
+modified_state_sensor:
+  topic: /modified_state
+  type: CombinedGlobalPoses

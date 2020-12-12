@@ -1,6 +1,5 @@
 world_name: test_world
 max_duration: -1
-starting_height: 0
 delay_evaluation: 0.1
 goal:
   x:

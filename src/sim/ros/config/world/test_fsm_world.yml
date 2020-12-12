@@ -1,0 +1,36 @@
+world_name: test_fsm_world
+max_duration: 10
+delay_evaluation: 1.0
+goal:
+  x:
+    min: 1.7
+    max: 2.2
+  y:
+    min: 1.7
+    max: 2.2
+  z:
+    min: 0.2
+    max: 5.
+waypoints:
+  - [0, 2]
+  - [2, 2]
+waypoint_reached_distance: 0.2
+min_collision_depth: 0.3
+reward:
+  step:
+    termination: 'NotDone'
+    weights:
+      travelled_distance: 10
+  on_collision:
+    termination: 'Failure'
+    weights:
+      distance_between_agents: 0.1
+  goal_reached:
+    termination: 'Success'
+    weights:
+      distance_from_start: 100
+  out_of_time:
+    termination: 'Failure'
+    weights:
+      iou: 1
+

@@ -6,15 +6,15 @@ environment_config:
   factory_key: ROS
   max_number_of_steps: 1000
   ros_config:
-    info: [current_waypoint, sensor/odometry, command]
-    observation: forward_camera
-    action: ros_expert
+    observation: camera
+    action_topic: /actor/ros_expert/cmd_vel
+    info: [current_waypoint, position, /cmd_vel]
     visible_xterm: false
     step_rate_fps: 30
     ros_launch_config:
       random_seed: 123
       robot_name: turtlebot_sim
-      fsm_config: single_run
+      fsm_mode: SingleRun
       fsm: true
       control_mapping: true
       waypoint_indicator: true

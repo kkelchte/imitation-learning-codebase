@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Iterable, Sequence
 
 from dataclasses import dataclass
 import numpy as np
@@ -43,7 +43,7 @@ class TestPublisherSubscriber:
                                                                        queue_size=10)
 
     def _store(self, msg, topic_name: str):
-        self.topic_values[topic_name] = msg if not hasattr(msg, 'data') else msg.data
+        self.topic_values[topic_name] = msg
 
 
 def compare_odometry(first_msg: Odometry, second_msg: Odometry) -> bool:
@@ -61,16 +61,69 @@ def get_fake_image():
     return image
 
 
+def get_fake_modified_state(data: Sequence = np.zeros((9,))) -> CombinedGlobalPoses:
+    msg = CombinedGlobalPoses()
+    msg.tracking_x = data[0]
+    msg.tracking_y = data[1]
+    msg.tracking_z = data[2]
+    msg.fleeing_x = data[3]
+    msg.fleeing_y = data[4]
+    msg.fleeing_z = data[5]
+    msg.tracking_roll = data[6]
+    msg.tracking_pitch = data[7]
+    msg.tracking_yaw = data[8]
+    return msg
+
+
 def get_fake_laser_scan(ranges=None):
-    # DEPRECATED
     scan = LaserScan()
     scan.ranges = [1.5]*360 if ranges is None else ranges
     return scan
 
 
-def get_fake_odometry(x: float = -5., y: float = 100., z: float = 8.):
+def get_fake_odometry(x: float = 0, y: float = 0, z: float = 0,
+                      xq: float = 0, yq: float = 0, zq: float = 0, wq: float = 1):
     odometry = Odometry()
     odometry.pose.pose.position.x = x
     odometry.pose.pose.position.y = y
     odometry.pose.pose.position.z = z
+    odometry.pose.pose.orientation.x = xq
+    odometry.pose.pose.orientation.y = yq
+    odometry.pose.pose.orientation.z = zq
+    odometry.pose.pose.orientation.w = wq
     return odometry
+
+
+def get_fake_pose_stamped(x: float = 0, y: float = 0, z: float = 0,
+                          xq: float = 0, yq: float = 0, zq: float = 0, wq: float = 1):
+    pose_stamped = PoseStamped()
+    pose_stamped.pose.position.x = x
+    pose_stamped.pose.position.y = y
+    pose_stamped.pose.position.z = z
+    pose_stamped.pose.orientation.x = xq
+    pose_stamped.pose.orientation.y = yq
+    pose_stamped.pose.orientation.z = zq
+    pose_stamped.pose.orientation.w = wq
+    return pose_stamped
+
+
+def get_fake_combined_global_poses(tx: float = 0,
+                                   ty: float = 0,
+                                   tz: float = 0,
+                                   fx: float = 0,
+                                   fy: float = 0,
+                                   fz: float = 0,
+                                   troll: float = 0,
+                                   tpitch: float = 0,
+                                   tyaw: float = 0) -> CombinedGlobalPoses:
+    msg = CombinedGlobalPoses()
+    msg.tracking_x = tx
+    msg.tracking_y = ty
+    msg.tracking_z = tz
+    msg.fleeing_x = fx
+    msg.fleeing_y = fy
+    msg.fleeing_z = fz
+    msg.tracking_roll = troll
+    msg.tracking_pitch = tpitch
+    msg.tracking_yaw = tyaw
+    return msg

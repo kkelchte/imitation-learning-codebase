@@ -1,5 +1,4 @@
 specs:
-  command_topic: '/actor/keyboard/cmd_vel'
   message: "
              Reading from the keyboard  and Publishing to Twist!
               ---------------------------

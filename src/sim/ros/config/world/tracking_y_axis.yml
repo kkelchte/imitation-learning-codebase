@@ -1,0 +1,8 @@
+world_name: tracking_y_axis
+delay_evaluation: 1
+reward:
+  step:
+    termination: 'NotDone'
+    weights:
+      iou: 1
+      distance_between_agents: 1
