@@ -274,17 +274,17 @@ def transform(points: List[np.ndarray],
 
 def calculate_bounding_box(state: Sequence,
                            resolution: tuple = (100, 100),
-                           focal_length: int = 30,
+                           focal_length: int = 20,
                            kx: int = 50,
                            ky: int = 50,
-                           skew: float = 0) -> Tuple[Tuple[int, int], int, int]:
+                           skew: float = 0) -> Tuple[Tuple[int, int], int, int, Tuple[int, int], int, int]:
     """
     Fleeing agent in the frame of tracking agent is represented as a bounding box
     according to the relative pose of the fleeing with respect to the tracking agent.
     state: iterable with 9 values see CombinedGlobalPoses [position_tracking, position_fleeing, orientation_tracking]
     resolution: the size of the frame of the tracking agent
     focal_length, kx, ky, skew: intrinsic camera parameters of constructed frame of tracking agent.
-    returns: (pos, w, h) pixel coordinates, height and width ounding box of fleeing agent.
+    returns: (pos, w, h) pixel coordinates, height and width bounding box of fleeing agent.
     """
     x0 = resolution[0]//2
     y0 = resolution[1]//2
@@ -294,24 +294,28 @@ def calculate_bounding_box(state: Sequence,
     pitch = state[7]
     roll = state[8]
     rel_pos = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
-    X = rel_pos[0]
-    Y = rel_pos[1]
-    Z = rel_pos[2]
+    x = rel_pos[0]
+    z = rel_pos[1]
+    y = rel_pos[2]
 
-    u = focal_length*X/Z
-    v = focal_length*Y/Z
+    u = focal_length*x/z
+    v = focal_length*y/z
 
     # width and height of drone in meters
+    min_dist = 3
     w_drone = 0.2
     h_drone = 0.2
 
-    pos = (u*kx+v*skew+x0, v*ky+y0)
+    pos0 = (x0, y0)
+    pos1 = (int(u*kx+v*skew+x0), int(y0-v*ky))
 
-    mx = Z/sqrt(Z**2 + X**2)
-    my = Z/sqrt(Z**2 + Y**2)
-    w = int(mx*kx*w_drone*focal_length/Z)
-    h = int(my*ky*h_drone*focal_length/Z)
-    return pos, w, h
+    mx = z/sqrt(z**2 + x**2)
+    my = z/sqrt(z**2 + y**2)
+    w0 = int(kx * w_drone * focal_length / min_dist)
+    h0 = int(ky * h_drone * focal_length / min_dist)
+    w1 = int(mx*kx*w_drone*focal_length/z)
+    h1 = int(my*ky*h_drone*focal_length/z)
+    return pos0, w0, h0, pos1, w1, h1
 
 
 def get_relative_coordinates(pos_agent0: np.ndarray,
@@ -343,6 +347,7 @@ def distance(a: Sequence, b: Sequence) -> float:
 
 def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
     #  TODO calculate intersection over union from bounding boxes
+
     return 5
 
 #########################################

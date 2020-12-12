@@ -24,24 +24,47 @@ class TestUtils(unittest.TestCase):
         distance(np.asarray([0, 0, 2]).reshape((1, 1, 3)), np.asarray([0, 0, 0]).reshape((1, 1, 3)))
 
     def test_bounding_box(self):
-        resolution = (100, 100)
-        tracking_agent_position = [0, 0, 1]
+        resolution = (1000, 1000)
+        tracking_agent_position = [1, 0, 1]
         tracking_agent_orientation = [0, 0, 0]
-        fleeing_agent_position = [1, 1, 1]
-        position, width, height = calculate_bounding_box(state=[*tracking_agent_position,
-                                                                *fleeing_agent_position,
-                                                                *tracking_agent_orientation],
-                                                         resolution=resolution)
-        frame = np.zeros(resolution)
-        frame[position[0]:position[0]+width,
-              position[1]:position[1]+height] = 1
-        plt.imshow(frame)
-        plt.show()
+        fleeing_agent_position = [1, 3, 1]
+        bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
+                                                       *fleeing_agent_position,
+                                                       *tracking_agent_orientation],
+                                                resolution=resolution)
+        self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (500, 500), 66, 66))
+
+        fleeing_agent_position = [0, 3, 1]
+        bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
+                                                       *fleeing_agent_position,
+                                                       *tracking_agent_orientation],
+                                                resolution=resolution)
+        self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (166, 500), 63, 66))
+
+        fleeing_agent_position = [2, 3, 1]
+        bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
+                                                       *fleeing_agent_position,
+                                                       *tracking_agent_orientation],
+                                                resolution=resolution)
+        self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (833, 500), 63, 66))
+
+        fleeing_agent_position = [1, 4, 1]
+        tracking_agent_orientation = [0.3, 0, 0]
+        bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
+                                                       *fleeing_agent_position,
+                                                       *tracking_agent_orientation],
+                                                resolution=resolution)
+        self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (190, 500), 50, 52))
+        # frame = np.zeros(resolution)
+        # frame[position[1]-height//2:position[1]+height//2,
+        #      position[0]-width//2:position[0]+width//2] = 1
+        # plt.imshow(frame)
+        # plt.show()
 
     def test_intersection_over_union(self):
         tracking_agent_position = [0, 0, 1]
         tracking_agent_orientation = [0, 0, 0]
-        fleeing_agent_position = [1, 1, 1]
+        fleeing_agent_position = [1, 3, 1]
         info = {'combined_global_poses': array_to_combined_global_pose([*tracking_agent_position,
                                                                         *fleeing_agent_position,
                                                                         *tracking_agent_orientation])}
