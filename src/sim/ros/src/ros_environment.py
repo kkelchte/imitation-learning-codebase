@@ -240,7 +240,7 @@ class RosEnvironment(Environment):
     def _set_field(self, msg: Union[String, Twist, Image, CompressedImage], args: Tuple) -> None:
         field_name, sensor_stats = args
         if field_name == 'fsm_state':
-            self.fsm_state = FsmState[msg.data]
+            self.fsm_state = FsmState[msg.w]
         elif field_name == 'observation':
             self._observation = self._process_observation(msg, sensor_stats)
         elif field_name == 'action':
