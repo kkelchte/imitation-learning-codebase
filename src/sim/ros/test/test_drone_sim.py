@@ -45,7 +45,7 @@ class TestRos(unittest.TestCase):
         self.assertEqual(self.ros_process.get_state(), ProcessState.Running)
         self._unpause_client.wait_for_service()
         self._unpause_client(EmptyRequest())
-        time.sleep(1)
+        time.sleep(2)
         for sensor in ['camera', 'position', 'depth']:  # collision < wrench, only published when turned upside down
             self.assertTrue(rospy.get_param(f'/robot/{sensor}_sensor/topic') in self.ros_topic.topic_values.keys())
 

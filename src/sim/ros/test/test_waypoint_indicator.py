@@ -55,7 +55,7 @@ class TestWaypointIndicator(unittest.TestCase):
     def send_odom_and_read_next_waypoint(self, odom: Odometry) -> tuple:
         self.ros_topic.publishers[self._pose_topic].publish(odom)
         time.sleep(1)
-        received_waypoint: tuple = self.ros_topic.topic_values[self._waypoint_topic]
+        received_waypoint: tuple = self.ros_topic.topic_values[self._waypoint_topic].data
         return received_waypoint
 
     def compare_vectors(self, a: tuple, b: tuple) -> bool:
