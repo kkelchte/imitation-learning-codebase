@@ -1,3 +1,4 @@
+0.1.8 add tinker and kornia for data augmentation
 0.1.7 pull out tellopy and remove qt of opencv for debugger to work
 0.1.6 add realsense, ip and ffmpeg
 0.1.5 vision opencv system wide, add image transport compressed, add image view, visual priors
