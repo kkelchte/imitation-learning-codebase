@@ -92,7 +92,6 @@ apt-get update && apt-get install -yq\
     ros-melodic-geometry2 \
     python-catkin-tools \
     ffmpeg \
-    python-tf2-ros \
     libglew-dev \
     libsuitesparse-dev libeigen3-dev libboost-all-dev \
     ros-melodic-rqt \
