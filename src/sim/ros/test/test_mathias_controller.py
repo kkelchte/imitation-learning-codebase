@@ -23,6 +23,27 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber, 
 
 class TestMathiasController(unittest.TestCase):
 
+    def test_startup_node(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        height = 5
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'empty',
+            'robot_name': 'drone_sim',
+            'control_mapping': False,
+            'control_mapping_config': 'mathias_controller',
+            'mathias_controller': True,
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+        a = 100
+
+    @unittest.skip
     def test_single_drone(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -112,8 +133,10 @@ class TestMathiasController(unittest.TestCase):
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.Terminated.name, 4, 0.1, ros_topic=self.ros_topic)
 
+        self._pause_client.call()
+
         # # check current height
-        # z_pos = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')].pose.pose.position.z
+        z_pos = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')].pose.pose.position.z
         # print(f'final_height: {z_pos}')
         # self.assertLess(abs(z_pos - height), 0.2)
         #

@@ -12,7 +12,6 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
 import actionlib
 from hector_uav_msgs.msg import *
-import tf
 import tf2_ros
 import tf2_geometry_msgs as tf2_geom
 from scipy.spatial.transform import Rotation as R
