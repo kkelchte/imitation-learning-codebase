@@ -206,6 +206,20 @@
               ns="/actor/ros_expert"/>
     </group>
 
+    <arg name="mathias_controller" default="false"/>
+    <group if="$(arg mathias_controller)">
+        <arg name="mathias_controller_config_file_path_with_extension"
+             default="$(env CODEDIR)/src/sim/ros/config/actor/mathias_controller.yml"/>
+        <rosparam command="load"
+                  file="$(arg mathias_controller_config_file_path_with_extension)"
+                  ns="/actor/mathias_controller"/>
+        <node pkg="imitation_learning_ros_package"
+              name="mathias_controller"
+              type="mathias_controller.py"
+              output="screen"
+              ns="/actor/mathias_controller"/>
+    </group>
+
     <arg name="altitude_control" default="false"/>
     <group if="$(arg altitude_control)">
         <node pkg="imitation_learning_ros_package"
