@@ -10,7 +10,7 @@ from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
-from geometry_msgs.msg import Twist, PoseStamped
+from geometry_msgs.msg import Twist, PoseStamped, Point
 from sensor_msgs.msg import Imu, Image
 from std_msgs.msg import Float32MultiArray
 
@@ -253,10 +253,13 @@ def project(points: List[np.ndarray],
     return [p / p[2] for p in pixel_coordinates]
 
 
-def transform(points: List[np.ndarray],
+def transform(points: List[Union[np.ndarray, Point]],
               orientation: np.ndarray = np.eye(3),
               translation: np.ndarray = np.zeros((3,)),
               invert: bool = False) -> List[np.ndarray]:
+    return_points = isinstance(points[0], Point)
+    if return_points:
+        points = [np.asarray([p.x, p.y, p.z]) for p in points]
     augmented = True
     lengths = [len(p) for p in points]
     assert min(lengths) == max(lengths)
@@ -269,7 +272,9 @@ def transform(points: List[np.ndarray],
     transformation[3, 3] = 1
     if invert:
         transformation = np.linalg.inv(transformation)
-    return [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p) for p in points]
+    transformed_arrays = [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p)
+                          for p in points]
+    return transformed_arrays if not return_points else [Point(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
 
 
 def calculate_bounding_box(state: Sequence,

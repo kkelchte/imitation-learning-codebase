@@ -157,7 +157,8 @@ class Fsm:
             self._takeover()
 
     def _set_state(self, state: FsmState) -> None:
-        cprint(f'set state: {state.name}', self._logger)
+        if state.name != self._state.name:
+            cprint(f'set state: {state.name}', self._logger)
         self._state = state
 
     def _running(self, msg: Empty = None):

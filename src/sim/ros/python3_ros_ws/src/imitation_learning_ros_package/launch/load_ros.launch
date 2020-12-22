@@ -29,7 +29,7 @@
     <!--    Distance between two drones used for double_drone_sim-->
     <arg name="distance_tracking_fleeing_m" default="3"/>
     <arg name="starting_height" default="1"/>
-    <param name="starting_height" value="$(arg starting_height)" />
+    <param name="/world/starting_height" value="$(arg starting_height)"/>
 
     <group if="$(eval arg('robot_name') == 'turtlebot_sim')">
           <param name="robot_description"

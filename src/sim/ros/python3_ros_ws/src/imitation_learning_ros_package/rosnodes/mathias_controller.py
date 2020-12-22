@@ -12,8 +12,8 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
 import actionlib
 from hector_uav_msgs.msg import *
-import tf2_ros
-import tf2_geometry_msgs as tf2_geom
+# import tf2_ros
+# import tf2_geometry_msgs as tf2_geom
 from scipy.spatial.transform import Rotation as R
 
 from src.core.logger import get_logger, cprint, MessageType
@@ -33,9 +33,9 @@ class MathiasController:
         rospy.init_node('controller')
         stime = time.time()
         max_duration = 60
-        while not rospy.has_param('/actor/controller/specs') and time.time() < stime + max_duration:
+        while not rospy.has_param('/actor/mathias_controller/specs') and time.time() < stime + max_duration:
             time.sleep(0.01)
-        self._specs = rospy.get_param('/actor/controller/specs')
+        self._specs = rospy.get_param('/actor/mathias_controller/specs')
         self._output_path = get_output_path()
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         cprint(f'controller specifications: {self._specs}', self._logger)
@@ -65,12 +65,13 @@ class MathiasController:
         self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
 
-        self.pos_error_prev = 0
-        self.vel_error_prev = 0
+        self.pos_error_prev = PointStamped()
+        self.vel_error_prev = PointStamped()
+        self.fb_cmd_prev = Twist()
         self.drone_pose_est = Pose()
         self.drone_vel_est = Point()
-        self.tfBuffer = tf2_ros.Buffer()
-        self.listener = tf2_ros.TransformListener(self.tfBuffer)
+        # self.tfBuffer = tf2_ros.Buffer()
+        # self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
     def _subscribe(self):
         rospy.Subscriber('/fsm/state', String, self._fsm_state_update)
@@ -95,7 +96,7 @@ class MathiasController:
         # Listen to fsm state
         rospy.Subscriber(name='/fsm/state',
                          data_class=Float32MultiArray,
-                         callback=self._update_waypoint)
+                         callback=self._fsm_state_update)
 
     def _fsm_state_update(self, msg: String):
         self.count = 0
@@ -162,7 +163,7 @@ class MathiasController:
                 msg = f'control:  cmd: {self._update_twist()} \n'
                 if len(self._next_waypoint) != 0:
                     msg += f' next waypoint: {self._next_waypoint} \n'
-                cprint(msg, self._logger, msg_type=MessageType.info)
+                cprint(msg, self._logger)
             rate.sleep()
 
     def _feedback(self, pos_desired, vel_desired):
@@ -187,9 +188,9 @@ class MathiasController:
         vel_error.point.x = vel_desired.linear.x - self.drone_vel_est.x
         vel_error.point.y = vel_desired.linear.y - self.drone_vel_est.y
 
-        pos_error, vel_error = transform([np.asarray([pos_error.point.x, pos_error.point.y, pos_error.point.z]),
-                                          np.asarray([vel_error.point.x, vel_error.point.y, vel_error.point.z])],
-                                         R.from_euler('XYZ', (0, 0, self.real_yaw), degrees=False).as_matrix())
+        pos_error.point, vel_error.point = transform([pos_error.point, vel_error.point],
+                                                     R.from_euler('XYZ', (0, 0, self.real_yaw),
+                                                                  degrees=False).as_matrix())
 
         fb_cmd.linear.x = max(-self.max_input, min(self.max_input, (
                               self.fb_cmd_prev.linear.x +
