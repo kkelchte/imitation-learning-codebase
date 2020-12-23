@@ -38,7 +38,7 @@ class Net(BaseNet):
     def _policy_distribution(self, inputs: torch.Tensor, train: bool = True) -> Categorical:
         self.set_mode(train)
         inputs = self.process_inputs(inputs=inputs)
-        logits = self._actor(inputs)
+        logits = nn.functional.softmax(self._actor(inputs))
         return Categorical(logits=logits)
 
     def get_policy_entropy(self, inputs: torch.Tensor, train: bool = True) -> torch.Tensor:

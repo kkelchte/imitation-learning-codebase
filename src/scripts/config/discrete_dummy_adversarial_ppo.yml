@@ -1,8 +1,8 @@
 architecture_config:
-  architecture: tracking_actor_critic
+  architecture: discrete_adversarial_actor_critic
   device: cpu
-  log_std: 0
-  random_seed: 5100
+  log_std: -0.5
+  random_seed: 5346
   initialisation_type: orthogonal
 data_saver_config:
   clear_buffer_before_episode: true
@@ -13,33 +13,31 @@ environment_config:
   invert_reward: false
   factory_key: GYM
   gym_config:
-    random_seed: 5723
+    random_seed: 5346
     render: false
     world_name: tracking-v0
     args: 'random_location=True'
   max_number_of_steps: 300  # let number of steps depend on environment
 episode_runner_config:
   train_every_n_steps: 1000
-number_of_epochs: 1000
-output_path: test_tracking
-save_checkpoint_every_n: 100
-tb_render_every_n_epochs: 100
-tensorboard: true
+number_of_epochs: 5000
 run_test_episodes: true
+output_path: test_discrete_adversarial
+save_checkpoint_every_n: 100
+tb_render_every_n_epochs: 10
+tensorboard: true
 trainer_config:
-  scheduler_config:
-    number_of_epochs: 1000
   criterion: MSELoss
-  critic_learning_rate: 0.0001
+  critic_learning_rate: 0.0005
   actor_learning_rate: 0.0001
-  gradient_clip_norm: 10
+  gradient_clip_norm: 3
   optimizer: RMSprop
   data_loader_config:
-    batch_size: 200
-    random_seed: 5100
+    batch_size: 100
+    random_seed: 5346
   device: cpu
   discount: 0.99
-  factory_key: PPO
+  factory_key: APPO
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.01

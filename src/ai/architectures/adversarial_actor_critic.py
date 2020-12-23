@@ -8,7 +8,7 @@ from torch.distributions import Normal
 
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator, get_slow_hunt
+from src.ai.utils import mlp_creator, get_slow_hunt, get_slow_run
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -62,22 +62,11 @@ class Net(BaseNet):
 
             self.initialize_architecture()
 
-    def get_action(self, inputs, train: bool = False) -> Action:
-        inputs = self.process_inputs(inputs)
-        output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
-        adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
-                                                                                      max=self.action_max)
-
-        actions = np.stack([*output.data.cpu().numpy().squeeze(),
-                            *adversarial_output.data.cpu().numpy().squeeze()], axis=-1)
-        return Action(actor_name=get_filename_without_extension(__file__),  # assume output [1, 2] so no batch!
-                      value=actions)
-
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
         inputs = self.process_inputs(inputs)
         if agent_id == 0:
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
-            actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0])
+            actions = np.stack([*output.data.cpu().numpy().squeeze(), *get_slow_run(inputs.squeeze())], axis=-1)
         elif agent_id == 1:
             output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                               max=self.action_max)

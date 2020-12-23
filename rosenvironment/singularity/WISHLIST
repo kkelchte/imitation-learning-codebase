@@ -1,2 +1,3 @@
 debian package:
-- pull out opencv to allow debugger to work in singularity
+pip install omg-tools
+apt-get install python3-tk

@@ -46,6 +46,17 @@ def get_slow_hunt(state: torch.Tensor) -> torch.Tensor:
     return 0.3 * np.sign(agent_one - agent_zero)
 
 
+def get_slow_run(state: np.ndarray) -> np.ndarray:
+    agent_zero = state[:2]
+    agent_one = state[2:]
+    difference = (agent_one - agent_zero)
+    for diff in difference:
+        if diff == 0:
+            difference += (np.random.rand(2) - 0.5)/10
+    difference = np.sign(difference)
+    return 0.2 * difference
+
+
 def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
     for p in weights.parameters():
         if len(p.shape) == 1:
