@@ -78,7 +78,6 @@ class ModifiedStatePublisher:
             self.fleeing_position = pose[0:3]
         else:
             raise NotImplemented(f'[modified_state_publisher]: unknown type {sensor_type}')
-        state = np.asarray([*self.tracking_position, *self.fleeing_position, *self.tracking_orientation])
 
     def publish(self):
         state = np.asarray([*self.tracking_position, *self.fleeing_position, *self.tracking_orientation])

@@ -63,6 +63,7 @@ class TestUtils(unittest.TestCase):
         #      position[0]-width//2:position[0]+width//2] = 1
         # plt.imshow(frame)
         # plt.show()
+        # a=100
 
     def test_intersection_over_union(self):
         tracking_agent_position = [1, 0, 1]
@@ -105,6 +106,7 @@ class TestUtils(unittest.TestCase):
         #       pos1[0] - w1 // 2:pos1[0] + w1 // 2] = 1
         # plt.imshow(frame)
         # plt.show()
+        # a = 100
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
