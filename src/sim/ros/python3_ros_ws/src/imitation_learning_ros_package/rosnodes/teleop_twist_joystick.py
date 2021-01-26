@@ -14,7 +14,7 @@ from rosservice import ROSServiceException
 
 from src.core.logger import get_logger, cprint
 from src.core.utils import get_filename_without_extension
-from src.sim.ros.src.utils import get_output_path
+#from src.sim.ros.src.utils import get_output_path
 
 
 class JoyTeleopException(Exception):
@@ -68,7 +68,7 @@ class JoyTeleop:
         # Run a low-freq action updater
         rospy.Timer(rospy.Duration(2.0), self.update_actions)
 
-        self._logger = get_logger(get_filename_without_extension(__file__), get_output_path())
+        self._logger = get_logger(get_filename_without_extension(__file__), rospy.get_param('/output_path', '/tmp'))
         for c in self.command_list:
             cprint(f'{c}: ', self._logger)
             for k, e in self.command_list[c].items():
