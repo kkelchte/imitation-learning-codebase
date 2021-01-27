@@ -294,7 +294,7 @@ def calculate_bounding_box(state: Sequence,
     yaw = state[6]
     pitch = state[7]
     roll = state[8]
-    x, z, y = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
+    z, x, y = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
 
     u = focal_length * x / z
     v = focal_length * y / z
@@ -305,7 +305,7 @@ def calculate_bounding_box(state: Sequence,
     h_drone = 0.2
 
     pos0 = (x0, y0)
-    pos1 = (int(u * kx + v * skew + x0), int(y0 + v * ky))
+    pos1 = (int(x0 - u * kx + v * skew), int(y0 + v * ky))
 
     mx = z / sqrt(z ** 2 + x ** 2)
     my = z / sqrt(z ** 2 + y ** 2)
