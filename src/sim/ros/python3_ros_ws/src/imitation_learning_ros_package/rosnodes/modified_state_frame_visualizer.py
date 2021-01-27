@@ -39,12 +39,11 @@ class ModifiedStateFrameVisualizer:
 
     def _publish_combined_global_poses(self, data: np.ndarray) -> None:
         resolution = (100, 100)
-        # position, width, height = calculate_bounding_box(state=data,  # TODO
-        #                                                  resolution=resolution)
-        position, width, height = (10, 10), 5, 5
+        pos0, w0, h0, pos1, w1, h1 = calculate_bounding_box(state=data,
+                                                            resolution=resolution)
         frame = np.zeros(resolution)
-        frame[position[0]:position[0] + width,
-        position[1]:position[1] + height] = 255
+        frame[pos0[0]:pos0[0] + w0, pos0[1]:pos0[1] + h0] = 255
+        frame[pos1[0]:pos1[0] + w1, pos1[1]:pos1[1] + h1] = 125
 
         image = Image()
         image.data = frame.astype(np.uint8).flatten().tolist()
