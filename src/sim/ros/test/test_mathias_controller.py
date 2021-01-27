@@ -7,7 +7,7 @@ import numpy as np
 import rospy
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
-from geometry_msgs.msg import Pose, PointStamped
+from geometry_msgs.msg import Pose, PointStamped, Point
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
@@ -144,6 +144,7 @@ class TestMathiasController(unittest.TestCase):
         result = self.ros_topic.topic_values[self.command_topic]
         self.assertTrue(result.linear.z < 0)
 
+    #@unittest.skip
     def test_drone_positioning(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -219,14 +220,12 @@ class TestMathiasController(unittest.TestCase):
         self._unpause_client.wait_for_service()
         self._unpause_client.call()
 
-        # send out reference pose
-        msg = PointStamped()
-        msg.point.z = 1
-        self.ros_topic.publishers[self._reference_topic].publish(msg)
-
         # gets fsm in taken over state
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 2, 0.1, ros_topic=self.ros_topic)
+
+        # send out reference pose
+        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(z=1.)))
 
         # altitude control brings drone to starting_height
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',

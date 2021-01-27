@@ -122,9 +122,9 @@ class MathiasController:
             pose_ref = PointStamped(point=Point(x=pose_ref[0],
                                                 y=pose_ref[1],
                                                 z=1 if len(pose_ref) == 2 else pose_ref[2]))
-        if pose_ref != self.pose_ref:
-            print(f'setting pose_ref: {self.pose_ref}')
-            self.pose_ref = pose_ref
+        #if pose_ref != self.pose_ref:
+        cprint(f'setting pose_ref: {self.pose_ref}', self._logger)
+        self.pose_ref = pose_ref
 
     def _update_twist(self) -> Twist:
         twist = self._feedback()
@@ -139,7 +139,7 @@ class MathiasController:
             self._publisher.publish(cmd)
             self.count += 1
             if self.count % 10 * self._rate_fps == 0:
-                msg = f'control:  ref: {self.pose_ref}, \n pose: {self.pose_est} \n control: {cmd}'
+                msg = f'<<reference: {self.pose_ref}, \n<<pose: {self.pose_est} \n control: {cmd}'
                 cprint(msg, self._logger)
             rate.sleep()
 
@@ -191,9 +191,9 @@ class MathiasController:
 
         # Add theta feedback to remain at zero yaw angle
         # extension: look at reference point
-        angle_error = ((((self.desired_yaw - self.real_yaw) - np.pi) % (2*np.pi)) - np.pi)
-        K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
-        cmd.angular.z = (K_theta*angle_error)
+        #angle_error = ((((self.desired_yaw - self.real_yaw) - np.pi) % (2*np.pi)) - np.pi)
+        #K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
+        #cmd.angular.z = (K_theta*angle_error)
 
         self.prev_pose_error = pose_error
         self.prev_vel_error = vel_error
