@@ -11,6 +11,7 @@ from geometry_msgs.msg import Pose, PointStamped, Point
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
+import matplotlib.pyplot as plt
 
 from src.core.utils import get_filename_without_extension, get_to_root_dir, get_data_dir, safe_wait_till_true
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
@@ -204,48 +205,107 @@ class TestMathiasController(unittest.TestCase):
 
         self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
-#        for _ in range(3):
-#            print(f'round: {_}')
+        index = 0
+        while True:
+            # set gazebo model state
+            model_state = ModelState()
+            model_state.model_name = 'quadrotor'
+            model_state.pose = Pose()
+            self._set_model_state.wait_for_service()
+            self._set_model_state(model_state)
 
-        # set gazebo model state
-        model_state = ModelState()
-        model_state.model_name = 'quadrotor'
-        model_state.pose = Pose()
-        self._set_model_state.wait_for_service()
-        self._set_model_state(model_state)
+            # publish reset
+            self.ros_topic.publishers['/fsm/reset'].publish(Empty())
 
-        # publish reset
-        self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+            self._unpause_client.wait_for_service()
+            self._unpause_client.call()
+
+            # gets fsm in taken over state
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+                                FsmState.TakenOver.name, 2, 0.1, ros_topic=self.ros_topic)
+
+            # altitude control brings drone to starting_height
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+                                FsmState.Running.name, 45, 0.1, ros_topic=self.ros_topic)
+            # tweak z, x, y parameters
+            #self.tweak_separate_axis(index)
+
+            # tweak joint trajectory
+
+    def tweak_separate_axis(self, index):
+        measured_data = {}
+        # send out reference pose Z
+        self._pause_client.wait_for_service()
+        self._pause_client.call()
+
+        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(z=3.)))
 
         self._unpause_client.wait_for_service()
         self._unpause_client.call()
 
-        # gets fsm in taken over state
-        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
-                            FsmState.TakenOver.name, 2, 0.1, ros_topic=self.ros_topic)
+        points = []
+        for _ in range(100):
+            rospy.sleep(0.1)
+            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+            points.append(odom.pose.pose.position.z - 3.0)
+        plt.plot(points, 'r-', label='z')
+        measured_data[index] = {'z': points}
 
-        # altitude control brings drone to starting_height
-        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
-                            FsmState.Running.name, 45, 0.1, ros_topic=self.ros_topic)
+        # send out reference pose X
+        self._pause_client.wait_for_service()
+        self._pause_client.call()
+
+        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(x=2., z=3.)))
+
+        self._unpause_client.wait_for_service()
+        self._unpause_client.call()
+        points = []
+
+        for _ in range(100):
+            rospy.sleep(0.1)
+            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+            points.append(odom.pose.pose.position.x - 2.)
+        plt.plot(points, 'b', label='x')
+        measured_data[index]['x'] = points
+
+        # send out reference pose Y
+        self._pause_client.wait_for_service()
+        self._pause_client.call()
+
+        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(x=2., y=2., z=3.)))
+
+        self._unpause_client.wait_for_service()
+        self._unpause_client.call()
+
+        points = []
+        for _ in range(100):
+            rospy.sleep(0.1)
+            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+            points.append(odom.pose.pose.position.y - 2.)
+        plt.plot(points, 'g', label='y')
+        measured_data[index]['y'] = points
 
         self._pause_client.wait_for_service()
         self._pause_client.call()
-        # send out reference pose
-        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(z=1.)))
 
-        self._unpause_client.wait_for_service()
-        self._unpause_client.call()
+        plt.legend()
+        plt.show()
 
-        odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
-        while abs(odom.twist.twist.linear.z) > 0.1:
-            time.sleep(1)
-            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
-
-        # print(f'final_height: {z_pos}')
-        # self.assertLess(abs(z_pos - height), 0.2)
-        #
-        # self._pause_client.wait_for_service()
-        # self._pause_client.call()
+        colors = ['C0', 'C1', 'C2', 'C3', 'C4']
+        for key in measured_data.keys():
+            for a in measured_data[key].keys():
+                if a == 'x':
+                    style = '-'
+                elif a == 'y':
+                    style = '--'
+                else:
+                    style = ':'
+                plt.plot(measured_data[key][a], linestyle=style,
+                         color=colors[key % len(colors)], label=f'{key}: {a}')
+        plt.legend()
+        plt.show()
+        index += 1
+        index %= len(colors)
 
     def tearDown(self) -> None:
         self._ros_process.terminate()
