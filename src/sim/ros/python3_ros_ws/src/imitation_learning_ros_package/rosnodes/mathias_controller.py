@@ -49,13 +49,13 @@ class MathiasController:
         self._sample_time = self._specs['_sample_time'] if '_sample_time' in self._specs.keys() else 1./self._rate_fps
         self.Kp_x = self._specs['Kp_x'] if 'Kp_x' in self._specs.keys() else 0.6864
         self.Ki_x = self._specs['Ki_x'] if 'Ki_x' in self._specs.keys() else 0.6864
-        self.Kd_x = self._specs['Kd_x'] if 'Kd_x' in self._specs.keys() else 0  # 0.6864
+        self.Kd_x = self._specs['Kd_x'] if 'Kd_x' in self._specs.keys() else 0.6864
         self.Kp_y = self._specs['Kp_y'] if 'Kp_y' in self._specs.keys() else 0.6864
         self.Ki_y = self._specs['Ki_y'] if 'Ki_y' in self._specs.keys() else 0.6864
-        self.Kd_y = self._specs['Kd_y'] if 'Kd_y' in self._specs.keys() else 0  # 0.6864
+        self.Kd_y = self._specs['Kd_y'] if 'Kd_y' in self._specs.keys() else 0.6864
         self.Kp_z = self._specs['Kp_z'] if 'Kp_z' in self._specs.keys() else 0.5
-        self.Ki_z = self._specs['Ki_z'] if 'Ki_z' in self._specs.keys() else 1.5792
-        self.Kd_z = self._specs['Kd_z'] if 'Kd_z' in self._specs.keys() else 0  # 1.
+        self.Ki_z = self._specs['Ki_z'] if 'Ki_z' in self._specs.keys() else 0.5
+        self.Kd_z = self._specs['Kd_z'] if 'Kd_z' in self._specs.keys() else 0.5
         self.K_theta = self._specs['K_theta'] if 'K_theta' in self._specs.keys() else 0.3
 
         self.real_yaw = 0.0

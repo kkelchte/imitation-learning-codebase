@@ -224,16 +224,23 @@ class TestMathiasController(unittest.TestCase):
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 2, 0.1, ros_topic=self.ros_topic)
 
-        # send out reference pose
-        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(z=1.)))
-
         # altitude control brings drone to starting_height
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.Running.name, 45, 0.1, ros_topic=self.ros_topic)
 
+        self._pause_client.wait_for_service()
         self._pause_client.call()
-        # # check current height
-        z_pos = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')].pose.pose.position.z
+        # send out reference pose
+        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(z=1.)))
+
+        self._unpause_client.wait_for_service()
+        self._unpause_client.call()
+
+        odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+        while abs(odom.twist.twist.linear.z) > 0.1:
+            time.sleep(1)
+            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+
         # print(f'final_height: {z_pos}')
         # self.assertLess(abs(z_pos - height), 0.2)
         #
