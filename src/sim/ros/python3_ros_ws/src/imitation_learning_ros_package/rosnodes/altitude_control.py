@@ -25,6 +25,10 @@ from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_
     get_output_path, apply_noise_to_twist, process_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension, safe_wait_till_true
 
+"""
+Take care of taking off and landing during take-over state
+"""
+
 
 class AltitudeControl:
 
@@ -61,7 +65,6 @@ class AltitudeControl:
                              callback_args='default')
             rospy.wait_for_service('/enable_motors')
             self._enable_motors_services['default'] = rospy.ServiceProxy('/enable_motors', EnableMotors)
-
         elif isinstance(self._robot, list):
             # in case of tracking fleeing quadrotor
             self._publishers['tracking'] = rospy.Publisher('cmd_vel', Twist, queue_size=10)
