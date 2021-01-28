@@ -145,7 +145,7 @@ class TestMathiasController(unittest.TestCase):
         result = self.ros_topic.topic_values[self.command_topic]
         self.assertTrue(result.linear.z < 0)
 
-    #@unittest.skip
+    @unittest.skip
     def test_drone_positioning(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -205,6 +205,7 @@ class TestMathiasController(unittest.TestCase):
 
         self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
+        measured_data = {}
         index = 0
         while True:
             # set gazebo model state
@@ -226,14 +227,14 @@ class TestMathiasController(unittest.TestCase):
 
             # altitude control brings drone to starting_height
             safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
-                                FsmState.Running.name, 45, 0.1, ros_topic=self.ros_topic)
+                                FsmState.Running.name, 20, 0.1, ros_topic=self.ros_topic)
             # tweak z, x, y parameters
-            #self.tweak_separate_axis(index)
+            #self.tweak_separate_axis(index, measured_data)
 
-            # tweak joint trajectory
+            # tweak joint fly to point
+            self.tweak_joint_axis(index, measured_data)
 
-    def tweak_separate_axis(self, index):
-        measured_data = {}
+    def tweak_separate_axis(self, index, measured_data):
         # send out reference pose Z
         self._pause_client.wait_for_service()
         self._pause_client.call()
@@ -306,6 +307,133 @@ class TestMathiasController(unittest.TestCase):
         plt.show()
         index += 1
         index %= len(colors)
+
+    def tweak_joint_axis(self, index, measured_data):
+
+        # send out reference pose
+        self._pause_client.wait_for_service()
+        self._pause_client.call()
+
+        self.ros_topic.publishers[self._reference_topic].publish(PointStamped(point=Point(x=2., y=2., z=3.)))
+
+        self._unpause_client.wait_for_service()
+        self._unpause_client.call()
+
+        measured_data[index] = {'x': [],
+                                'y': [],
+                                'z': []}
+        for _ in range(100):
+            rospy.sleep(0.1)
+            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+            measured_data[index]['x'].append(odom.pose.pose.position.x - 2.)
+            measured_data[index]['y'].append(odom.pose.pose.position.y - 2.)
+            measured_data[index]['z'].append(odom.pose.pose.position.z - 3.)
+
+        self._pause_client.wait_for_service()
+        self._pause_client.call()
+
+        colors = ['C0', 'C1', 'C2', 'C3', 'C4']
+        for key in measured_data.keys():
+            for a in measured_data[key].keys():
+                if a == 'x':
+                    style = '-'
+                elif a == 'y':
+                    style = '--'
+                else:
+                    style = ':'
+                plt.plot(measured_data[key][a], linestyle=style,
+                         color=colors[key % len(colors)], label=f'{key}: {a}')
+        plt.legend()
+        plt.show()
+        index += 1
+        index %= len(colors)
+
+    def test_trajectory_tracking(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'debug_drone',
+            'robot_name': 'drone_sim',
+            'gazebo': True,
+            'fsm': True,
+            'fsm_mode': 'TakeOverRun',
+            'control_mapping': True,
+            'control_mapping_config': 'mathias_controller',
+            'waypoint_indicator': True,
+            'altitude_control': True,
+            'mathias_controller': True,
+            'starting_height': 1.
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+
+        # subscribe to command control
+        subscribe_topics = [
+            TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
+                        msg_type=rospy.get_param('/robot/position_sensor/type')),
+            TopicConfig(topic_name='/fsm/state',
+                        msg_type='String')
+        ]
+        publish_topics = [
+            TopicConfig(topic_name='/fsm/reset', msg_type='Empty'),
+        ]
+
+        self.ros_topic = TestPublisherSubscriber(
+            subscribe_topics=subscribe_topics,
+            publish_topics=publish_topics
+        )
+        self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
+        self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
+        self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+
+        # unpause gazebo to receive messages
+        self._unpause_client.wait_for_service()
+        self._unpause_client.call()
+
+        safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 10, 0.1, ros_topic=self.ros_topic)
+        self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data, FsmState.Unknown.name)
+
+        # pause again before start
+        self._pause_client.wait_for_service()
+        self._pause_client.call()
+        self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+
+        measured_data = {}
+        index = 0
+        while True:
+            # set gazebo model state
+            model_state = ModelState()
+            model_state.model_name = 'quadrotor'
+            model_state.pose = Pose()
+            self._set_model_state.wait_for_service()
+            self._set_model_state(model_state)
+
+            # publish reset
+            self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+
+            self._unpause_client.wait_for_service()
+            self._unpause_client.call()
+
+            # gets fsm in taken over state
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+                                FsmState.TakenOver.name, 2, 0.1, ros_topic=self.ros_topic)
+
+            # altitude control brings drone to starting_height
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+                                FsmState.Running.name, 20, 0.1, ros_topic=self.ros_topic)
+            # see it reaches the goal state:
+            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+                                FsmState.Terminated.name, 20, 0.1, ros_topic=self.ros_topic)
+
+            self._pause_client.wait_for_service()
+            self._pause_client.call()
+            a = 100
 
     def tearDown(self) -> None:
         self._ros_process.terminate()

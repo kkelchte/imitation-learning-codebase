@@ -61,7 +61,7 @@ class MathiasController:
         self.K_theta = self._specs['K_theta'] if 'K_theta' in self._specs.keys() else 0.3
 
         self.real_yaw = 0.0
-        self.desired_yaw = 0.0  #np.pi / 8.
+        self.desired_yaw = 0.0
         self._fsm_state = FsmState.Unknown
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
@@ -128,7 +128,7 @@ class MathiasController:
                       msg.pose.pose.orientation.z,
                       msg.pose.pose.orientation.w)
         _, _, self.real_yaw = euler_from_quaternion(quaternion)
-        print(f'yaw world frame: {self.real_yaw}')
+        cprint(f'yaw world frame: {self.real_yaw}', self._logger)
 
         self.pose_est = msg.pose.pose
         self.vel_est.x = msg.twist.twist.linear.x
@@ -183,9 +183,9 @@ class MathiasController:
         vel_error.point.x = self.vel_ref.linear.x - self.vel_est.x
         vel_error.point.y = self.vel_ref.linear.y - self.vel_est.y
 
-        pose_error.point, vel_error.point = transform([pose_error.point, vel_error.point],
-                                                      R.from_euler('XYZ', (0, 0, self.real_yaw),
-                                                                   degrees=False).as_matrix())
+        pose_error.point, vel_error.point = transform(points=[pose_error.point, vel_error.point],
+                                                      orientation=R.from_euler('XYZ', (0, 0, -self.real_yaw),
+                                                                               degrees=False).as_matrix())
 
         cmd = Twist()
         cmd.linear.x = max(-self.max_input, min(self.max_input, (
@@ -206,12 +206,20 @@ class MathiasController:
                               (-self.Kp_z + self.Ki_z * self._sample_time/2) * prev_pose_error.point.z +
                               self.Kd_z * (vel_error.point.z - prev_vel_error.point.z))))  # Added derivative term
 
-        # Add theta feedback to remain at zero yaw angle
-        # extension: look at reference point
-        angle_error = ((((self.desired_yaw - self.real_yaw) - np.pi) % (2*np.pi)) - np.pi)
-        K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
-        # angle_error = np.arctan(pose_error.point.y / pose_error.point.x) % 2 * np.pi
-        cmd.angular.z = (K_theta * angle_error)
+        # if target is more than 1m away, look in that direction
+        if np.sqrt(pose_error.point.x ** 2 + pose_error.point.y ** 2) > 1:
+            angle_error = np.arctan(pose_error.point.y / pose_error.point.x)
+            # compensate for second and third quadrant:
+            if np.sign(pose_error.point.x) == -1:
+                angle_error += np.pi
+            # turn in direction of smallest angle
+            angle_error = -(2 * np.pi - angle_error) if 2 * np.pi - angle_error < angle_error else angle_error
+            cmd.angular.z = (self.K_theta * angle_error)
+            self.desired_yaw = self.real_yaw  # update desired looking direction
+        else:  # else look at reference point
+            angle_error = ((((self.desired_yaw - self.real_yaw) - np.pi) % (2*np.pi)) - np.pi)
+            K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
+            cmd.angular.z = (K_theta * angle_error)
 
         self.prev_pose_error = pose_error
         self.prev_vel_error = vel_error
