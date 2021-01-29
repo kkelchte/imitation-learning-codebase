@@ -160,7 +160,7 @@
     <arg name="joystick" default="false"/>
     <group if="$(arg joystick)" ns="/actor/joystick">
         <arg name="joystick_config_file_path_with_extension"
-             default="$(env CODEDIR)/src/sim/ros/config/actor/joystick_turtlebot_sim.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/joystick_$(arg robot_name).yml"/>
         <rosparam command="load"
                   file="$(arg joystick_config_file_path_with_extension)"/>
         <!--<node pkg="imitation_learning_ros_package"
@@ -181,7 +181,7 @@
     <arg name="keyboard" default="false"/>
     <group if="$(arg keyboard)">
         <arg name="keyboard_config_file_path_with_extension"
-             default="$(env CODEDIR)/src/sim/ros/config/actor/keyboard_turtlebot_sim.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/keyboard_$(arg robot_name).yml"/>
         <rosparam command="load"
                   file="$(arg keyboard_config_file_path_with_extension)"
                   ns="/actor/keyboard"/>

@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 import rospy
 import yaml
-from std_msgs.msg import Float32MultiArray, String
+from std_msgs.msg import Float32MultiArray, String, Header
 from geometry_msgs.msg import Twist, PointStamped, Point, Pose
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
@@ -60,8 +60,8 @@ class MathiasController:
         self.Kd_z = self._specs['Kd_z'] if 'Kd_z' in self._specs.keys() else 0.
         self.K_theta = self._specs['K_theta'] if 'K_theta' in self._specs.keys() else 0.3
 
-        self.real_yaw = 0.0
-        self.desired_yaw = 0.0
+        self.real_yaw = 0
+        self.desired_yaw = None
         self._fsm_state = FsmState.Unknown
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
@@ -138,11 +138,22 @@ class MathiasController:
     def _reference_update(self, message: PointStamped) -> None:
         if isinstance(message, PointStamped):
             pose_ref = message
-        elif isinstance(message, Float32MultiArray):
+            if message.header.frame_id == "agent":  # transform from agent to world-yaw (!) reference frame.
+                current_world_yaw_position = transform(points=[self.pose_est.position],
+                                                       orientation=R.from_euler('XYZ', (0, 0, -self.real_yaw),
+                                                                                degrees=False).as_matrix())[0]
+                pose_ref.point.x += current_world_yaw_position.x
+                pose_ref.point.y += current_world_yaw_position.y
+                pose_ref.point.z += current_world_yaw_position.z
+        elif isinstance(message, Float32MultiArray):  # in case of global waypoint
             pose_ref = message.data
             pose_ref = PointStamped(point=Point(x=pose_ref[0],
                                                 y=pose_ref[1],
                                                 z=1 if len(pose_ref) == 2 else pose_ref[2]))
+        if pose_ref != self.pose_ref:  # reset pose error when new reference comes in.
+            self.prev_pose_error = PointStamped()
+            self.prev_vel_error = PointStamped()
+            self.prev_cmd = Twist()
         self.pose_ref = pose_ref
 
     def _update_twist(self) -> Twist:
@@ -171,6 +182,7 @@ class MathiasController:
         
         # PID
         prev_pose_error = self.prev_pose_error
+
         pose_error = PointStamped()
         pose_error.header.frame_id = "world"
         pose_error.point.x = (self.pose_ref.point.x - self.pose_est.position.x)
@@ -217,9 +229,10 @@ class MathiasController:
             cmd.angular.z = (self.K_theta * angle_error)
             self.desired_yaw = self.real_yaw  # update desired looking direction
         else:  # else look at reference point
-            angle_error = ((((self.desired_yaw - self.real_yaw) - np.pi) % (2*np.pi)) - np.pi)
-            K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
-            cmd.angular.z = (K_theta * angle_error)
+            if self.desired_yaw is not None:  # in case there is a desired yaw
+                angle_error = ((((self.desired_yaw - self.real_yaw) - np.pi) % (2*np.pi)) - np.pi)
+                K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
+                cmd.angular.z = (K_theta * angle_error)
 
         self.prev_pose_error = pose_error
         self.prev_vel_error = vel_error
