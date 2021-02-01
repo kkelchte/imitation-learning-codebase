@@ -62,7 +62,6 @@ class MathiasController:
 
         self.real_yaw = 0
         self.desired_yaw = None
-        self._fsm_state = FsmState.Unknown
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
         self.prev_cmd = Twist()
@@ -80,6 +79,9 @@ class MathiasController:
         # self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
     def _subscribe(self):
+        self._fsm_state = FsmState.Unknown
+        rospy.Subscriber(name='/fsm/state', data_class=String, callback=self._set_fsm_state)
+
         # listen to desired next reference point
         rospy.Subscriber('/reference_pose', PointStamped, self._reference_update)
         rospy.Subscriber(name='/waypoint_indicator/current_waypoint',
@@ -103,6 +105,15 @@ class MathiasController:
 
         # Dynamic reconfig server
         self._config_server = Server(pidConfig, self._dynamic_config_callback)
+
+    def _set_fsm_state(self, msg: String):
+        # detect transition
+        if self._fsm_state != FsmState[msg.data]:
+            self._fsm_state = FsmState[msg.data]
+            if self._fsm_state == FsmState.Running:  # reset early feedback values
+                self.prev_pose_error = PointStamped()
+                self.prev_vel_error = PointStamped()
+                self.prev_cmd = Twist()
 
     def _dynamic_config_callback(self, config, level):
         cprint(f'received config: {config}, level: {level}', self._logger)
@@ -165,12 +176,13 @@ class MathiasController:
     def run(self):
         rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
-            cmd = self._update_twist()
-            self._publisher.publish(cmd)
-            self.count += 1
-            if self.count % 10 * self._rate_fps == 0:
-                msg = f'<<reference: {self.pose_ref}, \n<<pose: {self.pose_est} \n control: {cmd}'
-                cprint(msg, self._logger)
+            if self._fsm_state == FsmState.Running:
+                cmd = self._update_twist()
+                self._publisher.publish(cmd)
+                self.count += 1
+                if self.count % 10 * self._rate_fps == 0:
+                    msg = f'<<reference: {self.pose_ref}, \n<<pose: {self.pose_est} \n control: {cmd}'
+                    cprint(msg, self._logger)
             rate.sleep()
 
     def _feedback(self):

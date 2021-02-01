@@ -587,7 +587,67 @@ class TestMathiasController(unittest.TestCase):
             index += 1
             index %= len(colors)
 
-    # @unittest.skip
+    def test_drone_keyboard_gazebo(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'empty',
+            'robot_name': 'drone_sim',
+            'gazebo': True,
+            'fsm': True,
+            'fsm_mode': 'TakeOverRun',
+            'control_mapping': True,
+            'control_mapping_config': 'mathias_controller_keyboard',
+            'altitude_control': False,
+            'keyboard': True,
+            'mathias_controller': True,
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+
+        # subscribe to command control
+        subscribe_topics = [
+            TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
+                        msg_type=rospy.get_param('/robot/position_sensor/type')),
+            TopicConfig(topic_name='/fsm/state',
+                        msg_type='String')
+
+        ]
+        self._reference_topic = '/reference_pose'
+        self._reference_type = 'PointStamped'
+        publish_topics = [
+            TopicConfig(topic_name='/fsm/reset', msg_type='Empty'),
+            TopicConfig(topic_name=self._reference_topic, msg_type=self._reference_type),
+        ]
+
+        self.ros_topic = TestPublisherSubscriber(
+            subscribe_topics=subscribe_topics,
+            publish_topics=publish_topics
+        )
+
+        self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
+        self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
+
+        safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 10, 0.1, ros_topic=self.ros_topic)
+        measured_data = {}
+        index = 0
+        while True:
+            # publish reset
+            self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+
+            self._unpause_client.wait_for_service()
+            self._unpause_client.call()
+
+            # index = self.tweak_steady_pose(measured_data, index)
+            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+
+    @unittest.skip
     def test_drone_relative_positioning_real_bebop(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -638,7 +698,7 @@ class TestMathiasController(unittest.TestCase):
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
             # index = self.tweak_steady_pose(measured_data, index)
-            index = self.tweak_separate_axis_real(measured_data, index, axis=0)
+            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
 
     def tweak_steady_pose(self, measured_data, index):
         # gets fsm in taken over state
@@ -683,7 +743,7 @@ class TestMathiasController(unittest.TestCase):
         index %= len(colors)
         return index
 
-    def tweak_separate_axis_real(self, measured_data, index, axis=2):
+    def tweak_separate_axis_keyboard(self, measured_data, index, axis=2):
         # gets fsm in taken over state
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
@@ -707,12 +767,13 @@ class TestMathiasController(unittest.TestCase):
         reference = [ref_odom.pose.pose.position.x,
                      ref_odom.pose.pose.position.y,
                      ref_odom.pose.pose.position.z]
+
         # Mathias controller should keep drone in steady pose
         while self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
             odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
-            measured_data[index]['x'].append(odom.pose.pose.position.x - reference[0])
-            measured_data[index]['y'].append(odom.pose.pose.position.y - reference[1])
-            measured_data[index]['z'].append(odom.pose.pose.position.z - reference[2])
+            measured_data[index]['x'].append(odom.pose.pose.position.x - reference[0] - (1. if axis == 0 else 0.))
+            measured_data[index]['y'].append(odom.pose.pose.position.y - reference[1] - (1. if axis == 1 else 0.))
+            measured_data[index]['z'].append(odom.pose.pose.position.z - reference[2] - (1. if axis == 2 else 0.))
             quaternion = (odom.pose.pose.orientation.x,
                           odom.pose.pose.orientation.y,
                           odom.pose.pose.orientation.z,
