@@ -1,10 +1,10 @@
-output_path: discrete-dummy-tracking/baseline
+output_path: two_drone_setup/test
 mode: default
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
   - 5
 base_config_files:
-  - src/scripts/config/discrete_dummy_tracking_ppo.yml
+  - src/scripts/config/rl_train_adversarial_agents.yml
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/start2017/r0669036/code/imitation-learning-codebase

@@ -29,7 +29,7 @@ class AdversarialProximatePolicyGradient(ProximatePolicyGradient):
         # add adversarial actor & critic optimizers
         kwargs = {'params': self._net.get_adversarial_actor_parameters(),
                   'lr': self._config.learning_rate if self._config.actor_learning_rate == -1
-                  else 5*self._config.actor_learning_rate}
+                  else self._config.actor_learning_rate}
         if self._config.optimizer == 'Adam':
             kwargs['eps'] = 1e-05
         self._adversarial_actor_optimizer = eval(f'torch.optim.{self._config.optimizer}')(**kwargs)
