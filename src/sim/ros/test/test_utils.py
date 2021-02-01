@@ -28,7 +28,7 @@ class TestUtils(unittest.TestCase):
         tracking_agent_position = [0, 1, 1]
         tracking_agent_orientation = [0, 0, 0]
         fleeing_agent_position = [3, 1, 1]
-        bmasterounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
+        bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
                                                        *fleeing_agent_position,
                                                        *tracking_agent_orientation],
                                                 resolution=resolution)

@@ -291,9 +291,9 @@ def calculate_bounding_box(state: Sequence,
     y0 = resolution[1] // 2
     agent0 = np.asarray(state[:3])
     agent1 = np.asarray(state[3:6])
-    yaw = state[6]
+    roll = state[6]
     pitch = state[7]
-    roll = state[8]
+    yaw = state[8]
     z, x, y = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
 
     u = focal_length * x / z
@@ -313,6 +313,7 @@ def calculate_bounding_box(state: Sequence,
     h0 = int(ky * h_drone * focal_length / min_dist)
     w1 = int(mx * kx * w_drone * focal_length / z)
     h1 = int(my * ky * h_drone * focal_length / z)
+    print(str(pos0) + " - " + str(pos1))
     return pos0, w0, h0, pos1, w1, h1
 
 
