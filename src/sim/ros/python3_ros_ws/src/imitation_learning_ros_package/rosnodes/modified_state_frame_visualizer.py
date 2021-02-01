@@ -38,12 +38,12 @@ class ModifiedStateFrameVisualizer:
         rospy.init_node('modified_state_frame_visualizer')
 
     def _publish_combined_global_poses(self, data: np.ndarray) -> None:
-        resolution = (100, 100)
+        resolution = (1000, 1000)
         pos0, w0, h0, pos1, w1, h1 = calculate_bounding_box(state=data,
                                                             resolution=resolution)
         frame = np.zeros(resolution)
-        frame[pos0[0]:pos0[0] + w0, pos0[1]:pos0[1] + h0] = 255
-        frame[pos1[0]:pos1[0] + w1, pos1[1]:pos1[1] + h1] = 125
+        frame[pos0[1] - w0//2:pos0[1] + w0//2, pos0[0] - h0//2:pos0[0] + h0//2] = 255
+        frame[pos1[1] - w1//2:pos1[1] + w1//2, pos1[0] - h1//2:pos1[0] + h1//2] = 125
 
         image = Image()
         image.data = frame.astype(np.uint8).flatten().tolist()

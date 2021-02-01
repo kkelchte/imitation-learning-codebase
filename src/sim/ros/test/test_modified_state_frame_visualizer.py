@@ -13,8 +13,7 @@ from std_msgs.msg import Float32MultiArray
 from src.core.utils import get_filename_without_extension, get_data_dir, safe_wait_till_true
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import euler_from_quaternion, process_float32multi_array, process_image, \
-    calculate_bounding_box
+from src.sim.ros.src.utils import euler_from_quaternion, process_float32multi_array, process_image
 from src.sim.ros.test.common_utils import TestPublisherSubscriber, TopicConfig, get_fake_pose_stamped, \
     get_fake_combined_global_poses
 
@@ -56,7 +55,7 @@ class TestModifiedStatePublisher(unittest.TestCase):
             publish_topics=publish_topics
         )
         # test center view
-        message = get_fake_combined_global_poses(0, 0, 1, 3, 0, 1, 0, 0, 0)
+        message = get_fake_combined_global_poses(0, 0, 1, 3, 1, 1, 0, 0, 0)
         rospy.sleep(2)
         self.ros_topic.publishers[self.modified_state_topic].publish(message)
 

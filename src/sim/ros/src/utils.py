@@ -309,11 +309,10 @@ def calculate_bounding_box(state: Sequence,
 
     mx = z / sqrt(z ** 2 + x ** 2)
     my = z / sqrt(z ** 2 + y ** 2)
-    w0 = int(kx * w_drone * focal_length / min_dist)
-    h0 = int(ky * h_drone * focal_length / min_dist)
-    w1 = int(mx * kx * w_drone * focal_length / z)
-    h1 = int(my * ky * h_drone * focal_length / z)
-    print(str(pos0) + " - " + str(pos1))
+    w0 = int((kx * w_drone * focal_length / min_dist) * resolution[0]/1000)
+    h0 = int((ky * h_drone * focal_length / min_dist) * resolution[1]/1000)
+    w1 = int((mx * kx * w_drone * focal_length / z) * resolution[0]/1000)
+    h1 = int((my * ky * h_drone * focal_length / z) * resolution[1]/1000)
     return pos0, w0, h0, pos1, w1, h1
 
 
