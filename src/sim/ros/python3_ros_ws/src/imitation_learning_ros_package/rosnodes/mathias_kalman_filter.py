@@ -1,7 +1,6 @@
 #!/usr/bin/python3.8
 
-from geometry_msgs.msg import Twist, PoseStamped, PointStamped
-from std_msgs.msg import Empty
+from geometry_msgs.msg import PointStamped, TwistStamped
 import rospy
 import numpy as np
 
@@ -28,12 +27,12 @@ class Kalman(object):
         self.X_r_t0 = np.zeros(shape=(8, 1))  # ??
         self.input_cmd_Ts = rospy.get_param('vel_cmd/sample_time', 0.01)  # s  TODO
 
-        self.Phat_t0 = np.zeros(8)
+        self.Phat_t0 = np.zeros(8)  # error covariance matrix
         self.Phat = np.zeros(8)
 
         # Kalman tuning parameters.
         self.R = np.identity(3)  # measurement noise covariance
-        self.Q = np.array([[1, 0, 0, 0, 0, 0, 0, 0],
+        self.Q = np.array([[1, 0, 0, 0, 0, 0, 0, 0],  # process noise covariance matrix
                            [0, 1e1, 0, 0, 0, 0, 0, 0],
                            [0, 0, 1, 0, 0, 0, 0, 0],
                            [0, 0, 0, 1, 0, 0, 0, 0],
@@ -42,7 +41,7 @@ class Kalman(object):
                            [0, 0, 0, 0, 0, 0, 1, 0],
                            [0, 0, 0, 0, 0, 0, 0, 1e1]])
 
-    def kalman_pos_predict(self, input_cmd, yhat_r):
+    def kalman_pos_predict(self, input_cmd):
         '''
         Based on the velocity commands send out by the velocity controller,
         calculate a prediction of the position in the future.
@@ -71,7 +70,8 @@ class Kalman(object):
             - case 5: last velocity command before measurement is not yet in
                       the list and appears only in the next correction step.
         Arguments:
-            measurement_world: PoseStamped expressed in "world" frame.
+            measurement: PoseStamped expressed in "world" frame.
+            yhat_r_t0:
         '''
 
         self.vel_list_corr = self.vel_list_corr + self.input_cmd_list
@@ -124,8 +124,7 @@ class Kalman(object):
         # Now make prediction up to new t0 if not case 3.
         if not case3:
             # print '\n kalman third predict step Ts and yhat_r \n', B, yhat_r.point
-            (X, yhat_r, vhat_r, Phat) = self.predict_step_calc(
-                self.vel_list_corr[-1], B, X, Phat)
+            (X, yhat_r, vhat_r, Phat) = self.predict_step_calc(self.vel_list_corr[-1], B, X, Phat)
         else:
             self.case5 = False
             B = B % self.input_cmd_Ts
@@ -133,14 +132,12 @@ class Kalman(object):
         # ---- CORRECTION ----
         # Correct the estimate at new t0 with the measurement.
         # print '\n kalman correct yhat_r \n', yhat_r.point
-        (X, yhat_r_t0, Phat) = self.correct_step_calc(
-                                                measurement, X, yhat_r, Phat)
+        (X, yhat_r_t0, Phat) = self.correct_step_calc(measurement, X, yhat_r, Phat)
         self.X_r_t0 = X
         yhat_r_t0.header.stamp = measurement.header.stamp
 
         # Now predict until next point t that coincides with next timepoint
         # for the controller.
-        # print '\n kalman fourth predict step Ts and yhat_r \n', (1 + self.case5)*self.input_cmd_Ts - B, yhat_r_t0.point
         (X, yhat_r, vhat_r, Phat) = self.predict_step_calc(
                                 self.vel_list_corr[-1],
                                 (1 + self.case5)*self.input_cmd_Ts - B,
@@ -155,13 +152,18 @@ class Kalman(object):
 
         return yhat_r, yhat_r_t0
 
-    def predict_step_calc(self, input_cmd_stamped, Ts, X, Phat):
+    def predict_step_calc(self, input_cmd_stamped: TwistStamped,
+                          Ts: float,
+                          X: np.ndarray,
+                          Phat: np.ndarray):
         """
         Prediction step of the kalman filter. Update the position of the drone
         using the reference velocity commands.
         Arguments:
             - input_cmd_stamped = TwistStamped
             - Ts = varying step size over which to integrate.
+            - X = current state as array 8x1
+            - Phat = error covariance matrix a priori update
         """
         input_cmd = input_cmd_stamped.twist
 

@@ -46,7 +46,7 @@ class MathiasController:
             yaml.dump(self._specs, f)
         self._reference_height = rospy.get_param('/world/starting_height', 1)
 
-        self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 60
+        self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 5
         self.max_input = self._specs['max_input'] if 'max_input' in self._specs.keys() else 1.0
         # Not sure if this sample time should correspond to update rate of controller or measurement rate
         self._sample_time = 1./self._rate_fps

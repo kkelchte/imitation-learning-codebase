@@ -704,7 +704,7 @@ class TestMathiasController(unittest.TestCase):
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
             #index = self.tweak_steady_pose(measured_data, index)
-            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
 
     def get_pose(self):
         if rospy.get_param('/robot/position_sensor/topic') in self.ros_topic.topic_values.keys():
@@ -732,6 +732,7 @@ class TestMathiasController(unittest.TestCase):
                                                                                       point=Point(x=ref_pose[0],
                                                                                                   y=ref_pose[1],
                                                                                                   z=ref_pose[2])))
+                print(f'OVERTAKE: drones: yaw = {ref_pose[3]}')
             # with relative positioning
             #self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(frame_id="agent"),
             #                                                                      point=Point(x=0., y=0., z=0.)))
@@ -749,6 +750,7 @@ class TestMathiasController(unittest.TestCase):
             measured_data[index]['y'].append(y - ref_pose[1])
             measured_data[index]['z'].append(z - ref_pose[2])
             measured_data[index]['yaw'].append(yaw - ref_pose[3])
+            print(f'RUNNING: drones: ref_pose = {ref_pose}')
             rospy.sleep(0.5)
 
         colors = ['C0', 'C1', 'C2', 'C3', 'C4']
@@ -767,7 +769,7 @@ class TestMathiasController(unittest.TestCase):
         # gets fsm in taken over state
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
-        d = 1
+        d = 0.5
         point = [d if axis == 0 else 0.,
                  d if axis == 1 else 0.,
                  d if axis == 2 else 0.]
@@ -803,7 +805,7 @@ class TestMathiasController(unittest.TestCase):
                 z=pose[2] - goal_pose[2])
             # rotate pose error to global yaw frame
             pose_error = transform(points=[pose_error],
-                                   orientation=R.from_euler('XYZ', (0, 0, -last_pose[0]),
+                                   orientation=R.from_euler('XYZ', (0, 0, -last_pose[-1]),
                                                             degrees=False).as_matrix())[0]
             measured_data[index]['x'].append(pose_error.x)
             measured_data[index]['y'].append(pose_error.y)
