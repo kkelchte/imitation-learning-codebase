@@ -48,7 +48,8 @@ class MathiasController:
 
         self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 60
         self.max_input = self._specs['max_input'] if 'max_input' in self._specs.keys() else 1.0
-        self._sample_time = self._specs['_sample_time'] if '_sample_time' in self._specs.keys() else 1./self._rate_fps
+        # Not sure if this sample time should correspond to update rate of controller or measurement rate
+        self._sample_time = 1./self._rate_fps
         self.Kp_x = self._specs['Kp_x'] if 'Kp_x' in self._specs.keys() else 2.0
         self.Ki_x = self._specs['Ki_x'] if 'Ki_x' in self._specs.keys() else 0.2
         self.Kd_x = self._specs['Kd_x'] if 'Kd_x' in self._specs.keys() else 0.4
@@ -62,6 +63,7 @@ class MathiasController:
 
         self.real_yaw = 0
         self.desired_yaw = None
+        self.last_cmd = None
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
         self.prev_cmd = Twist()
@@ -71,6 +73,8 @@ class MathiasController:
         self.vel_ref = Twist()
         self.prev_pose_error = PointStamped()
         self.prev_vel_error = PointStamped()
+        self._robot = rospy.get_param('/robot/model_name')
+        cprint(f'model_name: {self._robot}', self._logger)
 
         self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
@@ -118,6 +122,7 @@ class MathiasController:
     def _dynamic_config_callback(self, config, level):
         cprint(f'received config: {config}, level: {level}', self._logger)
         self._rate_fps = config['rate_fps']
+        self._sample_time = 1 / self._rate_fps
         self.max_input = config['max_input']
         self.Kp_x = config['Kp_x']
         self.Ki_x = config['Ki_x']
@@ -146,16 +151,19 @@ class MathiasController:
         self.vel_est.y = msg.twist.twist.linear.y
         self.vel_est.z = msg.twist.twist.linear.z
 
+        if self._fsm_state == FsmState.Running:
+            self.last_cmd = self._update_twist()
+            self._publisher.publish(self.last_cmd)
+
     def _reference_update(self, message: PointStamped) -> None:
         if isinstance(message, PointStamped):
             pose_ref = message
-            if message.header.frame_id == "agent":  # transform from agent to world-yaw (!) reference frame.
-                current_world_yaw_position = transform(points=[self.pose_est.position],
-                                                       orientation=R.from_euler('XYZ', (0, 0, -self.real_yaw),
-                                                                                degrees=False).as_matrix())[0]
-                pose_ref.point.x += current_world_yaw_position.x
-                pose_ref.point.y += current_world_yaw_position.y
-                pose_ref.point.z += current_world_yaw_position.z
+            if message.header.frame_id == "agent":
+                # transform from agent to world frame.
+                pose_ref.point = transform(points=[pose_ref.point],
+                                           orientation=R.from_euler('XYZ', (0, 0, self.real_yaw),
+                                                                    degrees=False).as_matrix(),
+                                           translation=self.pose_est.position)[0]
         elif isinstance(message, Float32MultiArray):  # in case of global waypoint
             pose_ref = message.data
             pose_ref = PointStamped(point=Point(x=pose_ref[0],
@@ -174,16 +182,13 @@ class MathiasController:
         return twist
 
     def run(self):
-        rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
             if self._fsm_state == FsmState.Running:
-                cmd = self._update_twist()
-                self._publisher.publish(cmd)
                 self.count += 1
                 if self.count % 10 * self._rate_fps == 0:
-                    msg = f'<<reference: {self.pose_ref}, \n<<pose: {self.pose_est} \n control: {cmd}'
+                    msg = f'<<reference: {self.pose_ref}, \n<<pose: {self.pose_est} \n control: {self.last_cmd}'
                     cprint(msg, self._logger)
-            rate.sleep()
+            rospy.sleep(duration=1/self._rate_fps)
 
     def _feedback(self):
         '''Whenever the target is reached, apply position feedback to the

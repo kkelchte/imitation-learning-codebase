@@ -255,7 +255,7 @@ def project(points: List[np.ndarray],
 
 def transform(points: List[Union[np.ndarray, Point]],
               orientation: np.ndarray = np.eye(3),
-              translation: np.ndarray = np.zeros((3,)),
+              translation: Union[np.ndarray, Point] = np.zeros((3,)),
               invert: bool = False) -> List[Union[np.ndarray, Point]]:
     return_points = isinstance(points[0], Point)
     if return_points:
@@ -268,7 +268,9 @@ def transform(points: List[Union[np.ndarray, Point]],
         points = [np.concatenate([p, np.ones(1,)]) for p in points]
     transformation = np.zeros((4, 4))
     transformation[0:3, 0:3] = orientation
-    transformation[0:3, 3] = translation
+    transformation[0:3, 3] = translation if isinstance(translation, np.ndarray) else np.asarray([translation.x,
+                                                                                                 translation.y,
+                                                                                                 translation.z])
     transformation[3, 3] = 1
     if invert:
         transformation = np.linalg.inv(transformation)

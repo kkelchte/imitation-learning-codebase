@@ -12,11 +12,12 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty, Header
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 import matplotlib.pyplot as plt
+from scipy.spatial.transform import Rotation as R
 
 from src.core.utils import get_filename_without_extension, get_to_root_dir, get_data_dir, safe_wait_till_true
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import euler_from_quaternion
+from src.sim.ros.src.utils import euler_from_quaternion, transform
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber, get_fake_laser_scan
 
 
@@ -479,7 +480,7 @@ class TestMathiasController(unittest.TestCase):
             'control_mapping_config': 'mathias_controller',
             'altitude_control': True,
             'mathias_controller': True,
-            'starting_height': 1.
+            'starting_height': 1.,
         }
 
         # spinoff roslaunch
@@ -587,6 +588,7 @@ class TestMathiasController(unittest.TestCase):
             index += 1
             index %= len(colors)
 
+    @unittest.skip
     def test_drone_keyboard_gazebo(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -603,6 +605,9 @@ class TestMathiasController(unittest.TestCase):
             'altitude_control': False,
             'keyboard': True,
             'mathias_controller': True,
+            'yaw_or': 1.5,
+            'x_pos': 1,
+            'y_pos': 2
         }
 
         # spinoff roslaunch
@@ -644,10 +649,11 @@ class TestMathiasController(unittest.TestCase):
             self._unpause_client.wait_for_service()
             self._unpause_client.call()
 
-            # index = self.tweak_steady_pose(measured_data, index)
-            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            #index = self.tweak_steady_pose(measured_data, index)
+            #index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[2, 2, 1])
 
-    @unittest.skip
+    #@unittest.skip
     def test_drone_relative_positioning_real_bebop(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -697,8 +703,20 @@ class TestMathiasController(unittest.TestCase):
         while True:
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
-            # index = self.tweak_steady_pose(measured_data, index)
+            #index = self.tweak_steady_pose(measured_data, index)
             index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+
+    def get_pose(self):
+        if rospy.get_param('/robot/position_sensor/topic') in self.ros_topic.topic_values.keys():
+            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+            quaternion = (odom.pose.pose.orientation.x,
+                          odom.pose.pose.orientation.y,
+                          odom.pose.pose.orientation.z,
+                          odom.pose.pose.orientation.w)
+            _, _, yaw = euler_from_quaternion(quaternion)
+            return odom.pose.pose.position.x, odom.pose.pose.position.y, odom.pose.pose.position.z, yaw
+        else:
+            return None
 
     def tweak_steady_pose(self, measured_data, index):
         # gets fsm in taken over state
@@ -707,9 +725,16 @@ class TestMathiasController(unittest.TestCase):
 
         # once drone is in good starting position invoke 'go' with key m
         while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Running.name:
-            # while taking off, update reference point for PID controller to remain at same height
-            self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(frame_id="agent"),
-                                                                                  point=Point(x=0., y=0., z=0.)))
+            # with absolute positioning
+            ref_pose = self.get_pose()
+            if ref_pose is not None:
+                self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(),
+                                                                                      point=Point(x=ref_pose[0],
+                                                                                                  y=ref_pose[1],
+                                                                                                  z=ref_pose[2])))
+            # with relative positioning
+            #self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(frame_id="agent"),
+            #                                                                      point=Point(x=0., y=0., z=0.)))
             rospy.sleep(0.5)
 
         measured_data[index] = {'x': [],
@@ -719,16 +744,11 @@ class TestMathiasController(unittest.TestCase):
 
         # Mathias controller should keep drone in steady pose
         while self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
-            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
-            measured_data[index]['x'].append(odom.pose.pose.position.x)
-            measured_data[index]['y'].append(odom.pose.pose.position.y)
-            measured_data[index]['z'].append(odom.pose.pose.position.z)
-            quaternion = (odom.pose.pose.orientation.x,
-                          odom.pose.pose.orientation.y,
-                          odom.pose.pose.orientation.z,
-                          odom.pose.pose.orientation.w)
-            _, _, yaw = euler_from_quaternion(quaternion)
-            measured_data[index]['yaw'].append(yaw)
+            x, y, z, yaw = self.get_pose()
+            measured_data[index]['x'].append(x - ref_pose[0])
+            measured_data[index]['y'].append(y - ref_pose[1])
+            measured_data[index]['z'].append(z - ref_pose[2])
+            measured_data[index]['yaw'].append(yaw - ref_pose[3])
             rospy.sleep(0.5)
 
         colors = ['C0', 'C1', 'C2', 'C3', 'C4']
@@ -747,43 +767,107 @@ class TestMathiasController(unittest.TestCase):
         # gets fsm in taken over state
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
+        d = 1
+        point = [d if axis == 0 else 0.,
+                 d if axis == 1 else 0.,
+                 d if axis == 2 else 0.]
+        # gets fsm in taken over state
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+                            FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
 
         # once drone is in good starting position invoke 'go' with key m
         while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Running.name:
             # while taking off, update reference point for PID controller to remain at same height
             self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(frame_id="agent"),
-                                                                                  point=Point(x=1. if axis == 0 else 0.,
-                                                                                              y=1. if axis == 1 else 0.,
-                                                                                              z=1. if axis == 2 else 0.)
+                                                                                  point=Point(x=point[0],
+                                                                                              y=point[1],
+                                                                                              z=point[2])
                                                                                   ))
-            if rospy.get_param('/robot/position_sensor/topic') in self.ros_topic.topic_values.keys():
-                ref_odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+            last_pose = self.get_pose()
             rospy.sleep(0.5)
 
         measured_data[index] = {'x': [],
                                 'y': [],
                                 'z': [],
                                 'yaw': []}
-        reference = [ref_odom.pose.pose.position.x,
-                     ref_odom.pose.pose.position.y,
-                     ref_odom.pose.pose.position.z]
+        goal_pose = transform(points=[np.asarray(point)],
+                              orientation=R.from_euler('XYZ', (0, 0, last_pose[-1]), degrees=False).as_matrix(),
+                              translation=np.asarray(last_pose[:3]))[0]
 
         # Mathias controller should keep drone in steady pose
         while self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
-            odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
-            measured_data[index]['x'].append(odom.pose.pose.position.x - reference[0] - (1. if axis == 0 else 0.))
-            measured_data[index]['y'].append(odom.pose.pose.position.y - reference[1] - (1. if axis == 1 else 0.))
-            measured_data[index]['z'].append(odom.pose.pose.position.z - reference[2] - (1. if axis == 2 else 0.))
-            quaternion = (odom.pose.pose.orientation.x,
-                          odom.pose.pose.orientation.y,
-                          odom.pose.pose.orientation.z,
-                          odom.pose.pose.orientation.w)
-            _, _, yaw = euler_from_quaternion(quaternion)
-            measured_data[index]['yaw'].append(yaw)
+            pose = self.get_pose()
+            pose_error = Point(
+                x=pose[0] - goal_pose[0],
+                y=pose[1] - goal_pose[1],
+                z=pose[2] - goal_pose[2])
+            # rotate pose error to global yaw frame
+            pose_error = transform(points=[pose_error],
+                                   orientation=R.from_euler('XYZ', (0, 0, -last_pose[0]),
+                                                            degrees=False).as_matrix())[0]
+            measured_data[index]['x'].append(pose_error.x)
+            measured_data[index]['y'].append(pose_error.y)
+            measured_data[index]['z'].append(pose_error.z)
+            measured_data[index]['yaw'].append(last_pose[-1])
             rospy.sleep(0.5)
 
         colors = ['C0', 'C1', 'C2', 'C3', 'C4']
         styles = {'x': '-', 'y': '--', 'z': ':', 'yaw': '-.'}
+        fig = plt.figure(figsize=(15, 15))
+        for key in measured_data.keys():
+            for a in measured_data[key].keys():
+                plt.plot(measured_data[key][a], linestyle=styles[a], linewidth=3 if key == index else 1,
+                         color=colors[key % len(colors)], label=f'{key}: {a}')
+        plt.legend()
+        plt.show()
+        index += 1
+        index %= len(colors)
+        return index
+
+    def tweak_combined_axis_keyboard(self, measured_data, index, point):
+        # gets fsm in taken over state
+        safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+                            FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
+
+        # once drone is in good starting position invoke 'go' with key m
+        while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Running.name:
+            # while taking off, update reference point for PID controller to remain at same height
+            self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(frame_id="agent"),
+                                                                                  point=Point(x=point[0],
+                                                                                              y=point[1],
+                                                                                              z=point[2])
+                                                                                  ))
+            last_pose = self.get_pose()
+            rospy.sleep(0.5)
+
+        measured_data[index] = {'x': [],
+                                'y': [],
+                                'z': [],
+                                'yaw': []}
+        goal_pose = transform(points=[np.asarray(point)],
+                              orientation=R.from_euler('XYZ', (0, 0, last_pose[-1]), degrees=False).as_matrix(),
+                              translation=np.asarray(last_pose[:3]))[0]
+
+        # Mathias controller should keep drone in steady pose
+        while self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
+            pose = self.get_pose()
+            pose_error = Point(
+                x=pose[0] - goal_pose[0],
+                y=pose[1] - goal_pose[1],
+                z=pose[2] - goal_pose[2])
+            # rotate pose error to global yaw frame
+            pose_error = transform(points=[pose_error],
+                                   orientation=R.from_euler('XYZ', (0, 0, -last_pose[0]),
+                                                            degrees=False).as_matrix())[0]
+            measured_data[index]['x'].append(pose_error.x)
+            measured_data[index]['y'].append(pose_error.y)
+            measured_data[index]['z'].append(pose_error.z)
+            measured_data[index]['yaw'].append(last_pose[-1])
+            rospy.sleep(0.5)
+
+        colors = ['C0', 'C1', 'C2', 'C3', 'C4']
+        styles = {'x': '-', 'y': '--', 'z': ':', 'yaw': '-.'}
+        fig = plt.figure(figsize=(15, 15))
         for key in measured_data.keys():
             for a in measured_data[key].keys():
                 plt.plot(measured_data[key][a], linestyle=styles[a], linewidth=3 if key == index else 1,
