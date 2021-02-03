@@ -15,7 +15,7 @@ job_configs:
     wall_time_s: 10 * 60 * 60
     nice: true
     gpu_mem_mb: 1900
-    use_singularity: false
-    check_if_ros_already_in_use: false
+    use_singularity: true
+    check_if_ros_already_in_use: true
     save_locally: true
     save_before_wall_time: true

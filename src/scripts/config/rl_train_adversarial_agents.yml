@@ -1,5 +1,5 @@
 output_path: adversarial_agents_ros
-number_of_epochs: 10
+number_of_epochs: 1000
 episode_runner_config:
   number_of_episodes: 5
   train_every_n_steps: -1
@@ -7,6 +7,7 @@ architecture_config:
   architecture: adversarial_actor_critic_side_ways_ros
   device: cpu
   initialisation_type: orthogonal
+  random_seed: 123
 environment_config:
   factory_key: ROS
   max_number_of_steps: 30
