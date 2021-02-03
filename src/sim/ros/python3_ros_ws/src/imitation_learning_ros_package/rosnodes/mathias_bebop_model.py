@@ -3,12 +3,9 @@
 import numpy as np
 
 
-class Model(object):
+class BebopModel(object):
 
     def __init__(self):
-        self.initialize_model()
-
-    def initialize_model(self):
         '''Initializes the model to be used in the Kalman filter.
         State space model x'(t) = A*x(t) + B*u(t) in observable canonical
         form, corresponding to transfer function
@@ -16,7 +13,7 @@ class Model(object):
         G(s) = --------------------------
                 s^3 + a2*s^2 + a1*s + a0
         State space model matrices for position Kalman filter are in
-        continuous time!! Are then converted to discrete time further on
+        continuous time. Are then converted to discrete time further on
         depending on varying Ts.
         '''
 
@@ -37,10 +34,16 @@ class Model(object):
         Az = np.array([[0., 1.],
                        [-a0z, -a1z]])
 
+        a1theta = 3.262
+        a0theta = 0.0
+        Atheta = np.array([[0., 1.],
+                           [-a0theta, -a1theta]])
+
         self.A = np.zeros([8, 8])  # continuous A matrix
         self.A[0:3, 0:3] = Ax
         self.A[3:6, 3:6] = Ay
         self.A[6:8, 6:8] = Az
+        #self.A[8:10, 8:10] = Atheta  # TODO
 
         self.B = np.zeros([8, 3])  # continuous B matrix
         self.B[2, 0] = 1
@@ -66,6 +69,7 @@ class Model(object):
         Bx = np.array([-b2x*a0x, b0x - a1x*b2x, b1x - b2x*a2x])
         By = np.array([-b2y*a0y, b0y - a1y*b2y, b1y - b2y*a2y])
         Bz = np.array([-b1z*a0z, b0z - a1z*b1z])
+
         self.C_vel = np.zeros([3, 8])
         self.C_vel[0, 0:3] = Bx
         self.C_vel[1, 3:6] = By

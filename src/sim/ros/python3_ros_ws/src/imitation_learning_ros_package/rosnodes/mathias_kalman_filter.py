@@ -5,7 +5,7 @@ import rospy
 import numpy as np
 
 
-class Kalman(object):
+class KalmanFilter(object):
 
     def __init__(self, model):
         '''
@@ -23,9 +23,9 @@ class Kalman(object):
 
         self.vel_list_corr = []
 
-        self.X_r = np.zeros(shape=(8, 1))  # ??
-        self.X_r_t0 = np.zeros(shape=(8, 1))  # ??
-        self.input_cmd_Ts = rospy.get_param('vel_cmd/sample_time', 0.01)  # s  TODO
+        self.X_r = np.zeros(shape=(8, 1))  # px,vx,ax,py,vy,ay,pz,vz (TODO: ,ptheta,vtheta)
+        self.X_r_t0 = np.zeros(shape=(8, 1))  #
+        self.input_cmd_Ts = 0.01  # rospy.get_param('vel_cmd/sample_time', 0.01)  # s  TODO
 
         self.Phat_t0 = np.zeros(8)  # error covariance matrix
         self.Phat = np.zeros(8)
@@ -48,10 +48,8 @@ class Kalman(object):
         Arguments:
             input_cmd: TwistStamped
         '''
-        # print '---------------self.X_r before', self.X_r
         (self.X_r, yhat_r, vhat_r, self.Phat) = self.predict_step_calc(
             input_cmd, self.input_cmd_Ts, self.X_r, self.Phat)
-        # print '---------------self.X_r after', self.X_r
         return yhat_r, vhat_r
 
     def kalman_pos_correct(self, measurement, yhat_r_t0):
@@ -101,7 +99,7 @@ class Kalman(object):
         else:
             case3 = True
             Ts = self.get_time_diff(measurement, yhat_r_t0)
-        # print '\n kalman first predict step Ts, X_r_t0 \n', Ts, self.X_r_t0
+        # kalman first predict step
         (X, yhat_r, vhat_r, Phat) = self.predict_step_calc(
                 self.vel_list_corr[0], Ts, self.X_r_t0, self.Phat_t0)
 
@@ -153,9 +151,7 @@ class Kalman(object):
         return yhat_r, yhat_r_t0
 
     def predict_step_calc(self, input_cmd_stamped: TwistStamped,
-                          Ts: float,
-                          X: np.ndarray,
-                          Phat: np.ndarray):
+                          Ts: float, X: np.ndarray, Phat: np.ndarray):
         """
         Prediction step of the kalman filter. Update the position of the drone
         using the reference velocity commands.
