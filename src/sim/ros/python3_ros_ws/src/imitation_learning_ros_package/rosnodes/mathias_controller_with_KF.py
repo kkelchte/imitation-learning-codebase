@@ -23,6 +23,9 @@ from src.sim.common.noise import *
 from src.core.data_types import Action, SensorType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from imitation_learning_ros_package.cfg import pidConfig
+
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.mathias_bebop_model import BebopModel
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.mathias_kalman_filter import KalmanFilter
 from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_quaternion, \
     get_output_path, apply_noise_to_twist, process_twist, transform
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
@@ -60,21 +63,23 @@ class MathiasController:
         self.Ki_z = self._specs['Ki_z'] if 'Ki_z' in self._specs.keys() else 0.2
         self.Kd_z = self._specs['Kd_z'] if 'Kd_z' in self._specs.keys() else 0.
         self.K_theta = self._specs['K_theta'] if 'K_theta' in self._specs.keys() else 0.3
+        self._robot = rospy.get_param('/robot/model_name')
+        self.model = BebopModel()
+        self.filter = KalmanFilter(model=self.model)
 
-        self.real_yaw = 0
         self.desired_yaw = None
         self.last_cmd = None
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
         self.prev_cmd = Twist()
-        self.pose_est = Pose()
-        self.vel_est = Point()
         self.pose_ref = PointStamped()
         self.vel_ref = Twist()
         self.prev_pose_error = PointStamped()
         self.prev_vel_error = PointStamped()
-        self._robot = rospy.get_param('/robot/model_name')
-        cprint(f'model_name: {self._robot}', self._logger)
+
+        self.real_yaw = 0
+        self.pose_est = Pose()
+        self.vel_est = Point()
 
         self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
@@ -138,22 +143,18 @@ class MathiasController:
 
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         sensor_topic, sensor_stats = args
+
         # adjust orientation towards current_waypoint
         quaternion = (msg.pose.pose.orientation.x,
                       msg.pose.pose.orientation.y,
                       msg.pose.pose.orientation.z,
                       msg.pose.pose.orientation.w)
-        _, _, self.real_yaw = euler_from_quaternion(quaternion)
-        cprint(f'yaw world frame: {self.real_yaw}', self._logger)
-
-        self.pose_est = msg.pose.pose
-        self.vel_est.x = msg.twist.twist.linear.x
-        self.vel_est.y = msg.twist.twist.linear.y
-        self.vel_est.z = msg.twist.twist.linear.z
-
-        if self._fsm_state == FsmState.Running:
-            self.last_cmd = self._update_twist()
-            self._publisher.publish(self.last_cmd)
+        _, _, yaw = euler_from_quaternion(quaternion)
+        # TODO
+        # self.pose_est = msg.pose.pose
+        # self.vel_est.x = msg.twist.twist.linear.x
+        # self.vel_est.y = msg.twist.twist.linear.y
+        # self.vel_est.z = msg.twist.twist.linear.z
 
     def _reference_update(self, message: PointStamped) -> None:
         if isinstance(message, PointStamped):
@@ -176,6 +177,7 @@ class MathiasController:
         self.pose_ref = pose_ref
 
     def _update_twist(self) -> Twist:
+        self.pose_est, self.vel_est, self.real_yaw = self.filter.kalman_prediction(self.last_cmd)
         twist = self._feedback()
         if self._noise is not None:
             twist = apply_noise_to_twist(twist=twist, noise=self._noise.sample())
@@ -184,6 +186,8 @@ class MathiasController:
     def run(self):
         while not rospy.is_shutdown():
             if self._fsm_state == FsmState.Running:
+                self.last_cmd = self._update_twist()
+                self._publisher.publish(self.last_cmd)
                 self.count += 1
                 if self.count % 10 * self._rate_fps == 0:
                     msg = f'<<reference: {self.pose_ref}, \n<<pose: {self.pose_est} \n control: {self.last_cmd}'

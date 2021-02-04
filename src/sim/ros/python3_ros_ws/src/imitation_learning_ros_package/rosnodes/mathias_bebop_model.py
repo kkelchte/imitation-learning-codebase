@@ -9,7 +9,7 @@ class BebopModel(object):
         '''Initializes the model to be used in the Kalman filter.
         State space model x'(t) = A*x(t) + B*u(t) in observable canonical
         form, corresponding to transfer function
-                  b2*s^2 + b1*s + b0
+                        b0
         G(s) = --------------------------
                 s^3 + a2*s^2 + a1*s + a0
         State space model matrices for position Kalman filter are in
@@ -17,6 +17,7 @@ class BebopModel(object):
         depending on varying Ts.
         '''
 
+        # Building continuous A matrix
         a2x = 6.167
         a1x = 1.523
         a0x = 0.0
@@ -38,44 +39,49 @@ class BebopModel(object):
         a0theta = 0.0
         Atheta = np.array([[0., 1.],
                            [-a0theta, -a1theta]])
-
-        self.A = np.zeros([8, 8])  # continuous A matrix
+        self.A = np.zeros([8, 8])  # TODO: 10x10
         self.A[0:3, 0:3] = Ax
         self.A[3:6, 3:6] = Ay
         self.A[6:8, 6:8] = Az
-        #self.A[8:10, 8:10] = Atheta  # TODO
+        #  self.A[8:10, 8:10] = Atheta  # TODO
 
-        self.B = np.zeros([8, 3])  # continuous B matrix
+        # continuous B matrix
+        # control J or U is 3x1: linear x, linear y, linear z (TODO: angular z)
+        self.B = np.zeros([8, 3])   # TODO: 10x4
         self.B[2, 0] = 1
         self.B[5, 1] = 1
         self.B[7, 2] = 1
+        # self.B[9, 3] = 1  # TODO
 
-        b2x = 0.0
-        b1x = 0.0
-        b0x = 22.51
-        Bx = np.array([b0x, b1x, b2x])
-        b2y = 0.0
-        b1y = 0.0
+        # continuous C matrix
+        b0x = 22.51  # b0 stems from transfer formula
         b0y = 18.96
-        By = np.array([b0y, b1y, b2y])
-        b1z = 0.0
         b0z = 6.066
-        Bz = np.array([b0z, b1z])
-        self.C = np.zeros([3, 8])
-        self.C[0, 0:3] = Bx
-        self.C[1, 3:6] = By
-        self.C[2, 6:8] = Bz
+        b0theta = 5.66
 
-        Bx = np.array([-b2x*a0x, b0x - a1x*b2x, b1x - b2x*a2x])
-        By = np.array([-b2y*a0y, b0y - a1y*b2y, b1y - b2y*a2y])
-        Bz = np.array([-b1z*a0z, b0z - a1z*b1z])
+        self.C = np.zeros([6, 8])
+        # pose x, y, z
+        self.C[0, 0:3] = np.array([b0x, 0, 0])
+        self.C[1, 3:6] = np.array([b0y, 0, 0])
+        self.C[2, 6:8] = np.array([b0z, 0])
 
-        self.C_vel = np.zeros([3, 8])
-        self.C_vel[0, 0:3] = Bx
-        self.C_vel[1, 3:6] = By
-        self.C_vel[2, 6:8] = Bz
+        # velocity x, y, z
+        self.C[3, 0:3] = np.array([0, b0x, 0])
+        self.C[4, 3:6] = np.array([0, b0y, 0])
+        self.C[5, 6:8] = np.array([0, b0z])
 
-        self.D_vel = np.zeros([3, 3])
-        self.D_vel[0, 0] = b2x
-        self.D_vel[1, 1] = b2y
-        self.D_vel[2, 2] = b1z
+        # TODO
+        # self.C = np.zeros([8, 10])
+        # # pose x, y, z, yaw
+        # self.C[0, 0:3] = np.array([b0x, 0, 0])
+        # self.C[1, 3:6] = np.array([b0y, 0, 0])
+        # self.C[2, 6:8] = np.array([b0z, 0])
+        # self.C[3, 8:10] = np.array([b0theta, 0])
+        #
+        # # velocity x, y, z, yaw
+        # self.C[4, 0:3] = np.array([0, b0x, 0])
+        # self.C[5, 3:6] = np.array([0, b0y, 0])
+        # self.C[6, 6:8] = np.array([0, b0z])
+        # self.C[7, 8:10] = np.array([0, b0theta])
+        #
+        # continuous D matrix is zero.

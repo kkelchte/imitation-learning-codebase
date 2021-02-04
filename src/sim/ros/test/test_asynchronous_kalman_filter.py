@@ -7,7 +7,7 @@ import numpy as np
 import rospy
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
-from geometry_msgs.msg import Pose, PointStamped, Point, TwistStamped, Twist, Vector3
+from geometry_msgs.msg import Pose, PointStamped, Point, TwistStamped, Twist, Vector3, PoseStamped, Quaternion
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty, Header
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
@@ -41,9 +41,12 @@ class TestAsynchronousKalmanFilter(unittest.TestCase):
         print_state(init_state)
         for _ in range(10):
             cmd = TwistStamped(twist=Twist(linear=Vector3(x=1, y=1, z=1)))
-            yhat_r, vhat_r = filter.kalman_pos_predict(cmd)
+            yhat_r, vhat_r = filter.kalman_prediction(cmd)
             print_state(filter.X_r)
             print(f'Phat: {filter.Phat}, yhat_r: {yhat_r}, vhat_r: {vhat_r}')
+        measurement = PoseStamped(pose=Pose(position=Point(x=0.5, y=0.5, z=1),
+                                            orientation=Quaternion(x=0, y=0, z=0, w=1)))
+        filter.kalman_correction(measurement)
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)
