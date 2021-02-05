@@ -2,7 +2,7 @@ output_path: two_drone_setup/test
 mode: default
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
-  - 5
+  - 1
 base_config_files:
   - src/scripts/config/rl_train_adversarial_agents.yml
 job_configs:
@@ -16,6 +16,6 @@ job_configs:
     nice: true
     gpu_mem_mb: 1900
     use_singularity: true
-    check_if_ros_already_in_use: true
+    check_if_ros_already_in_use: false
     save_locally: true
     save_before_wall_time: true
