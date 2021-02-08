@@ -19,3 +19,5 @@ job_configs:
     check_if_ros_already_in_use: false
     save_locally: true
     save_before_wall_time: true
+    singularity_dir: /users/start2017/r0669036/code/imitation-learning-codebase/rosenvironment/singularity
+    singularity_file: /users/start2017/r0669036/code/imitation-learning-codebase/rosenvironment/singularity/image-0.1.8.sif
