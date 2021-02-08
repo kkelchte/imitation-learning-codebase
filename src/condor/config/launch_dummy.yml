@@ -19,3 +19,5 @@ job_configs:
     check_if_ros_already_in_use: false
     save_locally: true
     save_before_wall_time: true
+    singularity_dir: /gluster/visics/kkelchte/singularity_images/ubuntu
+    singularity_file: /gluster/visics/kkelchte/singularity_images/ubuntu/image-0.1.8.sif
