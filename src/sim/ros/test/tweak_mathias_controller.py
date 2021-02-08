@@ -653,7 +653,7 @@ class TestMathiasController(unittest.TestCase):
             #index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
             index = self.tweak_combined_axis_keyboard(measured_data, index, point=[2, 2, 1])
 
-    #@unittest.skip
+    @unittest.skip
     def test_drone_relative_positioning_real_bebop(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -879,6 +879,71 @@ class TestMathiasController(unittest.TestCase):
         index += 1
         index %= len(colors)
         return index
+
+#    @unittest.skip
+    def test_drone_keyboard_gazebo_with_KF(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'empty',
+            'robot_name': 'drone_sim',
+            'gazebo': True,
+            'fsm': True,
+            'fsm_mode': 'TakeOverRun',
+            'control_mapping': True,
+            'control_mapping_config': 'mathias_controller_keyboard',
+            'altitude_control': False,
+            'keyboard': True,
+            'mathias_controller_with_KF': True,
+            'yaw_or': 0,
+            'x_pos': 0,
+            'y_pos': 0
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+
+        # subscribe to command control
+        subscribe_topics = [
+            TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
+                        msg_type=rospy.get_param('/robot/position_sensor/type')),
+            TopicConfig(topic_name='/fsm/state',
+                        msg_type='String')
+
+        ]
+        self._reference_topic = '/reference_pose'
+        self._reference_type = 'PointStamped'
+        publish_topics = [
+            TopicConfig(topic_name='/fsm/reset', msg_type='Empty'),
+            TopicConfig(topic_name=self._reference_topic, msg_type=self._reference_type),
+        ]
+
+        self.ros_topic = TestPublisherSubscriber(
+            subscribe_topics=subscribe_topics,
+            publish_topics=publish_topics
+        )
+
+        self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
+        self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
+
+        safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 10, 0.1, ros_topic=self.ros_topic)
+        measured_data = {}
+        index = 0
+        while True:
+            # publish reset
+            self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+
+            self._unpause_client.wait_for_service()
+            self._unpause_client.call()
+
+            index = self.tweak_steady_pose(measured_data, index)
+            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            # index = self.tweak_combined_axis_keyboard(measured_data, index, point=[2, 2, 1])
 
     def tearDown(self) -> None:
         self._ros_process.terminate()

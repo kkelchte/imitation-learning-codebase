@@ -65,7 +65,8 @@ class MathiasController:
         self.K_theta = self._specs['K_theta'] if 'K_theta' in self._specs.keys() else 0.3
         self._robot = rospy.get_param('/robot/model_name')
         self.model = BebopModel()
-        self.filter = KalmanFilter(model=self.model)
+        self.filter = KalmanFilter(model=self.model,
+                                   start_time=rospy.Time.now())
 
         self.desired_yaw = None
         self.last_cmd = None
@@ -83,9 +84,6 @@ class MathiasController:
 
         self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
-
-        # self.tfBuffer = tf2_ros.Buffer()
-        # self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
     def _subscribe(self):
         self._fsm_state = FsmState.Unknown

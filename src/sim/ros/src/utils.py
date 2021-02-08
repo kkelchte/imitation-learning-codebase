@@ -10,7 +10,7 @@ from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
-from geometry_msgs.msg import Twist, PoseStamped, Point
+from geometry_msgs.msg import Twist, PoseStamped, Point, TransformStamped, PointStamped
 from sensor_msgs.msg import Imu, Image
 from std_msgs.msg import Float32MultiArray
 
@@ -396,3 +396,20 @@ def get_distance_between_agents(info: dict) -> float:
     msg = info['combined_global_poses']
     return distance([msg.tracking_x, msg.tracking_y, msg.tracking_z],
                     [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z]) if msg is not None else None
+
+
+def get_timestamp(stamped_var: Union[PoseStamped, PointStamped, TransformStamped]) -> int:
+    '''Returns the timestamp of 'stamped_var' (any stamped msg, eg.
+    PoseStamped, Pointstamped, TransformStamped,...) in seconds.
+    '''
+    time = float(stamped_var.header.stamp.to_sec())
+    return time
+
+
+def get_time_diff(stamp1: Union[PoseStamped, PointStamped, TransformStamped],
+                  stamp2: Union[PoseStamped, PointStamped, TransformStamped]) -> float:
+    '''Returns the difference between to timestamped messages (any stamped
+    msg, eg. PoseStamped, Pointstamped, TransformStamped,...) in seconds.
+    '''
+    time_diff = get_timestamp(stamp1) - get_timestamp(stamp2)
+    return time_diff
