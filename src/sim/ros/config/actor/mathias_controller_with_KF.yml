@@ -1,6 +1,6 @@
 specs:
-  # Use on drone sim with groundtruth state at 100Hz
-  rate_fps: 100
+  # Use on drone sim with slower measurement rate of 5Hz and control rate of 15Hz
+  rate_fps: 15
   Kp_x: 1.0
   Ki_x: 0.3
   Kd_x: 0.3

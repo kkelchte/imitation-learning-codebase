@@ -1,17 +1,19 @@
 #!/usr/bin/python3.8
-from typing import Union
+from copy import copy
+from typing import Union, Tuple
 
 from geometry_msgs.msg import PointStamped, TwistStamped, PoseStamped, Point
 import rospy
 import numpy as np
 from nav_msgs.msg import Odometry
 
-from src.sim.ros.src.utils import get_time_diff
+from src.sim.ros.src.utils import get_time_diff, get_timestamp, to_ros_time, euler_from_quaternion, \
+    rotation_from_quaternion, quaternion_from_euler
 
 
 class KalmanFilter(object):
 
-    def __init__(self, model, start_time):
+    def __init__(self, model):
         '''
         Asynchronous kalman filter to estimate position.
         '''
@@ -22,257 +24,301 @@ class KalmanFilter(object):
         self.C = model.C
 
         # keep track of velocity commands and their actual timings to calculate correction step
-
-        command = TwistStamped()
-        command.header.stamp = start_time
-        self.cmd_list_after_prev_meas = [command]
+        self.cmd_list = []
 
         # rot: indicates world_rotated ==> world yaw following yaw drone.
         # tnext: at next control step = t + Ts
         # hat: estimated
         # tmeas: at time of last measurements
-        self.x_hat_rot_tnext = np.zeros(shape=(8, 1))  # 1/b0 * (px,vx,ax,py,vy,ay,pz,vz) (TODO: ptheta, vtheta)
-        self.x_rot_tmeas = np.zeros(shape=(8, 1))  # at last measurement time
+        self.x_hat_rot_tnext = np.zeros(shape=(10, 1))  # 1/b0 * (px,vx,ax,py,vy,ay,pz,vz,ptheta,vtheta)
+        self.x_rot_tmeas = np.zeros(shape=(10, 1))  # at last measurement time
 
-        self.error_cov_hat_tmeas = np.zeros(8)  # error covariance matrix at the start?
-        self.error_cov_hat_tnext = np.zeros(8)
+        self.error_cov_hat_tmeas = np.zeros(10)  # error covariance matrix at the start?
+        self.error_cov_hat_tnext = np.zeros(10)
 
-        self.y_hat_rot_tmeas = PointStamped()
+        self.y_hat_rot_tmeas = np.zeros(shape=(8, 1))
+        self.y_hat_rot_tnext = np.zeros(shape=(8, 1))
+        self.prev_measurement = None
+        self.tnext = None  # field keeping track of next control step time
+        self.tmeas = None
+        self.correcting = False  # field to avoid several correction steps running at the same time
 
         # Kalman tuning parameters.
-        self.meas_noise_cov = np.identity(3)  # measurement noise covariance
-        self.process_noise_cov = np.array([[1, 0, 0, 0, 0, 0, 0, 0],  # process noise covariance matrix
-                                           [0, 1e1, 0, 0, 0, 0, 0, 0],
-                                           [0, 0, 1, 0, 0, 0, 0, 0],
-                                           [0, 0, 0, 1, 0, 0, 0, 0],
-                                           [0, 0, 0, 0, 1e1, 0, 0, 0],
-                                           [0, 0, 0, 0, 0, 1, 0, 0],
-                                           [0, 0, 0, 0, 0, 0, 1, 0],
-                                           [0, 0, 0, 0, 0, 0, 0, 1e1]])
+        self.meas_noise_cov = np.identity(8)  # measurement noise covariance
+        self.process_noise_cov = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # process noise covariance matrix
+                                           [0, 1e1, 0, 0, 0, 0, 0, 0, 0, 0],
+                                           [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                                           [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                                           [0, 0, 0, 0, 1e1, 0, 0, 0, 0, 0],
+                                           [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                                           [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                                           [0, 0, 0, 0, 0, 0, 0, 1e1, 0, 0],
+                                           [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 1e1]])
+        self.requires_initialisation = True
 
-    def kalman_prediction(self, input_cmd: TwistStamped, time_delay_s: float):
-        '''
+    def initialise(self, measurement: Odometry):
+        self.prev_measurement = measurement
+        self.tmeas = float(measurement.header.stamp.to_sec())
+        zero_input_cmd = TwistStamped()
+        zero_input_cmd.header = measurement.header
+        self.cmd_list = [zero_input_cmd]
+        self.requires_initialisation = False
+
+    def kalman_prediction(self, input_cmd: TwistStamped, time_delay_s: float) -> Union[None, Odometry]:
+        """
         Based on the velocity commands send out by the velocity controller,
         calculate a prediction of the position in the future.
         Arguments:
             input_cmd: TwistStamped
             time_delay_s: period of control updates Ts so pose and velocity at t+Ts are predicted based on input_cmd
         Returns:
-            predicted pose and velocity commands in world_yaw frame
-        '''
-        self.cmd_list_after_prev_meas.append(input_cmd)
-        (self.x_hat_rot_tnext, yhat_r, vhat_r, self.error_cov_hat_tnext) = self._predict_step_calc(
-            input_cmd, time_delay_s, self.x_hat_rot_tnext, self.error_cov_hat_tnext)
-        return yhat_r, vhat_r
+            predicted pose as PointStamped
+            velocity as PointStamped commands in world_yaw frame
+        """
+        if self.requires_initialisation:
+            return None
+        # keep input command for recalculation during correction step
+        self.cmd_list.append(input_cmd)
 
-    def kalman_correction(self, measurement: Union[PoseStamped, TwistStamped],
-                          time_delay_s: float):
-        '''
+        # general update
+        self.x_hat_rot_tnext, self.y_hat_rot_tnext, self.error_cov_hat_tnext, self.tnext = self._predict_step_calc(
+            input_cmd, time_delay_s, self.x_hat_rot_tnext, self.error_cov_hat_tnext)
+        return self._generate_twist("tnext")
+
+    def kalman_correction(self, measurement: Odometry,
+                          time_delay_s: float) -> Union[None, Odometry]:
+        """
         Whenever a new position measurement is available, sends this
         information to the perception and then triggers the kalman filter
         to apply a correction step.
-        Cases:
-            - case 1: multiple velocity commands between successive
-                      measurements: ok
-            - case 2: only one velocity command between successive
-                      measurements: ok
-            - case 3: no velocity command between successive measurements: ok
-            - case 4: last velocity command corresponds to time after new
-                      measurement, but due to delay is already in the list.
-            - case 5: last velocity command before measurement is not yet in
-                      the list and appears only in the next correction step. => not really possible
+
         Arguments:
-            measurement: PoseStamped expressed in "world" frame.
+            measurement: Odometry expressed in "world" frame.
             time_delay_s: the period of the control updates
-        '''
 
-        # discard last command before last measurement in case there are more commands
-        # this command was only relevant if there were no other commands
-        if (len(self.cmd_list_after_prev_meas) > 1) and \
-                get_time_diff(self.y_hat_rot_tmeas, self.cmd_list_after_prev_meas[1]) > 0:
-            self.cmd_list_after_prev_meas = self.cmd_list_after_prev_meas[1:]
-
-        # First make prediction from old point t0 to last point t before new measurement.
-        # Calculate variable B (time between latest prediction and new t0).
-        # Check for case 4: last velocity command comes after measurement => don't use in prediction
-        late_cmd_vel = []
-        if get_time_diff(measurement, self.cmd_list_after_prev_meas[-1]) < 0:
-            late_cmd_vel = [self.cmd_list_after_prev_meas[-1]]
-            self.cmd_list_after_prev_meas = self.cmd_list_after_prev_meas[0:-1]
-            print(f'KF: correction case 4')
-
-        vel_len = len(self.cmd_list_after_prev_meas)
-        if vel_len > 1:
-            case3 = False  # get time from last measurement update till first command
-            Ts = get_time_diff(self.cmd_list_after_prev_meas[1], self.y_hat_rot_tmeas)
+        Returns:
+            Odometry estimate at tnext, unless there has been no prediction step, then tmeas.
+            In case there is a kalman correction step already going on, ignore this measurement and return None.
+        """
+        if self.correcting:
+            return None
+        self.correcting = True
+        if self.requires_initialisation:
+            self.initialise(measurement)
         else:
-            case3 = True  # get time from last measurement till now
-            Ts = get_time_diff(measurement, self.y_hat_rot_tmeas)  # yhat_r_t0 = last measurement update in rotated frame
-            print(f'KF: correction case 3')
-        # kalman first predict step till t_meas' starting from t0 = t_meas
-        (X, yhat_r, vhat_r, Phat) = self._predict_step_calc(
-                self.cmd_list_after_prev_meas[0], Ts, self.x_rot_tmeas, self.error_cov_hat_tmeas)
+            x_hat_rot_tmeas, error_cov_tmeas, last_command = self._predict_from_prev_meas_till_new_meas(measurement)
+            self.x_rot_tmeas, self.y_hat_rot_tmeas, self.error_cov_hat_tmeas = self._correct_step_calc(measurement,
+                                                                                                       x_hat_rot_tmeas,
+                                                                                                       error_cov_tmeas)
+            self.prev_measurement = measurement
+            self.tmeas = float(measurement.header.stamp.to_sec())
+            self._predict_from_new_meas_till_tnext(last_command, time_delay_s)
+        twist = self._generate_twist("tnext" if self.tnext is not None else self.tmeas)
+        self.correcting = False
+        return twist
 
-        # If not case 2 or 3 -> need to predict up to
-        # last vel cmd before new_t0
-        if vel_len > 2:
-            # Case 1.
-            print(f'KF: correction case 1')
-            for i in range(vel_len - 2):
-                Ts = get_time_diff(
-                    self.cmd_list_after_prev_meas[i+2], self.cmd_list_after_prev_meas[i+1])
-                # print '\n kalman second predict step Ts and yhat_r \n', Ts, yhat_r.point
-                (X, yhat_r, vhat_r, Phat) = self._predict_step_calc(
-                    self.cmd_list_after_prev_meas[i+1], Ts, X, Phat)
+    def _generate_twist(self, time: str = "tnext") -> Odometry:
+        """
+        Adapt field y with observable system outputs to odometry message with correct time stamp.
+        """
+        result = Odometry()
+        result.header.stamp = to_ros_time(self.tnext if time == "tnext" else self.tmeas)
+        data_vector = self.y_hat_rot_tnext if time == "tnext" else self.y_hat_rot_tmeas
+        # transform y_hat_rot first to y_hat based on estimated yaw
+        yaw = data_vector[3, 0]
+        position_rot = data_vector[0:3, 0]
+        velocity_rot = data_vector[4:7, 0]
+        yaw_rotation = np.array([[np.cos(-yaw), np.sin(-yaw), 0],
+                                 [-np.sin(-yaw), np.cos(-yaw), 0],
+                                 [0, 0, 1]])
+        position = np.matmul(yaw_rotation, position_rot)
+        velocity = np.matmul(yaw_rotation, velocity_rot)
 
-        B = get_time_diff(measurement, self.cmd_list_after_prev_meas[-1])
-        case5 = B > time_delay_s
-        if case5:
-            print(f'KF: correction case 5')
+        quaternion = quaternion_from_euler((0, 0, yaw))
 
-        # Now make prediction up to new t0 if not case 3.
-        if not case3:
-            # print '\n kalman third predict step Ts and yhat_r \n', B, yhat_r.point
-            (X, yhat_r, vhat_r, Phat) = self._predict_step_calc(self.cmd_list_after_prev_meas[-1], B, X, Phat)
-        else:
-            case5 = False
-            B = B % time_delay_s
-            
-        # Make a prediction estimate X for the time of the measurement based on previous measurement and commands
-        # This prediction step depends on the number of control commands send between the last measurement and now
-        # The control commands are stored in cmd_list_after_prev_meas.
-        # If this list is empty, predict from last command before previous measurement step (case 3)
+        result.pose.pose.position.x = position[0]
+        result.pose.pose.position.y = position[1]
+        result.pose.pose.position.z = position[2]
+        result.pose.pose.orientation.x = quaternion[0]
+        result.pose.pose.orientation.y = quaternion[1]
+        result.pose.pose.orientation.z = quaternion[2]
+        result.pose.pose.orientation.w = quaternion[3]
 
-        # ---- CORRECTION ----
-        # Correct the estimate at new t0 with the measurement.
-        (X, self.y_hat_rot_tmeas, Phat) = self._correct_step_calc(measurement, X, Phat)
-        self.x_rot_tmeas = X
-        self.y_hat_rot_tmeas.header.stamp = measurement.header.stamp
+        result.twist.twist.linear.x = velocity[0]
+        result.twist.twist.linear.y = velocity[1]
+        result.twist.twist.linear.z = velocity[2]
+        result.twist.twist.angular.z = data_vector[7]
 
-        # Now predict until next point t that coincides with next time point for the controller.
-        (X, yhat_r, vhat_r, Phat) = self._predict_step_calc(
-                                self.cmd_list_after_prev_meas[-1],
-                                (1 + case5)*time_delay_s - B,
-                                X, Phat)  # ? Shouldn't we use the late_cmd_vel here as well ?
+        return result
 
-        # Save variable globally
-        self.x_hat_rot_tnext = X
-        self.error_cov_hat_tnext = Phat
-
-        # Empty commands and only keep last
-        self.cmd_list_after_prev_meas = [self.cmd_list_after_prev_meas[-1]]
-        self.cmd_list_after_prev_meas += late_cmd_vel
-        
-        return yhat_r, self.y_hat_rot_tmeas
-
-    def _predict_step_calc(self, input_cmd_stamped: TwistStamped,
-                           Ts: float, X: np.ndarray, Phat: np.ndarray):
+    def _predict_step_calc(self, input_cmd_stamped: TwistStamped, time_delay_s: float, x_hat_rot: np.ndarray,
+                           error_cov_hat: np.ndarray, tstart: float = None) -> Tuple[np.ndarray, np.ndarray,
+                                                                                     np.ndarray, float]:
         """
         Prediction step of the kalman filter. Update the position of the drone
         using the reference velocity commands.
         Arguments:
             - input_cmd_stamped = TwistStamped of command applied at t
             - Ts = varying step size over which to integrate.
-            - X = current state as array 8x1
-            - Phat = error covariance matrix a priori update
+            - x_hat_rot = current state as array 8x1
+            - error_cov_hat = error covariance matrix a priori update
+            - tstart = t for which x_hat_rot and error_cov_hat are predicted
         Returns:
-            - X state estimate at time t+Ts
-            - y,v at time t+Ts
-            - Phat at time t+Ts
+            - x_hat_rot: X state estimate at time t+Ts
+            - y_hat_rot: outputs y at time t+Ts
+            - error_cov_hat: error covariance matrix at time t+Ts
+            - tnext: end time t+Ts
         """
-        input_cmd = input_cmd_stamped.twist
+        u = np.array([[input_cmd_stamped.twist.linear.x],
+                      [input_cmd_stamped.twist.linear.y],
+                      [input_cmd_stamped.twist.linear.z],
+                      [input_cmd_stamped.twist.angular.z]])
+        # clip time period at zero so a negative delay leads to no change.
+        time_delay_s = max(0., time_delay_s)
+        x_hat_rot = np.matmul(time_delay_s * self.A + np.identity(10), x_hat_rot) + np.matmul(time_delay_s * self.B, u)
+        y_hat_rot = np.matmul(self.C, x_hat_rot)
 
-        u = np.array([[input_cmd.linear.x],
-                      [input_cmd.linear.y],
-                      [input_cmd.linear.z]])
-        # 8x8 * 8x1 + 8x3 * 3x1
-        X = (np.matmul(Ts*self.A + np.identity(8), X) + np.matmul(Ts*self.B, u))
+        error_cov_hat = np.matmul(time_delay_s * self.A + np.identity(10),
+                                  np.matmul(error_cov_hat, np.transpose(time_delay_s * self.A + np.identity(10)))) \
+                        + self.process_noise_cov
+        end_time = (get_timestamp(input_cmd_stamped) if tstart is None else tstart) + time_delay_s
+        return x_hat_rot, y_hat_rot, error_cov_hat, end_time
 
-        Y = np.matmul(self.C, X)
+    def _predict_from_prev_meas_till_new_meas(self, measurement):
+        """
+        Arguments:
+            measurement: PoseStamped expressed in "world" frame, only used for timing
+        Returns:
+            x_hat_r: estimate state at measurement's time in rotated frame,
+            error_cov: estimate error covariance at measurement's time,
+            cmd: last command before measurement time arrived
+        """
+        # initialise local variables:
+        x_hat_r = copy(self.x_rot_tmeas)
+        error_cov = copy(self.error_cov_hat_tmeas)
+        tnext = self.tmeas
 
-        yhat_r = PointStamped()
-        yhat_r.header.frame_id = "world_rot"
-        yhat_r.point.x = Y[0, 0]
-        yhat_r.point.y = Y[1, 0]
-        yhat_r.point.z = Y[2, 0]
+        # discard irrelevant commands by ensuring only 1 command comes before previous measurement
+        while len(self.cmd_list) > 1 and get_time_diff(self.prev_measurement, self.cmd_list[1]) > 0:
+            self.cmd_list.pop(0)
 
-        vhat_r = PointStamped()
-        vhat_r.header.frame_id = "world_rot"
-        vhat_r.point.x = Y[3, 0]
-        vhat_r.point.y = Y[4, 0]
-        vhat_r.point.z = Y[5, 0]
+        # predict from previous t_meas till first following command step using command applied before
+        cmd_before = self.cmd_list.pop(0)
+        if len(self.cmd_list) > 0:
+            cmd_after = self.cmd_list.pop(0)
+            time_difference = get_time_diff(cmd_after, self.prev_measurement)
+            x_hat_r, y_hat_r, error_cov, tnext = self._predict_step_calc(cmd_before, time_difference, x_hat_r,
+                                                                         error_cov, tnext)
 
-        Phat = np.matmul(Ts*self.A + np.identity(8), np.matmul(
-            Phat, np.transpose(Ts*self.A + np.identity(8)))) + self.process_noise_cov
+            # predict for each following control up until one control step before t_meas
+            # is there still a command in command list that is before t measurement, if so, apply it.
+            one_more_step = len(self.cmd_list) != 0 and get_time_diff(measurement, self.cmd_list[0]) > 0
+            while one_more_step:
+                cmd_before = copy(cmd_after)
+                cmd_after = self.cmd_list.pop(0)  # we know this command is still before t_measurement
+                # use actually applied durations or clip by measurement time
+                duration = get_time_diff(cmd_after, cmd_before)
+                x_hat_r, y_hat_r, error_cov, tnext = self._predict_step_calc(cmd_before, duration,
+                                                                             x_hat_r, error_cov, tnext)
+                one_more_step = len(self.cmd_list) != 0 and get_time_diff(measurement, self.cmd_list[0]) > 0
+            cmd_before = copy(cmd_after)
 
-        return X, yhat_r, vhat_r, Phat
+        # predict from control step till current measurement time using last control before measurement
+        duration = get_timestamp(measurement) - tnext
+        x_hat_r, y_hat_r, error_cov, tnext = self._predict_step_calc(cmd_before, duration,
+                                                                     x_hat_r, error_cov, tnext)
+        # prediction should be very close to measurement
+        assert abs(tnext - get_timestamp(measurement)) < 1e-4
+        return x_hat_r, error_cov, cmd_before
 
-    def _correct_step_calc(self, measurement: Union[Odometry, PoseStamped],
-                           X: np.ndarray, Phat: np.ndarray):
+    def _predict_from_new_meas_till_tnext(self, last_command: TwistStamped, time_delay_s: float):
+        """
+        Starting from x_rot_tmeas en error_cov_hat_tmeas at measurement time,
+        continue last command till either next command start or for control_time_period.
+        If there are already next commands available, update also for them the prediction.
+        """
+        # initialize local variables
+        x_hat_r, error_cov, tnext = self.x_rot_tmeas, self.error_cov_hat_tmeas, self.tmeas
+        # predict from t_meas till first following command step using command applied before
+        cmds_to_keep = [last_command]
+        cmd_before = last_command
+
+        # predict from tmeas to first following control step using last_command
+        if len(self.cmd_list) > 0:
+            duration = get_time_diff(self.cmd_list[0], self.prev_measurement)
+        else:
+            duration = time_delay_s - get_time_diff(self.prev_measurement, cmd_before)
+
+        x_hat_r, y_hat_r, error_cov, tnext = self._predict_step_calc(cmd_before, duration, x_hat_r, error_cov, tnext)
+
+        while self.tnext is not None and self.tnext - tnext > 1e-4:
+            cmd_after = self.cmd_list.pop(0) if len(self.cmd_list) > 0 else None
+            duration = get_timestamp(cmd_after) - tnext if cmd_after is not None else time_delay_s
+            x_hat_r, y_hat_r, error_cov, tnext = self._predict_step_calc(cmd_before, duration, x_hat_r, error_cov, tnext)
+            if cmd_after is not None:
+                cmd_before = copy(cmd_after)
+                cmds_to_keep.append(cmd_after)
+
+        self.x_hat_rot_tnext, self.y_hat_rot_tnext, self.error_cov_tnext, self.tnext = x_hat_r, \
+                                                                                       y_hat_r, error_cov, tnext
+
+        # reset cmd_list for next correction step with command before and after measurement
+        self.cmd_list = cmds_to_keep
+
+    def _correct_step_calc(self, measurement: Odometry, x_hat_rot_tmeas: np.ndarray, error_cov_hat_tmeas: np.ndarray):
         """
         Correction step of the kalman filter. Update the position of the drone in world_yaw frame
-        using the measurements.
+        using the measurements. Note that timings between measurment, state and covariance matrix should be aligned.
         Argument:
-            - pos_meas = PoseStamped expressed in "world_yaw" frame.
-            - X = "current" state
-            - yhat_r = last
-        """
-        if isinstance(measurement, PoseStamped):
-            y = np.array([[measurement.pose.position.x],
-                          [measurement.pose.position.y],
-                          [measurement.pose.position.z]])
-        else:
-            y = np.array([[measurement.pose.pose.position.x],
-                          [measurement.pose.pose.position.y],
-                          [measurement.pose.pose.position.z]])
+            - measurement = Odometry expressed in world frame.
+            - x_hat_rot_tmeas = state at measurement time
+            - error_cov_hat_tmeas = error covariance at measurement time
+        Returns:
 
-        # TODO: make correction also on observed velocity in twist
+        """
+        _, _, yaw = euler_from_quaternion((measurement.pose.pose.orientation.x,
+                                           measurement.pose.pose.orientation.y,
+                                           measurement.pose.pose.orientation.z,
+                                           measurement.pose.pose.orientation.w))
+        yaw_rotation = np.array([[np.cos(yaw), np.sin(yaw), 0],
+                                 [-np.sin(yaw), np.cos(yaw), 0],
+                                 [0, 0, 1]])
+        position = np.array([[measurement.pose.pose.position.x],
+                             [measurement.pose.pose.position.y],
+                             [measurement.pose.pose.position.z]])
+        position_rot = np.matmul(yaw_rotation, position)
+        # assumption: velocity is expressed in drone frame
+        velocity = np.array([[measurement.twist.twist.linear.x],
+                             [measurement.twist.twist.linear.y],
+                             [measurement.twist.twist.linear.z]])
+        velocity_rot = np.matmul(yaw_rotation, velocity)
+        y = np.zeros((8, 1))
+        y[0:3] = position_rot
+        y[3, 0] = yaw
+        y[4:7] = velocity_rot
+        y[7, 0] = measurement.twist.twist.angular.z
+
         # innovation = what is measured differently from what we would be expected
         # (note D is zero in y(i+1) = C x(i+1) + D j(i) )
         # only use pose to correct, don't correct velocity terms.
-        nu = y - np.matmul(self.C, X)[0:3, :]
+        nu = y - np.matmul(self.C, x_hat_rot_tmeas)
 
-        # covariance on innovation depends on covariance of prediction Phat (reliability of prediction)
+        # innovation_covariance depends on covariance of prediction Phat (reliability of prediction)
         # and measurement noise covariance R (reliability of measurement)
-        S = np.matmul(self.C[0:3, :], np.matmul(Phat, np.transpose(self.C[0:3, :]))) + self.meas_noise_cov
+        innovation_covariance = np.matmul(self.C, np.matmul(error_cov_hat_tmeas, np.transpose(self.C))) \
+                                + self.meas_noise_cov
 
         # Kalman gain represents impact of innovation on state estimate,
         # increases with covariance prediction (unreliable prediction)
         # decreases with covariance measurement error (unreliable measurement)
-        L = np.matmul(Phat, np.matmul(np.transpose(self.C[0:3, :]), np.linalg.inv(S)))
+        kalman_gain = np.matmul(error_cov_hat_tmeas, np.matmul(np.transpose(self.C),
+                                                               np.linalg.inv(innovation_covariance)))
         # update state
-        X = X + np.matmul(L, nu)
+        x_hat_rot_tmeas = x_hat_rot_tmeas + np.matmul(kalman_gain, nu)
         # decrease state covariance
-        Phat = np.matmul((np.identity(8) - np.matmul(L, self.C[0:3, :])), Phat)
-        # store covariance of last measurement update (t0)
-        self.error_cov_hat_tmeas = Phat
+        error_cov_hat_tmeas = np.matmul((np.identity(10) - np.matmul(kalman_gain, self.C)), error_cov_hat_tmeas)
         # get pose and velocity information (note D is zero in y(i+1) = C x(i+1) + D j(i) )
-        Y = np.matmul(self.C[0:3, :], X)
+        y_hat_rot_tnext = np.matmul(self.C, x_hat_rot_tmeas)
 
-        yhat_r = PointStamped(point=Point(x=Y[0, 0],
-                                          y=Y[1, 0],
-                                          z=Y[2, 0]))
-        return X, yhat_r, Phat
-
-    # def transform_pose(self, pose, _from, _to):
-    #     '''Transforms pose (geometry_msgs/PoseStamped) from frame "_from" to
-    #     frame "_to".
-    #     Arguments:
-    #         - _from, _to = string, name of frame
-    #     '''
-    #     transform = self.get_transform(_from, _to)
-    #     pose_tf = tf2_geom.do_transform_pose(pose, transform)
-    #     pose_tf.header.stamp = pose.header.stamp
-    #     pose_tf.header.frame_id = _to
-    #
-    #     return pose_tf
-
-    # def get_transform(self, _from, _to):
-    #     '''Returns the TransformStamped msg of the transform from reference
-    #     frame '_from' to reference frame '_to'
-    #     Arguments:
-    #         - _from, _to = string, name of frame
-    #     '''
-    #     tf_f_in_t = self.tfBuffer.lookup_transform(
-    #         _to, _from, rospy.Time(0), rospy.Duration(0.1))
-    #     return tf_f_in_t
+        return x_hat_rot_tmeas, y_hat_rot_tnext, error_cov_hat_tmeas

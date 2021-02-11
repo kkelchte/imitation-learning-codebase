@@ -65,7 +65,6 @@ class TestModifiedStatePublisher(unittest.TestCase):
         # TODO: self.assertEqual(frame.sum(), CORRECT SUM)
         # plt.imshow(frame)
         # plt.show()
-        # a = 100
 
     def tearDown(self) -> None:
         self._ros_process.terminate()

@@ -24,7 +24,7 @@ from src.core.data_types import Action, SensorType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from imitation_learning_ros_package.cfg import pidConfig
 from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_quaternion, \
-    get_output_path, apply_noise_to_twist, process_twist, transform
+    get_output_path, apply_noise_to_twist, process_twist, transform, get_timestamp
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 
@@ -73,14 +73,12 @@ class MathiasController:
         self.vel_ref = Twist()
         self.prev_pose_error = PointStamped()
         self.prev_vel_error = PointStamped()
+        self.last_measurement = None
         self._robot = rospy.get_param('/robot/model_name')
         cprint(f'model_name: {self._robot}', self._logger)
 
         self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
-
-        # self.tfBuffer = tf2_ros.Buffer()
-        # self.listener = tf2_ros.TransformListener(self.tfBuffer)
 
     def _subscribe(self):
         self._fsm_state = FsmState.Unknown
@@ -107,8 +105,8 @@ class MathiasController:
                                  callback=eval(f'self.{sensor_callback}'),
                                  callback_args=(sensor_topic, sensor_stats))
 
-        # Dynamic reconfig server
-        self._config_server = Server(pidConfig, self._dynamic_config_callback)
+        # Dynamic reconfig server --> use for setting config/actor
+        # self._config_server = Server(pidConfig, self._dynamic_config_callback)
 
     def _set_fsm_state(self, msg: String):
         # detect transition
@@ -137,6 +135,11 @@ class MathiasController:
         return config
 
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
+        if self.last_measurement is not None:
+            difference = get_timestamp(msg) - self.last_measurement
+            if difference < 1. / 5:
+                return
+        self.last_measurement = get_timestamp(msg)
         sensor_topic, sensor_stats = args
         # adjust orientation towards current_waypoint
         quaternion = (msg.pose.pose.orientation.x,

@@ -17,7 +17,7 @@ from scipy.spatial.transform import Rotation as R
 from src.core.utils import get_filename_without_extension, get_to_root_dir, get_data_dir, safe_wait_till_true
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import euler_from_quaternion, transform
+from src.sim.ros.src.utils import euler_from_quaternion, transform, process_image
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber, get_fake_laser_scan
 
 
@@ -614,7 +614,7 @@ class TestMathiasController(unittest.TestCase):
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=self._config,
                                        visible=True)
-
+        self.visualisation_topic = None
         # subscribe to command control
         subscribe_topics = [
             TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
@@ -651,7 +651,7 @@ class TestMathiasController(unittest.TestCase):
 
             #index = self.tweak_steady_pose(measured_data, index)
             #index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[2, 2, 1])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[-2, 2, 1])
 
     @unittest.skip
     def test_drone_relative_positioning_real_bebop(self):
@@ -676,7 +676,7 @@ class TestMathiasController(unittest.TestCase):
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=self._config,
                                        visible=True)
-
+        self.visualisation_topic = None
         # subscribe to command control
         subscribe_topics = [
             TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
@@ -703,8 +703,9 @@ class TestMathiasController(unittest.TestCase):
         while True:
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
-            #index = self.tweak_steady_pose(measured_data, index)
-            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
+            # index = self.tweak_steady_pose(measured_data, index)
+            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[-2, 2, 1])
 
     def get_pose(self):
         if rospy.get_param('/robot/position_sensor/topic') in self.ros_topic.topic_values.keys():
@@ -732,10 +733,6 @@ class TestMathiasController(unittest.TestCase):
                                                                                       point=Point(x=ref_pose[0],
                                                                                                   y=ref_pose[1],
                                                                                                   z=ref_pose[2])))
-                print(f'OVERTAKE: drones: yaw = {ref_pose[3]}')
-            # with relative positioning
-            #self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(frame_id="agent"),
-            #                                                                      point=Point(x=0., y=0., z=0.)))
             rospy.sleep(0.5)
 
         measured_data[index] = {'x': [],
@@ -749,8 +746,8 @@ class TestMathiasController(unittest.TestCase):
             measured_data[index]['x'].append(x - ref_pose[0])
             measured_data[index]['y'].append(y - ref_pose[1])
             measured_data[index]['z'].append(z - ref_pose[2])
-            measured_data[index]['yaw'].append(yaw - ref_pose[3])
-            print(f'RUNNING: drones: ref_pose = {ref_pose}')
+            measured_data[index]['yaw'].append(yaw)  # - ref_pose[3]
+            #print(f'RUNNING: drones: ref_pose = {ref_pose}')
             rospy.sleep(0.5)
 
         colors = ['C0', 'C1', 'C2', 'C3', 'C4']
@@ -761,6 +758,15 @@ class TestMathiasController(unittest.TestCase):
                          color=colors[key % len(colors)], label=f'{key}: {a}')
         plt.legend()
         plt.show()
+
+        # print visualisation if it's in ros topic:
+        if self.visualisation_topic in self.ros_topic.topic_values.keys():
+            frame = process_image(self.ros_topic.topic_values[self.visualisation_topic])
+            plt.figure(figsize=(15, 15))
+            plt.imshow(frame)
+            plt.axis('off')
+            plt.show()
+
         index += 1
         index %= len(colors)
         return index
@@ -769,7 +775,7 @@ class TestMathiasController(unittest.TestCase):
         # gets fsm in taken over state
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
-        d = 0.5
+        d = 3
         point = [d if axis == 0 else 0.,
                  d if axis == 1 else 0.,
                  d if axis == 2 else 0.]
@@ -822,6 +828,15 @@ class TestMathiasController(unittest.TestCase):
                          color=colors[key % len(colors)], label=f'{key}: {a}')
         plt.legend()
         plt.show()
+
+        # print visualisation if it's in ros topic:
+        if self.visualisation_topic in self.ros_topic.topic_values.keys():
+            frame = process_image(self.ros_topic.topic_values[self.visualisation_topic])
+            plt.figure(figsize=(15, 15))
+            plt.imshow(frame)
+            plt.axis('off')
+            plt.show()
+
         index += 1
         index %= len(colors)
         return index
@@ -876,11 +891,20 @@ class TestMathiasController(unittest.TestCase):
                          color=colors[key % len(colors)], label=f'{key}: {a}')
         plt.legend()
         plt.show()
+
+        # print visualisation if it's in ros topic:
+        if self.visualisation_topic in self.ros_topic.topic_values.keys():
+            frame = process_image(self.ros_topic.topic_values[self.visualisation_topic])
+            plt.figure(figsize=(15, 15))
+            plt.imshow(frame)
+            plt.axis('off')
+            plt.show()
+
         index += 1
         index %= len(colors)
         return index
 
-#    @unittest.skip
+    @unittest.skip
     def test_drone_keyboard_gazebo_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -908,6 +932,70 @@ class TestMathiasController(unittest.TestCase):
                                        visible=True)
 
         # subscribe to command control
+        self.visualisation_topic = '/actor/mathias_controller/visualisation'
+        subscribe_topics = [
+            TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
+                        msg_type=rospy.get_param('/robot/position_sensor/type')),
+            TopicConfig(topic_name='/fsm/state',
+                        msg_type='String'),
+            TopicConfig(topic_name=self.visualisation_topic,
+                        msg_type='Image')
+        ]
+        self._reference_topic = '/reference_pose'
+        self._reference_type = 'PointStamped'
+        publish_topics = [
+            TopicConfig(topic_name='/fsm/reset', msg_type='Empty'),
+            TopicConfig(topic_name=self._reference_topic, msg_type=self._reference_type),
+        ]
+
+        self.ros_topic = TestPublisherSubscriber(
+            subscribe_topics=subscribe_topics,
+            publish_topics=publish_topics
+        )
+
+        self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
+        self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
+
+        safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 25, 0.1, ros_topic=self.ros_topic)
+        measured_data = {}
+        index = 0
+        while True:
+            # publish reset
+            self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+
+            self._unpause_client.wait_for_service()
+            self._unpause_client.call()
+
+            # index = self.tweak_steady_pose(measured_data, index)
+            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[-2, 2, 1])
+
+    #@unittest.skip
+    def test_drone_relative_positioning_real_bebop_with_KF(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'empty',
+            'robot_name': 'bebop_real',
+            'gazebo': False,
+            'fsm': True,
+            'fsm_mode': 'TakeOverRun',
+            'control_mapping': True,
+            'control_mapping_config': 'mathias_controller_keyboard',
+            'altitude_control': False,
+            'keyboard': True,
+            'mathias_controller_with_KF': True,
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+        self.visualisation_topic = None
+        # subscribe to command control
         subscribe_topics = [
             TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
                         msg_type=rospy.get_param('/robot/position_sensor/type')),
@@ -926,10 +1014,6 @@ class TestMathiasController(unittest.TestCase):
             subscribe_topics=subscribe_topics,
             publish_topics=publish_topics
         )
-
-        self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
-        self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
-
         safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
                             True, 10, 0.1, ros_topic=self.ros_topic)
         measured_data = {}
@@ -937,15 +1021,12 @@ class TestMathiasController(unittest.TestCase):
         while True:
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
-
-            self._unpause_client.wait_for_service()
-            self._unpause_client.call()
-
             index = self.tweak_steady_pose(measured_data, index)
-            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            # index = self.tweak_combined_axis_keyboard(measured_data, index, point=[2, 2, 1])
+            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
+            # index = self.tweak_combined_axis_keyboard(measured_data, index, point=[-2, 2, 1])
 
-    def tearDown(self) -> None:
+
+def tearDown(self) -> None:
         self._ros_process.terminate()
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

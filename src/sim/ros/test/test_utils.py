@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation as R
 
 from src.core.utils import get_filename_without_extension, get_data_dir
 from src.sim.ros.src.utils import calculate_bounding_box, distance, array_to_combined_global_pose, get_iou, \
-    process_combined_global_poses, transform
+    process_combined_global_poses, transform, to_ros_time
 
 """ Test Utils
 """
@@ -19,6 +19,15 @@ class TestUtils(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+
+    def test_to_ros_time(self):
+        result = to_ros_time(5)
+        self.assertEqual(result.secs, 5)
+        self.assertEqual(result.nsecs, 0)
+
+        result = to_ros_time(5.1)
+        self.assertEqual(result.secs, 5)
+        self.assertLessEqual(abs(result.nsecs - 10**8), 1)
 
     def test_distance(self):
         self.assertEqual(distance([0, 0, 2], [0, 0, 0]), 2)
