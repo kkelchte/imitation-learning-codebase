@@ -120,17 +120,21 @@ class MathiasController:
         # Dynamic reconfig server --> use only during tweaking
         self._config_server = Server(pidConfig, self._dynamic_config_callback)
 
+    def _reset(self):
+        self.data = {
+            axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in
+            ['x', 'y', 'z', 'yaw']}
+        self.prev_pose_error = PointStamped()
+        self.prev_vel_error = PointStamped()
+        self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
+        self.filter.reset()
+
     def _set_fsm_state(self, msg: String):
         # detect transition
         if self._fsm_state != FsmState[msg.data]:
             self._fsm_state = FsmState[msg.data]
             if self._fsm_state == FsmState.Running:  # reset early feedback values
-                self.data = {
-                    axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in
-                    ['x', 'y', 'z', 'yaw']}
-                self.prev_pose_error = PointStamped()
-                self.prev_vel_error = PointStamped()
-                self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
+                self._reset()
             elif self._fsm_state == FsmState.TakenOver and self.show_graph:
                 self._plot()
 
@@ -232,8 +236,10 @@ class MathiasController:
             self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
         self.pose_ref = pose_ref
 
-    def _update_twist(self) -> Twist:
+    def _update_twist(self) -> Union[None, Twist]:
         result = self.filter.kalman_prediction(self.last_cmd, self._control_period)
+        if result is None:
+            return None
         self._store_datapoint(result, 'predicted')
         self.pose_est = result.pose.pose
         self.vel_est.x = result.twist.twist.linear.x
@@ -249,11 +255,12 @@ class MathiasController:
         while not rospy.is_shutdown():
             if self._fsm_state == FsmState.Running:
                 twist = self._update_twist()
-                self.last_cmd = TwistStamped(
-                    header=Header(stamp=rospy.Time().now()),
-                    twist=twist
-                )
-                self._publisher.publish(twist)
+                if twist is not None:
+                    self.last_cmd = TwistStamped(
+                        header=Header(stamp=rospy.Time().now()),
+                        twist=twist
+                    )
+                    self._publisher.publish(twist)
                 self.count += 1
                 if self.count % 10 * self._rate_fps == 0:
                     _, _, yaw = euler_from_quaternion(self.pose_est.orientation)

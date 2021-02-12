@@ -670,6 +670,7 @@ class TestMathiasController(unittest.TestCase):
             'altitude_control': False,
             'keyboard': True,
             'mathias_controller': True,
+            'mathias_controller_config_file_path_with_extension': f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_real_bebop.yml'
         }
 
         # spinoff roslaunch
@@ -704,8 +705,8 @@ class TestMathiasController(unittest.TestCase):
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
             # index = self.tweak_steady_pose(measured_data, index)
-            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[-2, 2, 1])
+            #index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0.5, 0.5, 0.5])
 
     def get_pose(self):
         if rospy.get_param('/robot/position_sensor/topic') in self.ros_topic.topic_values.keys():
@@ -775,7 +776,7 @@ class TestMathiasController(unittest.TestCase):
         # gets fsm in taken over state
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
-        d = 3
+        d = 1
         point = [d if axis == 0 else 0.,
                  d if axis == 1 else 0.,
                  d if axis == 2 else 0.]
@@ -904,7 +905,7 @@ class TestMathiasController(unittest.TestCase):
         index %= len(colors)
         return index
 
-    @unittest.skip
+    #@unittest.skip
     def test_drone_keyboard_gazebo_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -969,9 +970,9 @@ class TestMathiasController(unittest.TestCase):
 
             # index = self.tweak_steady_pose(measured_data, index)
             # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[-2, 2, 1])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1, 3, 0])
 
-    #@unittest.skip
+    @unittest.skip
     def test_drone_relative_positioning_real_bebop_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -994,15 +995,16 @@ class TestMathiasController(unittest.TestCase):
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=self._config,
                                        visible=True)
-        self.visualisation_topic = None
-        # subscribe to command control
+        self.visualisation_topic = '/actor/mathias_controller/visualisation'
         subscribe_topics = [
             TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
                         msg_type=rospy.get_param('/robot/position_sensor/type')),
             TopicConfig(topic_name='/fsm/state',
-                        msg_type='String')
-
+                        msg_type='String'),
+            TopicConfig(topic_name=self.visualisation_topic,
+                        msg_type='Image')
         ]
+
         self._reference_topic = '/reference_pose'
         self._reference_type = 'PointStamped'
         publish_topics = [
@@ -1022,11 +1024,10 @@ class TestMathiasController(unittest.TestCase):
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
             index = self.tweak_steady_pose(measured_data, index)
-            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
+            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
             # index = self.tweak_combined_axis_keyboard(measured_data, index, point=[-2, 2, 1])
 
-
-def tearDown(self) -> None:
+    def tearDown(self) -> None:
         self._ros_process.terminate()
         shutil.rmtree(self.output_dir, ignore_errors=True)
 

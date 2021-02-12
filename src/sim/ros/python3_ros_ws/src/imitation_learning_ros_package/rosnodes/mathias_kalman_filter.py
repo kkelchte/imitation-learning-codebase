@@ -57,6 +57,33 @@ class KalmanFilter(object):
                                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1e1]])
         self.requires_initialisation = True
 
+    def reset(self):
+        self.x_hat_rot_tnext = np.zeros(shape=(10, 1))  # 1/b0 * (px,vx,ax,py,vy,ay,pz,vz,ptheta,vtheta)
+        self.x_rot_tmeas = np.zeros(shape=(10, 1))
+
+        self.error_cov_hat_tmeas = np.zeros(10)
+        self.error_cov_hat_tnext = np.zeros(10)
+
+        self.y_hat_rot_tmeas = np.zeros(shape=(8, 1))
+        self.y_hat_rot_tnext = np.zeros(shape=(8, 1))
+        self.prev_measurement = None
+        self.tnext = None
+        self.tmeas = None
+
+        # Kalman tuning parameters.
+        self.meas_noise_cov = np.identity(8)  # measurement noise covariance
+        self.process_noise_cov = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # process noise covariance matrix
+                                           [0, 1e1, 0, 0, 0, 0, 0, 0, 0, 0],
+                                           [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                                           [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                                           [0, 0, 0, 0, 1e1, 0, 0, 0, 0, 0],
+                                           [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                                           [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                                           [0, 0, 0, 0, 0, 0, 0, 1e1, 0, 0],
+                                           [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 1e1]])
+        self.requires_initialisation = True
+
     def initialise(self, measurement: Odometry):
         self.prev_measurement = measurement
         self.tmeas = float(measurement.header.stamp.to_sec())
