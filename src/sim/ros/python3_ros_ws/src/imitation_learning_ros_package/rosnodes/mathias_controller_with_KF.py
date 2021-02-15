@@ -78,6 +78,7 @@ class MathiasController:
         self.last_measurement = None  # used to invoke slower measurement update in simulation
 
         self.desired_yaw = None
+        self.real_yaw = None
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
         self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
@@ -127,7 +128,7 @@ class MathiasController:
         self.prev_pose_error = PointStamped()
         self.prev_vel_error = PointStamped()
         self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
-        self.filter.reset()
+        #self.filter.reset()  # gives a drop in z-direction... better to have proper pose estimate at start of run
 
     def _set_fsm_state(self, msg: String):
         # detect transition
@@ -194,20 +195,23 @@ class MathiasController:
                                                data.pose.pose.orientation.y,
                                                data.pose.pose.orientation.z,
                                                data.pose.pose.orientation.w))
-            data = {'x': data.pose.pose.position.x,
-                    'y': data.pose.pose.position.y,
-                    'z': data.pose.pose.position.z,
+            rotated_position = transform(points=[data.pose.pose.position],
+                                         orientation=self.pose_est.orientation,
+                                         invert=True)[0]
+            data = {'x': rotated_position.x,
+                    'y': rotated_position.y,
+                    'z': rotated_position.z,
                     'yaw': yaw}
             for axis in self.data.keys():
                 self.data[axis][label].append((stamp, data[axis]))
 
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         sensor_topic, sensor_stats = args
-        if self.last_measurement is not None:
-            difference = get_timestamp(msg) - self.last_measurement
-            if difference < 1./5:
-                return
-        self.last_measurement = get_timestamp(msg)
+        #if self.last_measurement is not None:
+        #    difference = get_timestamp(msg) - self.last_measurement
+        #    if difference < 1./5:
+        #        return
+        # self.last_measurement = get_timestamp(msg)
         result = self.filter.kalman_correction(msg, self._control_period)
         if result is not None:
             self._store_datapoint(msg, 'observed')
@@ -216,6 +220,22 @@ class MathiasController:
             self.vel_est.x = result.twist.twist.linear.x
             self.vel_est.y = result.twist.twist.linear.y
             self.vel_est.z = result.twist.twist.linear.z
+        # # adjust orientation towards current_waypoint
+        # quaternion = (msg.pose.pose.orientation.x,
+        #               msg.pose.pose.orientation.y,
+        #               msg.pose.pose.orientation.z,
+        #               msg.pose.pose.orientation.w)
+        # _, _, self.real_yaw = euler_from_quaternion(quaternion)
+
+        # self.pose_est = msg.pose.pose
+        # self.vel_est.x = msg.twist.twist.linear.x
+        # self.vel_est.y = msg.twist.twist.linear.y
+        # self.vel_est.z = msg.twist.twist.linear.z
+
+        # if self._fsm_state == FsmState.Running:
+        #     self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()),
+        #                                  twist=self._update_twist())
+        #     self._publisher.publish(self.last_cmd.twist)
 
     def _reference_update(self, message: PointStamped) -> None:
         if isinstance(message, PointStamped):
@@ -226,7 +246,10 @@ class MathiasController:
                 pose_ref.point = transform(points=[pose_ref.point],
                                            orientation=self.pose_est.orientation,
                                            translation=self.pose_est.position)[0]
-
+                # pose_ref.point = transform(points=[pose_ref.point],
+                #                            orientation=R.from_euler('XYZ', (0, 0, self.real_yaw),
+                #                                                     degrees=False).as_matrix(),
+                #                            translation=self.pose_est.position)[0]
         elif isinstance(message, Float32MultiArray):  # in case of global waypoint
             pose_ref = message.data
             pose_ref = PointStamped(point=Point(x=pose_ref[0],
@@ -242,6 +265,14 @@ class MathiasController:
         result = self.filter.kalman_prediction(self.last_cmd, self._control_period)
         if result is None:
             return None
+        # cprint(f'---------------------------------------------------------------------Prediction:'
+        #        f'kalman x: {result.pose.pose.position.x}, measured x: {self.pose_est.position.x}\n'
+        #        f'kalman y: {result.pose.pose.position.y}, measured y: {self.pose_est.position.y}\n'
+        #        f'kalman z: {result.pose.pose.position.z}, measured z: {self.pose_est.position.z}\n'
+        #        f'kalman yaw: {kalman_yaw}, measured yaw: {self.real_yaw}\n'
+        #        f'kalman dx: {result.twist.twist.linear.x}, measured yaw: {self.vel_est.x}\n'
+        #        f'kalman dy: {result.twist.twist.linear.y}, measured yaw: {self.vel_est.y}\n'
+        #        f'kalman dz: {result.twist.twist.linear.z}, measured yaw: {self.vel_est.z}\n', self._logger)
         self._store_datapoint(result, 'predicted')
         self.pose_est = result.pose.pose
         self.vel_est.x = result.twist.twist.linear.x
