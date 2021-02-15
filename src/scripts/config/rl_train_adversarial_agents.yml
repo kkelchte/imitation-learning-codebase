@@ -17,7 +17,7 @@ environment_config:
     observation: modified_state
     action_topic: python
     num_action_publishers: 2
-    visible_xterm: true
+    visible_xterm: false
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
