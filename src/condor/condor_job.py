@@ -197,11 +197,15 @@ class CondorJob:
         with open(config_file, 'r') as f:
             config_dict = yaml.load(f, Loader=yaml.FullLoader)
         self._original_output_path = config_dict['output_path']
+        print(self._original_output_path)
         if not self._original_output_path.startswith('/'):
+            print('does not start with / so becomes')
             self._original_output_path = f'{get_data_dir(os.environ["HOME"])}/{self._original_output_path}'
         # cut local_home, which is a TEMP environment variable, from the output path of the adjusted config
         # so python experiment will take the DATADIR environment variable which should be set to TEMP
-        config_dict['output_path'] = f'{"/esat/opal/r0669036/data"}/{self._original_output_path}' #self.local_output_path[len(self.local_home)+1:]
+        print(self._original_output_path)
+        print('the local output path is ' + str(self.local_output_path) + ' or ' + str(self.local_output_path[len(self.local_home)+1:]))
+        config_dict['output_path'] = self.local_output_path[len(self.local_home)+1:]
 
         # adjust config if hdf5 files are present and store original_to_new_location_tuples
         original_to_new_location_tuples = []

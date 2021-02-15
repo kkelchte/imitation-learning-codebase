@@ -1,5 +1,5 @@
 output_path: adversarial_agents_ros
-number_of_epochs: 1000
+number_of_epochs: 10
 episode_runner_config:
   number_of_episodes: 5
   train_every_n_steps: -1
