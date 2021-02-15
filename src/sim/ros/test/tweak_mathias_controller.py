@@ -905,7 +905,7 @@ class TestMathiasController(unittest.TestCase):
         index %= len(colors)
         return index
 
-    #@unittest.skip
+    @unittest.skip
     def test_drone_keyboard_gazebo_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -970,9 +970,9 @@ class TestMathiasController(unittest.TestCase):
 
             # index = self.tweak_steady_pose(measured_data, index)
             # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1, 3, 0])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1, 3, 0.5])
 
-    @unittest.skip
+    #@unittest.skip
     def test_drone_relative_positioning_real_bebop_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)

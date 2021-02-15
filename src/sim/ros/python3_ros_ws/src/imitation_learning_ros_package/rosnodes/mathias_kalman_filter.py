@@ -6,6 +6,8 @@ from geometry_msgs.msg import PointStamped, TwistStamped, PoseStamped, Point
 import rospy
 import numpy as np
 from nav_msgs.msg import Odometry
+from scipy.spatial.transform import Rotation as R
+
 
 from src.sim.ros.src.utils import get_time_diff, get_timestamp, to_ros_time, euler_from_quaternion, \
     rotation_from_quaternion, quaternion_from_euler
@@ -151,26 +153,24 @@ class KalmanFilter(object):
         """
         result = Odometry()
         result.header.stamp = to_ros_time(self.tnext if time == "tnext" else self.tmeas)
+        result.header.frame_id = "global"
         data_vector = self.y_hat_rot_tnext if time == "tnext" else self.y_hat_rot_tmeas
-        # transform y_hat_rot first to y_hat based on estimated yaw
+        # transform y_hat_rot to y_hat based on estimated yaw
         yaw = data_vector[3, 0]
         position_rot = data_vector[0:3, 0]
         velocity_rot = data_vector[4:7, 0]
-        yaw_rotation = np.array([[np.cos(-yaw), np.sin(-yaw), 0],
-                                 [-np.sin(-yaw), np.cos(-yaw), 0],
-                                 [0, 0, 1]])
-        position = np.matmul(yaw_rotation, position_rot)
-        velocity = np.matmul(yaw_rotation, velocity_rot)
-
-        quaternion = quaternion_from_euler((0, 0, yaw))
+        orientation = R.from_euler('XYZ', (0, 0, yaw), degrees=False)
+        rotated_to_global = orientation.as_matrix()
+        position = np.matmul(rotated_to_global, position_rot)
+        velocity = np.matmul(rotated_to_global, velocity_rot)
 
         result.pose.pose.position.x = position[0]
         result.pose.pose.position.y = position[1]
         result.pose.pose.position.z = position[2]
-        result.pose.pose.orientation.x = quaternion[0]
-        result.pose.pose.orientation.y = quaternion[1]
-        result.pose.pose.orientation.z = quaternion[2]
-        result.pose.pose.orientation.w = quaternion[3]
+        result.pose.pose.orientation.x = orientation.as_quat()[0]
+        result.pose.pose.orientation.y = orientation.as_quat()[1]
+        result.pose.pose.orientation.z = orientation.as_quat()[2]
+        result.pose.pose.orientation.w = orientation.as_quat()[3]
 
         result.twist.twist.linear.x = velocity[0]
         result.twist.twist.linear.y = velocity[1]
@@ -180,8 +180,8 @@ class KalmanFilter(object):
         return result
 
     def _predict_step_calc(self, input_cmd_stamped: TwistStamped, time_delay_s: float, x_hat_rot: np.ndarray,
-                           error_cov_hat: np.ndarray, tstart: float = None) -> Tuple[np.ndarray, np.ndarray,
-                                                                                     np.ndarray, float]:
+                           error_cov_hat: np.ndarray, tstart: float = None) \
+            -> Tuple[np.ndarray, np.ndarray, np.ndarray, float]:
         """
         Prediction step of the kalman filter. Update the position of the drone
         using the reference velocity commands.
@@ -308,23 +308,23 @@ class KalmanFilter(object):
                                            measurement.pose.pose.orientation.y,
                                            measurement.pose.pose.orientation.z,
                                            measurement.pose.pose.orientation.w))
-        yaw_rotation = np.array([[np.cos(yaw), np.sin(yaw), 0],
-                                 [-np.sin(yaw), np.cos(yaw), 0],
-                                 [0, 0, 1]])
+        global_to_rotated = R.from_euler('XYZ', (0, 0, -yaw), degrees=False).as_matrix()
+
         position = np.array([[measurement.pose.pose.position.x],
                              [measurement.pose.pose.position.y],
                              [measurement.pose.pose.position.z]])
-        position_rot = np.matmul(yaw_rotation, position)
-        # assumption: velocity is expressed in drone frame
+        position_rot = np.matmul(global_to_rotated, position)
+        # assumption: velocity is expressed in global frame
         velocity = np.array([[measurement.twist.twist.linear.x],
                              [measurement.twist.twist.linear.y],
                              [measurement.twist.twist.linear.z]])
-        velocity_rot = np.matmul(yaw_rotation, velocity)
+        velocity_rot = np.matmul(global_to_rotated, velocity)
+        # output vector contains pose and velocity in global-rotated frame (following drone's yaw)
         y = np.zeros((8, 1))
         y[0:3] = position_rot
-        y[3, 0] = yaw
+        y[3, 0] = yaw  # yaw is kept in global frame
         y[4:7] = velocity_rot
-        y[7, 0] = measurement.twist.twist.angular.z
+        y[7, 0] = measurement.twist.twist.angular.z  # angular y yaw velocity is kept in global frame
 
         # innovation = what is measured differently from what we would be expected
         # (note D is zero in y(i+1) = C x(i+1) + D j(i) )
@@ -333,8 +333,8 @@ class KalmanFilter(object):
 
         # innovation_covariance depends on covariance of prediction Phat (reliability of prediction)
         # and measurement noise covariance R (reliability of measurement)
-        innovation_covariance = np.matmul(self.C, np.matmul(error_cov_hat_tmeas, np.transpose(self.C))) \
-                                + self.meas_noise_cov
+        innovation_covariance = np.matmul(self.C,
+                                          np.matmul(error_cov_hat_tmeas, np.transpose(self.C))) + self.meas_noise_cov
 
         # Kalman gain represents impact of innovation on state estimate,
         # increases with covariance prediction (unreliable prediction)

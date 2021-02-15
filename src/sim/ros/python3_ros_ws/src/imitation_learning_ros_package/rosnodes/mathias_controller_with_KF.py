@@ -222,9 +222,11 @@ class MathiasController:
             pose_ref = message
             if message.header.frame_id == "agent":
                 # transform from agent to world frame.
+                # pose_estimate.orientation only incorporates yaw turn (not roll and pitch)
                 pose_ref.point = transform(points=[pose_ref.point],
                                            orientation=self.pose_est.orientation,
                                            translation=self.pose_est.position)[0]
+
         elif isinstance(message, Float32MultiArray):  # in case of global waypoint
             pose_ref = message.data
             pose_ref = PointStamped(point=Point(x=pose_ref[0],
