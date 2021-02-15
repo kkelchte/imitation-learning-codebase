@@ -117,7 +117,6 @@ class AltitudeControl:
             self._height[agent_name] = msg.pose.position.z
 
     def _get_twist(self, agent: str = 'default') -> Twist:
-        #  TODO make proper PID controller
         twist = Twist()
         height = self._height[agent]
         if height < (self._reference_height - 0.1):

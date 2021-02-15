@@ -1,0 +1,38 @@
+output_path: test_circle_world
+number_of_epochs: 1
+episode_runner_config:
+  number_of_episodes: 1
+environment_config:
+  factory_key: ROS
+  max_number_of_steps: -1
+  ros_config:
+    observation: camera
+    visible_xterm: true
+    max_update_wait_period_s: 10
+    step_rate_fps: 100
+    info:
+      - position
+      - current_waypoint
+    ros_launch_config:
+      random_seed: 123
+      robot_name: drone_sim_down_cam
+      fsm_mode: TakeOverRun
+      fsm: true
+      control_mapping: true
+      robot_display: false
+      waypoint_indicator: true
+      control_mapping_config: ros_expert
+      world_name: circle_world/model_000
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 0.2
+      yaw_or: 1.57
+      gazebo: true
+    actor_configs:
+      - name: altitude_control
+      - name: ros_expert
+        file: src/sim/ros/config/actor/ros_expert_wp_slow.yml
+data_saver_config:
+  store_hdf5: false
+  separate_raw_data_runs: true
+  saving_directory_tag: expert

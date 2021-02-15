@@ -220,22 +220,6 @@ class MathiasController:
             self.vel_est.x = result.twist.twist.linear.x
             self.vel_est.y = result.twist.twist.linear.y
             self.vel_est.z = result.twist.twist.linear.z
-        # # adjust orientation towards current_waypoint
-        # quaternion = (msg.pose.pose.orientation.x,
-        #               msg.pose.pose.orientation.y,
-        #               msg.pose.pose.orientation.z,
-        #               msg.pose.pose.orientation.w)
-        # _, _, self.real_yaw = euler_from_quaternion(quaternion)
-
-        # self.pose_est = msg.pose.pose
-        # self.vel_est.x = msg.twist.twist.linear.x
-        # self.vel_est.y = msg.twist.twist.linear.y
-        # self.vel_est.z = msg.twist.twist.linear.z
-
-        # if self._fsm_state == FsmState.Running:
-        #     self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()),
-        #                                  twist=self._update_twist())
-        #     self._publisher.publish(self.last_cmd.twist)
 
     def _reference_update(self, message: PointStamped) -> None:
         if isinstance(message, PointStamped):
@@ -246,10 +230,6 @@ class MathiasController:
                 pose_ref.point = transform(points=[pose_ref.point],
                                            orientation=self.pose_est.orientation,
                                            translation=self.pose_est.position)[0]
-                # pose_ref.point = transform(points=[pose_ref.point],
-                #                            orientation=R.from_euler('XYZ', (0, 0, self.real_yaw),
-                #                                                     degrees=False).as_matrix(),
-                #                            translation=self.pose_est.position)[0]
         elif isinstance(message, Float32MultiArray):  # in case of global waypoint
             pose_ref = message.data
             pose_ref = PointStamped(point=Point(x=pose_ref[0],
@@ -265,14 +245,6 @@ class MathiasController:
         result = self.filter.kalman_prediction(self.last_cmd, self._control_period)
         if result is None:
             return None
-        # cprint(f'---------------------------------------------------------------------Prediction:'
-        #        f'kalman x: {result.pose.pose.position.x}, measured x: {self.pose_est.position.x}\n'
-        #        f'kalman y: {result.pose.pose.position.y}, measured y: {self.pose_est.position.y}\n'
-        #        f'kalman z: {result.pose.pose.position.z}, measured z: {self.pose_est.position.z}\n'
-        #        f'kalman yaw: {kalman_yaw}, measured yaw: {self.real_yaw}\n'
-        #        f'kalman dx: {result.twist.twist.linear.x}, measured yaw: {self.vel_est.x}\n'
-        #        f'kalman dy: {result.twist.twist.linear.y}, measured yaw: {self.vel_est.y}\n'
-        #        f'kalman dz: {result.twist.twist.linear.z}, measured yaw: {self.vel_est.z}\n', self._logger)
         self._store_datapoint(result, 'predicted')
         self.pose_est = result.pose.pose
         self.vel_est.x = result.twist.twist.linear.x
