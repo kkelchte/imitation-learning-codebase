@@ -7,7 +7,8 @@ import torch
 
 from src.ai.base_net import ArchitectureConfig
 from src.ai.evaluator import Evaluator, EvaluatorConfig
-from src.ai.utils import generate_random_dataset_in_raw_data, DiscreteActionMapper
+from src.ai.utils import generate_random_dataset_in_raw_data, DiscreteActionMapper, \
+    clip_action_according_to_playfield_size
 from src.core.utils import get_to_root_dir, get_filename_without_extension
 from src.ai.architectures import *  # Do not remove
 from src.data.data_loader import DataLoaderConfig, DataLoader
@@ -32,6 +33,32 @@ class UtilsTest(unittest.TestCase):
         self.assertLess((discrete_action_mapper.index_to_tensor(1) -
                          torch.as_tensor([0.2, 0.0, 0.0, 0.0, 0.0, 0.0])).sum(),
                         0.00001)
+
+    def test_clip_action_according_to_playfield_size(self):
+        playfield_size = (1., 1., 1.)
+        # default usage
+        inputs = np.asarray([0, 0, 0,
+                             0, 0, 0,
+                             0, 3, 0])
+        actions = np.asarray([4, 0, 0,
+                              0, 5, 0,
+                              0, 1])
+        result = clip_action_according_to_playfield_size(inputs, actions, playfield_size=playfield_size)
+        self.assertListEqual(list(result), list(actions))
+        # clip all actions one time in + and -
+        offset = 0.1
+        for agent in ['tracking', 'fleeing']:
+            for direction in range(3):
+                for sign in [+1, -1]:
+                    inputs = np.zeros((9,))
+                    index = direction if agent == 'tracking' else direction + 3
+                    inputs[index] = sign * (playfield_size[direction] + offset)
+                    actions = np.arange(1, 9)
+                    print(f'inputs: {inputs}')
+                    print(f'actions: {actions}')
+                    result = clip_action_according_to_playfield_size(inputs, actions, playfield_size=playfield_size)
+                    self.assertEqual(result[index], 0 if sign > 0 else index + 1)
+                    print(f'result: {result}')
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

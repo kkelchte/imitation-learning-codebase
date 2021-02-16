@@ -4,7 +4,7 @@ import unittest
 import torch
 import numpy as np
 
-from src.core.utils import camelcase_to_snake_format, get_to_root_dir, get_data_dir
+from src.core.utils import camelcase_to_snake_format, get_to_root_dir, get_data_dir, safe_wait_till_true
 
 
 class TestUtils(unittest.TestCase):
@@ -42,6 +42,13 @@ class TestUtils(unittest.TestCase):
         self.assertFalse("DATADIR" in os.environ.keys())
         result = get_data_dir(os.environ['HOME'])
         self.assertTrue(result, os.environ["HOME"])
+
+    def test_safe_wait_till_true(self):
+        class FakeObject:
+            def __init__(self):
+                self.field_a = 1
+        f = FakeObject()
+        safe_wait_till_true('kwargs["f"].field_a', 1, 2, 0.1, f=f)
 
 
 if __name__ == '__main__':

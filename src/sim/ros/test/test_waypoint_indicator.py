@@ -40,8 +40,8 @@ class TestWaypointIndicator(unittest.TestCase):
             TopicConfig(topic_name=self._waypoint_topic, msg_type="Float32MultiArray"),
         ]
         # create publishers for all relevant sensors < sensor expert
-        self._pose_topic = rospy.get_param('/robot/odometry_topic')
-        self._pose_type = rospy.get_param('/robot/odometry_type')
+        self._pose_topic = rospy.get_param('/robot/position_sensor/topic')
+        self._pose_type = rospy.get_param('/robot/position_sensor/type')
 
         publish_topics = [
             TopicConfig(topic_name=self._pose_topic, msg_type=self._pose_type)
@@ -55,7 +55,7 @@ class TestWaypointIndicator(unittest.TestCase):
     def send_odom_and_read_next_waypoint(self, odom: Odometry) -> tuple:
         self.ros_topic.publishers[self._pose_topic].publish(odom)
         time.sleep(1)
-        received_waypoint: tuple = self.ros_topic.topic_values[self._waypoint_topic]
+        received_waypoint: tuple = self.ros_topic.topic_values[self._waypoint_topic].data
         return received_waypoint
 
     def compare_vectors(self, a: tuple, b: tuple) -> bool:

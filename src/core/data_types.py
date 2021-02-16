@@ -1,5 +1,5 @@
 import sys
-from typing import Dict, Union, List, Iterator
+from typing import Dict, Union, List, Iterator, Sequence
 from enum import IntEnum
 
 import h5py
@@ -8,13 +8,36 @@ import torch
 from dataclasses import dataclass
 
 
+class FsmMode(IntEnum):
+    SingleRun = 0
+    TakeOverRun = 2
+    TakeOverRunDriveBack = 3
+
+
+class SensorType(IntEnum):
+    """
+    Fixed set of sensor types which are expected to be on robot and used by ros nodes.
+    Corresponding topic and type is found as rosparam get /robot/sensor_{sensor_type}
+    """
+    frame = -1
+    position = 0
+    camera = 1
+    collision = 2
+    depth = 3
+    modified_state = 4
+    tracking_position = 5
+    tracking_camera = 6
+    fleeing_position = 7
+    fleeing_camera = 8
+
+
 class Distribution:
     mean: float = 0
     std: float = 0
     min: float = 0
     max: float = 0
 
-    def __init__(self, data: Iterator):
+    def __init__(self, data: Sequence):
         if isinstance(data, list):
             try:
                 if isinstance(data[0], torch.Tensor):
@@ -64,6 +87,9 @@ class Action:
 
     def __len__(self):
         return len(self.value) if self.value is not None else 0
+
+    def norm(self):
+        return np.sqrt((np.asarray(self.value)**2).sum())
 
 
 @dataclass

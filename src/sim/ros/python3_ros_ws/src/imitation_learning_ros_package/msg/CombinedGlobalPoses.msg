@@ -1,0 +1,9 @@
+float32 tracking_x
+float32 tracking_y
+float32 tracking_z
+float32 fleeing_x
+float32 fleeing_y
+float32 fleeing_z
+float32 tracking_roll
+float32 tracking_pitch
+float32 tracking_yaw

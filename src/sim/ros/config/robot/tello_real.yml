@@ -1,20 +1,19 @@
-robot_type: 'quadrotor'
-command_topic: '/tello/cmd_vel'
-sensors:
-  - 'forward_camera'
-  - 'odometry'
-forward_camera_topic: '/tello/image_raw'
-forward_camera_type: 'Image'
-forward_camera_stats:
-  height: 128
-  width: 128
-  depth: 3
+model_name: quadrotor_real
+command_topic: /tello/cmd_vel
+camera_sensor:
+  topic: /tello/image_raw
+  type: Image
+  stats:
+    height: 128
+    width: 128
+    depth: 3
 #  height: 200
 #  width: 200
 #  depth: 1
-odometry_topic: '/tello/odom'
-odometry_type: 'Odometry'
-takeoff: '/tello/takeoff'
-land: '/tello/land'
-emergency: '/tello/emergency'
-flattrim: '/tello/flattrim'
+position_sensor:
+  topic: /tello/odom
+  type: Odometry
+takeoff: /tello/takeoff
+land: /tello/land
+emergency: /tello/emergency
+flattrim: /tello/flattrim

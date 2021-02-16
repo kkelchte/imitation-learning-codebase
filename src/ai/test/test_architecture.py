@@ -294,7 +294,6 @@ class ArchitectureTest(unittest.TestCase):
             network = eval(self.base_config['architecture']).Net(
                 config=ArchitectureConfig().create(config_dict=self.base_config)
             )
-
             # test single unprocessed data point
             try:
                 network.forward(torch.randn((10, *network.input_size)), train=True)

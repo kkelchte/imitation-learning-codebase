@@ -1,9 +1,0 @@
-# FSM_mode options:
-#  SingleRun = 0
-#  TakeOverRun = 2
-#  TakeOverRunDriveBack = 3
-fsm_mode: 0
-terminal_topic: '/terminal_outcome'
-state_topic: '/fsm/state'
-reward_topic: '/fsm/reward'
-rate_fps: 60

@@ -1,0 +1,18 @@
+rate_fps: 60
+mapping:
+  Running:
+    command_a: actor_a
+    command_b: actor_b
+    command_c: actor_c
+  Unknown:
+    command_a: actor_d
+    command_b: actor_e
+    command_c: actor_f
+  Terminated:
+    command_b: actor_a
+    command_c: actor_a
+  TakenOver:
+    command_a: actor_b
+    command_b: actor_b
+  DriveBack:
+    command_c: actor_a

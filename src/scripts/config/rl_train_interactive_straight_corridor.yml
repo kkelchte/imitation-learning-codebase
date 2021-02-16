@@ -18,7 +18,7 @@ environment_config:
     info:
       -sensor/odometry
     observation: depth_scan
-    store_action: true
+
     store_reward: true
     visible_xterm: false
     step_rate_fps: 100
@@ -26,7 +26,7 @@ environment_config:
     ros_launch_config:
       random_seed: 123
       robot_name: turtlebot_sim
-      fsm_config: single_run
+      fsm_mode: SingleRun
       fsm: true
       control_mapping: true
       waypoint_indicator: true

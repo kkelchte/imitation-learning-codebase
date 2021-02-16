@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Optional, List
+from typing import Optional, List, Union
 
 import numpy as np
 from dataclasses import dataclass
@@ -8,7 +8,7 @@ from dataclasses_json import dataclass_json
 
 from src.core.config_loader import Config
 from src.core.logger import get_logger, cprint, MessageType
-from src.core.utils import get_date_time_tag, get_filename_without_extension
+from src.core.utils import get_date_time_tag, get_filename_without_extension, to_file_name
 from src.data.data_loader import DataLoaderConfig, DataLoader
 from src.data.utils import timestamp_to_filename, store_image, store_array_to_file, create_hdf5_file_from_dataset
 from src.core.data_types import Dataset, Action
@@ -125,13 +125,16 @@ class DataSaver:
                                   dst=dst, time_stamp=experience.time_stamp)
 
         for key, value in experience.info.items():
-            self._store_frame(data=np.asarray(value), dst=f'info_{key}', time_stamp=experience.time_stamp)
+            self._store_frame(data=np.asarray(value.value) if isinstance(value, Action) else value,
+                              dst=f'info_{to_file_name(key)}', time_stamp=experience.time_stamp)
 
         if experience.done in [TerminationType.Success, TerminationType.Failure]:
             os.system(f'touch {os.path.join(self._config.saving_directory, experience.done.name)}')
         self._check_dataset_size_on_file_system()
 
-    def _store_frame(self, data: np.ndarray, dst: str, time_stamp: int) -> None:
+    def _store_frame(self, data: Union[np.ndarray, float], dst: str, time_stamp: int) -> None:
+        if not isinstance(data, np.ndarray):
+            data = np.asarray(data)
         try:
             if len(data.shape) in [2, 3]:
                 if not os.path.isdir(os.path.join(self._config.saving_directory, dst)):

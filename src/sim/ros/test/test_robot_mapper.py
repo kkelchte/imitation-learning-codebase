@@ -26,7 +26,6 @@ class TestRobotMapper(unittest.TestCase):
 
         config = {
             'output_path': self.output_dir,
-            'world_name': 'test_robot_mapper',
             'robot_name': 'turtlebot_sim',
             'gazebo': False,
             'fsm': False,
@@ -42,9 +41,9 @@ class TestRobotMapper(unittest.TestCase):
                                        visible=False)
 
         # create publishers for all relevant sensors < sensor expert
-        self._pose_topic = rospy.get_param('/robot/odometry_topic')
-        self._pose_type = rospy.get_param('/robot/odometry_type')
-        self._fsm_topic = rospy.get_param('/fsm/state_topic')
+        self._pose_topic = rospy.get_param('/robot/position_sensor/topic')
+        self._pose_type = rospy.get_param('/robot/position_sensor/type')
+        self._fsm_topic = '/fsm/state'
         publish_topics = [
             TopicConfig(topic_name=self._pose_topic, msg_type=self._pose_type),
             TopicConfig(topic_name=self._fsm_topic, msg_type='String')
@@ -60,14 +59,14 @@ class TestRobotMapper(unittest.TestCase):
         self.ros_topic.publishers[self._pose_topic].publish(odom)
         time.sleep(0.1)
 
-    def test_waypoint_indicator(self):
+    def test_robot_mapper(self):
         self.start_test()
         stime = time.time()
         max_duration = 100
         while time.time() < stime + max_duration \
                 and not rospy.has_param('/output_path'):
             time.sleep(0.1)
-
+        time.sleep(0.1)
         self.ros_topic.publishers[self._fsm_topic].publish(FsmState.Running.name)
         self.publish_odom(x=0, y=0, z=0, yaw=0)
         self.publish_odom(x=1, y=0, z=0, yaw=0)
@@ -79,6 +78,7 @@ class TestRobotMapper(unittest.TestCase):
         # self.publish_odom(x=1, y=0, z=0, yaw=-0.7)
         # self.publish_odom(x=0, y=1, z=0, yaw=-0.7+1.57)
         # self.publish_odom(x=0, y=1, z=0, yaw=-0.7+1.57)
+        time.sleep(0.1)
         self.ros_topic.publishers[self._fsm_topic].publish(FsmState.Terminated.name)
         time.sleep(1)
         trajectory = glob(os.path.join(self.output_dir, 'trajectories', '*.png'))[0]

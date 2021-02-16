@@ -40,7 +40,7 @@ class KeyboardActor(Actor):
         self.settings = termios.tcgetattr(sys.stdin)
         self._logger = get_logger(get_filename_without_extension(__file__), get_output_path())
 
-        self.command_pub = rospy.Publisher(self.specs['command_topic'], Twist, queue_size=1)
+        self.command_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
         self.rate_fps = self.specs['rate_fps']
         self.speed = self.specs['speed']
         self.turn = self.specs['turn']

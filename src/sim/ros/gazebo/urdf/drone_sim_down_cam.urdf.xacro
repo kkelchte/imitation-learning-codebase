@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<robot
+    name="quadrotor"
+    xmlns:xacro="http://www.ros.org/wiki/xacro"
+>
+
+     <xacro:property name="M_PI" value="3.1415926535897931" />
+
+    <!-- Included URDF Files -->
+    <xacro:include filename="bebop.urdf.xacro" />
+
+
+    <!-- Forward facing camera-->
+    <xacro:include filename="$(find hector_sensors_description)/urdf/generic_camera.urdf.xacro" />
+    <xacro:generic_camera name="down"
+                          parent="base_link"
+                          ros_topic="camera/image"
+                          cam_info_topic="camera/camera_info"
+                          update_rate="10"
+                          res_x="200"
+                          res_y="200"
+                          image_format="R8G8B8" hfov="80">
+      <origin xyz="0.05 0.0 -0.1" rpy="0 ${90*pi/180} 0"/>
+    </xacro:generic_camera>
+
+    <!-- Kinect Camera -->
+<!--    <include filename="$(find hector_quadrotor_description)/urdf/kinect_camera.urdf.xacro" />-->
+<!--    <xacro:kinect_camera name="kinect" parent="base_link">-->
+<!--      <origin xyz="0.1 0.0 0.1" rpy="0 0 0"/>-->
+<!--    </xacro:kinect_camera>-->
+
+    <!-- Lidar Camera -->
+<!--    <include filename="$(find hector_quadrotor_description)/urdf/lidar.urdf.xacro" />-->
+<!--    <xacro:lidar name="lidar" parent="base_link">-->
+<!--      <origin xyz="0.1 0.0 0.5" rpy="0 0 0"/>-->
+<!--    </xacro:lidar>-->
+
+    <!-- Instantiate quadrotor_base_macro once (has no parameters atm) -->
+    <xacro:quadrotor_base_macro />
+
+</robot>

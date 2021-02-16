@@ -1,5 +1,4 @@
 specs:
-  command_topic: '/actor/ros_expert/cmd_vel'
   field_of_view: 100
   front_width: 40
   speed: 0.15

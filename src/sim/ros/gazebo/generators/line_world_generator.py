@@ -12,10 +12,11 @@ from scipy.interpolate import CubicSpline
 from tqdm import tqdm
 
 number_of_worlds = 1000
-
+output_dir = 'line_worlds'
 for world_index in tqdm(range(number_of_worlds)):
     number_of_points = np.random.randint(10, 30)
     dev = np.random.uniform(0.1, 0.5)
+
 
     # start from loop
     t = np.arange(0, 1., 1/number_of_points)
@@ -53,6 +54,8 @@ for world_index in tqdm(range(number_of_worlds)):
     # Place small cylinders in one model
     x_coords, y_coords = out
     for index, (x, y) in enumerate(zip(x_coords, y_coords)):
+        static = ET.SubElement(model, 'static')
+        static.text = '1'
         link = ET.SubElement(model, 'link', attrib={'name': f'link_{index}'})
         pose = ET.SubElement(link, 'pose', attrib={'frame': ''})
 
@@ -81,13 +84,13 @@ for world_index in tqdm(range(number_of_worlds)):
 #    model_name = f'model_{sum(x_coords)}'
     model_name = f'model_{world_index:03d}'
     world_dir = 'src/sim/ros/gazebo/worlds'
-    os.makedirs(os.path.join(os.environ['PWD'], world_dir, 'line_worlds'), exist_ok=True)
-    tree.write(os.path.join(os.environ['PWD'], world_dir, 'line_worlds', model_name + '.world'), encoding="us-ascii",
+    os.makedirs(os.path.join(os.environ['PWD'], world_dir, output_dir), exist_ok=True)
+    tree.write(os.path.join(os.environ['PWD'], world_dir, output_dir, model_name + '.world'), encoding="us-ascii",
                xml_declaration=True, method="xml")
 
     # Create world config with waypoints
     world_config_dir = 'src/sim/ros/config/world'
-    background_file = f'src/sim/ros/gazebo/background_images/line_worlds/{model_name}_{1 if clockwise else -1}_0_5.jpg'
+    background_file = f'src/sim/ros/gazebo/background_images/{output_dir}/{model_name}_{1 if clockwise else -1}_0_5.jpg'
     config = {
         'world_name': model_name,
         'max_duration': 300,
@@ -107,8 +110,8 @@ for world_index in tqdm(range(number_of_worlds)):
         'background_file': background_file
     }
 
-    os.makedirs(os.path.join(os.environ['PWD'], world_config_dir, 'line_worlds'), exist_ok=True)
-    with open(os.path.join(os.environ['PWD'], world_config_dir, 'line_worlds', model_name + '.yml'), 'w') as f:
+    os.makedirs(os.path.join(os.environ['PWD'], world_config_dir, output_dir), exist_ok=True)
+    with open(os.path.join(os.environ['PWD'], world_config_dir, output_dir, model_name + '.yml'), 'w') as f:
         yaml.dump(config, f)
 
     # plot
@@ -121,7 +124,7 @@ for world_index in tqdm(range(number_of_worlds)):
         plt.xlim(-2.5, 0.5)
     plt.axis('off')
 
-    os.makedirs(os.path.join(os.environ['PWD'], 'src/sim/ros/gazebo/background_images', 'line_worlds'), exist_ok=True)
+    os.makedirs(os.path.join(os.environ['PWD'], 'src/sim/ros/gazebo/background_images', output_dir), exist_ok=True)
     plt.savefig(os.path.join(os.environ['PWD'], background_file), bbox_inches='tight')
     plt.close()
     plt.cla()

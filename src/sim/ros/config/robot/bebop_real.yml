@@ -1,23 +1,19 @@
-robot_type: 'quadrotor'
-command_topic: '/bebop/cmd_vel'
-sensors:
-  - 'forward_camera'
-  - 'odometry'
-  - 'gps'
-forward_camera_topic: '/bebop/image_raw'
-forward_camera_type: 'Image'
-forward_camera_stats:
-#  height: 128
-#  width: 128
-#  depth: 3
-  height: 200
-  width: 200
-  depth: 1
-odometry_topic: '/bebop/odom'
-odometry_type: 'Odometry'
-gps_topic: '/bebop/fix'
-gps_type: 'NavSatFix'
-takeoff: '/bebop/takeoff'
-land: '/bebop/land'
-emergency: '/bebop/emergency'
-flattrim: '/bebop/flattrim'
+model_name: quadrotor_real
+command_topic: /bebop/cmd_vel
+camera_sensor:
+  topic: /bebop/image_raw
+  type: Image
+  stats:
+    height: 200
+    width: 200
+    depth: 1
+position_sensor:
+  topic: /bebop/odom
+  type: Odometry
+gps_position_sensor:
+  topic: /bebop/fix
+  type: NavSatFix
+takeoff: /bebop/takeoff
+land: /bebop/land
+emergency: /bebop/emergency
+flattrim: /bebop/flattrim
