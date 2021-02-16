@@ -201,8 +201,7 @@ class CondorJob:
             self._original_output_path = f'{get_data_dir(os.environ["HOME"])}/{self._original_output_path}'
         # cut local_home, which is a TEMP environment variable, from the output path of the adjusted config
         # so python experiment will take the DATADIR environment variable which should be set to TEMP
-        config_dict['output_path'] = self._original_output_path
-        #config_dict['output_path'] = self.local_output_path[len(self.local_home)+1:]
+        config_dict['output_path'] = self.local_output_path[len(self.local_home)+1:]
 
         # adjust config if hdf5 files are present and store original_to_new_location_tuples
         original_to_new_location_tuples = []
