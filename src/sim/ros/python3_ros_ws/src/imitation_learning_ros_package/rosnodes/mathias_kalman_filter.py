@@ -208,7 +208,7 @@ class KalmanFilter(object):
 
         error_cov_hat = np.matmul(time_delay_s * self.A + np.identity(10),
                                   np.matmul(error_cov_hat, np.transpose(time_delay_s * self.A + np.identity(10)))) \
-                        + self.process_noise_cov
+            + self.process_noise_cov
         end_time = (get_timestamp(input_cmd_stamped) if tstart is None else tstart) + time_delay_s
         return x_hat_rot, y_hat_rot, error_cov_hat, end_time
 
@@ -256,7 +256,7 @@ class KalmanFilter(object):
         x_hat_r, y_hat_r, error_cov, tnext = self._predict_step_calc(cmd_before, duration,
                                                                      x_hat_r, error_cov, tnext)
         # prediction should be very close to measurement
-        assert abs(tnext - get_timestamp(measurement)) < 1e-4
+        # assert abs(tnext - get_timestamp(measurement)) < 1e-4
         return x_hat_r, error_cov, cmd_before
 
     def _predict_from_new_meas_till_tnext(self, last_command: TwistStamped, time_delay_s: float):

@@ -776,7 +776,7 @@ class TestMathiasController(unittest.TestCase):
         # gets fsm in taken over state
         safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
                             FsmState.TakenOver.name, 20, 0.1, ros_topic=self.ros_topic)
-        d = 1
+        d = 0.8
         point = [d if axis == 0 else 0.,
                  d if axis == 1 else 0.,
                  d if axis == 2 else 0.]
@@ -885,13 +885,13 @@ class TestMathiasController(unittest.TestCase):
 
         colors = ['C0', 'C1', 'C2', 'C3', 'C4']
         styles = {'x': '-', 'y': '--', 'z': ':', 'yaw': '-.'}
-        fig = plt.figure(figsize=(15, 15))
-        for key in measured_data.keys():
-            for a in measured_data[key].keys():
-                plt.plot(measured_data[key][a], linestyle=styles[a], linewidth=3 if key == index else 1,
-                         color=colors[key % len(colors)], label=f'{key}: {a}')
-        plt.legend()
-        plt.show()
+        # fig = plt.figure(figsize=(15, 15))
+        # for key in measured_data.keys():
+        #     for a in measured_data[key].keys():
+        #         plt.plot(measured_data[key][a], linestyle=styles[a], linewidth=3 if key == index else 1,
+        #                  color=colors[key % len(colors)], label=f'{key}: {a}')
+        # plt.legend()
+        # plt.show()
 
         # print visualisation if it's in ros topic:
         if self.visualisation_topic in self.ros_topic.topic_values.keys():
@@ -905,7 +905,7 @@ class TestMathiasController(unittest.TestCase):
         index %= len(colors)
         return index
 
-    @unittest.skip
+    # @unittest.skip
     def test_drone_keyboard_gazebo_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -968,11 +968,11 @@ class TestMathiasController(unittest.TestCase):
             self._unpause_client.wait_for_service()
             self._unpause_client.call()
 
-            index = self.tweak_steady_pose(measured_data, index)
-            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            # index = self.tweak_steady_pose(measured_data, index)
+            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
             # index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1, 3, 0.5])
 
-    # @unittest.skip
+    @unittest.skip
     def test_drone_relative_positioning_real_bebop_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -1024,8 +1024,8 @@ class TestMathiasController(unittest.TestCase):
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
             # index = self.tweak_steady_pose(measured_data, index)
-            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1.0, 0.5, 0.5])
+            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0., 0.7, 0.])
 
     def tearDown(self) -> None:
         self._ros_process.terminate()

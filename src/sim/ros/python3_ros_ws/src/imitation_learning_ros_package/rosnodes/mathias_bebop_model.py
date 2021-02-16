@@ -46,7 +46,7 @@ class BebopModel(object):
         self.A[8:10, 8:10] = Atheta
 
         # continuous B matrix
-        # control J or U is 3x1: linear x, linear y, linear z, angular z
+        # control J or U is 4x1: linear x, linear y, linear z, angular z
         self.B = np.zeros([10, 4])
         self.B[2, 0] = 1
         self.B[5, 1] = 1

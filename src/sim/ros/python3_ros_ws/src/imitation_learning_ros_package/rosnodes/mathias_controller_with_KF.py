@@ -72,8 +72,11 @@ class MathiasController:
         self.model = BebopModel()
         self.filter = KalmanFilter(model=self.model)
         self.show_graph = self._specs['show_graph'] if 'show_graph' in self._specs.keys() else True
-        self.data = {
+        self.data = {title: {
             axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in ['x', 'y', 'z', 'yaw']}
+                     for title in ['pose', 'velocity', 'command']
+        }
+
         self.visualiser = rospy.Publisher('visualisation', Image, queue_size=10)
         self.last_measurement = None  # used to invoke slower measurement update in simulation
 
@@ -122,9 +125,10 @@ class MathiasController:
         self._config_server = Server(pidConfig, self._dynamic_config_callback)
 
     def _reset(self):
-        self.data = {
-            axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in
-            ['x', 'y', 'z', 'yaw']}
+        self.data = {title: {
+            axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in ['x', 'y', 'z', 'yaw']}
+            for title in ['pose', 'velocity', 'command']
+        }
         self.prev_pose_error = PointStamped()
         self.prev_vel_error = PointStamped()
         self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
@@ -140,22 +144,30 @@ class MathiasController:
                 self._plot()
 
     def _plot(self):
-        # cprint(f'sending out plot with '
-        #        f'{len(self.data["x"]["predicted"])} predicted, '
-        #        f'{len(self.data["x"]["observed"])} observed, '
-        #        f'{len(self.data["x"]["adjusted"])} adjusted points ', self._logger)
         colors = {'x': 'C0', 'y': 'C1', 'z': 'C2', 'yaw': 'C3'}
         markers = {'predicted': '.', 'observed': '+', 'adjusted': '*'}
         size = {'predicted': 8, 'observed': 30, 'adjusted': 20}
-        fig = plt.figure(figsize=(15, 15))
-        for direction in self.data.keys():
-            for dt in self.data[direction].keys():
-                plt.plot([_[0] for _ in self.data[direction][dt]],
-                         [_[1] for _ in self.data[direction][dt]],
-                         marker=markers[dt], color=colors[direction],
-                         label=f'{direction}: {dt}',
-                         markersize=size[dt])
-        plt.legend()
+        y_labels = {'pose': '[m] or [rad]',
+                    'velocity': '[m/s] or [rad/s]',
+                    'command': '[m/s] or [rad/s]'}
+        fig, axes = plt.subplots(nrows=len(self.data.keys()),
+                                 ncols=1,
+                                 sharex="all",
+                                 squeeze=True,
+                                 figsize=(25, 10 * len(self.data.keys())))
+        for index, title in enumerate(self.data.keys()):
+            axes[index].set_title(title)
+            for direction in self.data[title].keys():
+                for dt in self.data[title][direction].keys():
+                    axes[index].plot([_[0] for _ in self.data[title][direction][dt]],
+                                     [_[1] for _ in self.data[title][direction][dt]],
+                                     marker=markers[dt], color=colors[direction],
+                                     label=f'{direction}: {dt}',
+                                     markersize=size[dt])
+            axes[index].legend()
+            axes[index].set_xlabel('time [s]', fontsize=10)
+            axes[index].set_ylabel(y_labels[title], fontsize=10)
+
         fig.canvas.draw()
         fig.tight_layout(pad=0)
         data = np.fromstring(fig.canvas.tostring_rgb(),
@@ -186,7 +198,7 @@ class MathiasController:
         self.K_theta = config['K_theta']
         return config
 
-    def _store_datapoint(self, data: Union[Odometry], label: str):
+    def _store_datapoint(self, data: Union[Odometry, TwistStamped], label: str = "observed"):
         if not self.show_graph:
             return
         if isinstance(data, Odometry):
@@ -195,23 +207,35 @@ class MathiasController:
                                                data.pose.pose.orientation.y,
                                                data.pose.pose.orientation.z,
                                                data.pose.pose.orientation.w))
-            rotated_position = transform(points=[data.pose.pose.position],
-                                         orientation=self.pose_est.orientation,
-                                         invert=True)[0]
-            data = {'x': rotated_position.x,
-                    'y': rotated_position.y,
-                    'z': rotated_position.z,
-                    'yaw': yaw}
-            for axis in self.data.keys():
-                self.data[axis][label].append((stamp, data[axis]))
+            rotated_position, rotated_velocity = transform(points=[data.pose.pose.position,
+                                                                   data.twist.twist.linear],
+                                                           orientation=self.pose_est.orientation,
+                                                           invert=True)
+            self.data['pose']['x'][label].append((stamp, rotated_position.x))
+            self.data['pose']['y'][label].append((stamp, rotated_position.y))
+            self.data['pose']['z'][label].append((stamp, rotated_position.z))
+            self.data['pose']['yaw'][label].append((stamp, yaw))
+            self.data['velocity']['x'][label].append((stamp, rotated_velocity.x))
+            self.data['velocity']['y'][label].append((stamp, rotated_velocity.y))
+            self.data['velocity']['z'][label].append((stamp, rotated_velocity.z))
+            self.data['velocity']['yaw'][label].append((stamp, data.twist.twist.angular.z))
+        elif isinstance(data, TwistStamped):
+            stamp = float(data.header.stamp.to_sec())
+            if len(self.data['command']['x']['observed']) > 1 and \
+                    abs(stamp - self.data['command']['x']['observed'][-1][0]) < 0.1:
+                return
+            self.data['command']['x'][label].append((stamp, data.twist.linear.x))
+            self.data['command']['y'][label].append((stamp, data.twist.linear.y))
+            self.data['command']['z'][label].append((stamp, data.twist.linear.z))
+            self.data['command']['yaw'][label].append((stamp, data.twist.angular.z))
 
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         sensor_topic, sensor_stats = args
-        #if self.last_measurement is not None:
-        #    difference = get_timestamp(msg) - self.last_measurement
-        #    if difference < 1./5:
-        #        return
-        # self.last_measurement = get_timestamp(msg)
+        if self.last_measurement is not None:
+            difference = get_timestamp(msg) - self.last_measurement
+            if difference < 1./5:
+                return
+        self.last_measurement = get_timestamp(msg)
         result = self.filter.kalman_correction(msg, self._control_period)
         if result is not None:
             self._store_datapoint(msg, 'observed')
@@ -235,11 +259,13 @@ class MathiasController:
             pose_ref = PointStamped(point=Point(x=pose_ref[0],
                                                 y=pose_ref[1],
                                                 z=1 if len(pose_ref) == 2 else pose_ref[2]))
-        if pose_ref != self.pose_ref:  # reset pose error when new reference comes in.
+        if pose_ref != self.pose_ref:
+            # reset pose error when new reference comes in.
             self.prev_pose_error = PointStamped()
             self.prev_vel_error = PointStamped()
             self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
-        self.pose_ref = pose_ref
+            self.pose_ref = pose_ref
+            cprint(f'set pose_ref: {self.pose_ref}', self._logger)
 
     def _update_twist(self) -> Union[None, Twist]:
         result = self.filter.kalman_prediction(self.last_cmd, self._control_period)
@@ -265,6 +291,7 @@ class MathiasController:
                         header=Header(stamp=rospy.Time().now()),
                         twist=twist
                     )
+                    self._store_datapoint(self.last_cmd)
                     self._publisher.publish(twist)
                 self.count += 1
                 if self.count % 10 * self._rate_fps == 0:
