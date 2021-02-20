@@ -294,7 +294,7 @@ def calculate_bounding_box(state: Sequence,
     roll = state[6]
     pitch = state[7]
     yaw = state[8]
-    z, x, y = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
+    z, x, y = relative_coordinates(agent0, agent1, yaw, pitch, roll)
 
     u = focal_length * x / z
     v = focal_length * y / z
@@ -316,7 +316,7 @@ def calculate_bounding_box(state: Sequence,
     return pos0, w0, h0, pos1, w1, h1
 
 
-def get_relative_coordinates(pos_agent0: np.ndarray,
+def relative_coordinates(pos_agent0: np.ndarray,
                              pos_agent1: np.ndarray,
                              yaw: float,
                              pitch: float,
@@ -367,6 +367,13 @@ def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
     return intersection / union
 
 
+def calculate_inverse_relative_pixel_distance(center, pixel_pos) -> float:
+    size = 2*center
+    max_dist = distance(center, size)
+    dist = distance(center, pixel_pos)
+    return (max_dist-dist)/max_dist
+
+
 #########################################
 # Helper functions for reward calculation
 #########################################
@@ -413,5 +420,21 @@ def get_distance_between_agents(info: dict) -> float:
                     [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z]) if msg is not None else None
 
 
-def get_relative_pixel_distance(info: dict) -> float:
-    return dict
+def get_inverse_relative_pixel_distance(info: dict) -> float:
+    if info['combined_global_poses'] is None:
+        return None
+    state = [info['combined_global_poses'].tracking_x,
+             info['combined_global_poses'].tracking_y,
+             info['combined_global_poses'].tracking_z,
+             info['combined_global_poses'].fleeing_x,
+             info['combined_global_poses'].fleeing_y,
+             info['combined_global_poses'].fleeing_z,
+             info['combined_global_poses'].tracking_roll,
+             info['combined_global_poses'].tracking_pitch,
+             info['combined_global_poses'].tracking_yaw]
+    try:
+        pos0, w0, h0, pos1, w1, h1 = calculate_bounding_box(state=np.asarray(state))
+        result = calculate_inverse_relative_pixel_distance(pos0, pos1)
+    except:
+        result = 0
+    return result
