@@ -7,6 +7,7 @@ architecture_config:
   architecture: adversarial_actor_critic_side_ways_ros
   device: cpu
   initialisation_type: orthogonal
+  random_seed: 123
 environment_config:
   factory_key: ROS
   max_number_of_steps: 100
@@ -16,7 +17,7 @@ environment_config:
     observation: modified_state
     action_topic: python
     num_action_publishers: 2
-    visible_xterm: true
+    visible_xterm: false
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
