@@ -12,6 +12,7 @@ from src.ai.utils import mlp_creator, get_slow_hunt, clip_action_according_to_pl
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
+from src.sim.ros.src.utils import calculate_bounding_box
 
 """
 Adversarial agents for gazebo world tracking_y_axis
@@ -85,23 +86,21 @@ class Net(BaseNet):
         return actions
 
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
-        inputs = self.process_inputs(inputs)
+        #inputs = calculate_bounding_box(inputs)
+        inputs = np.squeeze(self.process_inputs(inputs))
         if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
-            actions = np.stack([0, *output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0])
+            actions = np.stack([0, output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0])
         elif agent_id == 1:  # fleeing agent ==> fleeing_linear_y
             output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                               max=self.action_max)
-            actions = np.stack([0, 0, 0, 0, *output.data.cpu().numpy().squeeze(), 0, 0, 0])
+            actions = np.stack([0, 0, 0, 0, output.data.cpu().numpy().squeeze(), 0, 0, 0])
         else:
             output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
             adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                                           max=self.action_max)
-            # actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
-            #                     0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
-            #                     0, 0], axis=-1)
-            actions = np.stack([0, 1, 0,
-                                0, 1, 0,
+            actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
+                                0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
                                 0, 0], axis=-1)
 
         # actions = self.adjust_height(inputs, actions)  Not necessary, hector quadrotor controller keeps altitude fixed

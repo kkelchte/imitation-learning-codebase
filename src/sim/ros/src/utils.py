@@ -345,13 +345,15 @@ def distance(a: Sequence, b: Sequence) -> float:
 
 def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
     pos0, w0, h0, pos1, w1, h1 = bounding_boxes
+    x0, y0 = pos0
+    x1, y1 = pos1
 
     square = namedtuple('square', 'xmin ymin xmax ymax')
 
-    square0 = square(pos0[0] - w0 // 2, pos0[1] - h0 // 2,
-                     pos0[0] + w0 // 2, pos0[1] + h0 // 2)
-    square1 = square(pos1[0] - w1 // 2, pos1[1] - h1 // 2,
-                     pos1[0] + w1 // 2, pos1[1] + h1 // 2)
+    square0 = square(x0 - w0 // 2, y0 - h0 // 2,
+                     x0 + w0 // 2, y0 + h0 // 2)
+    square1 = square(x1 - w1 // 2, y1 - h1 // 2,
+                     x1 + w1 // 2, y1 + h1 // 2)
 
     dx = min(square0.xmax, square1.xmax) - max(square0.xmin, square1.xmin)
     dy = min(square0.ymax, square1.ymax) - max(square0.ymin, square1.ymin)
@@ -386,7 +388,7 @@ def get_iou(info: dict) -> float:
         bounding_boxes = calculate_bounding_box(state=np.asarray(state))
         result = calculate_iou_from_bounding_boxes(bounding_boxes)
     except:
-        result = 5
+        result = 0
     return result
 
 
@@ -409,3 +411,7 @@ def get_distance_between_agents(info: dict) -> float:
     msg = info['combined_global_poses']
     return distance([msg.tracking_x, msg.tracking_y, msg.tracking_z],
                     [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z]) if msg is not None else None
+
+
+def get_relative_pixel_distance(info: dict) -> float:
+    return dict
