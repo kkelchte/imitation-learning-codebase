@@ -11,7 +11,7 @@ import rospy
 import yaml
 from cv2 import cv2
 from std_msgs.msg import Float32MultiArray, String, Header
-from geometry_msgs.msg import Twist, PointStamped, Point, Pose, TwistStamped, Quaternion
+from geometry_msgs.msg import Twist, PointStamped, Point, Pose, TwistStamped, Quaternion, PoseStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
 import actionlib
@@ -85,13 +85,15 @@ class MathiasController:
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
         self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
-        self.pose_ref = PointStamped()
-        self.vel_ref = Twist()
-        self.prev_pose_error = PointStamped()
-        self.prev_vel_error = PointStamped()
+        self.pose_ref = PointStamped(header=Header(frame_id="global"))
+        # expressed in rotated global frame according to drone's yaw
+        self.vel_ref = TwistStamped(header=Header(frame_id="global_rotated"))
+        self.prev_pose_error = PointStamped(header=Header(frame_id="global"))
+        self.prev_vel_error = PointStamped(header=Header(frame_id="global_rotated"))
 
-        self.pose_est = Pose(orientation=Quaternion(w=1))
-        self.vel_est = Point()
+        self.pose_est = PoseStamped(header=Header(frame_id="global"),
+                                    pose=Pose(orientation=Quaternion(w=1)))
+        self.vel_est = PointStamped(header=Header(frame_id="global_rotated"))
 
         self._publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self._subscribe()
@@ -129,10 +131,9 @@ class MathiasController:
             axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in ['x', 'y', 'z', 'yaw']}
             for title in ['pose', 'velocity', 'command']
         }
-        self.prev_pose_error = PointStamped()
-        self.prev_vel_error = PointStamped()
+        self.prev_pose_error = PointStamped(header=Header(frame_id="global"))
+        self.prev_vel_error = PointStamped(header=Header(frame_id="global_rotated"))
         self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
-        #self.filter.reset()  # gives a drop in z-direction... better to have proper pose estimate at start of run
 
     def _set_fsm_state(self, msg: String):
         # detect transition
@@ -156,7 +157,7 @@ class MathiasController:
                                  squeeze=True,
                                  figsize=(25, 10 * len(self.data.keys())))
         for index, title in enumerate(self.data.keys()):
-            axes[index].set_title(title)
+            axes[index].set_title(f'{title} in rotated global frame following yaw.')
             for direction in self.data[title].keys():
                 for dt in self.data[title][direction].keys():
                     axes[index].plot([_[0] for _ in self.data[title][direction][dt]],
@@ -202,22 +203,23 @@ class MathiasController:
         if not self.show_graph:
             return
         if isinstance(data, Odometry):
+            # Note that pose is expressed in global frame ==> rotate to rotated global frame
+            # While velocity is expressed in rotated global frame following yaw.
             stamp = float(data.header.stamp.to_sec())
             _, _, yaw = euler_from_quaternion((data.pose.pose.orientation.x,
                                                data.pose.pose.orientation.y,
                                                data.pose.pose.orientation.z,
                                                data.pose.pose.orientation.w))
-            rotated_position, rotated_velocity = transform(points=[data.pose.pose.position,
-                                                                   data.twist.twist.linear],
-                                                           orientation=self.pose_est.orientation,
-                                                           invert=True)
+            rotated_position = transform(points=[data.pose.pose.position],
+                                         orientation=self.pose_est.pose.orientation,
+                                         invert=True)[0]
             self.data['pose']['x'][label].append((stamp, rotated_position.x))
             self.data['pose']['y'][label].append((stamp, rotated_position.y))
             self.data['pose']['z'][label].append((stamp, rotated_position.z))
             self.data['pose']['yaw'][label].append((stamp, yaw))
-            self.data['velocity']['x'][label].append((stamp, rotated_velocity.x))
-            self.data['velocity']['y'][label].append((stamp, rotated_velocity.y))
-            self.data['velocity']['z'][label].append((stamp, rotated_velocity.z))
+            self.data['velocity']['x'][label].append((stamp, data.twist.twist.linear.x))
+            self.data['velocity']['y'][label].append((stamp, data.twist.twist.linear.y))
+            self.data['velocity']['z'][label].append((stamp, data.twist.twist.linear.z))
             self.data['velocity']['yaw'][label].append((stamp, data.twist.twist.angular.z))
         elif isinstance(data, TwistStamped):
             stamp = float(data.header.stamp.to_sec())
@@ -231,7 +233,7 @@ class MathiasController:
 
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         sensor_topic, sensor_stats = args
-        if self.last_measurement is not None:
+        if self.last_measurement is not None and False:
             difference = get_timestamp(msg) - self.last_measurement
             if difference < 1./5:
                 return
@@ -240,10 +242,10 @@ class MathiasController:
         if result is not None:
             self._store_datapoint(msg, 'observed')
             self._store_datapoint(result, 'adjusted')
-            self.pose_est = result.pose.pose
-            self.vel_est.x = result.twist.twist.linear.x
-            self.vel_est.y = result.twist.twist.linear.y
-            self.vel_est.z = result.twist.twist.linear.z
+            self.pose_est.pose = result.pose.pose
+            self.vel_est.point.x = result.twist.twist.linear.x
+            self.vel_est.point.y = result.twist.twist.linear.y
+            self.vel_est.point.z = result.twist.twist.linear.z
 
     def _reference_update(self, message: PointStamped) -> None:
         if isinstance(message, PointStamped):
@@ -252,30 +254,32 @@ class MathiasController:
                 # transform from agent to world frame.
                 # pose_estimate.orientation only incorporates yaw turn (not roll and pitch)
                 pose_ref.point = transform(points=[pose_ref.point],
-                                           orientation=self.pose_est.orientation,
-                                           translation=self.pose_est.position)[0]
+                                           orientation=self.pose_est.pose.orientation,
+                                           translation=self.pose_est.pose.position)[0]
+                pose_ref.header.frame_id = "global"
         elif isinstance(message, Float32MultiArray):  # in case of global waypoint
             pose_ref = message.data
-            pose_ref = PointStamped(point=Point(x=pose_ref[0],
+            pose_ref = PointStamped(header=Header(frame_id="global"),
+                                    point=Point(x=pose_ref[0],
                                                 y=pose_ref[1],
                                                 z=1 if len(pose_ref) == 2 else pose_ref[2]))
         if pose_ref != self.pose_ref:
             # reset pose error when new reference comes in.
-            self.prev_pose_error = PointStamped()
-            self.prev_vel_error = PointStamped()
+            self.prev_pose_error = PointStamped(header=Header(frame_id="global"))
+            self.prev_vel_error = PointStamped(header=Header(frame_id="global_rotated"))
             self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
             self.pose_ref = pose_ref
-            cprint(f'set pose_ref: {self.pose_ref}', self._logger)
+            cprint(f'set pose_ref: {self.pose_ref.point}', self._logger)
 
     def _update_twist(self) -> Union[None, Twist]:
         result = self.filter.kalman_prediction(self.last_cmd, self._control_period)
         if result is None:
             return None
         self._store_datapoint(result, 'predicted')
-        self.pose_est = result.pose.pose
-        self.vel_est.x = result.twist.twist.linear.x
-        self.vel_est.y = result.twist.twist.linear.y
-        self.vel_est.z = result.twist.twist.linear.z
+        self.pose_est.pose = result.pose.pose
+        self.vel_est.point.x = result.twist.twist.linear.x
+        self.vel_est.point.y = result.twist.twist.linear.y
+        self.vel_est.point.z = result.twist.twist.linear.z
 
         twist = self._feedback()
         if self._noise is not None:
@@ -295,8 +299,8 @@ class MathiasController:
                     self._publisher.publish(twist)
                 self.count += 1
                 if self.count % 10 * self._rate_fps == 0:
-                    _, _, yaw = euler_from_quaternion(self.pose_est.orientation)
-                    msg = f'<<reference: {self.pose_ref.point}, \n<<pose: {self.pose_est.position} \n ' \
+                    _, _, yaw = euler_from_quaternion(self.pose_est.pose.orientation)
+                    msg = f'<<reference: {self.pose_ref.point}, \n<<pose: {self.pose_est.pose.position} \n ' \
                           f'<<yaw {yaw},  \ncontrol: {self.last_cmd.twist.linear}'
                     cprint(msg, self._logger)
             rospy.sleep(duration=1/self._rate_fps)
@@ -312,21 +316,21 @@ class MathiasController:
         prev_pose_error = self.prev_pose_error
 
         pose_error = PointStamped()
-        pose_error.header.frame_id = "world"
-        pose_error.point.x = (self.pose_ref.point.x - self.pose_est.position.x)
-        pose_error.point.y = (self.pose_ref.point.y - self.pose_est.position.y)
-        pose_error.point.z = (self.pose_ref.point.z - self.pose_est.position.z)
+        pose_error.point.x = (self.pose_ref.point.x - self.pose_est.pose.position.x)
+        pose_error.point.y = (self.pose_ref.point.y - self.pose_est.pose.position.y)
+        pose_error.point.z = (self.pose_ref.point.z - self.pose_est.pose.position.z)
+        pose_error.point = transform(points=[pose_error.point],
+                                     orientation=self.pose_est.pose.orientation,
+                                     invert=True)[0]
+        pose_error.header.frame_id = "global_rotated"
 
         prev_vel_error = self.prev_vel_error
         vel_error = PointStamped()
-        vel_error.header.frame_id = "world"
-        vel_error.point.x = self.vel_ref.linear.x - self.vel_est.x
-        vel_error.point.y = self.vel_ref.linear.y - self.vel_est.y
+        vel_error.header.frame_id = "global_rotated"
+        vel_error.point.x = self.vel_ref.twist.linear.x - self.vel_est.point.x
+        vel_error.point.y = self.vel_ref.twist.linear.y - self.vel_est.point.y
 
-        pose_error.point, vel_error.point = transform(points=[pose_error.point, vel_error.point],
-                                                      orientation=self.pose_est.orientation,
-                                                      invert=True)
-
+        # calculations happen in global_rotated frame
         cmd = Twist()
         cmd.linear.x = max(-self.max_input, min(self.max_input, (
                 self.last_cmd.twist.linear.x +
@@ -347,8 +351,8 @@ class MathiasController:
                 self.Kd_z * (vel_error.point.z - prev_vel_error.point.z))))  # Added derivative term
 
         # if target is more than 1m away, look in that direction
-        _, _, yaw = euler_from_quaternion(self.pose_est.orientation)
-        if np.sqrt(pose_error.point.x ** 2 + pose_error.point.y ** 2) > 1:
+        _, _, yaw = euler_from_quaternion(self.pose_est.pose.orientation)
+        if np.sqrt(pose_error.point.x ** 2 + pose_error.point.y ** 2) > 0.1:
             angle_error = np.arctan(pose_error.point.y / pose_error.point.x)
             # compensate for second and third quadrant:
             if np.sign(pose_error.point.x) == -1:

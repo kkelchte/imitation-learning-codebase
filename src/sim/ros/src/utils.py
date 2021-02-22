@@ -270,7 +270,7 @@ def transform(points: List[Union[np.ndarray, Point]],
     assert min(lengths) == max(lengths)
     if points[0].shape[0] == 3:
         augmented = False
-        points = [np.concatenate([p, np.ones(1,)]) for p in points]
+        points = [np.concatenate([p.squeeze(), np.ones(1,)]) for p in points]
     transformation = np.zeros((4, 4))
     if isinstance(orientation, Quaternion):
         orientation = R.from_quat([orientation.x,

@@ -853,8 +853,7 @@ class TestMathiasController(unittest.TestCase):
             self.ros_topic.publishers[self._reference_topic].publish(PointStamped(header=Header(frame_id="agent"),
                                                                                   point=Point(x=point[0],
                                                                                               y=point[1],
-                                                                                              z=point[2])
-                                                                                  ))
+                                                                                              z=point[2])))
             last_pose = self.get_pose()
             rospy.sleep(0.5)
 
@@ -873,7 +872,7 @@ class TestMathiasController(unittest.TestCase):
                 x=pose[0] - goal_pose[0],
                 y=pose[1] - goal_pose[1],
                 z=pose[2] - goal_pose[2])
-            # rotate pose error to global yaw frame
+            # rotate pose error to rotated frame
             pose_error = transform(points=[pose_error],
                                    orientation=R.from_euler('XYZ', (0, 0, -last_pose[0]),
                                                             degrees=False).as_matrix())[0]
@@ -883,29 +882,35 @@ class TestMathiasController(unittest.TestCase):
             measured_data[index]['yaw'].append(last_pose[-1])
             rospy.sleep(0.5)
 
+        if False and '/bebop/land' in self.ros_topic.publishers.keys():
+            self.ros_topic.publishers['/bebop/land'].publish(Empty())
+
         colors = ['C0', 'C1', 'C2', 'C3', 'C4']
         styles = {'x': '-', 'y': '--', 'z': ':', 'yaw': '-.'}
-        # fig = plt.figure(figsize=(15, 15))
-        # for key in measured_data.keys():
-        #     for a in measured_data[key].keys():
-        #         plt.plot(measured_data[key][a], linestyle=styles[a], linewidth=3 if key == index else 1,
-        #                  color=colors[key % len(colors)], label=f'{key}: {a}')
-        # plt.legend()
-        # plt.show()
+        fig = plt.figure(figsize=(15, 15))
+        for key in measured_data.keys():
+            for a in measured_data[key].keys():
+                plt.plot(measured_data[key][a], linestyle=styles[a], linewidth=3 if key == index else 1,
+                         color=colors[key % len(colors)], label=f'{key}: {a}')
+        plt.legend()
+        plt.show()
 
         # print visualisation if it's in ros topic:
         if self.visualisation_topic in self.ros_topic.topic_values.keys():
             frame = process_image(self.ros_topic.topic_values[self.visualisation_topic])
-            plt.figure(figsize=(15, 15))
+            plt.figure(figsize=(15, 20))
             plt.imshow(frame)
             plt.axis('off')
-            plt.show()
+            plt.tight_layout()
+            plt.savefig(f'{os.environ["HOME"]}/kf_study/ref_yaw_{point[0]}_{point[1]}_{point[2]}.png')
+        plt.clf()
+        plt.close()
 
         index += 1
         index %= len(colors)
         return index
 
-    # @unittest.skip
+    #@unittest.skip
     def test_drone_keyboard_gazebo_with_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -969,8 +974,8 @@ class TestMathiasController(unittest.TestCase):
             self._unpause_client.call()
 
             # index = self.tweak_steady_pose(measured_data, index)
-            index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            # index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1, 3, 0.5])
+            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1, 3, 0.5])
 
     @unittest.skip
     def test_drone_relative_positioning_real_bebop_with_KF(self):
@@ -1010,6 +1015,7 @@ class TestMathiasController(unittest.TestCase):
         publish_topics = [
             TopicConfig(topic_name='/fsm/reset', msg_type='Empty'),
             TopicConfig(topic_name=self._reference_topic, msg_type=self._reference_type),
+            TopicConfig(topic_name='/bebop/land', msg_type='Empty'),
         ]
 
         self.ros_topic = TestPublisherSubscriber(
@@ -1025,11 +1031,14 @@ class TestMathiasController(unittest.TestCase):
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
             # index = self.tweak_steady_pose(measured_data, index)
             # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=1)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0., 0.7, 0.])
+#            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0., 0., 0.])
+            #index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0., 0., 0.5])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, 1])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, -1])
 
     def tearDown(self) -> None:
         self._ros_process.terminate()
-        shutil.rmtree(self.output_dir, ignore_errors=True)
+        # shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':
