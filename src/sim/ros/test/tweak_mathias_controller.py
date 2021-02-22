@@ -861,24 +861,24 @@ class TestMathiasController(unittest.TestCase):
                                 'y': [],
                                 'z': [],
                                 'yaw': []}
-        goal_pose = transform(points=[np.asarray(point)],
-                              orientation=R.from_euler('XYZ', (0, 0, last_pose[-1]), degrees=False).as_matrix(),
-                              translation=np.asarray(last_pose[:3]))[0]
+        goal_pose_global = transform(points=[np.asarray(point)],
+                                     orientation=R.from_euler('XYZ', (0, 0, last_pose[-1]), degrees=False).as_matrix(),
+                                     translation=np.asarray(last_pose[:3]))[0]
 
         # Mathias controller should keep drone in steady pose
         while self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
             pose = self.get_pose()
             pose_error = Point(
-                x=pose[0] - goal_pose[0],
-                y=pose[1] - goal_pose[1],
-                z=pose[2] - goal_pose[2])
+                x=goal_pose_global[0] - pose[0],
+                y=goal_pose_global[1] - pose[1],
+                z=goal_pose_global[2] - pose[2])
             # rotate pose error to rotated frame
-            pose_error = transform(points=[pose_error],
-                                   orientation=R.from_euler('XYZ', (0, 0, -last_pose[0]),
-                                                            degrees=False).as_matrix())[0]
-            measured_data[index]['x'].append(pose_error.x)
-            measured_data[index]['y'].append(pose_error.y)
-            measured_data[index]['z'].append(pose_error.z)
+            pose_error_local = transform(points=[pose_error],
+                                         orientation=R.from_euler('XYZ', (0, 0, -last_pose[0]),
+                                                                  degrees=False).as_matrix())[0]
+            measured_data[index]['x'].append(pose_error_local.x)
+            measured_data[index]['y'].append(pose_error_local.y)
+            measured_data[index]['z'].append(pose_error_local.z)
             measured_data[index]['yaw'].append(last_pose[-1])
             rospy.sleep(0.5)
 
@@ -902,7 +902,7 @@ class TestMathiasController(unittest.TestCase):
             plt.imshow(frame)
             plt.axis('off')
             plt.tight_layout()
-            plt.savefig(f'{os.environ["HOME"]}/kf_study/ref_yaw_{point[0]}_{point[1]}_{point[2]}.png')
+            plt.savefig(f'{os.environ["HOME"]}/kf_study/ref_fixed_yaw_{point[0]}_{point[1]}_{point[2]}.png')
         plt.clf()
         plt.close()
 
@@ -973,12 +973,12 @@ class TestMathiasController(unittest.TestCase):
             self._unpause_client.wait_for_service()
             self._unpause_client.call()
 
-            # index = self.tweak_steady_pose(measured_data, index)
-            # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0])
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0.7, 0, 0])
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0.7, 0])
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0.7])
+            #index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0])
+            #index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0.7, 0, 0])
+#            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0.7, 0])
+#            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0.7])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, 0])
+
 
     @unittest.skip
     def test_drone_relative_positioning_real_bebop_with_KF(self):
