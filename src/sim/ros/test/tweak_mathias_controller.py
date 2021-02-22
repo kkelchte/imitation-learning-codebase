@@ -927,6 +927,7 @@ class TestMathiasController(unittest.TestCase):
             'altitude_control': False,
             'keyboard': True,
             'mathias_controller_with_KF': True,
+            'mathias_controller_config_file_path_with_extension': 'mathias_controller_with_KF.yml',
             'yaw_or': 0,
             'x_pos': 0,
             'y_pos': 0
@@ -997,6 +998,7 @@ class TestMathiasController(unittest.TestCase):
             'altitude_control': False,
             'keyboard': True,
             'mathias_controller_with_KF': True,
+            'mathias_controller_config_file_path_with_extension': 'mathias_controller_real_bebop.yml'
         }
 
         # spinoff roslaunch
