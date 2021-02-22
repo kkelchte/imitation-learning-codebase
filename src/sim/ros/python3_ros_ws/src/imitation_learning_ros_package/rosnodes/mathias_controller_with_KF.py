@@ -242,12 +242,9 @@ class MathiasController:
 
         if 'real' not in self._robot:
             # simulated robots use /gt_states where twist message of odometry is expressed globally instaed of locally
-            # _, _, yaw = euler_from_quaternion(msg.pose.pose.orientation)
-            # msg.twist.twist.linear = transform(points=[msg.twist.twist.linear],
-            #                                    orientation=R.from_euler('XYZ', (0, 0, yaw)).as_matrix(),
-            #                                    invert=True)[0]
+            _, _, yaw = euler_from_quaternion(msg.pose.pose.orientation)
             msg.twist.twist.linear = transform(points=[msg.twist.twist.linear],
-                                               orientation=msg.pose.pose.orientation,
+                                               orientation=R.from_euler('XYZ', (0, 0, yaw)).as_matrix(),
                                                invert=True)[0]
         result = self.filter.kalman_correction(msg, self._control_period)
         if result is not None:
