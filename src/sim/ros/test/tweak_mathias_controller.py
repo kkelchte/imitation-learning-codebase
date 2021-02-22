@@ -975,7 +975,10 @@ class TestMathiasController(unittest.TestCase):
 
             # index = self.tweak_steady_pose(measured_data, index)
             # index = self.tweak_separate_axis_keyboard(measured_data, index, axis=0)
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[1, 3, 0.5])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0.7, 0, 0])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0.7, 0])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0.7])
 
     @unittest.skip
     def test_drone_relative_positioning_real_bebop_with_KF(self):

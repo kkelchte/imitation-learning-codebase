@@ -363,7 +363,7 @@ class MathiasController:
 
         # if target is more than 1m away, look in that direction
         _, _, yaw = euler_from_quaternion(self.pose_est.pose.orientation)
-        if np.sqrt(pose_error.point.x ** 2 + pose_error.point.y ** 2) > 0.1:
+        if np.sqrt(pose_error.point.x ** 2 + pose_error.point.y ** 2) > 1.:
             angle_error = np.arctan(pose_error.point.y / pose_error.point.x)
             # compensate for second and third quadrant:
             if np.sign(pose_error.point.x) == -1:
