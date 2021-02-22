@@ -315,8 +315,8 @@ class KalmanFilter(object):
         position_rot = np.matmul(global_to_rotated, position)
         # assumption: velocity is expressed in global rotated frame => no need to rotate
         velocity_rot = np.array([[measurement.twist.twist.linear.x],
-                             [measurement.twist.twist.linear.y],
-                             [measurement.twist.twist.linear.z]])
+                                 [measurement.twist.twist.linear.y],
+                                 [measurement.twist.twist.linear.z]])
         # output vector contains pose and velocity in global-rotated frame (following drone's yaw)
         y = np.zeros((8, 1))
         y[0:3] = position_rot

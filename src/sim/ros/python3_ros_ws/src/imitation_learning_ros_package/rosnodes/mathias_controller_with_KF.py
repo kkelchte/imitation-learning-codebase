@@ -58,19 +58,23 @@ class MathiasController:
         self.max_input = self._specs['max_input'] if 'max_input' in self._specs.keys() else 1.0
         # Not sure if this sample time should correspond to update rate of controller or measurement rate
         self._control_period = 1. / self._rate_fps
-        self.Kp_x = self._specs['Kp_x'] if 'Kp_x' in self._specs.keys() else 2.0
-        self.Ki_x = self._specs['Ki_x'] if 'Ki_x' in self._specs.keys() else 0.2
-        self.Kd_x = self._specs['Kd_x'] if 'Kd_x' in self._specs.keys() else 0.4
-        self.Kp_y = self._specs['Kp_y'] if 'Kp_y' in self._specs.keys() else 2.0
-        self.Ki_y = self._specs['Ki_y'] if 'Ki_y' in self._specs.keys() else 0.2
-        self.Kd_y = self._specs['Kd_y'] if 'Kd_y' in self._specs.keys() else 0.4
-        self.Kp_z = self._specs['Kp_z'] if 'Kp_z' in self._specs.keys() else 2.0
-        self.Ki_z = self._specs['Ki_z'] if 'Ki_z' in self._specs.keys() else 0.2
+        self.Kp_x = self._specs['Kp_x'] if 'Kp_x' in self._specs.keys() else .5
+        self.Ki_x = self._specs['Ki_x'] if 'Ki_x' in self._specs.keys() else 0.
+        self.Kd_x = self._specs['Kd_x'] if 'Kd_x' in self._specs.keys() else .5
+        self.Kp_y = self._specs['Kp_y'] if 'Kp_y' in self._specs.keys() else .5
+        self.Ki_y = self._specs['Ki_y'] if 'Ki_y' in self._specs.keys() else 0.
+        self.Kd_y = self._specs['Kd_y'] if 'Kd_y' in self._specs.keys() else .5
+        self.Kp_z = self._specs['Kp_z'] if 'Kp_z' in self._specs.keys() else 1.
+        self.Ki_z = self._specs['Ki_z'] if 'Ki_z' in self._specs.keys() else .5
         self.Kd_z = self._specs['Kd_z'] if 'Kd_z' in self._specs.keys() else 0.
-        self.K_theta = self._specs['K_theta'] if 'K_theta' in self._specs.keys() else 0.3
+        self.K_theta = self._specs['K_theta'] if 'K_theta' in self._specs.keys() else 1.0
         self._robot = rospy.get_param('/robot/model_name')
         self.model = BebopModel()
         self.filter = KalmanFilter(model=self.model)
+        if 'real' in self._robot:
+            # Velocity in yaw is not measured on real bebop drone
+            # Therefore, measurements should be ignored (weight of innovation = 1/mease_noise_cov)
+            self.filter.meas_noise_cov[7, 7] = 10e8
         self.show_graph = self._specs['show_graph'] if 'show_graph' in self._specs.keys() else True
         self.data = {title: {
             axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in ['x', 'y', 'z', 'yaw']}
