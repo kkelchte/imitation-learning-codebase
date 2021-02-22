@@ -1,0 +1,12 @@
+world_name: hexagon
+max_duration: 60
+delay_evaluation: 1.0
+waypoints:
+  - [ 1, 0, 1 ]
+  - [ 2, 1, 1 ]
+  - [ 3, 1, 1 ]
+  - [ 4, 0, 1 ]
+  - [ 3, -1, 1 ]
+  - [ 2, -1, 1 ]
+  - [ 1, 0, 1 ]
+waypoint_reached_distance: 0.2
