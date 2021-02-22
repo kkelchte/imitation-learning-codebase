@@ -10,7 +10,8 @@ from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
-from geometry_msgs.msg import Twist, PoseStamped, Point, TransformStamped, PointStamped, TwistStamped, Quaternion
+from geometry_msgs.msg import Twist, PoseStamped, Point, TransformStamped, PointStamped, TwistStamped, Quaternion, \
+    Vector3
 from sensor_msgs.msg import Imu, Image
 from std_msgs.msg import Float32MultiArray
 
@@ -258,12 +259,19 @@ def project(points: List[np.ndarray],
     return [p / p[2] for p in pixel_coordinates]
 
 
-def transform(points: List[Union[np.ndarray, Point]],
+def transform(points: List[Union[np.ndarray, Point, Vector3]],
               orientation: Union[Quaternion, np.ndarray] = np.eye(3),
               translation: Union[np.ndarray, Point] = np.zeros((3,)),
-              invert: bool = False) -> List[Union[np.ndarray, Point]]:
+              invert: bool = False) -> List[Union[np.ndarray, Point, Vector3]]:
+    """
+    Transforms a list of points expressed as np arrays, points or vector3.
+    Returns same type as it receives.
+    Performs p' = R*p + t where R corresponds to the orientation and t to the translation
+    Expects all points to be of the same type.
+    """
     return_points = isinstance(points[0], Point)
-    if return_points:
+    return_vectors = isinstance(points[0], Vector3)
+    if return_points or return_vectors:
         points = [np.asarray([p.x, p.y, p.z]) for p in points]
     augmented = True
     lengths = [len(p) for p in points]
@@ -286,7 +294,11 @@ def transform(points: List[Union[np.ndarray, Point]],
         transformation = np.linalg.inv(transformation)
     transformed_arrays = [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p)
                           for p in points]
-    return transformed_arrays if not return_points else [Point(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
+    if return_points:
+        transformed_arrays = [Point(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
+    elif return_vectors:
+        transformed_arrays = [Vector3(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
+    return transformed_arrays
 
 
 def calculate_bounding_box(state: Sequence,

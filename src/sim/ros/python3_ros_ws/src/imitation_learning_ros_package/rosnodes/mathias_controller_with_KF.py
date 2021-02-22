@@ -233,11 +233,22 @@ class MathiasController:
 
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         sensor_topic, sensor_stats = args
-        if self.last_measurement is not None and False:
+        # impose 7Hz to avoid 1000Hz simulation updates
+        if self.last_measurement is not None:
             difference = get_timestamp(msg) - self.last_measurement
-            if difference < 1./5:
+            if difference < 1./7:
                 return
         self.last_measurement = get_timestamp(msg)
+
+        if 'real' not in self._robot:
+            # simulated robots use /gt_states where twist message of odometry is expressed globally instaed of locally
+            # _, _, yaw = euler_from_quaternion(msg.pose.pose.orientation)
+            # msg.twist.twist.linear = transform(points=[msg.twist.twist.linear],
+            #                                    orientation=R.from_euler('XYZ', (0, 0, yaw)).as_matrix(),
+            #                                    invert=True)[0]
+            msg.twist.twist.linear = transform(points=[msg.twist.twist.linear],
+                                               orientation=msg.pose.pose.orientation,
+                                               invert=True)[0]
         result = self.filter.kalman_correction(msg, self._control_period)
         if result is not None:
             self._store_datapoint(msg, 'observed')
