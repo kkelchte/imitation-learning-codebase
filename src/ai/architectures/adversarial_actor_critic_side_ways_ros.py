@@ -86,7 +86,9 @@ class Net(BaseNet):
         return actions
 
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
-        #inputs = calculate_bounding_box(inputs)
+        #positions = np.squeeze(self.process_inputs(inputs))
+        #bb = calculate_bounding_box(inputs)
+        #inputs = (bb[3][0], bb[3][1], bb[4], bb[5])  # only info fleeing agent is relevant, info tracking is constant
         inputs = np.squeeze(self.process_inputs(inputs))
         if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
@@ -103,7 +105,7 @@ class Net(BaseNet):
                                 0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
                                 0, 0], axis=-1)
 
-        # actions = self.adjust_height(inputs, actions)  Not necessary, hector quadrotor controller keeps altitude fixed
+        # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
         actions = clip_action_according_to_playfield_size(inputs.detach().numpy().squeeze(),
                                                           actions, self._playfield_size)
         return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!

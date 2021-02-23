@@ -22,7 +22,7 @@ from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension, camelcase_to_snake_format
 from src.core.data_types import TerminationType, SensorType, FsmMode
 from src.sim.ros.src.utils import process_image, process_laser_scan, get_output_path, get_travelled_distance, \
-    get_distance_from_start, get_iou, get_distance_between_agents  # do not remove, used by reward.
+    get_distance_from_start, get_iou, get_distance_between_agents, get_inverse_relative_pixel_distance  # do not remove, used by reward.
 
 bridge = CvBridge()
 

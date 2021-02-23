@@ -5,4 +5,5 @@ reward:
     termination: 'NotDone'
     weights:
       iou: 9
+      #distance_between_agents: -1
       inverse_relative_pixel_distance: 1
