@@ -301,6 +301,29 @@ def transform(points: List[Union[np.ndarray, Point, Vector3]],
     return transformed_arrays
 
 
+def calculate_relative_orientation(robot_pose: PoseStamped,
+                                   reference_pose: PointStamped) -> float:
+    """
+    Given the global robot pose and the global reference pose,
+    calculate the relative yaw turn to face the reference pose.
+    """
+    robot_position = robot_pose.pose.position
+    robot_orientation = robot_pose.pose.orientation
+    # express vector from reference pose to robot
+    global_pose_error = np.asarray([reference_pose.point.x - robot_position.x,
+                                    reference_pose.point.y - robot_position.y,
+                                    reference_pose.point.z - robot_position.z])
+    # transform global pose error to local robot yaw frame (don't rotate in roll or pitch)
+    _, _, yaw = euler_from_quaternion(robot_orientation)
+    local_pose_error = np.matmul(R.from_euler('XYZ', (0, 0, -yaw)).as_matrix(), global_pose_error)
+    # calculate yaw turn
+    angle = np.arctan(local_pose_error[1] / local_pose_error[0])
+    # compensate for second and third quadrant:
+    if np.sign(local_pose_error[0]) == -1:
+        angle += np.pi
+    return angle
+
+
 def calculate_bounding_box(state: Sequence,
                            resolution: tuple = (100, 100),
                            focal_length: int = 30,

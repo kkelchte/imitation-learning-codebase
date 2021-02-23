@@ -32,7 +32,7 @@ from imitation_learning_ros_package.cfg import pidConfig
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.mathias_bebop_model import BebopModel
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.mathias_kalman_filter import KalmanFilter
 from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_quaternion, \
-    get_output_path, apply_noise_to_twist, process_twist, transform, get_timestamp
+    get_output_path, apply_noise_to_twist, process_twist, transform, get_timestamp, calculate_relative_orientation
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 
@@ -128,7 +128,7 @@ class MathiasController:
                                  callback_args=(sensor_topic, sensor_stats))
 
         # Dynamic reconfig server --> use only during tweaking
-        #self._config_server = Server(pidConfig, self._dynamic_config_callback)
+        # self._config_server = Server(pidConfig, self._dynamic_config_callback)
 
     def _reset(self):
         self.data = {title: {
@@ -281,6 +281,9 @@ class MathiasController:
             self.prev_vel_error = PointStamped(header=Header(frame_id="global_rotated"))
             self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
             self.pose_ref = pose_ref
+            self.desired_yaw = calculate_relative_orientation(robot_pose=self.pose_est,
+                                                              reference_pose=self.pose_ref)
+            self._calculate_desired_yaw()
             cprint(f'set pose_ref: {self.pose_ref.point}', self._logger)
 
     def _update_twist(self) -> Union[None, Twist]:
@@ -364,20 +367,10 @@ class MathiasController:
 
         # if target is more than 1m away, look in that direction
         _, _, yaw = euler_from_quaternion(self.pose_est.pose.orientation)
-        if np.sqrt(pose_error.point.x ** 2 + pose_error.point.y ** 2) > 1.:
-            angle_error = np.arctan(pose_error.point.y / pose_error.point.x)
-            # compensate for second and third quadrant:
-            if np.sign(pose_error.point.x) == -1:
-                angle_error += np.pi
-            # turn in direction of smallest angle
-            angle_error = -(2 * np.pi - angle_error) if 2 * np.pi - angle_error < angle_error else angle_error
-            cmd.angular.z = (self.K_theta * angle_error)
-            self.desired_yaw = yaw  # update desired looking direction
-        else:  # else look at reference point
-            if self.desired_yaw is not None:  # in case there is a desired yaw
-                angle_error = ((((self.desired_yaw - yaw) - np.pi) % (2*np.pi)) - np.pi)
-                K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
-                cmd.angular.z = (K_theta * angle_error)
+        if self.desired_yaw is not None:  # in case there is a desired yaw
+            angle_error = ((((self.desired_yaw - yaw) - np.pi) % (2*np.pi)) - np.pi)
+            K_theta = self.K_theta + (np.pi - abs(angle_error))/np.pi*0.2
+            cmd.angular.z = (K_theta * angle_error)
 
         self.prev_pose_error = pose_error
         self.prev_vel_error = vel_error
