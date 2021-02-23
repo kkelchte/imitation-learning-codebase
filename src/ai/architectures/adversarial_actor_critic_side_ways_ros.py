@@ -37,7 +37,7 @@ class Net(BaseNet):
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
         self._playfield_size = (0, 1, 0)
-        self.input_size = (9,)
+        self.input_size = (4,)
         self.output_size = (8,)
         self.action_min = -1
         self.action_max = 1
@@ -86,9 +86,9 @@ class Net(BaseNet):
         return actions
 
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
-        #positions = np.squeeze(self.process_inputs(inputs))
-        #bb = calculate_bounding_box(inputs)
-        #inputs = (bb[3][0], bb[3][1], bb[4], bb[5])  # only info fleeing agent is relevant, info tracking is constant
+        positions = np.squeeze(self.process_inputs(inputs))
+        bb = calculate_bounding_box(inputs)
+        inputs = (bb[3][0], bb[3][1], bb[4], bb[5])  # only info fleeing agent is relevant, info tracking is constant
         inputs = np.squeeze(self.process_inputs(inputs))
         if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
@@ -106,7 +106,7 @@ class Net(BaseNet):
                                 0, 0], axis=-1)
 
         # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
-        actions = clip_action_according_to_playfield_size(inputs.detach().numpy().squeeze(),
+        actions = clip_action_according_to_playfield_size(positions.detach().numpy().squeeze(),
                                                           actions, self._playfield_size)
         return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
                       value=actions)
@@ -139,6 +139,15 @@ class Net(BaseNet):
 
     def adversarial_policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
         return self.policy_log_probabilities(inputs, actions, train, adversarial=True)
+
+    def critic(self, inputs, train: bool = False) -> torch.Tensor:
+        if len(inputs[0]) == 9:
+            for index in range(len(inputs)):
+                bb = calculate_bounding_box(np.asarray(inputs[index]))
+                inputs[index] = torch.Tensor([bb[3][0], bb[3][1], bb[4], bb[5]])
+        self._critic.train()
+        inputs = np.squeeze(self.process_inputs(inputs=inputs))
+        return self._critic(inputs)
 
     def adversarial_critic(self, inputs, train: bool = False) -> torch.Tensor:
         self._adversarial_critic.train(train)
