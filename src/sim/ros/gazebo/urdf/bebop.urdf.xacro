@@ -16,10 +16,11 @@
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 3.14" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
           <!-- <mesh filename="package://hector_quadrotor_description/meshes/ardrone/quadrotor_4.dae"/> -->
-          <mesh filename="package://hector_quadrotor_description/meshes/bebop/quadrotor_CAD.dae"/>
+<!--          <mesh filename="package://hector_quadrotor_description/meshes/bebop/quadrotor_CAD.dae"/>-->
+          <mesh filename="../models/parrot_bebop_2/meshes/hull.dae"/>
         </geometry>
       </visual>
 
