@@ -927,7 +927,8 @@ class TestMathiasController(unittest.TestCase):
             'altitude_control': False,
             'keyboard': True,
             'mathias_controller_with_KF': True,
-            'mathias_controller_config_file_path_with_extension': 'mathias_controller_with_KF.yml',
+            'mathias_controller_config_file_path_with_extension':
+                f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF.yml',
             'yaw_or': 0,
             'x_pos': 0,
             'y_pos': 0
@@ -974,11 +975,11 @@ class TestMathiasController(unittest.TestCase):
             self._unpause_client.wait_for_service()
             self._unpause_client.call()
 
-            #index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0])
             #index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0.7, 0, 0])
-#            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0.7, 0])
-#            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0.7])
-            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, 0])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0.7, 0])
+            index = self.tweak_combined_axis_keyboard(measured_data, index, point=[0, 0, 0.7])
+            #index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, 0])
 
     @unittest.skip
     def test_drone_relative_positioning_real_bebop_with_KF(self):
@@ -997,7 +998,8 @@ class TestMathiasController(unittest.TestCase):
             'altitude_control': False,
             'keyboard': True,
             'mathias_controller_with_KF': True,
-            'mathias_controller_config_file_path_with_extension': 'mathias_controller_real_bebop.yml'
+            'mathias_controller_config_file_path_with_extension':
+                f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_real_bebop.yml'
         }
 
         # spinoff roslaunch
@@ -1040,7 +1042,7 @@ class TestMathiasController(unittest.TestCase):
             index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, 1])
             index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, -1])
 
-    # @unittest.skip
+    #@unittest.skip
     def test_waypoints_tracking_in_gazebo_with_KF_with_keyboard(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -1053,13 +1055,14 @@ class TestMathiasController(unittest.TestCase):
             'fsm': True,
             'fsm_mode': 'TakeOverRun',
             'control_mapping': True,
-            'control_mapping_config': 'mathias_controller',
+            'control_mapping_config': 'mathias_controller_keyboard',
             'waypoint_indicator': True,
             'altitude_control': False,
             'mathias_controller_with_KF': True,
             'starting_height': 1.,
             'keyboard': True,
-            'mathias_controller_config_file_path_with_extension': 'mathias_controller_with_KF.yml',
+            'mathias_controller_config_file_path_with_extension':
+                f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF.yml',
             'yaw_or': 0,
             'x_pos': 0,
             'y_pos': 0
@@ -1093,13 +1096,13 @@ class TestMathiasController(unittest.TestCase):
         self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
         self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 
-        # unpause gazebo to receive messages
         self._unpause_client.wait_for_service()
         self._unpause_client.call()
-
         safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
-                            True, 10, 0.1, ros_topic=self.ros_topic)
+                            True, 15, 0.1, ros_topic=self.ros_topic)
         self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data, FsmState.Unknown.name)
+        self._pause_client.wait_for_service()
+        self._pause_client.call()
 
         while True:
             # publish reset
@@ -1107,38 +1110,40 @@ class TestMathiasController(unittest.TestCase):
 
             self._unpause_client.wait_for_service()
             self._unpause_client.call()
+
+            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Running.name:
+                rospy.sleep(0.1)
+            safe_wait_till_true('"/waypoint_indicator/current_waypoint" in kwargs["ros_topic"].topic_values.keys()',
+                                True, 10, 0.1, ros_topic=self.ros_topic)
             poses = []
             waypoints = []
-            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Terminated.name:
-                rospy.sleep(0.1)
+            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Terminated.name and \
+                    self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
+                rospy.sleep(0.5)
                 pose = self.get_pose()
-                odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
                 waypoint = self.ros_topic.topic_values['/waypoint_indicator/current_waypoint']
                 poses.append(pose)
                 waypoints.append(waypoint)
+                print(self.ros_topic.topic_values["/fsm/state"].data)
 
             # see it reaches the goal state:
-            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
-                                FsmState.Terminated.name, 20, 0.1, ros_topic=self.ros_topic)
+#            safe_wait_till_true('kwargs["ros_topic"].topic_values["/fsm/state"].data',
+#                                FsmState.Terminated.name, 20, 0.1, ros_topic=self.ros_topic)
 
             self._pause_client.wait_for_service()
             self._pause_client.call()
 
-            colors = ['C0', 'C1', 'C2', 'C3', 'C4']
-            for key in measured_data.keys():
-                for a in measured_data[key].keys():
-                    if a == 'x':
-                        style = '-'
-                    elif a == 'y':
-                        style = '--'
-                    else:
-                        style = ':'
-                    plt.plot(measured_data[key][a], linestyle=style,
-                             color=colors[key % len(colors)], label=f'{key}: {a}')
+            plt.figure(figsize=(15, 15))
+            plt.scatter([p[0] for p in poses],
+                        [p[1] for p in poses],
+                        color='C0', label='xy-pose')
+            plt.scatter([p.data[0] for p in waypoints],
+                        [p.data[1] for p in waypoints],
+                        color='C1', label='xy-waypoints')
             plt.legend()
+            plt.xlabel("x [m]")
+            plt.ylabel("y [m]")
             plt.show()
-            index += 1
-            index %= len(colors)
 
     def tearDown(self) -> None:
         self._ros_process.terminate()

@@ -68,8 +68,7 @@ class Fsm:
         stime = time.time()
         max_duration = 60
         while not rospy.has_param('/fsm/mode') and time.time() < stime + max_duration:
-            time.sleep(0.01)
-
+            time.sleep(0.1)
         self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
         self._output_path = get_output_path()
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
@@ -311,8 +310,10 @@ class RewardCalculator:
             if value is not None:
                 reward += reward_weight * value
         self._count += 1
-        if self._count % 60 == 0:
-            cprint(f'reward: {reward}, termination: {termination_type}', self._logger, msg_type=MessageType.debug)
+        if self._count % 60 == 0 or termination_type in ['Failure', 'Success']:
+            cprint(f'occasion: {occasion}, '
+                   f'reward: {reward}, '
+                   f'termination: {termination_type}', self._logger, msg_type=MessageType.debug)
         return RosReward(
             reward=reward,
             termination=termination_type

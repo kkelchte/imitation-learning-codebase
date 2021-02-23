@@ -89,7 +89,7 @@ class MathiasController:
         noise_config = self._specs['noise'] if 'noise' in self._specs.keys() else {}
         self._noise = eval(f"{noise_config['name']}(**noise_config['args'])") if noise_config else None
         self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
-        self.pose_ref = PointStamped(header=Header(frame_id="global"))
+        self.pose_ref = None
         # expressed in rotated global frame according to drone's yaw
         self.vel_ref = TwistStamped(header=Header(frame_id="global_rotated"))
         self.prev_pose_error = PointStamped(header=Header(frame_id="global"))
@@ -274,16 +274,16 @@ class MathiasController:
             pose_ref = PointStamped(header=Header(frame_id="global"),
                                     point=Point(x=pose_ref[0],
                                                 y=pose_ref[1],
-                                                z=1 if len(pose_ref) == 2 else pose_ref[2]))
+                                                z=self.pose_est.pose.position.z if len(pose_ref) == 2 else pose_ref[2]))
         if pose_ref != self.pose_ref:
             # reset pose error when new reference comes in.
             self.prev_pose_error = PointStamped(header=Header(frame_id="global"))
             self.prev_vel_error = PointStamped(header=Header(frame_id="global_rotated"))
             self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
             self.pose_ref = pose_ref
-            self.desired_yaw = calculate_relative_orientation(robot_pose=self.pose_est,
-                                                              reference_pose=self.pose_ref)
-            self._calculate_desired_yaw()
+            _, _, yaw = euler_from_quaternion(self.pose_est.pose.orientation)
+            self.desired_yaw = yaw + calculate_relative_orientation(robot_pose=self.pose_est,
+                                                                    reference_pose=self.pose_ref)
             cprint(f'set pose_ref: {self.pose_ref.point}', self._logger)
 
     def _update_twist(self) -> Union[None, Twist]:
@@ -326,7 +326,9 @@ class MathiasController:
         drift. Tustin discretized PID controller for x and y, PI for z.
         Returns a twist containing the control command.
         '''
-        
+        cmd = Twist()
+        if self.pose_ref is None:
+            return cmd
         # PID
         prev_pose_error = self.prev_pose_error
 
@@ -346,7 +348,6 @@ class MathiasController:
         vel_error.point.y = self.vel_ref.twist.linear.y - self.vel_est.point.y
 
         # calculations happen in global_rotated frame
-        cmd = Twist()
         cmd.linear.x = max(-self.max_input, min(self.max_input, (
                 self.last_cmd.twist.linear.x +
                 (self.Kp_x + self.Ki_x * self._control_period / 2) * pose_error.point.x +

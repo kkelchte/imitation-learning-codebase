@@ -13,11 +13,12 @@ import time
 import numpy as np
 import rospy
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float32MultiArray, Empty
+from std_msgs.msg import Float32MultiArray, Empty, String
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
-from src.sim.ros.src.utils import get_output_path
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
+from src.sim.ros.src.utils import get_output_path, transform
 
 
 class WaypointIndicator:
@@ -34,6 +35,8 @@ class WaypointIndicator:
         self._current_waypoint_index = 0
         self._waypoints = rospy.get_param('/world/waypoints', [])
         self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.3)
+        self._local_waypoints = rospy.get_param('/world/express_waypoints_locally', False)
+        self.robot_pose = None
 
         # publishers
         self._publisher = rospy.Publisher('/waypoint_indicator/current_waypoint', Float32MultiArray, queue_size=10)
@@ -48,17 +51,28 @@ class WaypointIndicator:
         rospy.Subscriber(name='/fsm/reset',
                          data_class=Empty,
                          callback=self.reset)
+        self._fsm_state = FsmState.Unknown
+        rospy.Subscriber(name='/fsm/state', data_class=String, callback=self._set_fsm_state)
+
         rospy.init_node('waypoint_indicator')
         self.reset()
+
+    def _set_fsm_state(self, msg: String):
+        # detect transition
+        if self._fsm_state != FsmState[msg.data]:
+            self._fsm_state = FsmState[msg.data]
+            if self._fsm_state == FsmState.Running and self._local_waypoints:  # reset early feedback values
+                relative_points = [np.asarray([wp[0], wp[1], wp[2]]) if len(wp) == 3
+                                   else np.asarray([wp[0], wp[1], self.robot_pose.position.z])
+                                   for wp in self._waypoints]
+                absolute_points = transform(relative_points, self.robot_pose.orientation, self.robot_pose.position)
+                self._waypoints = absolute_points
 
     def reset(self, msg: Empty = None):
         self._waypoints = rospy.get_param('/world/waypoints', [])
         self._waypoints = [[float(coor) for coor in wp] for wp in self._waypoints]
         self._current_waypoint_index = 0
         self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.5)
-
-        # TODO extension: add automatic closest waypoint detection and start flying to there
-        #  ==> this allows robot to be spawned anywhere on the trajectory.
         if len(self._waypoints) == 0:
             cprint(message='could not find waypoints in rosparam so exit',
                    logger=self._logger,
@@ -68,9 +82,10 @@ class WaypointIndicator:
             cprint(f'waypoints: {self._waypoints}', self._logger)
 
     def _odometry_callback(self, msg: Odometry):
+        self.robot_pose = msg.pose.pose
         # adjust orientation towards current_waypoint
-        dy = (self._waypoints[self._current_waypoint_index][1] - msg.pose.pose.position.y)
-        dx = (self._waypoints[self._current_waypoint_index][0] - msg.pose.pose.position.x)
+        dy = (self._waypoints[self._current_waypoint_index][1] - self.robot_pose.position.y)
+        dx = (self._waypoints[self._current_waypoint_index][0] - self.robot_pose.position.x)
 
         if np.sqrt(dx ** 2 + dy ** 2) < self._waypoint_reached_distance:
             # update to next waypoint:
@@ -83,10 +98,11 @@ class WaypointIndicator:
     def run(self):
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
-            current_waypoint = self._waypoints[self._current_waypoint_index]
-            multi_array = Float32MultiArray()
-            multi_array.data = current_waypoint
-            self._publisher.publish(multi_array)
+            if self._fsm_state == FsmState.Running:
+                current_waypoint = self._waypoints[self._current_waypoint_index]
+                multi_array = Float32MultiArray()
+                multi_array.data = current_waypoint
+                self._publisher.publish(multi_array)
             rate.sleep()
 
 
