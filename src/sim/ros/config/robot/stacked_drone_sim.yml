@@ -1,0 +1,34 @@
+model_name: # used by rosenvironment to reset drone state
+  - tracking_quadrotor_2
+  - fleeing_quadrotor_2
+takeoff_action:
+  - /tracking/action/takeoff
+  - /fleeing/action/takeoff
+tracking_command_topic: /tracking/cmd_vel
+fleeing_command_topic: /fleeing/cmd_vel
+tracking_camera_sensor:
+  topic: /tracking/forward/camera/image
+  type: Image
+  camera_stats:
+    height: 200
+    width: 200
+    depth: 3
+fleeing_camera_sensor:
+  topic: /fleeing/forward/camera/image
+  type: Image
+  camera_stats:
+    height: 200
+    width: 200
+    depth: 3
+tracking_position_sensor:
+  topic: /tracking/ground_truth_to_tf/pose
+  type: PoseStamped
+fleeing_position_sensor:
+  topic: /fleeing/ground_truth_to_tf/pose
+  type: PoseStamped
+modified_state_sensor:
+  topic: /modified_state
+  type: CombinedGlobalPoses
+frame_sensor:
+  topic: /modified_state_frame
+  type: Image
