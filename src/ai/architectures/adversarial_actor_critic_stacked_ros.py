@@ -12,12 +12,13 @@ from src.ai.utils import mlp_creator, get_slow_hunt, clip_action_according_to_pl
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
+from src.sim.ros.src.utils import calculate_bounding_box
 
 """
-Adversarial agents for gazebo world tracking_x_axis
+Adversarial agents for gazebo world tracking_y_axis
 Observation space contains of 9 dimensional array with
 [tracking_x, tracking_y, tracking_z, fleeing_x, fleeing_y, fleeing_z, tracking_roll, tracking_pitch, tracking_yaw]
-as specified by the ROS CombinedGlobalPoses message. 
+as specifed by the ROS CombinedGlobalPoses message. 
 Observation space is shared by standard (tracking: 0) and adversarial (fleeing: 1) agent.
 Action space contains [tracking_linear_x, tracking_linear_y, tracking_linear_z,
                         fleeing_linear_x, fleeing_linear_y, fleeing_linear_z,
@@ -36,13 +37,13 @@ class Net(BaseNet):
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
         self._playfield_size = (1, 0, 0)
-        self.input_size = (9,)
+        self.input_size = (4,)
         self.output_size = (8,)
         self.action_min = -1
         self.action_max = 1
         self.starting_height = -1
 
-        self._actor = mlp_creator(sizes=[self.input_size[0], 10, 1],  # for now actors can only fly forward
+        self._actor = mlp_creator(sizes=[self.input_size[0], 10, 1],  # for now actors can only fly sideways
                                   activation=nn.Tanh(),
                                   output_activation=None)
         log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
@@ -85,27 +86,27 @@ class Net(BaseNet):
         return actions
 
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
-        inputs = self.process_inputs(inputs)
-        if agent_id == 0:  # tracking agent ==> tracking_linear_x
+        positions = np.squeeze(self.process_inputs(inputs))
+        bb = calculate_bounding_box(inputs, orientation=(0, 0, 1))
+        inputs = (bb[3][0], bb[3][1], bb[4], bb[5])  # only info fleeing agent is relevant, info tracking is constant
+        inputs = np.squeeze(self.process_inputs(inputs))
+        if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
-            actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0, 0])
-        elif agent_id == 1:  # fleeing agent ==> fleeing_linear_x
+            actions = np.stack([output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0, 0])
+        elif agent_id == 1:  # fleeing agent ==> fleeing_linear_y
             output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                               max=self.action_max)
-            actions = np.stack([0, 0, 0, *output.data.cpu().numpy().squeeze(), 0, 0, 0, 0])
+            actions = np.stack([0, 0, 0, output.data.cpu().numpy().squeeze(), 0, 0, 0, 0])
         else:
             output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
             adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                                           max=self.action_max)
-            # actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
-            #                     0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
-            #                     0, 0], axis=-1)
-            actions = np.stack([1, 0, 0,
-                                1, 0, 0,
+            actions = np.stack([output.data.cpu().numpy().squeeze().item(), 0, 0,
+                                adversarial_output.data.cpu().numpy().squeeze().item(), 0, 0,
                                 0, 0], axis=-1)
 
-        # actions = self.adjust_height(inputs, actions)  Not necessary, hector quadrotor controller keeps altitude fixed
-        actions = clip_action_according_to_playfield_size(inputs.detach().numpy().squeeze(),
+        # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
+        actions = clip_action_according_to_playfield_size(positions.detach().numpy().squeeze(),
                                                           actions, self._playfield_size)
         return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
                       value=actions)
@@ -138,6 +139,15 @@ class Net(BaseNet):
 
     def adversarial_policy_log_probabilities(self, inputs, actions, train: bool = True) -> torch.Tensor:
         return self.policy_log_probabilities(inputs, actions, train, adversarial=True)
+
+    def critic(self, inputs, train: bool = False) -> torch.Tensor:
+        if len(inputs[0]) == 9:
+            for index in range(len(inputs)):
+                bb = calculate_bounding_box(np.asarray(inputs[index]), orientation=(0, 0, 1))
+                inputs[index] = torch.Tensor([bb[3][0], bb[3][1], bb[4], bb[5]])
+        self._critic.train()
+        inputs = np.squeeze(self.process_inputs(inputs=inputs))
+        return self._critic(inputs)
 
     def adversarial_critic(self, inputs, train: bool = False) -> torch.Tensor:
         self._adversarial_critic.train(train)

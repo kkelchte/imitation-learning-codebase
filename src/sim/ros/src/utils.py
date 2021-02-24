@@ -407,6 +407,26 @@ def get_iou(info: dict) -> float:
     return result
 
 
+def get_iou_stacked(info: dict) -> float:
+    if info['combined_global_poses'] is None:
+        return None
+    state = [info['combined_global_poses'].tracking_x,
+             info['combined_global_poses'].tracking_y,
+             info['combined_global_poses'].tracking_z,
+             info['combined_global_poses'].fleeing_x,
+             info['combined_global_poses'].fleeing_y,
+             info['combined_global_poses'].fleeing_z,
+             info['combined_global_poses'].tracking_roll,
+             info['combined_global_poses'].tracking_pitch,
+             info['combined_global_poses'].tracking_yaw]
+    try:
+        bounding_boxes = calculate_bounding_box(state=np.asarray(state), orientation=(0, 0, 1))
+        result = calculate_iou_from_bounding_boxes(bounding_boxes)
+    except:
+        result = 0
+    return result
+
+
 def get_travelled_distance(info: dict) -> float:
     if info['previous_position'] is not None:
         increment = distance(info['current_position'],
