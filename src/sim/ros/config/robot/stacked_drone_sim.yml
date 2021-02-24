@@ -1,6 +1,6 @@
 model_name: # used by rosenvironment to reset drone state
-  - tracking_quadrotor_2
-  - fleeing_quadrotor_2
+  - tracking_quadrotor_stacked
+  - fleeing_quadrotor_stacked
 takeoff_action:
   - /tracking/action/takeoff
   - /fleeing/action/takeoff
