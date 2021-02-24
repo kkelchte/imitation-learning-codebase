@@ -1,4 +1,4 @@
-output_path: two_drone_setup/test
+output_path: two_drone_setup/y_axis
 mode: default
 wait_time_between_jobs_sec: 0.1
 number_of_jobs:  # indicates number of seeds per parameter value
@@ -8,16 +8,16 @@ base_config_files:
 job_configs:
   - command: python3.8 src/scripts/experiment.py
     codebase_dir: /users/start2017/r0669036/code/imitation-learning-codebase
-    cpus: 2
+    cpus: 1
     gpus: 0
     cpu_mem_gb: 5
     disk_mem_gb: 52
-    wall_time_s: 10 * 60 * 60
+    wall_time_s: 24 * 60 * 60
     nice: true
     gpu_mem_mb: 1900
     use_singularity: true
     check_if_ros_already_in_use: false
-    save_locally: false
+    save_locally: true
     save_before_wall_time: true
     singularity_dir: /esat/opal/kkelchte/singularity_images/ubuntu
     singularity_file: /esat/opal/kkelchte/singularity_images/ubuntu/image-0.1.8.sif
