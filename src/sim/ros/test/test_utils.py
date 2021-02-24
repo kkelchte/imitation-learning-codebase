@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 import matplotlib.pyplot as plt
 
+from math import pi
 from src.core.utils import get_filename_without_extension, get_data_dir
 from src.sim.ros.src.utils import calculate_bounding_box, distance, array_to_combined_global_pose, get_iou, \
     process_combined_global_poses
@@ -24,22 +25,23 @@ class TestUtils(unittest.TestCase):
         distance(np.asarray([0, 0, 2]).reshape((1, 1, 3)), np.asarray([0, 0, 0]).reshape((1, 1, 3)))
 
     def test_bounding_box(self):
-        resolution = (100, 100)
-        tracking_agent_position = [0, 1, 1]
+        resolution = (1000, 1000)
+        tracking_agent_position = [0, 0, 4]
         tracking_agent_orientation = [0, 0, 0]
-        fleeing_agent_position = [3, 1, 1]
+        fleeing_agent_position = [1, 0, 1]
         bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
                                                        *fleeing_agent_position,
                                                        *tracking_agent_orientation],
+                                                orientation=(0, 0, 1),
                                                 resolution=resolution)
-        # position = bounding_boxes[3]
-        # width = bounding_boxes[4]
-        # height = bounding_boxes[5]
-        # frame = np.zeros(resolution)
-        # frame[position[1]-height//2:position[1]+height//2,
-        #       position[0]-width//2:position[0]+width//2] = 1
-        # plt.imshow(frame)
-        # plt.show()
+        position = bounding_boxes[3]
+        width = bounding_boxes[4]
+        height = bounding_boxes[5]
+        frame = np.zeros(resolution)
+        frame[position[1]-height//2:position[1]+height//2,
+              position[0]-width//2:position[0]+width//2] = 1
+        plt.imshow(frame)
+        plt.show()
 
         self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (500, 500), 66, 66))
 

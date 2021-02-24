@@ -1,6 +1,6 @@
 #!/usr/bin/python3.8
 import os
-from math import sqrt, cos, sin
+from math import sqrt, cos, sin, pi
 from typing import Union, List, Tuple, Iterable, Sequence
 from collections import namedtuple
 
@@ -275,6 +275,7 @@ def transform(points: List[np.ndarray],
 
 def calculate_bounding_box(state: Sequence,
                            resolution: tuple = (1000, 1000),
+                           orientation: tuple = (1, 0, 0),
                            focal_length: int = 20,
                            kx: int = 50,
                            ky: int = 50,
@@ -294,8 +295,15 @@ def calculate_bounding_box(state: Sequence,
     roll = state[6]
     pitch = state[7]
     yaw = state[8]
-    z, x, y = relative_coordinates(agent0, agent1, yaw, pitch, roll)
 
+    if orientation == (0, 0, 1):
+        z, x, y = relative_coordinates(agent0, agent1, yaw, pitch - pi/2, roll)
+    elif orientation == (1, 0, 1):
+        z, x, y = relative_coordinates(agent0, agent1, yaw, pitch - pi/4, roll)
+    else:
+        z, x, y = relative_coordinates(agent0, agent1, yaw, pitch, roll)
+
+    y = -y
     u = focal_length * x / z
     v = focal_length * y / z
 
