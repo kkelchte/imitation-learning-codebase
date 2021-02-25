@@ -21,7 +21,7 @@ environment_config:
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
-      robot_name: double_drone_sim
+      robot_name: stacked_drone_sim
       fsm_mode: TakeOverRun
       fsm: true
       control_mapping: true
@@ -33,7 +33,10 @@ environment_config:
       control_mapping_config: python_adversarial
       world_name: tracking_stacked
       gazebo: True
-      starting_height: 0.5
+      x_pos: 0.0
+      y_pos: 0.0
+      z_pos: 1.0
+      yaw_or: 0
     actor_configs:
       - name: altitude_control
 data_saver_config:
