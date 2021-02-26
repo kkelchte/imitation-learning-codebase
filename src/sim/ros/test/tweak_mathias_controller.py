@@ -999,7 +999,7 @@ class TestMathiasController(unittest.TestCase):
             'keyboard': True,
             'mathias_controller_with_KF': True,
             'mathias_controller_config_file_path_with_extension':
-                f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_real_bebop.yml'
+                f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF_real_bebop.yml'
         }
 
         # spinoff roslaunch
@@ -1042,7 +1042,7 @@ class TestMathiasController(unittest.TestCase):
             index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, 1])
             index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, -1])
 
-    #@unittest.skip
+    @unittest.skip
     def test_waypoints_tracking_in_gazebo_with_KF_with_keyboard(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -1132,6 +1132,87 @@ class TestMathiasController(unittest.TestCase):
 
             self._pause_client.wait_for_service()
             self._pause_client.call()
+
+            plt.figure(figsize=(15, 15))
+            plt.scatter([p[0] for p in poses],
+                        [p[1] for p in poses],
+                        color='C0', label='xy-pose')
+            plt.scatter([p.data[0] for p in waypoints],
+                        [p.data[1] for p in waypoints],
+                        color='C1', label='xy-waypoints')
+            plt.legend()
+            plt.xlabel("x [m]")
+            plt.ylabel("y [m]")
+            plt.show()
+
+    def test_waypoints_tracking_real_bebop_with_KF_with_keyboard(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'hexagon',
+            'robot_name': 'bebop_real',
+            'gazebo': False,
+            'fsm': True,
+            'fsm_mode': 'TakeOverRun',
+            'control_mapping': True,
+            'control_mapping_config': 'mathias_controller_keyboard',
+            'waypoint_indicator': True,
+            'altitude_control': False,
+            'mathias_controller_with_KF': True,
+            'starting_height': 1.,
+            'keyboard': True,
+            'mathias_controller_config_file_path_with_extension':
+                f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF_real_bebop.yml',
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+
+        # subscribe to command control
+        self.visualisation_topic = '/actor/mathias_controller/visualisation'
+        subscribe_topics = [
+            TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
+                        msg_type=rospy.get_param('/robot/position_sensor/type')),
+            TopicConfig(topic_name='/fsm/state',
+                        msg_type='String'),
+            TopicConfig(topic_name='/waypoint_indicator/current_waypoint', msg_type='Float32MultiArray'),
+            TopicConfig(topic_name=self.visualisation_topic,
+                        msg_type='Image')
+        ]
+        publish_topics = [
+            TopicConfig(topic_name='/fsm/reset', msg_type='Empty'),
+        ]
+
+        self.ros_topic = TestPublisherSubscriber(
+            subscribe_topics=subscribe_topics,
+            publish_topics=publish_topics
+        )
+
+        safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 25, 0.1, ros_topic=self.ros_topic)
+        self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data, FsmState.Unknown.name)
+
+        while True:
+            # publish reset
+            self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+
+            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Running.name:
+                rospy.sleep(0.1)
+            safe_wait_till_true('"/waypoint_indicator/current_waypoint" in kwargs["ros_topic"].topic_values.keys()',
+                                True, 10, 0.1, ros_topic=self.ros_topic)
+            poses = []
+            waypoints = []
+            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Terminated.name and \
+                    self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
+                rospy.sleep(0.5)
+                pose = self.get_pose()
+                waypoint = self.ros_topic.topic_values['/waypoint_indicator/current_waypoint']
+                poses.append(pose)
+                waypoints.append(waypoint)
 
             plt.figure(figsize=(15, 15))
             plt.scatter([p[0] for p in poses],
