@@ -57,24 +57,24 @@ import os
 
 # basic argument checking
 # this script is not complicated enough to merit using a system such as argparse
-if len(sys.argv) not in [1, 3]:
+if len(sys.argv) not in [1, 3, 4]:
     print("usage is: generate_checkerboard.py rows columns "
           "[square_size_in_meters]")
     exit()
 
 # in meters
-DEFAULT_SQUARE_SIZE = 0.03
+DEFAULT_SQUARE_SIZE = 0.039
 
 # set up shop
-cols = int(sys.argv[1]) if len(sys.argv) != 3 else 4
-rows = int(sys.argv[2]) if len(sys.argv) != 3 else 8
+cols = int(sys.argv[1]) if len(sys.argv) != 3 else 7
+rows = int(sys.argv[2]) if len(sys.argv) != 3 else 7
 if len(sys.argv) > 3:
     sq_size = float(sys.argv[3])
 else:
     sq_size = DEFAULT_SQUARE_SIZE
-name = "_".join(["checkerboard", str(cols), str(rows),
+name = "_".join(["checkerboard", str(cols-1), str(rows-1),
                  str(sq_size).replace(".", "_")])
-pretty_name = "Checkerboard {} x {}, size {}m".format(cols, rows, sq_size)
+pretty_name = "Checkerboard {} x {}, size {}m".format(cols-1, rows-1, sq_size)
 
 
 # create directory for the model if it doesn't exist.

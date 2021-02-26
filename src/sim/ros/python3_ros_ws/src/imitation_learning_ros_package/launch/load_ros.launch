@@ -123,6 +123,14 @@
               output="screen"/>
     </group>
 
+    <arg name="chessboard_detector" default="false"/>
+    <group if="$(arg chessboard_detector)">
+        <node pkg="imitation_learning_ros_package"
+              name="chessboard_detector"
+              type="chessboard_detector.py"
+              output="screen"/>
+    </group>
+
     <arg name="robot_mapping" default="false"/>
     <group if="$(arg robot_mapping)">
         <node pkg="imitation_learning_ros_package"
