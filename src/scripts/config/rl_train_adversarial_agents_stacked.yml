@@ -25,7 +25,7 @@ environment_config:
       fsm_mode: TakeOverRun
       fsm: true
       control_mapping: true
-      distance_tracking_fleeing_m: 3
+      distance_tracking_fleeing_m: 0.5
       modified_state_publisher: true
       modified_state_publisher_mode: CombinedGlobalPoses
       modified_state_frame_visualizer: true
@@ -35,8 +35,10 @@ environment_config:
       gazebo: True
       x_pos: 0.0
       y_pos: 0.0
-      z_pos: 1.0
+      z_pos: 0.0
       yaw_or: 0
+      #starting_height_tracking: 4.0
+      #starting_height_fleeing: 1.0
     actor_configs:
       - name: altitude_control
 data_saver_config:

@@ -99,17 +99,17 @@
             <arg name="name" default="tracking_quadrotor_stacked"/>
             <arg name="x" value="$(arg x_pos)"/>
             <arg name="y" value="$(arg y_pos)"/>
-            <arg name="z" value="$(eval arg('z_pos') + arg('distance_tracking_fleeing_m'))"/>
+            <arg name="z" value="$(arg z_pos)"/>
             <arg name="Y" default="$(arg yaw_or)"/>
             <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
         </include>
         <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" ns="fleeing">
             <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
             <arg name="name" default="fleeing_quadrotor_stacked"/>
-            <arg name="x" value="$(arg x_pos)"/>
+            <arg name="x" value="$(eval arg('x_pos') + arg('distance_tracking_fleeing_m'))"/>
             <arg name="y" value="$(arg y_pos)"/>
             <arg name="z" value="$(arg z_pos)"/>
-            <arg name="Y" default="$(eval 3.14 + arg('yaw_or'))"/>
+            <arg name="Y" default="$(arg yaw_or)"/>
             <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
         </include>
     </group>
