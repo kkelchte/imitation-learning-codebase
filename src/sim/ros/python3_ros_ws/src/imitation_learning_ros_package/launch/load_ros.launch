@@ -164,6 +164,14 @@
               type="modified_state_frame_visualizer.py"
               output="screen"/>
     </group>
+
+    <!--######################## EXTERNAL HELPER NODES ########################-->
+
+    <arg name="april_tag_detector" default="false"/>
+    <group if="$(arg april_tag_detector)">
+        <include file="$(find apriltag_ros)/launch/continuous_detection.launch"/>
+    </group>
+
     <!--######################## ACTOR NODES ########################-->
     <arg name="joystick" default="false"/>
     <group if="$(arg joystick)" ns="/actor/joystick">

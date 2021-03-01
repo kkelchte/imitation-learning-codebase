@@ -30,6 +30,11 @@ apt-get update && \
     xterm \
     xorg \
     xserver-xorg-video-dummy \
+    subversion \
+    cmake \
+    libopencv-dev \
+    libeigen3-dev \
+    libv4l-dev \
     && rm -rf /var/lib/apt/lists/*
 
 rosdep update
@@ -99,8 +104,6 @@ apt-get update && apt-get install -yq\
     python3-tk \
     python-tk \
     && rm -rf /var/lib/apt/lists/*
-
-
 
 # ---- CUDA ----
 %files
