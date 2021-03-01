@@ -37,8 +37,8 @@ environment_config:
       y_pos: 0.0
       z_pos: 0.0
       yaw_or: 0
-      #starting_height_tracking: 4.0
-      #starting_height_fleeing: 1.0
+      starting_height_tracking: 4.0
+      starting_height_fleeing: 1.0
     actor_configs:
       - name: altitude_control
 data_saver_config:

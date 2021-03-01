@@ -67,10 +67,8 @@ class AltitudeControl:
             # in case of tracking fleeing quadrotor
             self._publishers['tracking'] = rospy.Publisher('cmd_vel', Twist, queue_size=10)
             self._publishers['fleeing'] = rospy.Publisher('cmd_vel_1', Twist, queue_size=10)
-            #self._reference_height['tracking'] = rospy.get_param('/starting_height_tracking', 1)
-            self._reference_height['tracking'] = 4
-            #self._reference_height['fleeing'] = rospy.get_param('/starting_height_fleeing', 1)
-            self._reference_height['fleeing'] = 0.5
+            self._reference_height['tracking'] = rospy.get_param('/starting_height_tracking', 4)
+            self._reference_height['fleeing'] = rospy.get_param('/starting_height_fleeing', 1)
             for agent in ['tracking', 'fleeing']:
                 sensor = SensorType.position
                 sensor_topic = rospy.get_param(f'/robot/{agent}_{sensor.name}_sensor/topic')
@@ -124,7 +122,7 @@ class AltitudeControl:
         height = self._height[agent]
         reference_height = self._reference_height[agent]
         if height < (reference_height - 0.1):
-            twist.linear.z = +0.5
+            twist.linear.z = +(reference_height - height)
         elif height > (reference_height + 0.1):
             twist.linear.z = -0.5
         else:
