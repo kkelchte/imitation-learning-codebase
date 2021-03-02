@@ -17,7 +17,7 @@ job_configs:
     gpu_mem_mb: 1900
     use_singularity: true
     check_if_ros_already_in_use: false
-    save_locally: true
+    save_locally: false
     save_before_wall_time: true
     singularity_dir: /esat/opal/kkelchte/singularity_images/ubuntu
     singularity_file: /esat/opal/kkelchte/singularity_images/ubuntu/image-0.1.7.sif
