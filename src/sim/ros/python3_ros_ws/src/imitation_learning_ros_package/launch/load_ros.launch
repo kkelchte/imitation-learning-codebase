@@ -123,11 +123,17 @@
               output="screen"/>
     </group>
 
-    <arg name="chessboard_detector" default="false"/>
-    <group if="$(arg chessboard_detector)">
+    <arg name="april_tag_detector" default="false"/>
+    <group if="$(arg april_tag_detector)">
+        <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+            <arg name="camera_name" value="bebop" if="$(eval arg('robot_name') == 'bebop_real')"/>
+            <arg name="camera_frame" value="camera_optical" if="$(eval arg('robot_name') == 'bebop_real')"/>
+            <arg name="camera_name" value="forward" if="$(eval arg('robot_name') == 'drone_sim')"/>
+            <arg name="camera_frame" value="forward_optical_frame" if="$(eval arg('robot_name') == 'drone_sim')"/>
+        </include>
         <node pkg="imitation_learning_ros_package"
-              name="chessboard_detector"
-              type="chessboard_detector.py"
+              name="april_tag_detector"
+              type="april_tag_detector.py"
               output="screen"/>
     </group>
 
@@ -163,13 +169,6 @@
               name="modified_state_frame_visualizer"
               type="modified_state_frame_visualizer.py"
               output="screen"/>
-    </group>
-
-    <!--######################## EXTERNAL HELPER NODES ########################-->
-
-    <arg name="april_tag_detector" default="false"/>
-    <group if="$(arg april_tag_detector)">
-        <include file="$(find apriltag_ros)/launch/continuous_detection.launch"/>
     </group>
 
     <!--######################## ACTOR NODES ########################-->

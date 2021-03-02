@@ -61,7 +61,28 @@
       </link>
     </model>
     <include>
-      <uri>model://checkerboard_6_4_0_039</uri>
+      <uri>model://Apriltag36_11_00000</uri>
+      <pose frame=''>1 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://Apriltag36_11_00001</uri>
+      <pose frame=''>2 1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://Apriltag36_11_00002</uri>
+      <pose frame=''>3 1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://Apriltag36_11_00003</uri>
+      <pose frame=''>4 0 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://Apriltag36_11_00004</uri>
+      <pose frame=''>3 -1 0 0 0 0</pose>
+    </include>
+    <include>
+      <uri>model://Apriltag36_11_00005</uri>
+      <pose frame=''>2 -1 0 0 0 0</pose>
     </include>
     <gravity>0 0 -9.8</gravity>
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>

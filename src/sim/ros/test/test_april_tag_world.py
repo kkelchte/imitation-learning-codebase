@@ -31,7 +31,7 @@ class TestChessboardWorld(unittest.TestCase):
 
         self._config = {
             'output_path': self.output_dir,
-            'world_name': 'chessboard',
+            'world_name': 'april_tag',
             'robot_name': 'drone_sim',
             'gazebo': True,
             'fsm': True,
@@ -40,12 +40,11 @@ class TestChessboardWorld(unittest.TestCase):
             'control_mapping_config': 'mathias_controller',
             'altitude_control': True,
             'waypoint_indicator': False,
-            'chessboard_detector': True,
+            'april_tag_detector': True,
             'mathias_controller_with_KF': True,
             'mathias_controller_config_file_path_with_extension':
                 f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF.yml',
-            'starting_height': 1,
-            'x_pos': -2,
+            'starting_height': 0.5,
         }
 
         # spinoff roslaunch
@@ -58,8 +57,8 @@ class TestChessboardWorld(unittest.TestCase):
         subscribe_topics = [
             TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
                         msg_type=rospy.get_param('/robot/position_sensor/type')),
-            TopicConfig(topic_name='/waypoint_indicator/current_waypoint',
-                        msg_type='Float32MultiArray'),
+            TopicConfig(topic_name='/reference_ground_point',
+                        msg_type='PointStamped'),
             TopicConfig(topic_name='/fsm/state',
                         msg_type='String'),
             TopicConfig(topic_name=self.image_topic,
@@ -99,17 +98,10 @@ class TestChessboardWorld(unittest.TestCase):
 
         # check pose
         pose = self.get_pose()
-        frame = process_image(self.ros_topic.topic_values[self.image_topic])
-        plt.figure(figsize=(15, 20))
-        plt.imshow(frame)
-        plt.axis('off')
-        plt.tight_layout()
-        plt.savefig(f'{os.environ["HOME"]}/chessboard_view_{pose[0]}_{pose[1]}_{pose[2]}_{pose[3]}.png')
 
-        a = 100
-        # TODO save image
         self._pause_client.wait_for_service()
         self._pause_client.call()
+        a = 100
 
     def get_pose(self):
         if rospy.get_param('/robot/position_sensor/topic') in self.ros_topic.topic_values.keys():

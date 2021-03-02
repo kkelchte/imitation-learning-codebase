@@ -71,10 +71,12 @@ class MathiasController:
         self._robot = rospy.get_param('/robot/model_name')
         self.model = BebopModel()
         self.filter = KalmanFilter(model=self.model)
-        if 'real' in self._robot:
-            # Velocity in yaw is not measured on real bebop drone
-            # Therefore, measurements should be ignored (weight of innovation = 1/mease_noise_cov)
-            self.filter.meas_noise_cov[7, 7] = 10e8
+
+        # if 'real' in self._robot:
+        # Velocity in yaw is not measured on real bebop drone
+        # Therefore, measurements should be ignored (weight of innovation = 1/mease_noise_cov)
+        self.filter.meas_noise_cov[7, 7] = 10e8
+
         self.show_graph = self._specs['show_graph'] if 'show_graph' in self._specs.keys() else True
         self.data = {title: {
             axis: {label: [] for label in ['predicted', 'observed', 'adjusted']} for axis in ['x', 'y', 'z', 'yaw']}
@@ -108,9 +110,10 @@ class MathiasController:
 
         # listen to desired next reference point
         rospy.Subscriber('/reference_pose', PointStamped, self._reference_update)
+        rospy.Subscriber('/reference_ground_point', PointStamped, self._ground_reference_callback)
         rospy.Subscriber(name='/waypoint_indicator/current_waypoint',
                          data_class=Float32MultiArray,
-                         callback=self._reference_update)
+                         callback=self._waypoint_callback)
 
         # Robot sensors:
         for sensor in [SensorType.position]:
@@ -259,22 +262,35 @@ class MathiasController:
             self.vel_est.point.y = result.twist.twist.linear.y
             self.vel_est.point.z = result.twist.twist.linear.z
 
-    def _reference_update(self, message: PointStamped) -> None:
-        if isinstance(message, PointStamped):
-            pose_ref = message
-            if message.header.frame_id == "agent":
-                # transform from agent to world frame.
-                # pose_estimate.orientation only incorporates yaw turn (not roll and pitch)
-                pose_ref.point = transform(points=[pose_ref.point],
-                                           orientation=self.pose_est.pose.orientation,
-                                           translation=self.pose_est.pose.position)[0]
-                pose_ref.header.frame_id = "global"
-        elif isinstance(message, Float32MultiArray):  # in case of global waypoint
-            pose_ref = message.data
-            pose_ref = PointStamped(header=Header(frame_id="global"),
-                                    point=Point(x=pose_ref[0],
-                                                y=pose_ref[1],
-                                                z=self.pose_est.pose.position.z if len(pose_ref) == 2 else pose_ref[2]))
+    def _waypoint_callback(self, message: Float32MultiArray):
+        pose_ref = message.data
+        pose_ref = PointStamped(header=Header(frame_id="global"),
+                                point=Point(x=pose_ref[0],
+                                            y=pose_ref[1],
+                                            z=self.pose_est.pose.position.z if len(pose_ref) == 2 else pose_ref[2]))
+        self._reference_update(pose_ref)
+
+    def _ground_reference_callback(self, pose_ref: PointStamped):
+        cprint(f'received tag pose: {pose_ref.point}', self._logger)
+        # map from optical camera to agent base_link coordinates
+        pose_ref.point = transform(points=[pose_ref.point],
+                                   orientation=Quaternion(x=0.553, y=-0.553, z=0.44, w=-0.44),
+                                   translation=np.asarray([0.1, 0, 0]))[0]
+        # add current height as desired flying height
+        pose_ref.point.z = 0
+        pose_ref.header.frame_id = "agent"
+        cprint(f'mapped to agent frame: {pose_ref.point}', self._logger)
+        self._reference_update(pose_ref)
+
+    def _reference_update(self, pose_ref: PointStamped):
+        if pose_ref.header.frame_id == "agent":
+            # transform from agent to world frame.
+            # pose_estimate.orientation only incorporates yaw turn (not roll and pitch)
+            pose_ref.point = transform(points=[pose_ref.point],
+                                       orientation=self.pose_est.pose.orientation,
+                                       translation=self.pose_est.pose.position)[0]
+            pose_ref.header.frame_id = "global"
+            cprint(f'mapped to global frame: {pose_ref.point}', self._logger)
         if pose_ref != self.pose_ref:
             # reset pose error when new reference comes in.
             self.prev_pose_error = PointStamped(header=Header(frame_id="global"))
@@ -313,7 +329,7 @@ class MathiasController:
                     self._store_datapoint(self.last_cmd)
                     self._publisher.publish(twist)
                 self.count += 1
-                if self.count % 10 * self._rate_fps == 0:
+                if self.count % 10 * self._rate_fps == 0 and self.pose_est is not None and self.pose_ref is not None:
                     _, _, yaw = euler_from_quaternion(self.pose_est.pose.orientation)
                     msg = f'<<reference: {self.pose_ref.point}, \n<<pose: {self.pose_est.pose.position} \n ' \
                           f'<<yaw {yaw},  \ncontrol: {self.last_cmd.twist.linear}'

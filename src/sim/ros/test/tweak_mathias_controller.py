@@ -12,6 +12,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Empty, Header
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.spatial.transform import Rotation as R
 
 from src.core.utils import get_filename_without_extension, get_to_root_dir, get_data_dir, safe_wait_till_true
@@ -1145,6 +1146,7 @@ class TestMathiasController(unittest.TestCase):
             plt.ylabel("y [m]")
             plt.show()
 
+    @unittest.skip
     def test_waypoints_tracking_real_bebop_with_KF_with_keyboard(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -1225,6 +1227,126 @@ class TestMathiasController(unittest.TestCase):
             plt.xlabel("x [m]")
             plt.ylabel("y [m]")
             plt.show()
+
+    @unittest.skip
+    def test_april_tag_detector_real_bebop(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'april_tag',
+            'robot_name': 'bebop_real',
+            'gazebo': False,
+            'april_tag_detector': True,
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+
+        # subscribe to command control
+        subscribe_topics = [
+            TopicConfig(topic_name='/reference_ground_point', msg_type='PointStamped'),
+        ]
+
+        self.ros_topic = TestPublisherSubscriber(
+            subscribe_topics=subscribe_topics,
+            publish_topics=[]
+        )
+        safe_wait_till_true('"/reference_ground_point" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 25, 0.1, ros_topic=self.ros_topic)
+        while True:
+            print(f'waypoint: {self.ros_topic.topic_values["/reference_ground_point"]}')
+            time.sleep(0.5)
+
+    def test_april_tag_detector_real_bebop_KF(self):
+        self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        self._config = {
+            'output_path': self.output_dir,
+            'world_name': 'april_tag',
+            'robot_name': 'bebop_real',
+            'gazebo': False,
+            'fsm': True,
+            'fsm_mode': 'TakeOverRun',
+            'control_mapping': True,
+            'control_mapping_config': 'mathias_controller_keyboard',
+            'april_tag_detector': True,
+            'altitude_control': False,
+            'mathias_controller_with_KF': True,
+            'starting_height': 1.,
+            'keyboard': True,
+            'mathias_controller_config_file_path_with_extension':
+                f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF_real_bebop.yml',
+        }
+
+        # spinoff roslaunch
+        self._ros_process = RosWrapper(launch_file='load_ros.launch',
+                                       config=self._config,
+                                       visible=True)
+
+        # subscribe to command control
+        self.visualisation_topic = '/actor/mathias_controller/visualisation'
+        subscribe_topics = [
+            TopicConfig(topic_name=rospy.get_param('/robot/position_sensor/topic'),
+                        msg_type=rospy.get_param('/robot/position_sensor/type')),
+            TopicConfig(topic_name='/fsm/state',
+                        msg_type='String'),
+            TopicConfig(topic_name='/waypoint_indicator/current_waypoint', msg_type='Float32MultiArray'),
+            TopicConfig(topic_name=self.visualisation_topic,
+                        msg_type='Image')
+        ]
+        publish_topics = [
+            TopicConfig(topic_name='/fsm/reset', msg_type='Empty'),
+        ]
+
+        self.ros_topic = TestPublisherSubscriber(
+            subscribe_topics=subscribe_topics,
+            publish_topics=publish_topics
+        )
+
+        safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
+                            True, 25, 0.1, ros_topic=self.ros_topic)
+        self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data, FsmState.Unknown.name)
+
+        index = 0
+        while True:
+            # publish reset
+            self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+
+            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Running.name:
+                rospy.sleep(0.1)
+            safe_wait_till_true('"/reference_ground_point" in kwargs["ros_topic"].topic_values.keys()',
+                                True, 10, 0.1, ros_topic=self.ros_topic)
+            waypoints = []
+
+            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Terminated.name and \
+                    self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
+                rospy.sleep(0.5)
+                waypoint = self.ros_topic.topic_values['/reference_ground_point']
+                waypoints.append(waypoint.point)
+
+            plt.plot([p.x for p in waypoints], color='C0', label='x')
+            plt.plot([p.y for p in waypoints], color='C1', label='y')
+            plt.plot([p.z for p in waypoints], color='C2', label='z')
+
+            plt.legend()
+            plt.xlabel("time")
+            plt.show()
+
+            if self.visualisation_topic in self.ros_topic.topic_values.keys():
+                frame = process_image(self.ros_topic.topic_values[self.visualisation_topic])
+                plt.figure(figsize=(15, 20))
+                plt.imshow(frame)
+                plt.axis('off')
+                plt.tight_layout()
+                plt.savefig(f'{os.environ["HOME"]}/april_tag/track_{index}.png')
+            plt.clf()
+            plt.close()
+            index += 1
 
     def tearDown(self) -> None:
         self._ros_process.terminate()
