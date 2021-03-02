@@ -20,4 +20,4 @@ job_configs:
     save_locally: false
     save_before_wall_time: true
     singularity_dir: /esat/opal/kkelchte/singularity_images/ubuntu
-    singularity_file: /esat/opal/kkelchte/singularity_images/ubuntu/image-0.1.7.sif
+    singularity_file: /esat/opal/kkelchte/singularity_images/ubuntu/image-0.1.8.sif
