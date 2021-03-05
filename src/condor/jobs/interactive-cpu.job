@@ -8,6 +8,6 @@ RequestDisk	= 5 G
 # max time 4h
 +RequestWallTime = 1*60*60
 Request_GPUS    = 0
-<<<<<<< HEAD
+
 Requirements = (machineowner == "Visics") && ( OpSysAndVer == "Fedora33" ) && ( Mips >= 26000 )
 Queue
