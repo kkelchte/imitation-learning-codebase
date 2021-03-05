@@ -1326,27 +1326,27 @@ class TestMathiasController(unittest.TestCase):
             while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Terminated.name and \
                     self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
                 rospy.sleep(0.5)
-                waypoint = self.ros_topic.topic_values['/reference_ground_point']
-                waypoints.append(waypoint.point)
+                #waypoint = self.ros_topic.topic_values['/reference_ground_point']
+                #waypoints.append(waypoint.point)
 
-            plt.plot([p.x for p in waypoints], color='C0', label='x')
-            plt.plot([p.y for p in waypoints], color='C1', label='y')
-            plt.plot([p.z for p in waypoints], color='C2', label='z')
+            #plt.plot([p.x for p in waypoints], color='C0', label='x')
+            #plt.plot([p.y for p in waypoints], color='C1', label='y')
+            #plt.plot([p.z for p in waypoints], color='C2', label='z')
 
-            plt.legend()
-            plt.xlabel("time")
-            plt.show()
+            #plt.legend()
+            #plt.xlabel("time")
+            #plt.show()
 
-            if self.visualisation_topic in self.ros_topic.topic_values.keys():
+            #if self.visualisation_topic in self.ros_topic.topic_values.keys():
                 frame = process_image(self.ros_topic.topic_values[self.visualisation_topic])
                 plt.figure(figsize=(15, 20))
                 plt.imshow(frame)
                 plt.axis('off')
                 plt.tight_layout()
                 plt.savefig(f'{os.environ["HOME"]}/april_tag/track_{index}.png')
-            plt.clf()
-            plt.close()
-            index += 1
+            #plt.clf()
+            #plt.close()
+            #index += 1
 
     def tearDown(self) -> None:
         self._ros_process.terminate()
