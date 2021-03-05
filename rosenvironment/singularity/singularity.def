@@ -96,6 +96,8 @@ apt-get update && apt-get install -yq\
     libsuitesparse-dev libeigen3-dev libboost-all-dev \
     ros-melodic-rqt \
     ros-melodic-rqt-common-plugins \
+    python3-tk \
+    python-tk \
     && rm -rf /var/lib/apt/lists/*
 
 
