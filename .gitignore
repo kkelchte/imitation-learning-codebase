@@ -192,3 +192,4 @@ test_dir/
 /.keras/
 
 *.sif
+*.code-workspace
