@@ -1261,6 +1261,7 @@ class TestMathiasController(unittest.TestCase):
             print(f'waypoint: {self.ros_topic.topic_values["/reference_ground_point"]}')
             time.sleep(0.5)
 
+    #@unittest.skip
     def test_april_tag_detector_real_bebop_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -1295,7 +1296,7 @@ class TestMathiasController(unittest.TestCase):
                         msg_type=rospy.get_param('/robot/position_sensor/type')),
             TopicConfig(topic_name='/fsm/state',
                         msg_type='String'),
-            TopicConfig(topic_name='/waypoint_indicator/current_waypoint', msg_type='Float32MultiArray'),
+            TopicConfig(topic_name='/reference_ground_point', msg_type='PointStamped'),
             TopicConfig(topic_name=self.visualisation_topic,
                         msg_type='Image')
         ]
@@ -1314,41 +1315,42 @@ class TestMathiasController(unittest.TestCase):
 
         index = 0
         while True:
+            print(f'start loop: {index} with resetting')
             # publish reset
             self.ros_topic.publishers['/fsm/reset'].publish(Empty())
+            rospy.sleep(0.5)
 
+            print(f'waiting in overtake state')
             while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Running.name:
-                rospy.sleep(0.1)
-            safe_wait_till_true('"/reference_ground_point" in kwargs["ros_topic"].topic_values.keys()',
-                                True, 10, 0.1, ros_topic=self.ros_topic)
-            waypoints = []
-
-            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.Terminated.name and \
-                    self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
                 rospy.sleep(0.5)
-                #waypoint = self.ros_topic.topic_values['/reference_ground_point']
-                #waypoints.append(waypoint.point)
 
-            #plt.plot([p.x for p in waypoints], color='C0', label='x')
-            #plt.plot([p.y for p in waypoints], color='C1', label='y')
-            #plt.plot([p.z for p in waypoints], color='C2', label='z')
-
-            #plt.legend()
-            #plt.xlabel("time")
-            #plt.show()
-
-            #if self.visualisation_topic in self.ros_topic.topic_values.keys():
-                frame = process_image(self.ros_topic.topic_values[self.visualisation_topic])
-                plt.figure(figsize=(15, 20))
-                plt.imshow(frame)
-                plt.axis('off')
-                plt.tight_layout()
-                plt.savefig(f'{os.environ["HOME"]}/april_tag/track_{index}.png')
-            #plt.clf()
-            #plt.close()
-            #index += 1
+            #safe_wait_till_true('"/reference_ground_point" in kwargs["ros_topic"].topic_values.keys()',
+            #                    True, 10, 0.1, ros_topic=self.ros_topic)
+            waypoints = []
+            print(f'waiting in running state')
+            while self.ros_topic.topic_values["/fsm/state"].data != FsmState.TakenOver.name:
+                if '/reference_ground_point' in self.ros_topic.topic_values.keys() \
+                        and '/bebop/odom' in self.ros_topic.topic_values.keys():
+                    odom = self.ros_topic.topic_values[rospy.get_param('/robot/position_sensor/topic')]
+                    point = transform([self.ros_topic.topic_values['/reference_ground_point'].point],
+                                      orientation=odom.pose.pose.orientation,
+                                      translation=odom.pose.pose.position)[0]
+                    waypoints.append(point)
+                rospy.sleep(0.5)
+            if len(waypoints) != 0:
+                plt.clf()
+                fig = plt.figure()
+                ax = fig.add_subplot(111, projection='3d')
+                ax.scatter([_.x for _ in waypoints],
+                           [_.y for _ in waypoints],
+                           [_.z for _ in waypoints], label='waypoints')
+                ax.legend()
+                plt.savefig(os.path.join(self.output_dir, f'image_{index}.jpg'))
+                #plt.show()
+            index += 1
 
     def tearDown(self) -> None:
+        print(f'shutting down...')
         self._ros_process.terminate()
         # shutil.rmtree(self.output_dir, ignore_errors=True)
 
