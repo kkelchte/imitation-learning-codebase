@@ -52,12 +52,36 @@ def get_slow_run(state: np.ndarray) -> np.ndarray:
     difference = (agent_one - agent_zero)
     for diff in difference:
         if diff == 0:
-            difference += (np.random.rand(2) - 0.5)/10
+            difference += (np.random.rand(2) - 0.5) / 10
     difference = np.sign(difference)
     return 0.2 * difference
 
 
-def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2**0.5) -> None:
+def get_waypoint(playfield_size: Tuple[float, float, float]) -> np.ndarray:
+    assert len(playfield_size) == 3
+    return np.multiply(2 * np.asarray(playfield_size), np.random.random(3)) - np.asarray(playfield_size) \
+        + np.asarray([3, 0, 0])
+
+
+def get_slow_run_ros(waypoint: np.ndarray, position: np.ndarray, playfield_size: Tuple[float, float, float]) \
+        -> np.ndarray:
+    action = [0, 0, 0]
+    for i in range(3):
+        if playfield_size[i] == 0:
+            continue
+        if abs(waypoint[i] - position[i]) < 0.1:
+            waypoint = get_waypoint(playfield_size)
+        action[i] = -0.3*np.sign(waypoint[i] - position[i])
+    return np.asarray([waypoint, action])
+
+
+def get_slow_hunt_ros(state: np.ndarray, playfield_size: Tuple[float, float, float]) -> np.ndarray:
+    tracking_agent = state[:3]
+    fleeing_agent = state[3:6]
+    return np.multiply(playfield_size, 0.3 * np.sign(fleeing_agent - tracking_agent))
+
+
+def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2 ** 0.5) -> None:
     for p in weights.parameters():
         if len(p.shape) == 1:
             p.data.zero_()
@@ -100,9 +124,9 @@ def mlp_creator(sizes: List[int], activation: nn.Module = None, output_activatio
                 bias_in_last_layer: bool = True) -> nn.Module:
     """Create Multi-Layer Perceptron"""
     layers = []
-    for j in range(len(sizes)-1):
-        is_not_last_layer = j < len(sizes)-2
-        layers += [nn.Linear(sizes[j], sizes[j+1], bias=True if bias_in_last_layer else is_not_last_layer)]
+    for j in range(len(sizes) - 1):
+        is_not_last_layer = j < len(sizes) - 2
+        layers += [nn.Linear(sizes[j], sizes[j + 1], bias=True if bias_in_last_layer else is_not_last_layer)]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act]
@@ -124,11 +148,12 @@ def conv_creator(channels: List[int], kernel_sizes: List[int] = None,
                              stride=2 if strides is None else strides[j],
                              bias=True if bias_in_last_layer else is_not_last_layer)]
         if batch_norm:
-            layers += [nn.BatchNorm2d(channels[j+1])]
+            layers += [nn.BatchNorm2d(channels[j + 1])]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act]
     return nn.Sequential(*layers)
+
 
 ##################################################################
 # Test Helper Functions
@@ -162,6 +187,7 @@ def get_checksum_network_parameters(parameters: Union[List[torch.Tensor],
     for p in parameters:
         count_weights += torch.sum(p).item()
     return count_weights
+
 
 ##################################################################
 # Phi (gradient weight) estimates

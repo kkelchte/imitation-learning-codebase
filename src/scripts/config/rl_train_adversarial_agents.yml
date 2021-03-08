@@ -10,14 +10,14 @@ architecture_config:
   random_seed: 123
 environment_config:
   factory_key: ROS
-  max_number_of_steps: 20
+  max_number_of_steps: 500
   ros_config:
     info:
       - frame
     observation: modified_state
     action_topic: python
     num_action_publishers: 2
-    visible_xterm: false
+    visible_xterm: true
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123

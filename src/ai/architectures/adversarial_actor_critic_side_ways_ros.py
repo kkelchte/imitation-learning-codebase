@@ -8,7 +8,8 @@ from torch.distributions import Normal
 
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator, get_slow_hunt, clip_action_according_to_playfield_size
+from src.ai.utils import mlp_creator, get_waypoint, clip_action_according_to_playfield_size, get_slow_run_ros, \
+    get_slow_hunt_ros
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -42,6 +43,8 @@ class Net(BaseNet):
         self.action_min = -1
         self.action_max = 1
         self.starting_height = -1
+
+        self.waypoint = get_waypoint(self._playfield_size)
 
         self._actor = mlp_creator(sizes=[self.input_size[0], 10, 1],  # for now actors can only fly sideways
                                   activation=nn.Tanh(),
@@ -101,9 +104,14 @@ class Net(BaseNet):
             output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
             adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                                           max=self.action_max)
+            slow_run = get_slow_run_ros(self.waypoint, np.asarray(positions[3:6]).squeeze(), self._playfield_size)
+            self.waypoint = np.squeeze(slow_run[0])
+            hunt_action = np.squeeze(get_slow_hunt_ros(np.asarray(positions), self._playfield_size))
+            run_action = np.squeeze(slow_run[1])
             actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
                                 0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
                                 0, 0], axis=-1)
+            #actions = np.stack([*hunt_action, *run_action, 0, 0], axis=-1)
 
         # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
         actions = clip_action_according_to_playfield_size(positions.detach().numpy().squeeze(),

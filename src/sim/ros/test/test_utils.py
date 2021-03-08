@@ -25,10 +25,10 @@ class TestUtils(unittest.TestCase):
         distance(np.asarray([0, 0, 2]).reshape((1, 1, 3)), np.asarray([0, 0, 0]).reshape((1, 1, 3)))
 
     def test_bounding_box(self):
-        resolution = (1000, 1000)
+        resolution = (400, 400)
         tracking_agent_position = [0, 0, 4]
         tracking_agent_orientation = [0, 0, 0]
-        fleeing_agent_position = [1, 0, 1]
+        fleeing_agent_position = [2, 0, 1]
         bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
                                                        *fleeing_agent_position,
                                                        *tracking_agent_orientation],

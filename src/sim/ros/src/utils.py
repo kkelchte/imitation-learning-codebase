@@ -274,11 +274,11 @@ def transform(points: List[np.ndarray],
 
 
 def calculate_bounding_box(state: Sequence,
-                           resolution: tuple = (1000, 1000),
+                           resolution: tuple = (400, 400),
                            orientation: tuple = (1, 0, 0),
                            focal_length: int = 20,
-                           kx: int = 50,
-                           ky: int = 50,
+                           kx: int = 20,
+                           ky: int = 20,
                            skew: float = 0) -> Tuple[Tuple[int, int], int, int, Tuple[int, int], int, int]:
     """
     Fleeing agent in the frame of tracking agent is represented as a bounding box
@@ -296,14 +296,11 @@ def calculate_bounding_box(state: Sequence,
     pitch = state[7]
     yaw = state[8]
 
-    if orientation == (0, 0, 1):
-        z, x, y = relative_coordinates(agent0, agent1, yaw, pitch - pi/2, roll)
-    elif orientation == (1, 0, 1):
-        z, x, y = relative_coordinates(agent0, agent1, yaw, pitch - pi/4, roll)
-    else:
-        z, x, y = relative_coordinates(agent0, agent1, yaw, pitch, roll)
+    z, x, y = relative_coordinates(agent0, agent1, yaw, pitch, roll, orientation)
 
-    y = -y
+    if z == 0:
+        z = 0.1
+
     u = focal_length * x / z
     v = focal_length * y / z
 
@@ -313,22 +310,26 @@ def calculate_bounding_box(state: Sequence,
     h_drone = 0.2
 
     pos0 = (x0, y0)
-    pos1 = (int(x0 - u * kx + v * skew), int(y0 + v * ky))
+    pos1 = (int(x0 - u * x0 / kx + v * skew), int(y0 - v * y0 / ky))
+
+    if pos1[0] < 0 or pos1[1] < 0:
+        pos1 = None
 
     mx = z / sqrt(z ** 2 + x ** 2)
     my = z / sqrt(z ** 2 + y ** 2)
-    w0 = int((kx * w_drone * focal_length / min_dist) * resolution[0]/1000)
-    h0 = int((ky * h_drone * focal_length / min_dist) * resolution[1]/1000)
-    w1 = int((mx * kx * w_drone * focal_length / z) * resolution[0]/1000)
-    h1 = int((my * ky * h_drone * focal_length / z) * resolution[1]/1000)
+    w0 = 3 * int(x0 / kx * w_drone * focal_length / min_dist)
+    h0 = 3 * int(y0 / ky * h_drone * focal_length / min_dist)
+    w1 = 3 * int(mx * x0 / kx * w_drone * focal_length / z)
+    h1 = 3 * int(my * y0 / ky * h_drone * focal_length / z)
     return pos0, w0, h0, pos1, w1, h1
 
 
 def relative_coordinates(pos_agent0: np.ndarray,
-                             pos_agent1: np.ndarray,
-                             yaw: float,
-                             pitch: float,
-                             roll: float) -> np.ndarray:
+                         pos_agent1: np.ndarray,
+                         yaw: float,
+                         pitch: float,
+                         roll: float,
+                         orientation: tuple = (1, 0, 0)) -> np.ndarray:
     """
     pos_agent0: 3d global coordinates of agent 0 (tracking)
     pos_agent1: 3d global coordinates of agent 1 (fleeing)
@@ -337,11 +338,20 @@ def relative_coordinates(pos_agent0: np.ndarray,
     pitch: float global pitch turn pos_agent0
     return relative pose (rotation and translation) of agent1 (fleeing) in the frame of agent0 (tracking)
     """
+    if orientation == (0, 0, 1):
+        cam_angle = -pi/2
+    elif orientation == (1, 0, 1):
+        cam_angle = -pi/4
+    else:
+        cam_angle = 0
+
+    pre_rot = np.array([[cos(cam_angle), 0, sin(cam_angle)], [0, 1, 0], [-sin(cam_angle), 0, cos(cam_angle)]])
     rot = np.array([[cos(yaw) * cos(pitch), cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll),
                      cos(yaw) * sin(pitch) * cos(roll) + sin(yaw) * sin(roll)],
                     [sin(yaw) * cos(pitch), sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll),
                      sin(yaw) * sin(pitch) * sin(roll) - cos(yaw) * sin(roll)],
                     [-sin(pitch), cos(pitch) * sin(roll), cos(pitch) * cos(roll)]])
+    rot = pre_rot.dot(rot)
     relative_pos = np.squeeze(np.transpose(rot.dot(np.transpose(np.array(pos_agent1 - pos_agent0)))))
     return relative_pos
 
@@ -376,10 +386,10 @@ def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
 
 
 def calculate_inverse_relative_pixel_distance(center, pixel_pos) -> float:
-    size = 2*center
+    size = 2 * center
     max_dist = distance(center, size)
     dist = distance(center, pixel_pos)
-    return (max_dist-dist)/max_dist
+    return (max_dist - dist) / max_dist
 
 
 #########################################
