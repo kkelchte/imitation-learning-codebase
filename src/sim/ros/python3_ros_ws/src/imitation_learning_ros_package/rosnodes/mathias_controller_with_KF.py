@@ -273,13 +273,14 @@ class MathiasController:
     def _ground_reference_callback(self, pose_ref: PointStamped):
         cprint(f'received tag pose: {pose_ref.point}', self._logger)
         # map from optical camera to agent base_link coordinates
-        pose_ref.point = transform(points=[pose_ref.point],
-                                   orientation=Quaternion(x=0.553, y=-0.553, z=0.44, w=-0.44),
-                                   translation=np.asarray([0.1, 0, 0]))[0]
-        # add current height as desired flying height
+        if pose_ref.header.frame_id == 'camera_optical':
+            pose_ref.point = transform(points=[pose_ref.point],
+                                       orientation=Quaternion(x=0.553, y=-0.553, z=0.44, w=-0.44),
+                                       translation=np.asarray([0.1, 0, 0]))[0]
+            # add current height as desired flying height
+            pose_ref.header.frame_id = "agent"
+            cprint(f'mapped to agent frame: {pose_ref.point}', self._logger)
         pose_ref.point.z = 0
-        pose_ref.header.frame_id = "agent"
-        cprint(f'mapped to agent frame: {pose_ref.point}', self._logger)
         self._reference_update(pose_ref)
 
     def _reference_update(self, pose_ref: PointStamped):

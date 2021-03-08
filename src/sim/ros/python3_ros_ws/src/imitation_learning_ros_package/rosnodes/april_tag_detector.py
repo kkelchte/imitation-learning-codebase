@@ -17,6 +17,7 @@ from geometry_msgs.msg import Transform, PointStamped, Point
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32MultiArray, Empty, String
 from tf2_msgs.msg import TFMessage
+from tf2_ros.transform_listener import TransformListener
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
@@ -36,6 +37,8 @@ class AprilTagDetector:
 
         # fields
         self._detected_waypoints = {}
+        self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.3)
+
 
         # publishers
         self._publisher = rospy.Publisher('/reference_ground_point', PointStamped, queue_size=10)
@@ -50,17 +53,21 @@ class AprilTagDetector:
         for transform in msg.transforms:
             if 'tag' in transform.child_frame_id:
                 distance = sum([transform.transform.translation.x**2,
-                                transform.transform.translation.y**2,
-                                transform.transform.translation.z**2])
+                                transform.transform.translation.y**2])  # , transform.transform.translation.z**2
                 self._detected_waypoints[distance] = transform.transform.translation
+
+    def _select_next_waypoint_transform(self) -> Transform.translation:
+        distances = list(self._detected_waypoints.keys())
+        distances.sort()
+        while distances[0] < self._waypoint_reached_distance:
+            distances.pop(0)
+        return self._detected_waypoints[distances[0]]
 
     def run(self):
         rate = rospy.Rate(1)
         while not rospy.is_shutdown():
             if self._detected_waypoints != {}:
-                distances = list(self._detected_waypoints.keys())
-                distances.sort()
-                closest_tag_transform = self._detected_waypoints[distances[0]]
+                closest_tag_transform = self._select_next_waypoint_transform()
                 reference_point = PointStamped(point=Point(
                     x=closest_tag_transform.x,
                     y=closest_tag_transform.y,
