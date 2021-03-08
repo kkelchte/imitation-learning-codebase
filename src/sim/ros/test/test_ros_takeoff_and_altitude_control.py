@@ -23,7 +23,7 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 
 class TestTakeOffAndAltitudeControl(unittest.TestCase):
 
-    @unittest.skip
+    #@unittest.skip
     def test_single_drone(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -113,7 +113,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
             self._pause_client.wait_for_service()
             self._pause_client.call()
 
-    # @unittest.skip
+    @unittest.skip
     def test_double_drone(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
