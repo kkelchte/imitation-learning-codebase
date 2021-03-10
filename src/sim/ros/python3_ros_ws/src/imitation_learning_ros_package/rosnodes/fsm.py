@@ -68,7 +68,7 @@ class Fsm:
         stime = time.time()
         max_duration = 60
         while not rospy.has_param('/fsm/mode') and time.time() < stime + max_duration:
-            time.sleep(0.01)
+            time.sleep(0.1)
 
         self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
         self._output_path = get_output_path()

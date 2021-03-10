@@ -46,7 +46,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
         # spinoff roslaunch
         self._ros_process = RosWrapper(launch_file='load_ros.launch',
                                        config=self._config,
-                                       visible=True)
+                                       visible=False)
 
         # subscribe to command control
         subscribe_topics = [
