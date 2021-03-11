@@ -123,8 +123,8 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
             'fsm_mode': 'TakeOverRun',
             'control_mapping': True,
             'control_mapping_config': 'python_adversarial',
-            'altitude_control': True,
-            'ros_expert': True,
+            'altitude_control': False,
+            'ros_expert': False,
             'starting_height': height
         }
 
