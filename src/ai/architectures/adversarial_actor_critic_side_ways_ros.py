@@ -43,6 +43,7 @@ class Net(BaseNet):
         self.action_min = -1
         self.action_max = 1
         self.starting_height = -1
+        self.previous_input = torch.Tensor([200, 200, 20, 20])
 
         self.waypoint = get_waypoint(self._playfield_size)
 
@@ -90,9 +91,13 @@ class Net(BaseNet):
 
     def get_action(self, inputs, train: bool = False, agent_id: int = -1) -> Action:
         positions = np.squeeze(self.process_inputs(inputs))
-        bb = calculate_bounding_box(inputs)
-        inputs = (bb[3][0], bb[3][1], bb[4], bb[5])  # only info fleeing agent is relevant, info tracking is constant
-        inputs = np.squeeze(self.process_inputs(inputs))
+        try:
+            bb = calculate_bounding_box(inputs)
+            inputs = (bb[3][0], bb[3][1], bb[4], bb[5])
+            inputs = np.squeeze(self.process_inputs(inputs))
+            self.previous_input = inputs
+        except TypeError:
+            inputs = self.previous_input
         if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
             actions = np.stack([0, output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0])
@@ -151,8 +156,14 @@ class Net(BaseNet):
     def critic(self, inputs, train: bool = False) -> torch.Tensor:
         if len(inputs[0]) == 9:
             for index in range(len(inputs)):
-                bb = calculate_bounding_box(np.asarray(inputs[index]))
-                inputs[index] = torch.Tensor([bb[3][0], bb[3][1], bb[4], bb[5]])
+                try:
+                    bb = calculate_bounding_box(np.asarray(inputs[index]))
+                    inputs[index] = torch.Tensor([bb[3][0], bb[3][1], bb[4], bb[5]])
+                except TypeError:
+                    if index == 0:
+                        inputs[index] = torch.Tensor([200, 200, 20, 20])
+                    else:
+                        inputs[index] = inputs[index-1]
         self._critic.train()
         inputs = np.squeeze(self.process_inputs(inputs=inputs))
         return self._critic(inputs)
