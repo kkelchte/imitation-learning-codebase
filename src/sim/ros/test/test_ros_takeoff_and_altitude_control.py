@@ -1,29 +1,24 @@
 import os
 import shutil
-import time
 import unittest
 
-import numpy as np
 import rospy
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
 from geometry_msgs.msg import Pose
 from std_msgs.msg import Empty
-from std_srvs.srv import Empty as Emptyservice, EmptyRequest
+from std_srvs.srv import Empty as Emptyservice
 
 from src.core.utils import get_filename_without_extension, get_to_root_dir, get_data_dir, safe_wait_till_true
-from src.core.data_types import TerminationType, SensorType
-from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.src.utils import quaternion_from_euler
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 
 
 class TestTakeOffAndAltitudeControl(unittest.TestCase):
 
-    #@unittest.skip
+    @unittest.skip
     def test_single_drone(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -113,7 +108,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
             self._pause_client.wait_for_service()
             self._pause_client.call()
 
-    @unittest.skip
+    #@unittest.skip
     def test_double_drone(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)

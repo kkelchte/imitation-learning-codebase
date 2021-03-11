@@ -27,11 +27,9 @@ import os
 import time
 from copy import deepcopy
 
-import actionlib
 import rospy
 from geometry_msgs.msg import Twist
-from hector_uav_msgs.msg import TakeoffAction, TakeoffActionGoal
-from std_msgs.msg import String, Empty
+from std_msgs.msg import String
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -46,7 +44,7 @@ class ControlMapper:
         stime = time.time()
         max_duration = 60
         while not rospy.has_param('/control_mapping/mapping') and time.time() < stime + max_duration:
-            time.sleep(0.01)
+            time.sleep(0.1)
 
         self._output_path = get_output_path()
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)

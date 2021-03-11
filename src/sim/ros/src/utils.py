@@ -1,12 +1,11 @@
 #!/usr/bin/python3.8
 import os
 from math import sqrt, cos, sin
-from typing import Union, List, Tuple, Iterable, Sequence
+from typing import Union, List, Tuple, Sequence
 from collections import namedtuple
 
 import numpy as np
 import rospy
-from cv2 import cv2
 from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R

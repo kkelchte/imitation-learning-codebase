@@ -6,18 +6,15 @@ from collections import OrderedDict
 
 import rospy
 import yaml
-from std_msgs.msg import Float32MultiArray, String
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
-import actionlib
-from hector_uav_msgs.msg import *
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
 from src.sim.common.noise import *
 from src.core.data_types import Action, SensorType
-from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_quaternion, \
     get_output_path, apply_noise_to_twist, process_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
