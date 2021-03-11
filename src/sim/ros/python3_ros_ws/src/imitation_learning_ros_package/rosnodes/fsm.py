@@ -1,7 +1,11 @@
 #!/usr/bin/python3.8
 import time
+import os
 from copy import deepcopy
 from enum import IntEnum
+
+for k in os.environ.keys():
+    print(f'{k}: {os.environ[k]}')
 
 import numpy as np
 import rospy

@@ -119,7 +119,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
             'world_name': 'empty',
             'robot_name': 'double_drone_sim',
             'gazebo': True,
-            'fsm': False,
+            'fsm': True,
             'fsm_mode': 'TakeOverRun',
             'control_mapping': False,
             'control_mapping_config': 'python_adversarial',
