@@ -192,3 +192,10 @@ test_dir/
 /.keras/
 
 *.sif
+/person_detection/test_images/
+/checkpoint.ckpt
+/utils/
+/yolo_demo.py
+/models.py
+/person_detection/
+/person_detection/
