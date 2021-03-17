@@ -6,18 +6,19 @@ Keep track of current position and next waypoint.
 extension 1:
 keep track of 2d (or 3d) poses to map trajectory in a topdown view.
 """
+import copy
 import os
 import sys
 import time
-
+from typing import Any, Union
 
 import numpy as np
 import rospy
-from geometry_msgs.msg import Transform, PointStamped, Point
+from geometry_msgs.msg import Transform, PointStamped, Point, TransformStamped, PoseStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32MultiArray, Empty, String
 from tf2_msgs.msg import TFMessage
-from tf2_ros.transform_listener import TransformListener
+from apriltag_ros.msg import AprilTagDetectionArray
 
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
@@ -36,48 +37,87 @@ class AprilTagDetector:
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
 
         # fields
-        self._detected_waypoints = {}
+        self._optical_to_base_transformation_dict = {
+            '/forward/image_raw': {'translation': [0, -0.086, -0.071],
+                                   'rotation': [0.553, -0.553, 0.440, 0.440]},
+            '/down/image_raw': {'translation': [-0.000, 0.050, -0.100],
+                                'rotation': [0.707, -0.707, 0.000, 0.000]},
+            '/bebop/image_raw': {'translation': [0.1, 0.0, 0],
+                                 'rotation': [0.553, -0.553, 0.44, -0.44]},
+        }
+        self._optical_to_base_transformation = self._optical_to_base_transformation_dict[
+            rospy.get_param('/robot/camera_sensor/topic')
+        ]
+        self._tag_transforms = {}
         self._waypoint_reached_distance = rospy.get_param('/world/waypoint_reached_distance', 0.3)
-
-
+        self._calculating = False  # Don't update tag detections while calculating closest
         # publishers
-        self._publisher = rospy.Publisher('/reference_ground_point', PointStamped, queue_size=10)
+        self._publisher = rospy.Publisher('/reference_pose', PointStamped, queue_size=10)
 
         # subscribe
-        rospy.Subscriber(name='/tf',
-                         data_class=TFMessage,
+        rospy.Subscriber(name='/tag_detections',
+                         data_class=AprilTagDetectionArray,
                          callback=self._set_tag_transforms)
         rospy.init_node('april_tag_detector')
+        cprint(f"Initialised", logger=self._logger)
 
-    def _set_tag_transforms(self, msg: TFMessage):
-        for transform in msg.transforms:
-            if 'tag' in transform.child_frame_id:
-                distance = sum([transform.transform.translation.x**2,
-                                transform.transform.translation.y**2])  # , transform.transform.translation.z**2
-                self._detected_waypoints[distance] = transform.transform.translation
+    def _set_tag_transforms(self, msg: AprilTagDetectionArray):
+        if self._calculating:
+            return
+        for detection in msg.detections:
+            self._tag_transforms[detection.id] = detection.pose
 
-    def _select_next_waypoint_transform(self) -> Transform.translation:
-        distances = list(self._detected_waypoints.keys())
-        distances.sort()
-        while distances[0] < self._waypoint_reached_distance:
-            distances.pop(0)
-        return self._detected_waypoints[distances[0]]
+    def _select_next_waypoint_transform(self) -> Union[PointStamped, None]:
+        # transform detected tags to agents base_link
+        tags_in_base_link = {}
+        for k in self._tag_transforms.keys():
+            tags_in_base_link[k] = transform(
+                points=[self._tag_transforms[k].pose.pose.position],
+                orientation=self._optical_to_base_transformation['rotation'],
+                translation=np.asarray(self._optical_to_base_transformation['translation']),
+                invert=True
+            )[0]
+        # for all tag transforms lying in front (x>0 in base_link frame), measure the distance
+        distances = {
+            k: np.sqrt(sum([tags_in_base_link[k].x**2,
+                            tags_in_base_link[k].y**2]))
+            for k in self._tag_transforms.keys() if tags_in_base_link[k].x > 0
+        }
+        # ignore tags that are closer than the 'distance-reached'
+        further_distances = {k: distances[k] for k in distances.keys()
+                             if distances[k] > self._waypoint_reached_distance}
+
+        # TODO: ignore tags with a too large covariance
+
+        # sort tags and take closest
+        sorted_distances = dict(sorted(further_distances.items(), key=lambda item: item[1]))
+        if len(sorted_distances) == 0:
+            return None
+        else:
+            tag_id = list(sorted_distances.keys())[0]
+        # create a PointStamped message
+
+        reference_point = PointStamped(point=Point(
+            x=tags_in_base_link[tag_id].x,
+            y=tags_in_base_link[tag_id].y,
+            z=0  # as tag lies probably on the ground just fly towards and above it
+        ))
+        reference_point.header.frame_id = 'agent'
+        reference_point.header.stamp = self._tag_transforms[tag_id].header.stamp
+        return reference_point
 
     def run(self):
         rate = rospy.Rate(1)
         while not rospy.is_shutdown():
-            if self._detected_waypoints != {}:
-                closest_tag_transform = self._select_next_waypoint_transform()
-                reference_point = PointStamped(point=Point(
-                    x=closest_tag_transform.x,
-                    y=closest_tag_transform.y,
-                    z=closest_tag_transform.z
-                )
-                )
-                reference_point.header.frame_id = 'camera_optical'
-                # use tags only as reference points
-                self._detected_waypoints = {}
-                self._publisher.publish(reference_point)
+            self._calculating = True
+            next_reference_point = self._select_next_waypoint_transform()
+            self._calculating = False
+            if next_reference_point is not None:
+                cprint(f"reference tag: {next_reference_point}", logger=self._logger)
+                self._publisher.publish(next_reference_point)
+                self._tag_transforms = {}
+            else:
+                cprint(f"detected tags: {self._tag_transforms.keys()}", logger=self._logger)
             rate.sleep()
 
 

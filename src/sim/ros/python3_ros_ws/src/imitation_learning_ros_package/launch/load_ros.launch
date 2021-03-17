@@ -128,8 +128,13 @@
         <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
             <arg name="camera_name" value="bebop" if="$(eval arg('robot_name') == 'bebop_real')"/>
             <arg name="camera_frame" value="camera_optical" if="$(eval arg('robot_name') == 'bebop_real')"/>
+            <arg name="tags_file" value="tags" if="$(eval arg('robot_name') == 'bebop_real')"/>
             <arg name="camera_name" value="forward" if="$(eval arg('robot_name') == 'drone_sim')"/>
             <arg name="camera_frame" value="forward_optical_frame" if="$(eval arg('robot_name') == 'drone_sim')"/>
+            <arg name="tags_file" value="tags_sim" if="$(eval arg('robot_name') == 'drone_sim')"/>
+            <arg name="camera_name" value="down" if="$(eval arg('robot_name') == 'drone_sim_down_cam')"/>
+            <arg name="camera_frame" value="down_optical_frame" if="$(eval arg('robot_name') == 'drone_sim_down_cam')"/>
+            <arg name="tags_file" value="tags_sim" if="$(eval arg('robot_name') == 'drone_sim_down_cam')"/>
         </include>
         <node pkg="imitation_learning_ros_package"
               name="april_tag_detector"

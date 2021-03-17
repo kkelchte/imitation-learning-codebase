@@ -16,8 +16,6 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan, Image
 import actionlib
 from hector_uav_msgs.msg import *
-# import tf2_ros
-# import tf2_geometry_msgs as tf2_geom
 from scipy.spatial.transform import Rotation as R
 from dynamic_reconfigure.server import Server
 import matplotlib.pyplot as plt
@@ -110,7 +108,6 @@ class MathiasController:
 
         # listen to desired next reference point
         rospy.Subscriber('/reference_pose', PointStamped, self._reference_update)
-        rospy.Subscriber('/reference_ground_point', PointStamped, self._ground_reference_callback)
         rospy.Subscriber(name='/waypoint_indicator/current_waypoint',
                          data_class=Float32MultiArray,
                          callback=self._waypoint_callback)
@@ -247,8 +244,8 @@ class MathiasController:
                 return
         self.last_measurement = get_timestamp(msg)
 
+        # simulated robots use /gt_states where twist message of odometry is expressed globally instead of locally
         if 'real' not in self._robot:
-            # simulated robots use /gt_states where twist message of odometry is expressed globally instaed of locally
             _, _, yaw = euler_from_quaternion(msg.pose.pose.orientation)
             msg.twist.twist.linear = transform(points=[msg.twist.twist.linear],
                                                orientation=R.from_euler('XYZ', (0, 0, yaw)).as_matrix(),
@@ -270,23 +267,17 @@ class MathiasController:
                                             z=self.pose_est.pose.position.z if len(pose_ref) == 2 else pose_ref[2]))
         self._reference_update(pose_ref)
 
-    def _ground_reference_callback(self, pose_ref: PointStamped):
-        cprint(f'received tag pose: {pose_ref.point}', self._logger)
-        # map from optical camera to agent base_link coordinates
-        if pose_ref.header.frame_id == 'camera_optical':
-            pose_ref.point = transform(points=[pose_ref.point],
-                                       orientation=Quaternion(x=0.553, y=-0.553, z=0.44, w=-0.44),
-                                       translation=np.asarray([0.1, 0, 0]))[0]
-            # add current height as desired flying height
-            pose_ref.header.frame_id = "agent"
-            cprint(f'mapped to agent frame: {pose_ref.point}', self._logger)
-        pose_ref.point.z = 0
-        self._reference_update(pose_ref)
-
     def _reference_update(self, pose_ref: PointStamped):
         if pose_ref.header.frame_id == "agent":
+            cprint(f'got pose_ref in agent frame: {pose_ref.point}', self._logger)
+            # TODO:
+            # Use time stamp of message to project reference point to global frame
+            # corresponding to the agent's pose at that time
+            # Although, as references should be said once per second the small delay probably won't matter that much.
+
             # transform from agent to world frame.
-            # pose_estimate.orientation only incorporates yaw turn (not roll and pitch)
+            # Note that agent frame is not necessarily the same as agent_horizontal, so a small error is induced here
+            # as pose_estimate.orientation only incorporates yaw turn because KF does not maintain roll and pitch.
             pose_ref.point = transform(points=[pose_ref.point],
                                        orientation=self.pose_est.pose.orientation,
                                        translation=self.pose_est.pose.position)[0]

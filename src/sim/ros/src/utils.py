@@ -260,8 +260,8 @@ def project(points: List[np.ndarray],
 
 
 def transform(points: List[Union[np.ndarray, Point, Vector3]],
-              orientation: Union[Quaternion, np.ndarray] = np.eye(3),
-              translation: Union[np.ndarray, Point] = np.zeros((3,)),
+              orientation: Union[Quaternion, np.ndarray, list] = np.eye(3),
+              translation: Union[np.ndarray, Point, list] = np.zeros((3,)),
               invert: bool = False) -> List[Union[np.ndarray, Point, Vector3]]:
     """
     Transforms a list of points expressed as np arrays, points or vector3.
@@ -285,6 +285,8 @@ def transform(points: List[Union[np.ndarray, Point, Vector3]],
                                    orientation.y,
                                    orientation.z,
                                    orientation.w]).as_matrix()
+    elif len(orientation) == 4:
+        orientation = R.from_quat(orientation).as_matrix()
     transformation[0:3, 0:3] = orientation
     transformation[0:3, 3] = translation if isinstance(translation, np.ndarray) else np.asarray([translation.x,
                                                                                                  translation.y,

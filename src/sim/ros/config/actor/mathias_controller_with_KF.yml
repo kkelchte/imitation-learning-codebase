@@ -10,4 +10,4 @@ specs:
   Kp_z: 1.0
   Ki_z: 0.
   Kd_z: 0.
-  K_theta: 2.5
+  K_theta: 3.5
