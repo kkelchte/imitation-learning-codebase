@@ -8,7 +8,7 @@ from torch.distributions import Normal
 
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator, get_waypoint, clip_action_according_to_playfield_size, get_slow_run_ros, \
+from src.ai.utils import mlp_creator, get_waypoint, clip_action_according_to_playfield_size_flipped, get_slow_run_ros, \
     get_slow_hunt_ros
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
@@ -117,9 +117,10 @@ class Net(BaseNet):
                                 0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
                                 0, 0], axis=-1)
             #actions = np.stack([*hunt_action, *run_action, 0, 0], axis=-1)
+            #actions = np.stack([0, -1, 0, 0, -1, 0, 0, 0], axis=-1)
 
         # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
-        actions = clip_action_according_to_playfield_size(positions.detach().numpy().squeeze(),
+        actions = clip_action_according_to_playfield_size_flipped(positions.detach().numpy().squeeze(),
                                                           actions, self._playfield_size)
         return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
                       value=actions)

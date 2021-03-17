@@ -10,6 +10,42 @@ from src.data.data_saver import DataSaverConfig, DataSaver
 from src.data.test.common_utils import generate_dummy_dataset
 
 
+def clip_action_according_to_playfield_size_flipped(inputs: Union[torch.Tensor, np.ndarray],
+                                            actions: Union[torch.Tensor, np.ndarray],
+                                            playfield_size: Tuple[float, float, float]) -> np.ndarray:
+    """
+    clip velocities of actions to zero when agents location is further from origin than playfield size.
+    inputs: dimension (9,) [tracking_x, tracking_y, tracking_z,
+                            fleeing_x, fleeing_y, fleeing_z,
+                            tracking_roll, tracking_pitch, tracking_yaw]
+    actions: dimension (8,) [tracking_linear_x, tracking_linear_y, tracking_linear_z,
+                             fleeing_linear_x, fleeing_linear_y, fleeing_linear_z,
+                             tracking_angular_z, fleeing_angular_z]
+     playfield_size: tuple (3,) specifying boundaries of playfield in x, y, z
+    """
+    assert inputs.shape == (9,)
+    assert actions.shape == (8,)
+    assert len(playfield_size) == 3
+    for agent in ['tracking', 'fleeing']:
+        for direction_index in range(3):
+            if playfield_size[direction_index] == 0:
+                continue
+            index = direction_index if agent == 'tracking' else direction_index + 3
+            position = inputs[index]
+            if abs(position) > playfield_size[direction_index]:
+                if position > 0:  # clip positive action to zero
+                    if agent == 'fleeing' and index < 5:
+                        actions[index] = max(0, actions[index])
+                    else:
+                        actions[index] = min(0, actions[index])
+                else:  # clip negative action to zero
+                    if agent == 'fleeing' and index < 5:
+                        actions[index] = min(0, actions[index])
+                    else:
+                        actions[index] = max(0, actions[index])
+    return actions
+
+
 def clip_action_according_to_playfield_size(inputs: Union[torch.Tensor, np.ndarray],
                                             actions: Union[torch.Tensor, np.ndarray],
                                             playfield_size: Tuple[float, float, float]) -> np.ndarray:
