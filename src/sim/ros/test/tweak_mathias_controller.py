@@ -1261,7 +1261,7 @@ class TestMathiasController(unittest.TestCase):
             print(f'waypoint: {self.ros_topic.topic_values["/reference_ground_point"]}')
             time.sleep(0.5)
 
-    @unittest.skip
+    #@unittest.skip
     def test_april_tag_detector_real_bebop_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -1349,7 +1349,7 @@ class TestMathiasController(unittest.TestCase):
                 #plt.show()
             index += 1
 
-    #@unittest.skip
+    @unittest.skip
     def test_april_tag_detector_gazebo_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)

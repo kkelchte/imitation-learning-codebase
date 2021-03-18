@@ -14,7 +14,8 @@ from typing import Any, Union
 
 import numpy as np
 import rospy
-from geometry_msgs.msg import Transform, PointStamped, Point, TransformStamped, PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import Transform, PointStamped, Point, TransformStamped, PoseStamped, PoseWithCovarianceStamped, \
+    Twist
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32MultiArray, Empty, String
 from tf2_msgs.msg import TFMessage
@@ -42,8 +43,8 @@ class AprilTagDetector:
                                    'rotation': [0.553, -0.553, 0.440, 0.440]},
             '/down/image_raw': {'translation': [-0.000, 0.050, -0.100],
                                 'rotation': [0.707, -0.707, 0.000, 0.000]},
-            '/bebop/image_raw': {'translation': [0.1, 0.0, 0],
-                                 'rotation': [0.553, -0.553, 0.44, -0.44]},
+            '/bebop/image_raw': {'translation': [0., 0.022, -0.097],
+                                 'rotation': [0.553, -0.553, 0.44, 0.44]},
         }
         self._optical_to_base_transformation = self._optical_to_base_transformation_dict[
             rospy.get_param('/robot/camera_sensor/topic')
@@ -58,8 +59,16 @@ class AprilTagDetector:
         rospy.Subscriber(name='/tag_detections',
                          data_class=AprilTagDetectionArray,
                          callback=self._set_tag_transforms)
+        rospy.Subscriber(name='/bebop/camera_control', data_class=Twist, callback=self._adjust_for_camera_twist)
+        # start node
         rospy.init_node('april_tag_detector')
         cprint(f"Initialised", logger=self._logger)
+
+    def _adjust_for_camera_twist(self, msg: Twist):
+        if msg.angular.y == -90:
+            self._optical_to_base_transformation['rotation'] = [0.707, -0.707, 0.000, 0.000]
+        elif msg.angular.y == 0:
+            self._optical_to_base_transformation['rotation'] = [0., 0., 0., 1.0]
 
     def _set_tag_transforms(self, msg: AprilTagDetectionArray):
         if self._calculating:
@@ -77,6 +86,7 @@ class AprilTagDetector:
                 translation=np.asarray(self._optical_to_base_transformation['translation']),
                 invert=True
             )[0]
+        print(f'tags_in_base_link: {tags_in_base_link}')
         # for all tag transforms lying in front (x>0 in base_link frame), measure the distance
         distances = {
             k: np.sqrt(sum([tags_in_base_link[k].x**2,
@@ -86,7 +96,7 @@ class AprilTagDetector:
         # ignore tags that are closer than the 'distance-reached'
         further_distances = {k: distances[k] for k in distances.keys()
                              if distances[k] > self._waypoint_reached_distance}
-
+        print(f'distances: {distances}')
         # TODO: ignore tags with a too large covariance
 
         # sort tags and take closest
@@ -96,7 +106,7 @@ class AprilTagDetector:
         else:
             tag_id = list(sorted_distances.keys())[0]
         # create a PointStamped message
-
+        print(f'tag_id: {tag_id}')
         reference_point = PointStamped(point=Point(
             x=tags_in_base_link[tag_id].x,
             y=tags_in_base_link[tag_id].y,
