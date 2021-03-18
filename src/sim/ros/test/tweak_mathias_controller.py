@@ -1357,7 +1357,7 @@ class TestMathiasController(unittest.TestCase):
         self._config = {
             'output_path': self.output_dir,
             'world_name': 'april_tag',
-            'robot_name': 'drone_sim',
+            'robot_name': 'drone_sim_down_cam',
             'gazebo': True,
             'fsm': True,
             'fsm_mode': 'TakeOverRun',
@@ -1398,7 +1398,7 @@ class TestMathiasController(unittest.TestCase):
         )
 
         safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
-                            True, 35, 0.1, ros_topic=self.ros_topic)
+                            True, 235, 0.1, ros_topic=self.ros_topic)
         self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data, FsmState.Unknown.name)
 
         index = 0

@@ -1,12 +1,12 @@
 specs:
   # Use on drone sim with slower measurement rate of 5Hz and control rate of 15Hz
   rate_fps: 30
-  Kp_x: 1.0
-  Ki_x: 0.5
+  Kp_x: 0.6
+  Ki_x: 0.
   Kd_x: 0.6
-  Kp_y: 1.0
-  Ki_y: 0.5
-  Kd_y: 0.6
+  Kp_y: 0.6
+  Ki_y: 0.
+  Kd_y: 1.0
   Kp_z: 1.0
   Ki_z: 0.
   Kd_z: 0.
