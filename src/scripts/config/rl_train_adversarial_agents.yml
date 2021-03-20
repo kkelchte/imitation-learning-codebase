@@ -11,7 +11,7 @@ architecture_config:
   random_seed: 123
 environment_config:
   factory_key: ROS
-  max_number_of_steps: 200
+  max_number_of_steps: 300
   ros_config:
     info:
       - frame
