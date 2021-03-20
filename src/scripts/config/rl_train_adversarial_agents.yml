@@ -1,9 +1,10 @@
 output_path: adversarial_agents_ros
-number_of_epochs: 400
+number_of_epochs: 200
 episode_runner_config:
   number_of_episodes: 5
   train_every_n_steps: -1
 architecture_config:
+  log_std: -0.5
   architecture: adversarial_actor_critic_side_ways_ros
   device: cpu
   initialisation_type: orthogonal
@@ -17,7 +18,7 @@ environment_config:
     observation: modified_state
     action_topic: python
     num_action_publishers: 2
-    visible_xterm: false
+    visible_xterm: true
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
@@ -51,7 +52,7 @@ trainer_config:
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
-    batch_size: 32
+    batch_size: 50
     random_seed: 123
   device: cpu
   discount: 0.99
@@ -61,6 +62,6 @@ trainer_config:
   entropy_coefficient: 0.01
   max_actor_training_iterations: 50
   max_critic_training_iterations: 10
-  epsilon: 0.1
+  epsilon: 0.2
   use_kl_stop: true
   kl_target: 0.01

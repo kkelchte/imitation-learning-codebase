@@ -43,7 +43,7 @@ class Net(BaseNet):
         self.action_min = -1
         self.action_max = 1
         self.starting_height = -1
-        self.previous_input = torch.Tensor([200, 200, 20, 20])
+        self.previous_input = torch.Tensor([200, 200, 40, 40])
 
         self._actor = mlp_creator(sizes=[self.input_size[0], 10, 2],  # for now actors can only fly sideways
                                   activation=nn.Tanh(),

@@ -312,7 +312,7 @@ def calculate_bounding_box(state: Sequence,
     pos0 = (x0, y0)
     pos1 = (int(x0 - u * x0 / kx + v * skew), int(y0 - v * y0 / ky))
 
-    if pos1[0] < 0 or pos1[1] < 0:
+    if pos1[0] < 0 or pos1[0] > resolution[0] or pos1[1] < 0 or pos1[1] > resolution[1]:
         pos1 = None
 
     mx = z / sqrt(z ** 2 + x ** 2)

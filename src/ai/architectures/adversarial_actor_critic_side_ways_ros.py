@@ -15,6 +15,7 @@ from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
 from src.sim.ros.src.utils import calculate_bounding_box
 
+
 """
 Adversarial agents for gazebo world tracking_y_axis
 Observation space contains of 9 dimensional array with
@@ -41,10 +42,10 @@ class Net(BaseNet):
         self._playfield_size = (0, 1, 0)
         self.input_size = (4,)
         self.output_size = (8,)
-        self.action_min = -1
-        self.action_max = 1
+        self.action_min = -0.5
+        self.action_max = 0.5
         self.starting_height = -1
-        self.previous_input = torch.Tensor([200, 200, 20, 20])
+        self.previous_input = torch.Tensor([200, 200, 40, 40])
 
         self.waypoint = get_waypoint(self._playfield_size)
 
@@ -142,11 +143,13 @@ class Net(BaseNet):
         return Normal(mean, std).entropy().sum(dim=1)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True, adversarial: bool = False) -> torch.Tensor:
-        actions = self.process_inputs(inputs=[a[2] if not adversarial else a[4] for a in actions])
+        actions = self.process_inputs(inputs=[a[1] if not adversarial else a[4] for a in actions])
+
         try:
             mean, std = self._policy_distribution(inputs, train, adversarial)
-            log_probabilities = -(0.5 * ((actions - mean) / (std + EPSILON)).pow(2).sum(-1) +
-                                  0.5 * np.log(2.0 * np.pi) * actions.shape[-1]
+            actions = actions.squeeze()
+            mean = mean.transpose(0, 1).squeeze()
+            log_probabilities = -(0.5 * ((actions - mean) / (std + EPSILON)).pow(2) + 0.5 * np.log(2.0 * np.pi)
                                   + (self.log_std.sum(-1) if not adversarial else self.adversarial_log_std.sum(-1)))
             return log_probabilities
         except Exception as e:
@@ -163,7 +166,7 @@ class Net(BaseNet):
                     inputs[index] = torch.Tensor([bb[3][0], bb[3][1], bb[4], bb[5]])
                 except TypeError:
                     if index == 0:
-                        inputs[index] = torch.Tensor([200, 200, 20, 20])
+                        inputs[index] = torch.Tensor([200, 200, 40, 40])
                     else:
                         inputs[index] = inputs[index - 1]
         self._critic.train()
