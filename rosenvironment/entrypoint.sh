@@ -2,7 +2,7 @@
 
 export CODEDIR="${PWD}"
 export PYTHONPATH=''
-export DATADIR="${CODEDIR}/experimental_data"
+#export DATADIR="${CODEDIR}/experimental_data"
 mkdir -p $DATADIR
 source /opt/ros/melodic/setup.bash
 
