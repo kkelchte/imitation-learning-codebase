@@ -30,6 +30,7 @@ Game specified action clipping done when agent reaches boundaries of game should
 """
 EPSILON = 1e-6
 
+
 #  - clip actions when getting out of play field
 
 
@@ -77,7 +78,7 @@ class Net(BaseNet):
 
     def adjust_height(self, inputs, actions: np.ndarray) -> np.ndarray:
         if self.starting_height == -1:  # Take average between tracking and fleeing height to be kept constant
-            self.starting_height = (inputs[2] + inputs[5])/2
+            self.starting_height = (inputs[2] + inputs[5]) / 2
         else:
             for agent in ['tracking', 'fleeing']:
                 height = inputs[2] if agent == 'tracking' else inputs[5]
@@ -116,12 +117,12 @@ class Net(BaseNet):
             actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
                                 0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
                                 0, 0], axis=-1)
-            #actions = np.stack([*hunt_action, *run_action, 0, 0], axis=-1)
-            #actions = np.stack([0, -1, 0, 0, -1, 0, 0, 0], axis=-1)
+            # actions = np.stack([*hunt_action, *run_action, 0, 0], axis=-1)
+            # actions = np.stack([0, -1, 0, 0, -1, 0, 0, 0], axis=-1)
 
         # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
         actions = clip_action_according_to_playfield_size_flipped(positions.detach().numpy().squeeze(),
-                                                          actions, self._playfield_size)
+                                                                  actions, self._playfield_size)
         return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
                       value=actions)
 
@@ -141,7 +142,7 @@ class Net(BaseNet):
         return Normal(mean, std).entropy().sum(dim=1)
 
     def policy_log_probabilities(self, inputs, actions, train: bool = True, adversarial: bool = False) -> torch.Tensor:
-        actions = self.process_inputs(inputs=[a[:2] if not adversarial else a[2:] for a in actions])
+        actions = self.process_inputs(inputs=[a[2] if not adversarial else a[4] for a in actions])
         try:
             mean, std = self._policy_distribution(inputs, train, adversarial)
             log_probabilities = -(0.5 * ((actions - mean) / (std + EPSILON)).pow(2).sum(-1) +
@@ -164,7 +165,7 @@ class Net(BaseNet):
                     if index == 0:
                         inputs[index] = torch.Tensor([200, 200, 20, 20])
                     else:
-                        inputs[index] = inputs[index-1]
+                        inputs[index] = inputs[index - 1]
         self._critic.train()
         inputs = np.squeeze(self.process_inputs(inputs=inputs))
         return self._critic(inputs)
