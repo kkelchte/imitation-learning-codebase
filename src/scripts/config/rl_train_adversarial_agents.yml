@@ -54,7 +54,7 @@ trainer_config:
   data_loader_config:
     batch_size: 32
     random_seed: 123
-  device: cuda
+  device: cpu
   discount: 0.99
   factory_key: APPO
   gae_lambda: 0.95
