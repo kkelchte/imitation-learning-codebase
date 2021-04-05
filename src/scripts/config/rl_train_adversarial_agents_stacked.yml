@@ -1,5 +1,5 @@
-output_path: adversarial_agents_stacked_ros
-number_of_epochs: 500
+output_path: adversarial_agents_stacked_ros/output_act
+number_of_epochs: 1000
 episode_runner_config:
   number_of_episodes: 5
   train_every_n_steps: -1
@@ -10,6 +10,7 @@ architecture_config:
   random_seed: 123
 environment_config:
   factory_key: ROS
+  normalize_rewards: true
   max_number_of_steps: 300
   ros_config:
     info:
@@ -49,14 +50,14 @@ tb_render_every_n_epochs: 1
 save_checkpoint_every_n: 5
 trainer_config:
   criterion: MSELoss
-  actor_learning_rate: 0.001
-  critic_learning_rate: 0.0001
+  actor_learning_rate: 0.002
+  critic_learning_rate: 0.001
   scheduler_config:
     number_of_epochs: 100
   gradient_clip_norm: -1
   optimizer: Adam
   data_loader_config:
-    batch_size: 32
+    batch_size: 64
     random_seed: 123
   device: cpu
   discount: 0.99
@@ -64,8 +65,8 @@ trainer_config:
   gae_lambda: 0.95
   phi_key: gae
   entropy_coefficient: 0.01
-  max_actor_training_iterations: 50
+  max_actor_training_iterations: 10
   max_critic_training_iterations: 10
-  epsilon: 0.1
+  epsilon: 0.2
   use_kl_stop: true
   kl_target: 0.01

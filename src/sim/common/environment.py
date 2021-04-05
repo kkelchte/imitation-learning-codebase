@@ -52,7 +52,7 @@ class RosLaunchConfig(Config):
     z_pos: float = 0.
     yaw_or: float = 0.
     starting_height: float = 1.
-    starting_height_tracking: float = 4.
+    starting_height_tracking: float = 1.
     starting_height_fleeing: float = 1.
     distance_tracking_fleeing_m: float = 3.
     altitude_control: bool = False

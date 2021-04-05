@@ -45,24 +45,24 @@ class Net(BaseNet):
         self.starting_height = -1
         self.previous_input = torch.Tensor([200, 200, 40, 40])
 
-        self._actor = mlp_creator(sizes=[self.input_size[0], 10, 2],  # for now actors can only fly sideways
+        self._actor = mlp_creator(sizes=[self.input_size[0], 12, 2],  # for now actors can only fly sideways
                                   activation=nn.Tanh(),
-                                  output_activation=None)
+                                  output_activation=nn.Tanh())
         log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
         self.log_std = torch.nn.Parameter(torch.ones((1,), dtype=torch.float32) * log_std,
                                           requires_grad=True)
 
-        self._critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
+        self._critic = mlp_creator(sizes=[self.input_size[0], 12, 1],
                                    activation=nn.Tanh(),
                                    output_activation=None)
 
-        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 10, 2],
+        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 12, 2],
                                               activation=nn.Tanh(),
-                                              output_activation=None)
+                                              output_activation=nn.Tanh())
         self.adversarial_log_std = torch.nn.Parameter(torch.ones((1,),
                                                                  dtype=torch.float32) * log_std, requires_grad=True)
 
-        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 10, 1],
+        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 12, 1],
                                                activation=nn.Tanh(),
                                                output_activation=None)
 
@@ -110,7 +110,7 @@ class Net(BaseNet):
             actions = np.stack([*output.data.cpu().numpy().squeeze(), 0,
                                 *adversarial_output.data.cpu().numpy().squeeze(), 0,
                                 0, 0], axis=-1)
-            # actions = np.stack([0, -1, 0, 0, -1, 0, 0, 0], axis=-1)
+            # actions = np.stack([1, 0, 0, -1, 0, 0, 0, 0], axis=-1)
 
         # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
         actions = clip_action_according_to_playfield_size_flipped(positions.detach().numpy().squeeze(),

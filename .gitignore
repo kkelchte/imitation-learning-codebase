@@ -199,3 +199,4 @@ test_dir/
 /models.py
 /person_detection/
 /person_detection/
+/checkpoint_latest.ckpt

@@ -99,7 +99,7 @@ def get_waypoint(playfield_size: Tuple[float, float, float]) -> np.ndarray:
         + np.asarray([3, 0, 0])
 
 
-def get_slow_run_ros(waypoint: np.ndarray, position: np.ndarray, playfield_size: Tuple[float, float, float]) \
+def get_rand_run_ros(waypoint: np.ndarray, position: np.ndarray, playfield_size: Tuple[float, float, float]) \
         -> np.ndarray:
     action = [0, 0, 0]
     for i in range(3):
@@ -111,10 +111,26 @@ def get_slow_run_ros(waypoint: np.ndarray, position: np.ndarray, playfield_size:
     return np.asarray([waypoint, action])
 
 
+def get_slow_run_ros(state: np.ndarray, playfield_size: Tuple[float, float, float]) -> np.ndarray:
+    x_center = 200
+    x_flee = state[0]
+    action = [0, 0, 0]
+    for i in range(3):
+        if playfield_size[i] == 0:
+            continue
+        action[i] = 0.3*np.sign(x_flee - x_center)
+    return np.asarray(action)
+
+
 def get_slow_hunt_ros(state: np.ndarray, playfield_size: Tuple[float, float, float]) -> np.ndarray:
-    tracking_agent = state[:3]
-    fleeing_agent = state[3:6]
-    return np.multiply(playfield_size, 0.3 * np.sign(fleeing_agent - tracking_agent))
+    x_center = 200
+    x_flee = state[0]
+    action = [0, 0, 0]
+    for i in range(3):
+        if playfield_size[i] == 0:
+            continue
+        action[i] = -0.3 * np.sign(x_flee - x_center)
+    return np.asarray(action)
 
 
 def initialize_weights(weights: torch.nn.Module, initialisation_type: str = 'xavier', scale: float = 2 ** 0.5) -> None:

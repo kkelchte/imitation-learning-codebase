@@ -476,3 +476,23 @@ def get_inverse_relative_pixel_distance(info: dict) -> float:
     except:
         result = 0
     return result
+
+
+def get_inverse_relative_pixel_distance_stacked(info: dict) -> float:
+    if info['combined_global_poses'] is None:
+        return None
+    state = [info['combined_global_poses'].tracking_x,
+             info['combined_global_poses'].tracking_y,
+             info['combined_global_poses'].tracking_z,
+             info['combined_global_poses'].fleeing_x,
+             info['combined_global_poses'].fleeing_y,
+             info['combined_global_poses'].fleeing_z,
+             info['combined_global_poses'].tracking_roll,
+             info['combined_global_poses'].tracking_pitch,
+             info['combined_global_poses'].tracking_yaw]
+    try:
+        pos0, w0, h0, pos1, w1, h1 = calculate_bounding_box(state=np.asarray(state), orientation=(0, 0, 1))
+        result = calculate_inverse_relative_pixel_distance(pos0, pos1)
+    except:
+        result = 0
+    return result

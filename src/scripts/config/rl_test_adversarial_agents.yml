@@ -1,5 +1,5 @@
-output_path: adversarial_agents_ros/reduced_in
-number_of_epochs: 1000
+output_path: adversarial_agents_ros/tracking_reduced_in
+number_of_epochs: 10
 episode_runner_config:
   number_of_episodes: 10
   train_every_n_steps: -1
@@ -12,14 +12,15 @@ architecture_config:
 environment_config:
   factory_key: ROS
   normalize_rewards: true
-  max_number_of_steps: 200
+  reward_clipping: 10
+  max_number_of_steps: 1000
   ros_config:
     info:
       - frame
     observation: modified_state
     action_topic: python
     num_action_publishers: 2
-    visible_xterm: false
+    visible_xterm: true
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123
@@ -38,31 +39,3 @@ environment_config:
       starting_height: 0.5
     actor_configs:
       - name: altitude_control
-data_saver_config:
-  clear_buffer_before_episode: true
-  store_on_ram_only: true
-tensorboard: true
-tb_render_every_n_epochs: 1
-save_checkpoint_every_n: 5
-trainer_config:
-  criterion: MSELoss
-  actor_learning_rate: 0.0015
-  critic_learning_rate: 0.001
-  scheduler_config:
-    number_of_epochs: 100
-  gradient_clip_norm: -1
-  optimizer: Adam
-  data_loader_config:
-    batch_size: 64
-    random_seed: 5123
-  device: cpu
-  discount: 0.99
-  factory_key: APPO
-  gae_lambda: 0.95
-  phi_key: gae
-  entropy_coefficient: 0.01
-  max_actor_training_iterations: 10
-  max_critic_training_iterations: 10
-  epsilon: 0.2
-  use_kl_stop: true
-  kl_target: 0.01

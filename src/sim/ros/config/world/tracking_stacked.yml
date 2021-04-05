@@ -1,8 +1,8 @@
-world_name: tracking_y_axis
+world_name: tracking_stacked
 delay_evaluation: 1
 reward:
   step:
     termination: 'NotDone'
     weights:
       iou_stacked: 9
-      inverse_relative_pixel_distance: 1
+      inverse_relative_pixel_distance_stacked: 1
