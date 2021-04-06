@@ -1,4 +1,4 @@
-output_path: adversarial_agents_ros/tracking_reduced_in
+output_path: adversarial_agents_ros/normalized_obs
 number_of_epochs: 10
 episode_runner_config:
   number_of_episodes: 10
@@ -13,14 +13,14 @@ environment_config:
   factory_key: ROS
   normalize_rewards: true
   reward_clipping: 10
-  max_number_of_steps: 1000
+  max_number_of_steps: 300
   ros_config:
     info:
       - frame
     observation: modified_state
     action_topic: python
     num_action_publishers: 2
-    visible_xterm: true
+    visible_xterm: false
     step_rate_fps: 100
     ros_launch_config:
       random_seed: 123

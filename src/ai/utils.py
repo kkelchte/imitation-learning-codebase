@@ -107,7 +107,7 @@ def get_rand_run_ros(waypoint: np.ndarray, position: np.ndarray, playfield_size:
             continue
         if abs(waypoint[i] - position[i]) < 0.1:
             waypoint = get_waypoint(playfield_size)
-        action[i] = -0.3*np.sign(waypoint[i] - position[i])
+        action[i] = -0.4*np.sign(waypoint[i] - position[i])
     return np.asarray([waypoint, action])
 
 
@@ -173,12 +173,12 @@ def data_to_tensor(data: Union[list, np.ndarray, torch.Tensor]) -> torch.Tensor:
 
 
 def mlp_creator(sizes: List[int], activation: nn.Module = None, output_activation: nn.Module = None,
-                bias_in_last_layer: bool = True) -> nn.Module:
+                layer_bias: bool = True, bias_in_last_layer: bool = True) -> nn.Module:
     """Create Multi-Layer Perceptron"""
     layers = []
     for j in range(len(sizes) - 1):
         is_not_last_layer = j < len(sizes) - 2
-        layers += [nn.Linear(sizes[j], sizes[j + 1], bias=True if bias_in_last_layer else is_not_last_layer)]
+        layers += [nn.Linear(sizes[j], sizes[j + 1], bias=True if bias_in_last_layer else layer_bias)]
         act = activation if is_not_last_layer else output_activation
         if act is not None:
             layers += [act]

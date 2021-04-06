@@ -1,7 +1,7 @@
-output_path: adversarial_agents_ros/reduced_in
-number_of_epochs: 1000
+output_path: adversarial_agents_ros/RNN
+number_of_epochs: 400
 episode_runner_config:
-  number_of_episodes: 10
+  number_of_episodes: 5
   train_every_n_steps: -1
 architecture_config:
   log_std: -0.5
@@ -12,7 +12,7 @@ architecture_config:
 environment_config:
   factory_key: ROS
   normalize_rewards: true
-  max_number_of_steps: 200
+  max_number_of_steps: 100
   ros_config:
     info:
       - frame
@@ -22,7 +22,7 @@ environment_config:
     visible_xterm: false
     step_rate_fps: 100
     ros_launch_config:
-      random_seed: 123
+      random_seed: 1273
       robot_name: double_drone_sim
       fsm_mode: TakeOverRun
       fsm: true
@@ -46,7 +46,7 @@ tb_render_every_n_epochs: 1
 save_checkpoint_every_n: 5
 trainer_config:
   criterion: MSELoss
-  actor_learning_rate: 0.0015
+  actor_learning_rate: 0.002
   critic_learning_rate: 0.001
   scheduler_config:
     number_of_epochs: 100
@@ -54,7 +54,7 @@ trainer_config:
   optimizer: Adam
   data_loader_config:
     batch_size: 64
-    random_seed: 5123
+    random_seed: 5000
   device: cpu
   discount: 0.99
   factory_key: APPO
@@ -64,5 +64,5 @@ trainer_config:
   max_actor_training_iterations: 10
   max_critic_training_iterations: 10
   epsilon: 0.2
-  use_kl_stop: true
+  use_kl_stop: false
   kl_target: 0.01

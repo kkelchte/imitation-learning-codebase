@@ -1,4 +1,4 @@
-output_path: adversarial_agents_stacked_ros/output_act
+output_path: adversarial_agents_stacked_ros/trash
 number_of_epochs: 1000
 episode_runner_config:
   number_of_episodes: 5

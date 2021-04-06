@@ -40,33 +40,37 @@ class Net(BaseNet):
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
         self._playfield_size = (0, 1, 0)
-        self.input_size = (2,)
+        self.input_size = (1,)
         self.output_size = (8,)
         self.action_min = -0.5
         self.action_max = 0.5
         self.starting_height = -1
-        self.previous_input = torch.Tensor([200, 200])
+        self.previous_input = 0
 
         self.waypoint = get_waypoint(self._playfield_size)
 
-        self._actor = mlp_creator(sizes=[self.input_size[0], 12, 1],  # for now actors can only fly sideways
+        self._actor = mlp_creator(sizes=[self.input_size[0], 4, 1],  # for now actors can only fly sideways
+                                  layer_bias=False,
                                   activation=nn.Tanh(),
                                   output_activation=None)
         log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
         self.log_std = torch.nn.Parameter(torch.ones((1,), dtype=torch.float32) * log_std,
                                           requires_grad=True)
 
-        self._critic = mlp_creator(sizes=[self.input_size[0], 12, 1],
+        self._critic = mlp_creator(sizes=[self.input_size[0], 4, 1],
+                                   layer_bias=False,
                                    activation=nn.Tanh(),
                                    output_activation=None)
 
-        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 12, 1],
+        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 4, 1],
+                                              layer_bias=False,
                                               activation=nn.Tanh(),
                                               output_activation=None)
         self.adversarial_log_std = torch.nn.Parameter(torch.ones((1,),
                                                                  dtype=torch.float32) * log_std, requires_grad=True)
 
-        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 12, 1],
+        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 4, 1],
+                                               layer_bias=False,
                                                activation=nn.Tanh(),
                                                output_activation=None)
 
@@ -96,11 +100,12 @@ class Net(BaseNet):
         try:
             bb = calculate_bounding_box(inputs)
             inputs_bb = (bb[3][0], bb[3][1], bb[4], bb[5])
-            inputs = (bb[3][0], bb[3][1])
-            inputs = np.squeeze(self.process_inputs(inputs))
-            self.previous_input = inputs
+            inputs_ = (bb[3][0] - 200)/40
+            inputs = torch.Tensor([inputs_])
+            self.previous_input = inputs_
         except TypeError:
-            inputs = self.previous_input
+            inputs_bb = (200, 200, 40, 40)
+            inputs = torch.Tensor([self.previous_input])
         if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
             actions = np.stack([0, output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0])
@@ -112,14 +117,17 @@ class Net(BaseNet):
             output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
             adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
                                                                                           max=self.action_max)
+
             # rand_run = get_rand_run_ros(self.waypoint, np.asarray(positions[3:6]).squeeze(), self._playfield_size)
             # self.waypoint = np.squeeze(rand_run[0])
             # hunt_action = np.squeeze(get_slow_hunt_ros(np.asarray(positions), self._playfield_size))
             # run_action = np.squeeze(get_slow_run_ros(inputs_bb, self._playfield_size))
             # run_action = np.squeeze(rand_run[1])
+
             actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
                                 0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
                                 0, 0], axis=-1)
+
             # actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0, *run_action, 0, 0], axis=-1)
 
         # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
@@ -164,14 +172,17 @@ class Net(BaseNet):
             for index in range(len(inputs)):
                 try:
                     bb = calculate_bounding_box(np.asarray(inputs[index]))
-                    inputs[index] = torch.Tensor([bb[3][0], bb[3][1]])
-                except TypeError:
                     if index == 0:
-                        inputs[index] = torch.Tensor([200, 200])
+                        inputs[index] = torch.Tensor([(bb[3][0]-200)/40])
+                    else:
+                        inputs[index] = torch.Tensor([(bb[3][0]-200)/40])
+                except (TypeError, IndexError):
+                    if index == 0:
+                        inputs[index] = torch.Tensor([0])
                     else:
                         inputs[index] = inputs[index - 1]
         self._critic.train()
-        inputs = np.squeeze(self.process_inputs(inputs=inputs))
+        inputs = self.process_inputs(inputs=inputs)
         return self._critic(inputs)
 
     def adversarial_critic(self, inputs, train: bool = False) -> torch.Tensor:
