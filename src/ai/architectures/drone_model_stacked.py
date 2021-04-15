@@ -1,14 +1,7 @@
 #!/bin/python3.8
-from typing import Iterator, Union, Tuple
-
-import torch
-import torch.nn as nn
-import numpy as np
-from torch.distributions import Normal
-
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator, clip_action_according_to_playfield_size_flipped, find_person
+from src.ai.utils import mlp_creator, find_person
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
