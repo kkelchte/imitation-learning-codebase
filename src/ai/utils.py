@@ -113,12 +113,14 @@ def get_rand_run_ros(waypoint: np.ndarray, position: np.ndarray, playfield_size:
 
 def get_slow_run_ros(state: np.ndarray, playfield_size: Tuple[float, float, float]) -> np.ndarray:
     x_center = 200
+    y_center = 200
     x_flee = state[0]
+    y_flee = state[1]
     action = [0, 0, 0]
-    for i in range(3):
-        if playfield_size[i] == 0:
-            continue
-        action[i] = 0.3*np.sign(x_flee - x_center)
+    if playfield_size[0] != 0:
+        action[0] = 0.3*np.sign(x_flee - x_center)
+    if playfield_size[1] != 0:
+        action[1] = 0.3 * np.sign(y_flee - y_center)
     return np.asarray(action)
 
 

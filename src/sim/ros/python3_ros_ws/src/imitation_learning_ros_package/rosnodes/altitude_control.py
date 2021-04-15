@@ -67,7 +67,7 @@ class AltitudeControl:
             # in case of tracking fleeing quadrotor
             self._publishers['tracking'] = rospy.Publisher('cmd_vel', Twist, queue_size=10)
             self._publishers['fleeing'] = rospy.Publisher('cmd_vel_1', Twist, queue_size=10)
-            self._reference_height['tracking'] = rospy.get_param('/starting_height_tracking', 1)
+            self._reference_height['tracking'] = rospy.get_param('/starting_height_tracking', 4)
             self._reference_height['fleeing'] = rospy.get_param('/starting_height_fleeing', 1)
             for agent in ['tracking', 'fleeing']:
                 sensor = SensorType.position

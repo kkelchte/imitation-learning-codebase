@@ -8,7 +8,7 @@ from torch.distributions import Normal
 
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
-from src.ai.utils import mlp_creator, get_slow_hunt, clip_action_according_to_playfield_size_flipped
+from src.ai.utils import mlp_creator, get_slow_run_ros, clip_action_according_to_playfield_size_flipped
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
@@ -38,33 +38,37 @@ class Net(BaseNet):
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
         self._playfield_size = (1, 1, 0)
-        self.input_size = (4,)
+        self.input_size = (2,)
         self.output_size = (8,)
-        self.action_min = -1
-        self.action_max = 1
+        self.action_min = -0.5
+        self.action_max = 0.5
         self.starting_height = -1
-        self.previous_input = torch.Tensor([200, 200, 40, 40])
+        self.previous_input = torch.Tensor([0, 0])
 
-        self._actor = mlp_creator(sizes=[self.input_size[0], 12, 2],  # for now actors can only fly sideways
+        self._actor = mlp_creator(sizes=[self.input_size[0], 8, 2],  # for now actors can only fly sideways
+                                  layer_bias=True,
                                   activation=nn.Tanh(),
                                   output_activation=nn.Tanh())
         log_std = self._config.log_std if self._config.log_std != 'default' else -0.5
         self.log_std = torch.nn.Parameter(torch.ones((1,), dtype=torch.float32) * log_std,
                                           requires_grad=True)
 
-        self._critic = mlp_creator(sizes=[self.input_size[0], 12, 1],
+        self._critic = mlp_creator(sizes=[self.input_size[0], 8, 1],
+                                   layer_bias=True,
                                    activation=nn.Tanh(),
-                                   output_activation=None)
+                                   output_activation=nn.Tanh())
 
-        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 12, 2],
+        self._adversarial_actor = mlp_creator(sizes=[self.input_size[0], 8, 2],
+                                              layer_bias=True,
                                               activation=nn.Tanh(),
                                               output_activation=nn.Tanh())
         self.adversarial_log_std = torch.nn.Parameter(torch.ones((1,),
                                                                  dtype=torch.float32) * log_std, requires_grad=True)
 
-        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 12, 1],
+        self._adversarial_critic = mlp_creator(sizes=[self.input_size[0], 8, 1],
+                                               layer_bias=True,
                                                activation=nn.Tanh(),
-                                               output_activation=None)
+                                               output_activation=nn.Tanh())
 
         if not quiet:
             self._logger = get_logger(name=get_filename_without_extension(__file__),
@@ -91,11 +95,13 @@ class Net(BaseNet):
         positions = np.squeeze(self.process_inputs(inputs))
         try:
             bb = calculate_bounding_box(inputs, orientation=(0, 0, 1))
-            inputs = (bb[3][0], bb[3][1], bb[4], bb[5])
+            inputs_bb = (bb[3][0], bb[3][1], bb[4], bb[5])
+            inputs = ((bb[3][0]-200)/40, (bb[3][1]-200)/40)
             inputs = np.squeeze(self.process_inputs(inputs))
             self.previous_input = inputs
         except TypeError:
             inputs = self.previous_input
+            inputs_bb = (200, 200, 40, 40)
         if agent_id == 0:  # tracking agent ==> tracking_linear_y
             output = self.sample(inputs, train=train).clamp(min=self.action_min, max=self.action_max)
             actions = np.stack([output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0, 0])
@@ -104,13 +110,15 @@ class Net(BaseNet):
                                                                               max=self.action_max)
             actions = np.stack([0, 0, 0, output.data.cpu().numpy().squeeze(), 0, 0, 0, 0])
         else:
-            output = self.sample(inputs, train=train, adversarial=False).clamp(min=self.action_min, max=self.action_max)
-            adversarial_output = self.sample(inputs, train=train, adversarial=True).clamp(min=self.action_min,
-                                                                                          max=self.action_max)
-            actions = np.stack([*output.data.cpu().numpy().squeeze(), 0,
-                                *adversarial_output.data.cpu().numpy().squeeze(), 0,
-                                0, 0], axis=-1)
-            # actions = np.stack([1, 0, 0, -1, 0, 0, 0, 0], axis=-1)
+            output = self.action_max*self.sample(inputs, train=train, adversarial=False)
+            adversarial_output = self.action_max*self.sample(inputs, train=train, adversarial=True)
+
+            run_action = np.squeeze(get_slow_run_ros(inputs_bb, self._playfield_size))
+
+            #actions = np.stack([*output.data.cpu().numpy().squeeze(), 0,
+            #                    *adversarial_output.data.cpu().numpy().squeeze(), 0,
+            #                    0, 0], axis=-1)
+            actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, *run_action, 0, 0], axis=-1)
 
         # actions = self.adjust_height(positions, actions)  Not necessary, controller keeps altitude fixed
         actions = clip_action_according_to_playfield_size_flipped(positions.detach().numpy().squeeze(),
@@ -152,10 +160,10 @@ class Net(BaseNet):
             for index in range(len(inputs)):
                 try:
                     bb = calculate_bounding_box(np.asarray(inputs[index]), orientation=(0, 0, 1))
-                    inputs[index] = torch.Tensor([bb[3][0], bb[3][1], bb[4], bb[5]])
+                    inputs[index] = torch.Tensor([(bb[3][0]-200)/40, (bb[3][1]-200)/40])
                 except TypeError:
                     if index == 0:
-                        inputs[index] = torch.Tensor([200, 200, 20, 20])
+                        inputs[index] = torch.Tensor([0, 0])
                     else:
                         inputs[index] = inputs[index - 1]
         self._critic.train()

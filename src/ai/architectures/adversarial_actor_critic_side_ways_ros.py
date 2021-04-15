@@ -119,10 +119,11 @@ class Net(BaseNet):
                                                                                           max=self.action_max)
 
             # rand_run = get_rand_run_ros(self.waypoint, np.asarray(positions[3:6]).squeeze(), self._playfield_size)
+            # run_action = np.squeeze(rand_run[1])
             # self.waypoint = np.squeeze(rand_run[0])
             # hunt_action = np.squeeze(get_slow_hunt_ros(np.asarray(positions), self._playfield_size))
             # run_action = np.squeeze(get_slow_run_ros(inputs_bb, self._playfield_size))
-            # run_action = np.squeeze(rand_run[1])
+
 
             actions = np.stack([0, output.data.cpu().numpy().squeeze().item(), 0,
                                 0, adversarial_output.data.cpu().numpy().squeeze().item(), 0,
