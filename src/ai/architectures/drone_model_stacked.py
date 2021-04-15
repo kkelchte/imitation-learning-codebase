@@ -67,7 +67,7 @@ class Net(BaseNet):
             inputs = self.previous_input
 
         output = self.action_max * self.sample(inputs, train=False)
-        actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0, 0], axis=-1)
+        actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0], axis=-1)
 
         return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
                       value=actions)
