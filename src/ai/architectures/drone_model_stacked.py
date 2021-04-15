@@ -1,4 +1,5 @@
 #!/bin/python3.8
+from PIL import Image
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
 from src.ai.utils import mlp_creator, find_person
@@ -18,6 +19,7 @@ class Net(BaseNet):
         self.action_max = 0.5
         self.starting_height = -1
         self.previous_input = torch.Tensor([0, 0])
+        self.sz = 416
 
         self._actor = mlp_creator(sizes=[self.input_size[0], 8, 2],  # for now actors can only fly sideways
                                   layer_bias=True,
@@ -54,9 +56,9 @@ class Net(BaseNet):
             cprint(f'Started.', self._logger)
             self.initialize_architecture()
 
-    def get_action(self, input_img, train: bool = False, agent_id: int = -1) -> Action:
+    def get_action(self, input_img: Image, train: bool = False, agent_id: int = -1) -> Action:
         try:
-            img = image2torch(input_img)
+            img = image2torch(input_img.resize((self.sz, self.sz)))
             boxes = self.yolov3_tiny.predict_img(img, conf_thresh=0.7)[0]
             inputs = find_person(boxes, self.previous_input)
             inputs = np.squeeze(self.process_inputs(inputs))
