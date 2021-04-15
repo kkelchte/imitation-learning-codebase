@@ -76,6 +76,16 @@ def clip_action_according_to_playfield_size(inputs: Union[torch.Tensor, np.ndarr
     return actions
 
 
+def find_person(boxes, prev_pos):
+    pos = prev_pos
+    conf = 0
+    for i in range(len(boxes)):
+        if boxes[i][-1] == 0 and boxes[i][-3] > conf:
+            conf = boxes[i][-3]
+            pos = ((boxes[i][0]-0.5)*10, (boxes[i][1]-0.5)*10)
+    return pos
+
+
 def get_slow_hunt(state: torch.Tensor) -> torch.Tensor:
     agent_zero = state[:2]
     agent_one = state[2:]

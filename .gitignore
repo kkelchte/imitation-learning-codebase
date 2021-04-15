@@ -200,3 +200,4 @@ test_dir/
 /person_detection/
 /person_detection/
 /checkpoint_latest.ckpt
+/src/ai/yolov3/yolov3_files/
