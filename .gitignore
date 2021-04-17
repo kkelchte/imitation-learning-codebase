@@ -193,3 +193,4 @@ test_dir/
 
 *.sif
 *.code-workspace
+*.vscode

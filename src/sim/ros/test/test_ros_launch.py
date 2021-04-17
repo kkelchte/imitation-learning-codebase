@@ -26,7 +26,7 @@ class TestRos(unittest.TestCase):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
 
-    @unittest.skip
+    #@unittest.skip
     def test_launch_and_terminate_ros(self):
         ros_process = RosWrapper(launch_file='empty_ros.launch',
                                  config={
@@ -160,7 +160,7 @@ class TestRos(unittest.TestCase):
             enable_motors_service.call(False)
         ros_process.terminate()
 
-    # @unittest.skip
+    @unittest.skip
     def test_takeoff_double_drone_sim(self):
         config = {
           "output_path": self.output_dir,

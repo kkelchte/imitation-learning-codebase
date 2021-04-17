@@ -4,13 +4,11 @@
 Universe 	= vanilla
 RequestCpus     = 11
 RequestMemory   = 10 G
-RequestDisk	= 50 G
+RequestDisk	    = 50 G
 # max time 4h
-+RequestWallTime = 15*60
++RequestWallTime = 2 * 60 * 60
 Request_GPUS    = 0
-Requirements = (machineowner == "Visics") && HasSingularity && ( OpSysAndVer == "Fedora32" ) && ( Mips >= 26000 ) 
+Requirements = (machineowner == "Visics") && HasSingularity && ( OpSysAndVer == "Fedora33" ) && ( Mips >= 26000 )
 
-# If you want X11 forwarding, uncomment this
-#Requirements = ( HasX11 == True )
 
 Queue

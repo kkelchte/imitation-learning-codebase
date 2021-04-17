@@ -1,16 +1,17 @@
 #!/usr/bin/python3.8
-import os
 import time
+import os
 from copy import deepcopy
 from enum import IntEnum
 
-import actionlib
+for k in os.environ.keys():
+    print(f'{k}: {os.environ[k]}')
+
 import numpy as np
 import rospy
 
-from geometry_msgs.msg import WrenchStamped, PoseStamped, Pose, Point
-from hector_uav_msgs.msg import TakeoffAction, TakeoffActionGoal
-from std_msgs.msg import Empty, Float32
+from geometry_msgs.msg import WrenchStamped, PoseStamped, Point
+from std_msgs.msg import Empty
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
@@ -68,7 +69,7 @@ class Fsm:
         stime = time.time()
         max_duration = 60
         while not rospy.has_param('/fsm/mode') and time.time() < stime + max_duration:
-            time.sleep(0.01)
+            time.sleep(0.1)
 
         self._rate_fps = rospy.get_param('/fsm/rate_fps', 60)
         self._output_path = get_output_path()

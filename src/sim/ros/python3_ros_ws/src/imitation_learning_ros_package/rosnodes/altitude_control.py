@@ -1,28 +1,17 @@
 #!/usr/bin/python3.8
-import operator
-import os
-import time
-from collections import OrderedDict
-from typing import Dict
 
 import rospy
-import yaml
 from hector_uav_msgs.srv import EnableMotors
-from rospy import Publisher
-from std_msgs.msg import Float32MultiArray, String, Empty
+from std_msgs.msg import String, Empty
 from geometry_msgs.msg import Twist, PoseStamped
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import LaserScan, Image
-import actionlib
 from hector_uav_msgs.msg import *
 
-from src.core.logger import get_logger, cprint, MessageType
-from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import Actor, ActorConfig
+from src.core.logger import get_logger, cprint
 from src.sim.common.noise import *
-from src.core.data_types import Action, SensorType
+from src.core.data_types import SensorType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import process_laser_scan, process_image, euler_from_quaternion, \
-    get_output_path, apply_noise_to_twist, process_twist
+from src.sim.ros.src.utils import get_output_path, process_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension, safe_wait_till_true
 
 

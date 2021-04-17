@@ -101,7 +101,7 @@ class TestFsm(unittest.TestCase):
         self.assertEqual('Unknown', self.ros_topic.topic_values[self.reward_topic].termination)
 
     def _test_delay_evaluation(self):
-        rospy.sleep(0.1)
+        time.sleep(0.1)
         self.ros_topic.publishers[self.reset_topic].publish(Empty())
         start_time = rospy.get_time()
         while self.ros_topic.topic_values[self.state_topic].data == 'Unknown':

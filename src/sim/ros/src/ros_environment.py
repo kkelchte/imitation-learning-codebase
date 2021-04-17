@@ -4,24 +4,21 @@ import signal
 import sys
 import time
 from copy import deepcopy
-from typing import Tuple, Union, List, Iterable
+from typing import Tuple, Iterable
 
 import numpy as np
 import rospy
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
-from nav_msgs.msg import Odometry
-from sensor_msgs.msg import CompressedImage, Image, LaserScan
 from geometry_msgs.msg import Twist, Pose
-from std_msgs.msg import String, Float32MultiArray, Empty, Float32
+from std_msgs.msg import String, Float32MultiArray, Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 
-from imitation_learning_ros_package.msg import RosReward, CombinedGlobalPoses
+from imitation_learning_ros_package.msg import RosReward
 from src.core.logger import cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
 from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge.core import CvBridge
 from src.core.utils import camelcase_to_snake_format, ros_message_to_type_str
-from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.actors import ActorConfig
 from src.core.data_types import Action, Experience, TerminationType, ProcessState, SensorType
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
