@@ -13,7 +13,7 @@ environment_config:
   factory_key: ROS
   normalize_rewards: true
   reward_clipping: 10
-  max_number_of_steps: 500
+  max_number_of_steps: 1000
   ros_config:
     info:
       - frame

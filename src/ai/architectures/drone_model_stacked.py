@@ -1,13 +1,12 @@
 #!/bin/python3.8
-from PIL import Image
 from src.ai.architectures.bc_actor_critic_stochastic_continuous import Net as BaseNet
 from src.ai.base_net import ArchitectureConfig
 from src.ai.utils import mlp_creator, find_person
 from src.core.data_types import Action
 from src.core.logger import get_logger, cprint, MessageType
 from src.core.utils import get_filename_without_extension
-from src.ai.yolov3.yolov3_pytorch.utils import *
 from src.ai.yolov3.yolov3_pytorch.yolov3_tiny import *
+from skimage.transform import resize
 
 
 class Net(BaseNet):
@@ -56,18 +55,18 @@ class Net(BaseNet):
             cprint(f'Started.', self._logger)
             self.initialize_architecture()
 
-    def get_action(self, input_img: Image, train: bool = False, agent_id: int = -1) -> Action:
+    def forward(self, inputs):
+        return self._actor(inputs)
+
+    def get_action(self, input_img: np.ndarray, train: bool = False, agent_id: int = -1) -> Action:
         try:
-            img = image2torch(input_img.resize((self.sz, self.sz)))
+            img = self.process_inputs(resize(input_img, (self.sz, self.sz)))
             boxes = self.yolov3_tiny.predict_img(img, conf_thresh=0.7)[0]
             inputs = find_person(boxes, self.previous_input)
             inputs = np.squeeze(self.process_inputs(inputs))
             self.previous_input = inputs
         except TypeError:
             inputs = self.previous_input
-
-        output = self.action_max * self.sample(inputs, train=False)
-        actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0, 0, 0, 0, 0], axis=-1)
-
-        return Action(actor_name="tracking_fleeing_agent",  # assume output [1, 8] so no batch!
-                      value=actions)
+        output = self.action_max * self.forward(inputs)
+        actions = np.stack([*output.data.cpu().numpy().squeeze(), 0, 0, 0, 0], axis=-1)
+        return Action(actor_name="drone_tracking_agent", value=actions)
