@@ -18,8 +18,8 @@
                           ros_topic="camera/image"
                           cam_info_topic="camera/camera_info"
                           update_rate="10"
-                          res_x="128"
-                          res_y="128"
+                          res_x="200"
+                          res_y="200"
                           image_format="R8G8B8" hfov="80">
       <origin xyz="0.05 0.0 -0.1" rpy="0 ${90*pi/180} 0"/>
     </xacro:generic_camera>

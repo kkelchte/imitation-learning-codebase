@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import Optional, List
+from typing import Optional, List, Union
 
 import numpy as np
 from dataclasses import dataclass
@@ -132,7 +132,9 @@ class DataSaver:
             os.system(f'touch {os.path.join(self._config.saving_directory, experience.done.name)}')
         self._check_dataset_size_on_file_system()
 
-    def _store_frame(self, data: np.ndarray, dst: str, time_stamp: int) -> None:
+    def _store_frame(self, data: Union[np.ndarray, float], dst: str, time_stamp: int) -> None:
+        if not isinstance(data, np.ndarray):
+            data = np.asarray(data)
         try:
             if len(data.shape) in [2, 3]:
                 if not os.path.isdir(os.path.join(self._config.saving_directory, dst)):

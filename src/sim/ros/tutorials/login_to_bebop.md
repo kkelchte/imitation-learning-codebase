@@ -29,9 +29,10 @@ CHANGE LOG
 Changed /data/dragon.conf autorecord -> false.
 Added default restart of dragon-prog in a startup_script.sh called from /etc/init.d/rcS 
 Restart dragon prog with following settings:
- -S 0: video stabilisation off 
- -s 640x480: streaming resolution
- -f 24: frame rate
- -H 1: stream mode with low latency (slightly more blur)
+
+ - S 0: video stabilisation off 
+ - s 640x480: streaming resolution
+ - f 24: frame rate
+ - H 1: stream mode with low latency (slightly more blur)
  
  Unfortunately no value was found to set the field-of-view. This used to be -V. 

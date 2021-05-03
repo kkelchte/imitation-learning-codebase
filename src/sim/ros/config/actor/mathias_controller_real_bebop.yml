@@ -1,0 +1,13 @@
+specs:
+  # Use on bebop real with measurement rate of 5Hz
+  rate_fps: 5
+  Kp_x: 0.1
+  Ki_x: 0.
+  Kd_x: 0.1
+  Kp_y: 0.1
+  Ki_y: 0.
+  Kd_y: 0.1
+  Kp_z: 1.0
+  Ki_z: 0.1
+  Kd_z: 0.
+  K_theta: 1.0

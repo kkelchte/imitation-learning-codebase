@@ -5,7 +5,7 @@ specs:
               Moving around:
                 u (roll left)   i (up)         o (roll right)  p (take off)
                 j (turn left)   k (straight)   l (turn right)  m (go)
-                m (land)        ; (down)
+                , (land)        ; (down)
 
                space (take over)
                e (emergency)"

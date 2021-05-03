@@ -30,6 +30,11 @@ generate_messages(
   geometry_msgs
   nav_msgs
 )
+
+generate_dynamic_reconfigure_options(
+  cfg/pid.cfg
+)
+
 catkin_package(
     CATKIN_DEPENDS message_runtime
 )
@@ -42,6 +47,7 @@ catkin_install_python(PROGRAMS
   rosnodes/fsm.py
   rosnodes/robot_mapping.py
   rosnodes/ros_expert.py
+  rosnodes/mathias_controller.py
   rosnodes/altitude_control.py
   rosnodes/teleop_twist_keyboard.py
   rosnodes/waypoint_indicator.py
@@ -52,3 +58,8 @@ catkin_install_python(PROGRAMS
 install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
   PATTERN ".svn" EXCLUDE)
+
+
+# make sure configure headers are built before any node using them
+#add_dependencies(mathias_controller ${PROJECT_NAME}_gencfg)
+

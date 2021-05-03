@@ -1,0 +1,13 @@
+specs:
+  # Use on drone sim with groundtruth state at 100Hz
+  rate_fps: 100
+  Kp_x: 1.0
+  Ki_x: 0.3
+  Kd_x: 0.3
+  Kp_y: 1.0
+  Ki_y: 0.3
+  Kd_y: 0.3
+  Kp_z: 1.0
+  Ki_z: 0.3
+  Kd_z: 0.
+  K_theta: 1.0

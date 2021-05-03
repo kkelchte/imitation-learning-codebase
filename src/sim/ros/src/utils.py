@@ -10,7 +10,7 @@ from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
-from geometry_msgs.msg import Twist, PoseStamped
+from geometry_msgs.msg import Twist, PoseStamped, Point, TransformStamped, PointStamped, TwistStamped, Quaternion
 from sensor_msgs.msg import Imu, Image
 from std_msgs.msg import Float32MultiArray
 
@@ -224,7 +224,12 @@ def array_to_combined_global_pose(data: Sequence) -> CombinedGlobalPoses:
     return msg
 
 
-def euler_from_quaternion(quaternion: tuple) -> tuple:
+def euler_from_quaternion(quaternion: Union[Quaternion, tuple]) -> tuple:
+    if isinstance(quaternion, Quaternion):
+        quaternion = [quaternion.x,
+                      quaternion.y,
+                      quaternion.z,
+                      quaternion.w]
     return tuple(R.from_quat(quaternion).as_euler('XYZ'))
 
 
@@ -253,10 +258,13 @@ def project(points: List[np.ndarray],
     return [p / p[2] for p in pixel_coordinates]
 
 
-def transform(points: List[np.ndarray],
-              orientation: np.ndarray = np.eye(3),
-              translation: np.ndarray = np.zeros((3,)),
-              invert: bool = False) -> List[np.ndarray]:
+def transform(points: List[Union[np.ndarray, Point]],
+              orientation: Union[Quaternion, np.ndarray] = np.eye(3),
+              translation: Union[np.ndarray, Point] = np.zeros((3,)),
+              invert: bool = False) -> List[Union[np.ndarray, Point]]:
+    return_points = isinstance(points[0], Point)
+    if return_points:
+        points = [np.asarray([p.x, p.y, p.z]) for p in points]
     augmented = True
     lengths = [len(p) for p in points]
     assert min(lengths) == max(lengths)
@@ -264,12 +272,21 @@ def transform(points: List[np.ndarray],
         augmented = False
         points = [np.concatenate([p, np.ones(1, )]) for p in points]
     transformation = np.zeros((4, 4))
+    if isinstance(orientation, Quaternion):
+        orientation = R.from_quat([orientation.x,
+                                   orientation.y,
+                                   orientation.z,
+                                   orientation.w]).as_matrix()
     transformation[0:3, 0:3] = orientation
-    transformation[0:3, 3] = translation
+    transformation[0:3, 3] = translation if isinstance(translation, np.ndarray) else np.asarray([translation.x,
+                                                                                                 translation.y,
+                                                                                                 translation.z])
     transformation[3, 3] = 1
     if invert:
         transformation = np.linalg.inv(transformation)
-    return [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p) for p in points]
+    transformed_arrays = [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p)
+                          for p in points]
+    return transformed_arrays if not return_points else [Point(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
 
 
 def calculate_bounding_box(state: Sequence,
@@ -408,3 +425,25 @@ def get_distance_between_agents(info: dict) -> float:
     msg = info['combined_global_poses']
     return distance([msg.tracking_x, msg.tracking_y, msg.tracking_z],
                     [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z]) if msg is not None else None
+
+
+def get_timestamp(stamped_var: Union[PoseStamped, PointStamped, TransformStamped, TwistStamped, Odometry]) -> float:
+    '''Returns the timestamp of 'stamped_var' (any stamped msg, eg.
+    PoseStamped, Pointstamped, TransformStamped,...) in seconds.
+    '''
+    time = float(stamped_var.header.stamp.to_sec())
+    return time
+
+
+def get_time_diff(stamp1: Union[PoseStamped, PointStamped, TransformStamped, TwistStamped, Odometry],
+                  stamp2: Union[PoseStamped, PointStamped, TransformStamped, TwistStamped, Odometry]) -> float:
+    '''Returns the difference between to timestamped messages (any stamped
+    msg, eg. PoseStamped, Pointstamped, TransformStamped,...) in seconds.
+    '''
+    time_diff = get_timestamp(stamp1) - get_timestamp(stamp2)
+    return time_diff
+
+
+def to_ros_time(time: float) -> rospy.Time:
+    return rospy.Time(secs=int(time),
+                      nsecs=int((time - int(time))*10**9))

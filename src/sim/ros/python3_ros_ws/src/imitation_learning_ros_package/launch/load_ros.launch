@@ -29,7 +29,7 @@
     <!--    Distance between two drones used for double_drone_sim-->
     <arg name="distance_tracking_fleeing_m" default="3"/>
     <arg name="starting_height" default="1"/>
-    <param name="starting_height" value="$(arg starting_height)" />
+    <param name="/world/starting_height" value="$(arg starting_height)"/>
 
     <group if="$(eval arg('robot_name') == 'turtlebot_sim')">
           <param name="robot_description"
@@ -43,7 +43,7 @@
     </group>
 
     <group if="$(eval arg('robot_name') == 'drone_sim_down_cam' or arg('robot_name') == 'drone_sim')">
-        <arg name="model_name" default="drone_sim"/>
+        <arg name="model_name" default="$(arg robot_name)"/>
         <!-- Spawn simulated quadrotor uav -->
         <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
             <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
@@ -161,7 +161,7 @@
     <arg name="joystick" default="false"/>
     <group if="$(arg joystick)" ns="/actor/joystick">
         <arg name="joystick_config_file_path_with_extension"
-             default="$(env CODEDIR)/src/sim/ros/config/actor/joystick_turtlebot_sim.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/joystick_$(arg robot_name).yml"/>
         <rosparam command="load"
                   file="$(arg joystick_config_file_path_with_extension)"/>
         <!--<node pkg="imitation_learning_ros_package"
@@ -182,7 +182,7 @@
     <arg name="keyboard" default="false"/>
     <group if="$(arg keyboard)">
         <arg name="keyboard_config_file_path_with_extension"
-             default="$(env CODEDIR)/src/sim/ros/config/actor/keyboard_turtlebot_sim.yml"/>
+             default="$(env CODEDIR)/src/sim/ros/config/actor/keyboard_$(arg robot_name).yml"/>
         <rosparam command="load"
                   file="$(arg keyboard_config_file_path_with_extension)"
                   ns="/actor/keyboard"/>
@@ -205,6 +205,34 @@
               type="ros_expert.py"
               output="screen"
               ns="/actor/ros_expert"/>
+    </group>
+
+    <arg name="mathias_controller" default="false"/>
+    <group if="$(arg mathias_controller)">
+        <arg name="mathias_controller_config_file_path_with_extension"
+             default="$(env CODEDIR)/src/sim/ros/config/actor/mathias_controller.yml"/>
+        <rosparam command="load"
+                  file="$(arg mathias_controller_config_file_path_with_extension)"
+                  ns="/actor/mathias_controller"/>
+        <node pkg="imitation_learning_ros_package"
+              name="mathias_controller"
+              type="mathias_controller.py"
+              output="screen"
+              ns="/actor/mathias_controller"/>
+    </group>
+
+    <arg name="mathias_controller_with_KF" default="false"/>
+    <group if="$(arg mathias_controller_with_KF)">
+        <arg name="mathias_controller_config_file_path_with_extension"
+             default="$(env CODEDIR)/src/sim/ros/config/actor/mathias_controller_with_KF.yml"/>
+        <rosparam command="load"
+                  file="$(arg mathias_controller_config_file_path_with_extension)"
+                  ns="/actor/mathias_controller"/>
+        <node pkg="imitation_learning_ros_package"
+              name="mathias_controller_with_KF"
+              type="mathias_controller_with_KF.py"
+              output="screen"
+              ns="/actor/mathias_controller"/>
     </group>
 
     <arg name="altitude_control" default="false"/>

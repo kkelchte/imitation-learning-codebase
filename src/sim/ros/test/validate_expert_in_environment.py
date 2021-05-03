@@ -11,7 +11,7 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-WORLD_NAME = 'cube_world'
+WORLD_NAME = 'circle_world/model_000'
 
 config_dict = {
     "output_path": "/tmp",
@@ -19,7 +19,8 @@ config_dict = {
     "max_number_of_steps": -1,
     "ros_config": {
         "info": [
-            "position"
+            "position",
+            "current_waypoint"
         ],
         "observation": "camera",
         "max_update_wait_period_s": 10,
@@ -27,19 +28,24 @@ config_dict = {
         "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,
-          "robot_name": "drone_sim",
-          "fsm_mode": "SingleRun",  # file with fsm params loaded from config/fsm
+          "robot_name": "drone_sim_down_cam",
+          "fsm_mode": "TakeOverRun",
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
-          "control_mapping_config": "noisy_ros_expert",  # default
+          "control_mapping_config": "ros_expert",  # default
+          "altitude_control": True,
           "world_name": WORLD_NAME,
           "gazebo": True,
+          "yaw_or": 1.57,
+          "z_pos": 0.2
         },
         "actor_configs": [{
               "name": "ros_expert",
               "file": "src/sim/ros/config/actor/ros_expert_wp_slow.yml"
-            }],
+            }, {
+            "name": "altitude_control"}
+        ],
     }
 }
 

@@ -14,6 +14,10 @@ from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm 
 from src.sim.ros.src.utils import get_output_path, process_twist
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension, safe_wait_till_true
 
+"""
+Take care of taking off and landing during take-over state
+"""
+
 
 class AltitudeControl:
 
@@ -50,7 +54,6 @@ class AltitudeControl:
                              callback_args='default')
             rospy.wait_for_service('/enable_motors')
             self._enable_motors_services['default'] = rospy.ServiceProxy('/enable_motors', EnableMotors)
-
         elif isinstance(self._robot, list):
             # in case of tracking fleeing quadrotor
             self._publishers['tracking'] = rospy.Publisher('cmd_vel', Twist, queue_size=10)
@@ -103,7 +106,6 @@ class AltitudeControl:
             self._height[agent_name] = msg.pose.position.z
 
     def _get_twist(self, agent: str = 'default') -> Twist:
-        #  TODO make proper PID controller
         twist = Twist()
         height = self._height[agent]
         if height < (self._reference_height - 0.1):
