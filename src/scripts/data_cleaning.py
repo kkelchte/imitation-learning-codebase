@@ -31,6 +31,7 @@ class DataCleaningConfig(Config):
     augment_empty_images: float = 0.
     texture_directory: str = ""  # directory in to fill background with
     binary_maps_as_target: bool = False  # extract binary maps from inputs and store in action field in hdf5
+    smoothen_labels: bool = False
     # binary maps are extracted according to a threshold, in line_world bg is white (high), line is blue (low)
     # so data is best inverted to predict line high and bg low
     invert_binary_maps: bool = False
@@ -90,7 +91,8 @@ class DataCleaner:
                 if self._config.augment_background_noise != 0 or self._config.augment_background_textured != 0 else None
             if self._config.binary_maps_as_target:
                 run_dataset = set_binary_maps_as_target(run_dataset, invert=self._config.invert_binary_maps,
-                                                        binary_images=binary_maps)
+                                                        binary_images=binary_maps,
+                                                        smoothen_labels=self._config.smoothen_labels)
 
             if self._config.augment_background_noise != 0:
                 run_dataset = augment_background_noise(run_dataset, p=self._config.augment_background_noise,

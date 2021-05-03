@@ -1,7 +1,7 @@
 output_path: test_pretrained_models/auto_encoder_deeply_supervised
 mode: lr_pretrain_imagenet
 job_configs:
-  - command: python3.8 src/scripts/pretrain_model_on_imagenet.py -n 15
+  - command: python3 src/scripts/pretrain_model_on_imagenet.py -n 15
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 11
     gpus: 1
@@ -10,7 +10,8 @@ job_configs:
     wall_time_s: 15 * 60 * 60
     nice: true
     gpu_mem_mb: 7900
-    use_singularity: false
+    use_singularity: true
+    singularity_dir: fedora
     check_if_ros_already_in_use: false
     save_locally: false
 number_of_jobs:

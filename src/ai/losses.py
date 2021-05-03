@@ -1,6 +1,5 @@
 import torch
-from torch.nn import Module
-from torch.nn.modules.loss import NLLLoss
+from torch.nn.modules.loss import *
 
 
 class WeightedBinaryCrossEntropyLoss(NLLLoss):

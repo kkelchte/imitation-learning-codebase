@@ -1,7 +1,7 @@
 output_path: cube_world
 mode: dag_train_evaluate
 job_configs:
-  - command: python3.8 src/scripts/experiment.py
+  - command: python3 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 8
     gpus: 1
@@ -13,7 +13,7 @@ job_configs:
     use_singularity: false
     check_if_ros_already_in_use: false
     save_locally: true
-  - command: python3.8 src/scripts/experiment.py
+  - command: python3 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 11
     gpus: 1

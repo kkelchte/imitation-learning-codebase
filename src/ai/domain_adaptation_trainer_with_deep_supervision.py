@@ -8,7 +8,7 @@ from src.ai.domain_adaptation_trainer import DomainAdaptationTrainer
 from src.ai.trainer import TrainerConfig, Trainer
 from src.ai.losses import *
 from src.ai.deep_supervision import DeepSupervision
-from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor
+from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor, plot_gradient_flow
 from src.core.data_types import Distribution, Dataset
 from src.core.logger import get_logger, cprint
 from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -56,12 +56,10 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
             task_loss *= (1 - self._config.epsilon)
 
             # add domain adaptation loss on distribution of output pixels at each output
-            domain_loss = sum([self._domain_adaptation_criterion(sp.flatten().unsqueeze(1), tp.flatten().unsqueeze(1))
-                               for sp, tp in zip(self._net.forward_with_all_outputs(source_batch.observations,
-                                                                                    train=True),
-                                                 self._net.forward_with_all_outputs(target_batch.observations,
-                                                                                    train=True))
-                               ]) * self._config.epsilon
+            domain_loss = sum(self._domain_adaptation_criterion(sp, tp) for sp, tp in zip(
+                self._net.get_features(source_batch.observations, train=True),
+                self._net.get_features(target_batch.observations, train=True)
+            )) * self._config.epsilon
 
             loss = task_loss + domain_loss
             loss.backward()
@@ -104,6 +102,8 @@ class DeepSupervisedDomainAdaptationTrainer(DeepSupervision, DomainAdaptationTra
                             # title += 'inds_' + '_'.join([str(v.item()) for v in winning_indices.indices])
                             # title += '_vals_' + '_'.join([f'{v.item():0.2f}' for v in winning_indices.values])
                             writer.write_output_image(feature_maps, title)
+            writer.write_figure(tag='gradient', figure=plot_gradient_flow(self._net.named_parameters()))
+
         return f' task {self._config.criterion} ' \
                f'{task_error_distribution.mean: 0.3e} ' \
                f'[{task_error_distribution.std:0.2e}] ' \

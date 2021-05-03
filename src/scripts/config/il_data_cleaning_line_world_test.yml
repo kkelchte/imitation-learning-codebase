@@ -1,0 +1,19 @@
+output_path: hdf5_files/line_world/mixed/1_200
+training_validation_split: 1.0
+remove_first_n_timestamps: 30
+augment_background_noise: 0.01
+augment_background_textured: 0.98
+augment_empty_images: 0.01
+texture_directory: textured_dataset
+binary_maps_as_target: True
+invert_binary_maps: True
+require_success: True
+max_run_length: 200
+max_hdf5_size: 3000000000
+shuffle: True
+data_loader_config:
+  subsample: 1
+  input_size: [1, 200, 200]
+  data_directories:
+    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_data/sim/raw/line_world_mixed/raw_data/20-09-10_14-02-58_runner_490
+    - /Users/kelchtermans/code/imitation-learning-codebase/experimental_data/line_world_data/sim/raw/line_world_mixed/raw_data/20-09-10_14-48-23_runner_487

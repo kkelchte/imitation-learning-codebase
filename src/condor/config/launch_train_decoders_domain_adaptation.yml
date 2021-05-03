@@ -1,8 +1,8 @@
-output_path: encoder_decoder/domain_adaptation_deeply_supervised_pixel_distribution
+output_path: encoder_decoder/domain_adaptation_deeply_supervised_avg_feature_map_distribution
 mode: domain_adaptation
 wait_time_between_jobs_sec: 0.1
 job_configs:
-  - command: python3.8 src/scripts/experiment.py
+  - command: python3 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
     cpus: 2
     gpus: 1

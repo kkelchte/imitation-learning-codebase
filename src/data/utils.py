@@ -9,6 +9,7 @@ import h5py
 import torch
 from PIL import Image
 import numpy as np
+from kornia import gaussian_blur2d, motion_blur
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
@@ -306,7 +307,6 @@ def load_dataset_from_hdf5(filename: str, input_size: List[int] = None) -> h5py.
     h5py_file = h5py.File(filename, 'r')
     if input_size is not None and input_size != []:
         assert tuple(h5py_file['dataset']['observations'][0].shape) == tuple(input_size)
-    print(len(h5py_file['dataset']['done'][:]))
     return h5py_file['dataset']
 
 
@@ -385,7 +385,7 @@ def parse_binary_maps(observations: List[torch.Tensor], invert: bool = False) ->
     create binary maps from observations based on R-channel which is 1 on background and 0 at blue line.
     :param observations: [channels (RGB) x height x width ]
     :param invert: bool switch high - low binary values
-    :return: binary maps : [1 x height x width ]
+    :return: binary maps : [height x width ]
     '''
     observations = [o.numpy() for o in observations]
     binary_images = [
@@ -395,10 +395,15 @@ def parse_binary_maps(observations: List[torch.Tensor], invert: bool = False) ->
     return binary_images
 
 
-def set_binary_maps_as_target(dataset: Dataset, invert: bool = False, binary_images: List[np.ndarray] = None) -> Dataset:
+def set_binary_maps_as_target(dataset: Dataset, invert: bool = False, binary_images: List[np.ndarray] = None,
+                              smoothen_labels: bool = False) -> Dataset:
     if binary_images is None:
         binary_images = parse_binary_maps(copy.deepcopy(dataset.observations), invert=invert)
-    dataset.actions = [torch.as_tensor(b) for b in binary_images]
+    binary_images = torch.stack([torch.as_tensor(b).unsqueeze(0) for b in binary_images], dim=0)
+    # smoothen binary maps to punish line predictions close to line less severely
+    if smoothen_labels:
+        binary_images = gaussian_blur2d(binary_images, kernel_size=(11, 11), sigma=(4, 4))
+    dataset.actions = [b.squeeze() for b in binary_images]
     return dataset
 
 
@@ -455,21 +460,22 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
     # 2. parse binary images to extract fore- and background
     if binary_images is None:
         binary_images = parse_binary_maps(copy.deepcopy(dataset.observations), invert=True)
+    # 3. combine foreground and background in augmented dataset
     augmented_dataset = copy.deepcopy(dataset)
     augmented_dataset.observations = []
     num_channels = dataset.observations[0].shape[0]
-    for index, image in tqdm(enumerate(binary_images)):
+    for index, image in tqdm(enumerate(binary_images[:-1])):
         if np.random.binomial(1, p):
-            new_shape = (*image.shape, num_channels)
             bg_image = np.random.choice(texture_paths)
             bg = load_and_preprocess_file(bg_image,
                                           size=(num_channels, image.shape[0], image.shape[1])).permute(1, 2, 0).numpy()
             if not np.random.binomial(1, p_empty):
-                three_channel_mask = np.stack([image] * num_channels, axis=-1)
-                fg = create_random_gradient_image(size=bg.shape)
-                new_img = torch.as_tensor(((1 - three_channel_mask) * bg + three_channel_mask * fg)).permute(2, 0, 1)
+                # blurred_mask = motion_blur_mask(binary_images[index], binary_images[index + 1], num_channels)
+                blurred_mask = gaussian_blur_mask(binary_images[index], num_channels)
+                fg = create_random_gradient_image(size=bg.shape, mean=bg.mean())
+                new_img = torch.as_tensor(((1 - blurred_mask) * bg + blurred_mask * fg)).permute(2, 0, 1)
                 augmented_dataset.observations.append(new_img)
-            else:
+            else:  # for ratio p_empty put only background
                 augmented_dataset.observations.append(torch.as_tensor(bg).permute(2, 0, 1))
                 augmented_dataset.actions[index] = torch.zeros_like(augmented_dataset.actions[index])
         else:
@@ -477,12 +483,43 @@ def augment_background_textured(dataset: Dataset, texture_directory: str,
     return augmented_dataset
 
 
-def create_random_gradient_image(size: tuple, low: float = 0., high: float = 1.) -> np.ndarray:
+def gaussian_blur_mask(image: torch.Tensor, num_channels: int) -> torch.Tensor:
+    mask = torch.stack([torch.as_tensor(image)] * num_channels, dim=0)
+    kernel_size = int(np.random.choice(list(range(4))) * 2 + 1)  # select random (but odd) kernel size
+    sigma = np.random.uniform(0.1, 3)  # select deviation
+    return gaussian_blur2d(mask.unsqueeze(0), kernel_size=(kernel_size, kernel_size),
+                           sigma=(sigma, sigma)).squeeze(0).permute(1, 2, 0).clamp(0, 1)
+
+
+def motion_blur_mask(image_a: torch.Tensor,
+              image_b: torch.Tensor, num_channels: int) -> torch.Tensor():
+    # smoothen mask to make transition less abrupt with randomly selected kernel size and motion blur
+    masks = torch.stack([torch.as_tensor(image_a),
+                         torch.as_tensor(image_b)],
+                         dim=0).unsqueeze(1)
+    if num_channels > 1:
+        masks = masks.repeat(1, 3, 1, 1)
+
+    kernel_size = int(np.random.choice(list(range(5))) * 2 + 5)  # select random (but odd) kernel size
+    angle = np.random.randint(0, 359)
+    direction = np.random.uniform(-1, 1)
+    return motion_blur(masks, kernel_size, angle, direction)[0].permute(1, 2, 0).clamp(0, 1)
+
+
+def create_random_gradient_image(size: tuple, low: float = 0., high: float = 1., mean: float = -1) -> np.ndarray:
+    """
+    mean is float to which fg colors should differ enough
+    """
+    minimum_distance = 10
+    locations = (np.random.randint(size[0]), np.random.randint(size[0]))
     color_a = np.random.uniform(low, high)
     color_b = np.random.uniform(low, high)
-    locations = (np.random.randint(size[0]), np.random.randint(size[0]))
-    while locations[0] == locations[1]:
+    while abs(locations[0] - locations[1]) < minimum_distance:
         locations = (np.random.randint(size[0]), np.random.randint(size[0]))
+    while abs(color_a - mean) < 0.05:
+        color_a = np.random.uniform(low, high)
+    while abs(color_b - mean) < 0.05:
+        color_b = np.random.uniform(low, high)
     x1, x2 = min(locations), max(locations)
     gradient = np.arange(color_a, color_b, ((color_b - color_a)/(x2 - x1)))
     gradient = gradient[:x2-x1]

@@ -14,9 +14,9 @@ def prepare_domain_adaptation(base_config_file: str,
                               number_of_jobs: int,
                               output_path: str) -> List[CondorJob]:
 
-    domain_adaptation_criterions = ['MMDLossSimple', 'Coral']
-    epsilons = [0.8, 0.5, 0.1, 0.0]
-    learning_rates = [0.001]
+    domain_adaptation_criterions = ['MMDLossSimple', 'Coral', 'MMDLossZhao']
+    epsilons = [0.5, 0.05]
+    learning_rates = [0.001, 0.0001]
     model_paths = [os.path.join(output_path, 'models', f'{dac}', f'eps_{eps}', f'lr_{lr}')
                    for dac in domain_adaptation_criterions
                    for eps in epsilons
@@ -46,34 +46,18 @@ def prepare_wd_confidence_line_world(base_config_file: str,
                                      job_config_object: CondorJobConfig,
                                      number_of_jobs: int,
                                      output_path: str) -> List[CondorJob]:
-    learning_rates = [0.1, 0.01, 0.001, 0.0001]
-    #weight_decays = [0.0, 0.01, 0.001, 0.0001, ]
+    learning_rates = [0.001, 0.0001]
     weight_decays = [10, 1.0, 0.1]
-
-    architectures = ['auto_encoder_deeply_supervised_confidence']
-
-    model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}', f'wd_{wd}')
-                   for arch in architectures
+    model_paths = [os.path.join(output_path, 'models', f'lr_{lr}', f'wd_{wd}')
                    for lr in learning_rates
                    for wd in weight_decays]
     adjustments = {translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
-                   [lr for arch in architectures
+                   [lr
                    for lr in learning_rates
                    for wd in weight_decays],
-                   translate_keys_to_string(['architecture_config', 'architecture']):
-                   [arch for arch in architectures
-                   for lr in learning_rates
-                   for wd in weight_decays],
-                   translate_keys_to_string(['trainer_config', 'factory_key']):
-                       ['DeepSupervisionConfidence' if 'confidence' in arch
-                        else 'DeepSupervision'
-                        for arch in architectures
-                        for lr in learning_rates
-                        for wd in weight_decays],
                    translate_keys_to_string(['trainer_config', 'confidence_weight']):
-                       [wd for arch in architectures
-                        for lr in learning_rates
+                       [wd for lr in learning_rates
                         for wd in weight_decays]}
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
@@ -105,12 +89,12 @@ def prepare_lr_discirminator_line_world(base_config_file: str,
                                         number_of_jobs: int,
                                         output_path: str) -> List[CondorJob]:
     learning_rates = [0.0001]
-    critic_learning_rates = [0.1, 0.01, 0.001]
-    epsilon = [0.8]
-    bns = [True]
+    critic_learning_rates = [0.01, 0.001]
+    epsilon = [0.5]
+    bns = [False]
 
     model_paths = [os.path.join(output_path, 'models', 'auto_encoder_deeply_supervised_with_discriminator',
-                                f'model_lr_{lr}', f'discriminator_lr_{dlr}', f'epsilon_{eps}', 'bn' if bn else 'dflt')
+                                f'model_lr_{lr}', f'discriminator_lr_{dlr}', f'epsilon_{eps}', 'bn' if bn else 'default')
                    for lr in learning_rates
                    for dlr in critic_learning_rates
                    for eps in epsilon
@@ -143,53 +127,27 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                        job_config_object: CondorJobConfig,
                                        number_of_jobs: int,
                                        output_path: str) -> List[CondorJob]:
-    learning_rates = [0.001]
-    #architectures = ['auto_encoder_deeply_supervised_confidence']
+    learning_rates = [0.001, 0.0001]
 
-    architectures = ['bc_deeply_supervised_auto_encoder',
-                     'auto_encoder_deeply_supervised_share_weights']
-    # 'auto_encoder_deeply_supervised_share_weights_confidence'
-    batch_norm = [False]
-    loss = ['WeightedBinaryCrossEntropyLoss']  # ['WeightedBinaryCrossEntropyLoss', 'MSELoss']
+    architectures = ['bc_deeply_supervised_auto_encoder']
+    # architectures = ['bc_deeply_supervised_auto_encoder',
+    #                  'auto_encoder_deeply_supervised_share_weights']
 
-    model_paths = [os.path.join(output_path, 'models', arch, 'bn' if bn else 'default', ls, f'lr_{lr}', )
+    model_paths = [os.path.join(output_path, 'models', arch, f'lr_{lr}', )
                    for arch in architectures
-                   for lr in learning_rates
-                   for bn in batch_norm
-                   for ls in loss]
+                   for lr in learning_rates]
     adjustments = {translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
                    [lr for arch in architectures
-                   for lr in learning_rates
-                   for bn in batch_norm
-                   for ls in loss],
+                   for lr in learning_rates],
                    translate_keys_to_string(['architecture_config', 'architecture']):
                    [arch for arch in architectures
-                   for lr in learning_rates
-                   for bn in batch_norm
-                   for ls in loss],
-                   translate_keys_to_string(['architecture_config', 'batch_normalisation']):
-                   [bn for arch in architectures
-                   for lr in learning_rates
-                   for bn in batch_norm
-                   for ls in loss],
-                   translate_keys_to_string(['trainer_config', 'criterion']):
-                   [ls for arch in architectures
-                   for lr in learning_rates
-                   for bn in batch_norm
-                   for ls in loss],
-                   translate_keys_to_string(['trainer_config', 'criterion_args_str']):
-                   ['' if ls == 'MSELoss' else 'beta=0.9' for arch in architectures
-                   for lr in learning_rates
-                   for bn in batch_norm
-                   for ls in loss],
+                   for lr in learning_rates],
                    translate_keys_to_string(['trainer_config', 'factory_key']):
                        ['DeepSupervisionConfidence' if 'confidence' in arch
                         else 'DeepSupervision'
                         for arch in architectures
-                        for lr in learning_rates
-                        for bn in batch_norm
-                        for ls in loss],
+                        for lr in learning_rates],
                    }
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
@@ -198,16 +156,34 @@ def prepare_lr_architecture_line_world(base_config_file: str,
                                              job_config_object=job_config_object)
 
 
-def prepare_lr_line_world(base_config_file: str,
-                          job_config_object: CondorJobConfig,
-                          number_of_jobs: int,
-                          output_path: str) -> List[CondorJob]:
-    learning_rates = [0.01, 0.001, 0.0001, 0.00001]
-    model_paths = [os.path.join(output_path, 'models', f'lr_{lr}')
-                   for lr in learning_rates]
+def prepare_lr_wd_bn_line_world(base_config_file: str,
+                                job_config_object: CondorJobConfig,
+                                number_of_jobs: int,
+                                output_path: str) -> List[CondorJob]:
+
+    learning_rates = [0.001, 0.0001]
+    batch_norm = [True, False]
+    weight_decay = [0.001, 0.0001, 0.00001]
+
+    model_paths = [os.path.join(output_path, 'models', 'bn' if bn else 'default', f'wd_{wd}', f'lr_{lr}')
+                   for lr in learning_rates
+                   for wd in weight_decay
+                   for bn in batch_norm]
+
     adjustments = {translate_keys_to_string(['output_path']): model_paths,
                    translate_keys_to_string(['trainer_config', 'learning_rate']):
-                       [lr for lr in learning_rates]}
+                       [lr for lr in learning_rates
+                        for wd in weight_decay
+                        for bn in batch_norm],
+                   translate_keys_to_string(['architecture_config', 'batch_normalisation']):
+                       [bn for lr in learning_rates
+                        for wd in weight_decay
+                        for bn in batch_norm],
+                   translate_keys_to_string(['trainer_config', 'weight_decay']):
+                       [wd for lr in learning_rates
+                        for wd in weight_decay
+                        for bn in batch_norm],
+                   }
     config_files = create_configs(base_config=base_config_file,
                                   output_path=output_path,
                                   adjustments=adjustments)

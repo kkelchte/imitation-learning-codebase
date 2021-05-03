@@ -1,0 +1,2 @@
+CODEDIR="${PWD}"
+PYTHONPATH=${PWD}:${PWD}/../dummy-tracking-gym

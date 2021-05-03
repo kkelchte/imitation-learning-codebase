@@ -1,3 +1,4 @@
+import io
 import os
 from typing import Union, List
 
@@ -42,6 +43,12 @@ class TensorboardWrapper(SummaryWriter):
             images = images.squeeze(dim=1)
             images = torch.stack(3*[images], dim=1)
         self.add_images(tag, images, self.step, dataformats='NCHW')
+
+    def write_figure(self, figure, tag):
+        """
+        figure: pyplot figure
+        """
+        self.add_figure(tag=f'Fig: {tag}', figure=figure, global_step=self.step)
 
     def write_gif(self, frames: List[np.ndarray] = None, tag: str = "") -> None:
         if len(frames) == 0:

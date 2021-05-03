@@ -6,8 +6,8 @@ number_of_jobs:  # indicates number of seeds per parameter value
 base_config_files:
   - src/scripts/config/discrete_dummy_tracking_ppo.yml
 job_configs:
-  - command: python3.8 src/scripts/experiment.py
-    codebase_dir: /users/start2017/r0669036/code/imitation-learning-codebase
+  - command: python3 src/scripts/experiment.py
+    codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase-dummy-tracking-env
     cpus: 2
     gpus: 0
     cpu_mem_gb: 5

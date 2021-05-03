@@ -1,4 +1,6 @@
 from typing import Union, List, Iterator, Sequence, Tuple
+import io
+from typing import Union, List, Iterator
 
 import torch
 import torch.nn as nn
@@ -210,3 +212,33 @@ def get_returns(batch: Dataset) -> torch.Tensor:
 
     assert len(returns) == len(batch)
     return torch.as_tensor(returns)
+
+##################################################################
+# Plot helper functions related to neural networks.
+##################################################################
+
+
+def plot_gradient_flow(named_parameters):
+    """ref: RoshanRane https://discuss.pytorch.org/t/check-gradient-flow-in-network/15063/7"""
+    import matplotlib.pyplot as plt
+    ave_grads = []
+    layers = []
+    for n, p in named_parameters:
+        if p.requires_grad and "bias" not in n:
+            try:
+                ave_grads.append(p.grad.abs().mean())
+            except:
+                pass
+            else:
+                layers.append(n)
+    figure = plt.figure()
+    plt.plot(ave_grads, alpha=0.3, color="b")
+    plt.hlines(0, 0, len(ave_grads) + 1, linewidth=1, color="k")
+    plt.xticks(range(0, len(ave_grads), 1), layers, rotation="vertical")
+    plt.xlim(xmin=0, xmax=len(ave_grads))
+    plt.xlabel("Layers")
+    plt.ylabel("Average Gradient")
+    plt.title("Gradient flow")
+    plt.grid(True)
+    plt.tight_layout()
+    return figure

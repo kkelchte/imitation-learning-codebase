@@ -5,7 +5,7 @@ import numpy as np
 
 from src.ai.base_net import BaseNet
 from src.ai.trainer import TrainerConfig, Trainer
-from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor
+from src.ai.utils import get_reward_to_go, get_checksum_network_parameters, data_to_tensor, plot_gradient_flow
 from src.core.data_types import Distribution, Dataset
 from src.core.logger import get_logger, cprint
 from src.core.tensorboard_wrapper import TensorboardWrapper
@@ -63,4 +63,14 @@ class DeepSupervision(Trainer):
                     writer.write_output_image(prob, f'training/predictions_{index}')
                 writer.write_output_image(targets, 'training/targets')
                 writer.write_output_image(torch.stack(batch.observations), 'training/inputs')
+            if self._config.store_feature_maps_on_tensorboard and epoch % 30 == 0:
+                outputs = self._net.forward_with_intermediate_outputs(batch.observations, train=False)
+                for i in range(4):  # store first 5 images of batch
+                    for layer in ['x1', 'x2', 'x3', 'x4']:
+                        feature_maps = outputs[layer][i].flatten(start_dim=0, end_dim=0)
+                        title = f'feature_map/layer_{layer}/{i}'
+                        # title += 'inds_' + '_'.join([str(v.item()) for v in winning_indices.indices])
+                        # title += '_vals_' + '_'.join([f'{v.item():0.2f}' for v in winning_indices.values])
+                        writer.write_output_image(feature_maps, title)
+            writer.write_figure(tag='gradient', figure=plot_gradient_flow(self._net.named_parameters()))
         return f' training {self._config.criterion} {error_distribution.mean: 0.3e} [{error_distribution.std:0.2e}]'

@@ -1,0 +1,26 @@
+output_path: hdf5_files/line_world_ctr/gaussian_blurred_lines/1_200
+training_validation_split: 0.
+remove_first_n_timestamps: 30
+augment_background_noise: 0.01
+augment_background_textured: 0.98
+augment_empty_images: 0.01
+texture_directory: manual_floor_dataset
+binary_maps_as_target: False
+require_success: True
+max_run_length: 200
+max_hdf5_size: 3000000000
+shuffle: True
+data_loader_config:
+  subsample: 1
+  input_size: [1, 200, 200]
+  data_directories:
+    - line_world_data/sim/raw_data/20-09-10_11-29-32_runner_133
+    - line_world_data/sim/raw_data/20-09-10_11-21-36_runner_78
+    - line_world_data/sim/raw_data/20-09-16_11-10-35_runner_15
+    - line_world_data/sim/raw_data/20-09-16_13-13-31_runner_81
+    - line_world_data/sim/raw_data/20-09-17_12-55-25_runner_127
+    - line_world_data/sim/raw_data/20-09-17_17-02-51_runner_374
+    - line_world_data/sim/raw_data/20-09-17_23-13-17_runner_49
+    - line_world_data/sim/raw_data/20-09-18_02-28-53_runner_249
+    - line_world_data/sim/raw_data/20-09-18_01-48-52_runner_208
+    - line_world_data/sim/raw_data/20-09-17_12-27-26_runner_99

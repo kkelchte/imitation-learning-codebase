@@ -1,15 +1,15 @@
-output_path: encoder_decoder/discriminator_lr_share_weights
+output_path: line_world/gaussian_blurred_line_smooth_label/big_ds_discriminator_long
 mode: lr_discirminator_line_world
 wait_time_between_jobs_sec: 0.1
 job_configs:
-  - command: python3.8 src/scripts/experiment.py
+  - command: python3 src/scripts/experiment.py
     codebase_dir: /users/visics/kkelchte/code/imitation-learning-codebase
-    cpus: 2
+    cpus: 1
     gpus: 1
-    gpu_mem_mb: 2900
-    cpu_mem_gb: 30
+    gpu_mem_mb: 3900
+    cpu_mem_gb: 7
     disk_mem_gb: 52
-    wall_time_s: 4 * 24 * 60 * 60
+    wall_time_s: 2 * 24 * 60 * 60
     nice: true
     use_singularity: false
     check_if_ros_already_in_use: false
