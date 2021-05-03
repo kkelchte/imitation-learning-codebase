@@ -137,7 +137,7 @@ class MathiasController:
     def _process_odometry(self, msg: Odometry, args: tuple) -> None:
         if self.last_measurement is not None:
             difference = get_timestamp(msg) - self.last_measurement
-            if difference < 1. / 5:
+            if difference < 1. / 15:
                 return
         self.last_measurement = get_timestamp(msg)
         sensor_topic, sensor_stats = args
@@ -147,7 +147,7 @@ class MathiasController:
                       msg.pose.pose.orientation.z,
                       msg.pose.pose.orientation.w)
         _, _, self.real_yaw = euler_from_quaternion(quaternion)
-        cprint(f'yaw world frame: {self.real_yaw}', self._logger)
+        # cprint(f'yaw world frame: {self.real_yaw}', self._logger)
 
         self.pose_est = msg.pose.pose
         self.vel_est.x = msg.twist.twist.linear.x
