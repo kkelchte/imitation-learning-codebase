@@ -14,14 +14,17 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
     <include>
+      <name>gate_0</name>
       <uri>model://gate</uri>
       <pose frame=''>2 0 0 0 0 0</pose>
     </include>
     <include>
+      <name>gate_1</name>
       <uri>model://gate</uri>
       <pose frame=''>4.870 -1 0 0 0 -0.61</pose>
     </include>
     <include>
+      <name>gate_2</name>
       <uri>model://gate</uri>
       <pose frame=''>7 -4 0 0 0 -1.6</pose>
     </include>
@@ -114,7 +117,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>1 0 5 0 1.57 1.57</pose>
+        <pose frame=''>-5 -0.7 6 0 0.6 -0.22</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>

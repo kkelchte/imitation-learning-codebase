@@ -108,7 +108,7 @@ class Fsm:
         self._state = FsmState.Unknown
         self._occasion = 'unk'
         self._step_count = 0
-        self._delay_evaluation_time = rospy.get_param('/world/delay_evaluation')
+        self._delay_evaluation_time = rospy.get_param('/world/delay_evaluation', 1.)
         self._is_shuttingdown = False
         self._set_state(FsmState.Unknown)
         self._start_time = -1

@@ -128,7 +128,7 @@ class MathiasController:
                                  callback_args=(sensor_topic, sensor_stats))
 
         # Dynamic reconfig server --> use only during tweaking
-        self._config_server = Server(pidConfig, self._dynamic_config_callback)
+        #self._config_server = Server(pidConfig, self._dynamic_config_callback)
 
     def _reset(self):
         self.data = {title: {

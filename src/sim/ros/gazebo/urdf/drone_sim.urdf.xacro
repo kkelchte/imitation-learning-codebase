@@ -31,10 +31,10 @@
 <!--    </xacro:kinect_camera>-->
 
     <!-- Lidar Camera -->
-    <include filename="$(find hector_quadrotor_description)/urdf/lidar.urdf.xacro" />
-    <xacro:lidar name="lidar" parent="base_link">
-      <origin xyz="0.1 0.0 0.1" rpy="0 0 0"/>
-    </xacro:lidar>
+<!--    <include filename="$(find hector_quadrotor_description)/urdf/lidar.urdf.xacro" />-->
+<!--    <xacro:lidar name="lidar" parent="base_link">-->
+<!--      <origin xyz="0.1 0.0 0.1" rpy="0 0 0"/>-->
+<!--    </xacro:lidar>-->
 
     <!-- Instantiate quadrotor_base_macro once (has no parameters atm) -->
     <xacro:quadrotor_base_macro />
