@@ -11,7 +11,7 @@ from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
 
-WORLD_NAME = 'circle_world/model_000'
+WORLD_NAME = 'gate_test'
 
 config_dict = {
     "output_path": "/tmp",
@@ -28,17 +28,17 @@ config_dict = {
         "step_rate_fps": 100,
         "ros_launch_config": {
           "random_seed": 123,
-          "robot_name": "drone_sim_down_cam",
+          "robot_name": "drone_sim",
           "fsm_mode": "TakeOverRun",
           "fsm": True,
           "control_mapping": True,
           "waypoint_indicator": True,
-          "control_mapping_config": "ros_expert",  # default
-          "altitude_control": True,
+          "control_mapping_config": "mathias_controller_keyboard",
+          "altitude_control": False,
           "world_name": WORLD_NAME,
           "gazebo": True,
-          "yaw_or": 1.57,
-          "z_pos": 0.2
+          "yaw_or": 0,
+          "z_pos": 0.1,
         },
         "actor_configs": [{
               "name": "ros_expert",

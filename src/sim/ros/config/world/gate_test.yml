@@ -1,0 +1,3 @@
+world_name: gate_test
+waypoints: [[2, 0, 1.5], [4.870, -1, 1.5], [7, 4, 1.5]]
+waypoint_reached_distance: 0.4
