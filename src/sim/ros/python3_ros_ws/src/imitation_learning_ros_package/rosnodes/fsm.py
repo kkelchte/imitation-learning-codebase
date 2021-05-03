@@ -4,14 +4,14 @@ import os
 from copy import deepcopy
 from enum import IntEnum
 
-for k in os.environ.keys():
-    print(f'{k}: {os.environ[k]}')
-
 import numpy as np
 import rospy
 
 from geometry_msgs.msg import WrenchStamped, PoseStamped, Point
 from std_msgs.msg import Empty
+from geometry_msgs.msg import WrenchStamped, PoseStamped, Pose, Point
+from hector_uav_msgs.msg import TakeoffAction, TakeoffActionGoal
+from std_msgs.msg import Empty, Float32
 from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 from nav_msgs.msg import Odometry
@@ -312,8 +312,10 @@ class RewardCalculator:
             if value is not None:
                 reward += reward_weight * value
         self._count += 1
-        if self._count % 60 == 0:
-            cprint(f'reward: {reward}, termination: {termination_type}', self._logger, msg_type=MessageType.debug)
+        if self._count % 60 == 0 or termination_type in ['Failure', 'Success']:
+            cprint(f'occasion: {occasion}, '
+                   f'reward: {reward}, '
+                   f'termination: {termination_type}', self._logger, msg_type=MessageType.debug)
         return RosReward(
             reward=reward,
             termination=termination_type

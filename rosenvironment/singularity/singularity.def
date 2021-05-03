@@ -30,6 +30,11 @@ apt-get update && \
     xterm \
     xorg \
     xserver-xorg-video-dummy \
+    subversion \
+    cmake \
+    libopencv-dev \
+    libeigen3-dev \
+    libv4l-dev \
     && rm -rf /var/lib/apt/lists/*
 
 rosdep update
@@ -100,8 +105,6 @@ apt-get update && apt-get install -yq\
     python-tk \
     && rm -rf /var/lib/apt/lists/*
 
-
-
 # ---- CUDA ----
 %files
 cuda-10.2 /usr/lib/local
@@ -120,4 +123,4 @@ cudnn-7.1 /usr/lib/local
 apt -y -q upgrade
 
 # ---- remove opencv QT to make pycharm debugger work
-rm /usr/local/lib/python3.8/dist-packages/cv2/qt/plugins/platforms/libqxcb.so
+# rm /usr/local/lib/python3.8/dist-packages/cv2/qt/plugins/platforms/libqxcb.so

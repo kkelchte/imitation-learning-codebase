@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*.bag
 # C extensions
 *.so
 
@@ -177,6 +177,8 @@ test_dir/
 /src/sim/ros/python3_ros_ws/src/turtlebot3
 /src/sim/ros/python3_ros_ws/src/vision_opencv
 /src/sim/ros/python3_ros_ws/src/image_pipeline
+/src/sim/ros/python3_ros_ws/src/apriltag_ros
+/src/sim/ros/python3_ros_ws/src/apriltags
 /src/sim/ros/python3_ros_ws/logs
 /src/sim/ros/python2_ros_ws/*
 *CMakeLists.txt*

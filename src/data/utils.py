@@ -55,8 +55,12 @@ def store_array_to_file(data: np.ndarray, file_name: str, time_stamp: int = 0) -
 ##############################################################################
 
 
-def filename_to_timestamp(filename: str) -> int:
-    return int(os.path.basename(filename).split('.')[0])
+def filename_to_timestamp(filename: str) -> Union[None, int]:
+    try:
+        result = int(os.path.basename(filename).split('.')[0])
+    except ValueError:
+        result = None
+    return result
 
 
 def load_and_preprocess_file(file_name: str, size: tuple = None, scope: str = 'default') -> Union[None, torch.Tensor]:
@@ -174,12 +178,12 @@ def load_run(directory: str, arrange_according_to_timestamp: bool = False, input
     run = {}
     time_stamps = {}
     for x in os.listdir(directory):
-        #try:
-        k = x if not x.endswith('.data') else x[:-5]
-        time_stamps[x], run[k] = load_data(x, directory, size=input_size if k == 'observation' else None,
-                                           scope=scope if k == 'observation' else None)
-        #except:
-        #    pass
+        try:
+            k = x if not x.endswith('.data') else x[:-5]
+            time_stamps[x], run[k] = load_data(x, directory, size=input_size if k == 'observation' else None,
+                                               scope=scope if k == 'observation' else None)
+        except:
+            pass
     if arrange_according_to_timestamp:
         run = arrange_run_according_timestamps(run, time_stamps)
     if len(run.keys()) == 0:

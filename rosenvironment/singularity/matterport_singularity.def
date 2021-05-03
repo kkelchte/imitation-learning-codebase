@@ -1,0 +1,50 @@
+Bootstrap: docker-daemon
+From: mattersim:9.2-devel-ubuntu18.04
+
+
+%environment
+export LC_ALL=C
+
+%labels
+    Author kkelchte
+    Version 0.0.1
+
+%post
+apt-get update && \
+ export DEBIAN_FRONTEND=noninteractive && apt-get install -yq\
+    dialog \
+    iproute2 \
+    apt-utils \
+    xvfb \
+    udev \
+    dirmngr \
+    gnupg2 \
+    python-pip \
+    python3-pip \
+    vim \
+    less \
+    wget \
+    libxml2 \
+    xterm \
+    xorg \
+    virtualenv \
+    xserver-xorg-video-dummy \
+    && rm -rf /var/lib/apt/lists/*
+
+%post
+apt update && \
+apt install -y -q software-properties-common
+apt update && \
+add-apt-repository ppa:deadsnakes/ppa
+apt update && \
+apt install -y -q python3.8-dev
+apt update
+
+
+%files
+cuda-10.2 /usr/lib/local
+%files
+cudnn-7.1 /usr/lib/local
+
+%post
+apt -y -q upgrade

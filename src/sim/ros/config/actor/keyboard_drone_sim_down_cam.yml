@@ -1,0 +1,88 @@
+specs:
+  message: "
+             Reading from the keyboard  and Publishing to Twist!
+             ---------------------------
+             Moving around:
+               u (roll left)   i (up)         o (roll right)  p (take off)
+               j (turn left)   k (straight)   l (turn right)  m (go)
+               m (land)        ; (down)
+
+              space (take over)
+              e (enable motors)"
+  speed: 0.5
+  turn: 1.0
+  rate_fps: 10
+  moveBindings:
+    k:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    i:
+      - 0
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+    ';':
+      - 0
+      - 0
+      - -1
+      - 0
+      - 0
+      - 0
+    u:
+      - 0
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+    o:
+      - 0
+      - -1
+      - 0
+      - 0
+      - 0
+      - 0
+    j:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+    l:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - -1
+    J:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 1
+    L:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - -1
+  topicBindings:
+    m: '/fsm/go'
+    ' ': '/fsm/overtake'
+    r: '/fsm/reset'
+    f: '/fsm/finish'
+  serviceBindings:
+    - key: p
+      name: /enable_motors
+      type: EnableMotors
+      message: True

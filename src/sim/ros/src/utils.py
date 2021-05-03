@@ -6,11 +6,13 @@ from collections import namedtuple
 
 import numpy as np
 import rospy
+from cv2 import cv2
 from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
-from geometry_msgs.msg import Twist, PoseStamped, Point, TransformStamped, PointStamped, TwistStamped, Quaternion
+from geometry_msgs.msg import Twist, PoseStamped, Point, TransformStamped, PointStamped, TwistStamped, Quaternion, \
+    Vector3
 from sensor_msgs.msg import Imu, Image
 from std_msgs.msg import Float32MultiArray
 
@@ -258,25 +260,34 @@ def project(points: List[np.ndarray],
     return [p / p[2] for p in pixel_coordinates]
 
 
-def transform(points: List[Union[np.ndarray, Point]],
-              orientation: Union[Quaternion, np.ndarray] = np.eye(3),
-              translation: Union[np.ndarray, Point] = np.zeros((3,)),
-              invert: bool = False) -> List[Union[np.ndarray, Point]]:
+def transform(points: List[Union[np.ndarray, Point, Vector3]],
+              orientation: Union[Quaternion, np.ndarray, list] = np.eye(3),
+              translation: Union[np.ndarray, Point, list] = np.zeros((3,)),
+              invert: bool = False) -> List[Union[np.ndarray, Point, Vector3]]:
+    """
+    Transforms a list of points expressed as np arrays, points or vector3.
+    Returns same type as it receives.
+    Performs p' = R*p + t where R corresponds to the orientation and t to the translation
+    Expects all points to be of the same type.
+    """
     return_points = isinstance(points[0], Point)
-    if return_points:
+    return_vectors = isinstance(points[0], Vector3)
+    if return_points or return_vectors:
         points = [np.asarray([p.x, p.y, p.z]) for p in points]
     augmented = True
     lengths = [len(p) for p in points]
     assert min(lengths) == max(lengths)
     if points[0].shape[0] == 3:
         augmented = False
-        points = [np.concatenate([p, np.ones(1, )]) for p in points]
+        points = [np.concatenate([p.squeeze(), np.ones(1,)]) for p in points]
     transformation = np.zeros((4, 4))
     if isinstance(orientation, Quaternion):
         orientation = R.from_quat([orientation.x,
                                    orientation.y,
                                    orientation.z,
                                    orientation.w]).as_matrix()
+    elif len(orientation) == 4:
+        orientation = R.from_quat(orientation).as_matrix()
     transformation[0:3, 0:3] = orientation
     transformation[0:3, 3] = translation if isinstance(translation, np.ndarray) else np.asarray([translation.x,
                                                                                                  translation.y,
@@ -286,12 +297,39 @@ def transform(points: List[Union[np.ndarray, Point]],
         transformation = np.linalg.inv(transformation)
     transformed_arrays = [np.matmul(transformation, p)[:3] if not augmented else np.matmul(transformation, p)
                           for p in points]
-    return transformed_arrays if not return_points else [Point(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
+    if return_points:
+        transformed_arrays = [Point(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
+    elif return_vectors:
+        transformed_arrays = [Vector3(x=p[0], y=p[1], z=p[2]) for p in transformed_arrays]
+    return transformed_arrays
+
+
+def calculate_relative_orientation(robot_pose: PoseStamped,
+                                   reference_pose: PointStamped) -> float:
+    """
+    Given the global robot pose and the global reference pose,
+    calculate the relative yaw turn to face the reference pose.
+    """
+    robot_position = robot_pose.pose.position
+    robot_orientation = robot_pose.pose.orientation
+    # express vector from reference pose to robot
+    global_pose_error = np.asarray([reference_pose.point.x - robot_position.x,
+                                    reference_pose.point.y - robot_position.y,
+                                    reference_pose.point.z - robot_position.z])
+    # transform global pose error to local robot yaw frame (don't rotate in roll or pitch)
+    _, _, yaw = euler_from_quaternion(robot_orientation)
+    local_pose_error = np.matmul(R.from_euler('XYZ', (0, 0, -yaw)).as_matrix(), global_pose_error)
+    # calculate yaw turn
+    angle = np.arctan(local_pose_error[1] / local_pose_error[0])
+    # compensate for second and third quadrant:
+    if np.sign(local_pose_error[0]) == -1:
+        angle += np.pi
+    return angle
 
 
 def calculate_bounding_box(state: Sequence,
-                           resolution: tuple = (1000, 1000),
-                           focal_length: int = 20,
+                           resolution: tuple = (100, 100),
+                           focal_length: int = 30,
                            kx: int = 50,
                            ky: int = 50,
                            skew: float = 0) -> Tuple[Tuple[int, int], int, int, Tuple[int, int], int, int]:

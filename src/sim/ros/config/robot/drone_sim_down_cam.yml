@@ -2,7 +2,7 @@ model_name: quadrotor
 takeoff_action: /action/takeoff
 command_topic: /cmd_vel
 camera_sensor:
-  topic: /down/camera/image
+  topic: /down/image_raw
   type: Image
   stats:
     height: 200

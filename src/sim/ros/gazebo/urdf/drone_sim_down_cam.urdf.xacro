@@ -15,8 +15,8 @@
     <xacro:include filename="$(find hector_sensors_description)/urdf/generic_camera.urdf.xacro" />
     <xacro:generic_camera name="down"
                           parent="base_link"
-                          ros_topic="camera/image"
-                          cam_info_topic="camera/camera_info"
+                          ros_topic="image_raw"
+                          cam_info_topic="camera_info"
                           update_rate="10"
                           res_x="200"
                           res_y="200"

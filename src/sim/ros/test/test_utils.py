@@ -4,12 +4,12 @@ import unittest
 
 import numpy as np
 import matplotlib.pyplot as plt
-from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PointStamped, PoseStamped, Pose, Point, Quaternion
 from scipy.spatial.transform import Rotation as R
 
 from src.core.utils import get_filename_without_extension, get_data_dir
 from src.sim.ros.src.utils import calculate_bounding_box, distance, array_to_combined_global_pose, get_iou, \
-    process_combined_global_poses, transform, to_ros_time
+    process_combined_global_poses, transform, to_ros_time, calculate_relative_orientation
 
 """ Test Utils
 """
@@ -19,6 +19,27 @@ class TestUtils(unittest.TestCase):
 
     def setUp(self) -> None:
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
+
+    def test_calculate_relative_orientation(self):
+        # Looking in +y direction (90° ccw)
+        robot_pose = PoseStamped(pose=Pose(position=Point(x=1, y=0, z=0),
+                                           orientation=Quaternion(x=0, y=0, z=0.7071068, w=0.7071068)))
+        # reference (0, 1) should result in +pi/4
+        reference_pose = PointStamped(point=Point(x=0, y=1, z=0))
+        result = calculate_relative_orientation(robot_pose, reference_pose)
+        self.assertAlmostEqual(result, np.pi/4, places=3)
+        # reference (0, -1) should result in +3pi/4
+        reference_pose = PointStamped(point=Point(x=0, y=-1, z=0))
+        result = calculate_relative_orientation(robot_pose, reference_pose)
+        self.assertAlmostEqual(result, np.pi * 3 / 4, places=3)
+        # reference (2, -1) should result in -3pi/4
+        reference_pose = PointStamped(point=Point(x=2, y=-1, z=0))
+        result = calculate_relative_orientation(robot_pose, reference_pose)
+        self.assertAlmostEqual(result, -np.pi * 3 / 4 + 2*np.pi, places=3)
+        # reference (2, 1) should result in -pi/4
+        reference_pose = PointStamped(point=Point(x=2, y=1, z=0))
+        result = calculate_relative_orientation(robot_pose, reference_pose)
+        self.assertAlmostEqual(result, -np.pi / 4, places=3)
 
     def test_to_ros_time(self):
         result = to_ros_time(5)

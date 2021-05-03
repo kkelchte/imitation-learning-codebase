@@ -149,7 +149,8 @@ class KalmanFilter(object):
 
     def _generate_twist(self, time: str = "tnext") -> Odometry:
         """
-        Adapt field y with observable system outputs to odometry message with correct time stamp.
+        Adapt field y with observable system outputs to odometry message with correct time stamp
+        with pose expressed in global frame and velocity expressed in rotated global frame according to the drone's yaw.
         """
         result = Odometry()
         result.header.stamp = to_ros_time(self.tnext if time == "tnext" else self.tmeas)
@@ -158,11 +159,9 @@ class KalmanFilter(object):
         # transform y_hat_rot to y_hat based on estimated yaw
         yaw = data_vector[3, 0]
         position_rot = data_vector[0:3, 0]
-        velocity_rot = data_vector[4:7, 0]
         orientation = R.from_euler('XYZ', (0, 0, yaw), degrees=False)
         rotated_to_global = orientation.as_matrix()
         position = np.matmul(rotated_to_global, position_rot)
-        velocity = np.matmul(rotated_to_global, velocity_rot)
 
         result.pose.pose.position.x = position[0]
         result.pose.pose.position.y = position[1]
@@ -172,10 +171,10 @@ class KalmanFilter(object):
         result.pose.pose.orientation.z = orientation.as_quat()[2]
         result.pose.pose.orientation.w = orientation.as_quat()[3]
 
-        result.twist.twist.linear.x = velocity[0]
-        result.twist.twist.linear.y = velocity[1]
-        result.twist.twist.linear.z = velocity[2]
-        result.twist.twist.angular.z = data_vector[7]
+        result.twist.twist.linear.x = data_vector[4, 0]
+        result.twist.twist.linear.y = data_vector[5, 0]
+        result.twist.twist.linear.z = data_vector[6, 0]
+        result.twist.twist.angular.z = data_vector[7, 0]
 
         return result
 
@@ -314,11 +313,10 @@ class KalmanFilter(object):
                              [measurement.pose.pose.position.y],
                              [measurement.pose.pose.position.z]])
         position_rot = np.matmul(global_to_rotated, position)
-        # assumption: velocity is expressed in global frame
-        velocity = np.array([[measurement.twist.twist.linear.x],
-                             [measurement.twist.twist.linear.y],
-                             [measurement.twist.twist.linear.z]])
-        velocity_rot = np.matmul(global_to_rotated, velocity)
+        # assumption: velocity is expressed in global rotated frame => no need to rotate
+        velocity_rot = np.array([[measurement.twist.twist.linear.x],
+                                 [measurement.twist.twist.linear.y],
+                                 [measurement.twist.twist.linear.z]])
         # output vector contains pose and velocity in global-rotated frame (following drone's yaw)
         y = np.zeros((8, 1))
         y[0:3] = position_rot
