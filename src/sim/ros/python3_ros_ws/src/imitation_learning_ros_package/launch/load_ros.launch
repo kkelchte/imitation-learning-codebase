@@ -112,8 +112,7 @@
         <node pkg="imitation_learning_ros_package"
               name="control_mapping"
               type="control_mapping.py"
-              output="screen"
-              launch-prefix="bash -c 'sleep 6; $0 $@' "/>
+              output="screen"/>
     </group>
 
     <arg name="waypoint_indicator" default="false"/>

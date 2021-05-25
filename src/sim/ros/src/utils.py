@@ -35,7 +35,7 @@ def get_output_path() -> str:
     if not output_path.startswith('/'):
         output_path = os.path.join(os.environ['CODEDIR'], output_path)
     if not os.path.isdir(output_path):
-        os.makedirs(output_path)
+        os.makedirs(output_path, exist_ok=True)
     return output_path
 
 

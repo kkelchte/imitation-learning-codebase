@@ -119,7 +119,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
             'world_name': 'empty',
             'robot_name': 'double_drone_sim',
             'gazebo': True,
-            'fsm': True,
+            'fsm': False,
             'fsm_mode': 'TakeOverRun',
             'control_mapping': False,
             'control_mapping_config': 'python_adversarial',
@@ -160,7 +160,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
         self._unpause_client.call()
 
         safe_wait_till_true('"/fsm/state" in kwargs["ros_topic"].topic_values.keys()',
-                            True, 10, 0.1, ros_topic=self.ros_topic)
+                            True, 60, 0.1, ros_topic=self.ros_topic)
         self.assertEqual(self.ros_topic.topic_values['/fsm/state'].data,
                          FsmState.Unknown.name)
 
@@ -211,7 +211,7 @@ class TestTakeOffAndAltitudeControl(unittest.TestCase):
 
     def tearDown(self) -> None:
         self._ros_process.terminate()
-        shutil.rmtree(self.output_dir, ignore_errors=True)
+        #shutil.rmtree(self.output_dir, ignore_errors=True)
 
 
 if __name__ == '__main__':

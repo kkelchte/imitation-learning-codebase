@@ -58,7 +58,7 @@ class ProcessWrapper:
     def _run(self, command: str, strict_check: bool = False, shell: bool = False, background: bool = True) -> bool:
         cprint(f'run {command}', self._logger)
         if shell:
-            assert(os.path.exists(command.split(' ')[0]))
+#            assert(os.path.exists(command.split(' ')[0]))
             command = f'/bin/bash {command}'
         if background:
             self._process_popen = subprocess.Popen(shlex.split(command))
@@ -171,8 +171,6 @@ class RosWrapper(ProcessWrapper):
 
         # executable = os.path.join(os.environ['HOME'], 'src', 'sim', 'ros', 'scripts', 'ros_DEPRECATED.sh')
         executable = 'roslaunch '
-        if not visible:
-            executable = f'xvfb-run -a {executable}'
         launch_file = os.path.join(os.environ['CODEDIR'], 'src', 'sim', 'ros', 'python3_ros_ws', 'src',
                                    'imitation_learning_ros_package', 'launch', launch_file)
         assert os.path.isfile(launch_file)
