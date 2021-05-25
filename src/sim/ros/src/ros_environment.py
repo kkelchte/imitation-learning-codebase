@@ -13,6 +13,8 @@ from gazebo_msgs.srv import SetModelState
 from geometry_msgs.msg import Twist, Pose
 from std_msgs.msg import String, Float32MultiArray, Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
+from sensor_msgs.msg import Image, CompressedImage, LaserScan
+from nav_msgs.msg import Odometry
 
 from imitation_learning_ros_package.msg import RosReward
 from src.core.logger import cprint, MessageType
@@ -44,7 +46,7 @@ class RosEnvironment(Environment):
                         else os.path.join(os.environ['CODEDIR'], actor_config.file)
                     roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
         # check if world config file exists
-        assert os.path.isfile(os.path.join(os.environ["PWD"], 'src/sim/ros/config/world/',
+        assert os.path.isfile(os.path.join(os.getcwd(), 'src/sim/ros/config/world/',
                                            roslaunch_arguments['world_name']) + '.yml')
         self._ros = RosWrapper(
             config=roslaunch_arguments,

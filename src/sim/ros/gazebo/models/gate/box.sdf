@@ -7,6 +7,7 @@
 	<collision name="collision">
 	<geometry>
       <mesh>
+        <scale>1.5 1.5 1.5</scale>
 		<uri>model://gate/meshes/halfmeter_gate.dae</uri>
 	  </mesh>
         </geometry>
@@ -14,7 +15,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-        <scale>1. 1. 1.</scale>
+        <scale>1.5 1.5 1.5</scale>
 		<uri>model://gate/meshes/halfmeter_gate.dae</uri>
 	  </mesh>
         </geometry>

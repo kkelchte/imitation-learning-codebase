@@ -128,7 +128,7 @@ class MathiasController:
                                  callback_args=(sensor_topic, sensor_stats))
 
         # Dynamic reconfig server --> use only during tweaking
-        #self._config_server = Server(pidConfig, self._dynamic_config_callback)
+        self._config_server = Server(pidConfig, self._dynamic_config_callback)
 
     def _reset(self):
         self.data = {title: {
@@ -138,6 +138,11 @@ class MathiasController:
         self.prev_pose_error = PointStamped(header=Header(frame_id="global"))
         self.prev_vel_error = PointStamped(header=Header(frame_id="global_rotated"))
         self.last_cmd = TwistStamped(header=Header(stamp=rospy.Time().now()))
+
+        if self.pose_ref is not None:
+            _, _, yaw = euler_from_quaternion(self.pose_est.pose.orientation)
+            self.desired_yaw = yaw + calculate_relative_orientation(robot_pose=self.pose_est,
+                                                                    reference_pose=self.pose_ref)
 
     def _set_fsm_state(self, msg: String):
         # detect transition
@@ -240,6 +245,7 @@ class MathiasController:
         # impose 7Hz to avoid 1000Hz simulation updates
         if self.last_measurement is not None:
             difference = get_timestamp(msg) - self.last_measurement
+
             if difference < 1./7:
                 return
         self.last_measurement = get_timestamp(msg)

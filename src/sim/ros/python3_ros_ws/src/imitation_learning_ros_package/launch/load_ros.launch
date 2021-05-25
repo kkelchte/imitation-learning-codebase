@@ -29,7 +29,7 @@
     <!--    Distance between two drones used for double_drone_sim-->
     <arg name="distance_tracking_fleeing_m" default="3"/>
     <arg name="starting_height" default="1"/>
-    <param name="/world/starting_height" value="$(arg starting_height)"/>
+    <param name="/starting_height" value="$(arg starting_height)"/>
 
     <group if="$(eval arg('robot_name') == 'turtlebot_sim')">
           <param name="robot_description"
@@ -42,7 +42,7 @@
                 output="log"/>
     </group>
 
-    <group if="$(eval arg('robot_name') == 'drone_sim_down_cam' or arg('robot_name') == 'drone_sim')">
+    <group if="$(eval arg('robot_name') == 'drone_sim_down_cam' or arg('robot_name') == 'drone_sim_forward_cam' or arg('robot_name') == 'drone_sim')">
         <arg name="model_name" default="$(arg robot_name)"/>
         <!-- Spawn simulated quadrotor uav -->
         <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">

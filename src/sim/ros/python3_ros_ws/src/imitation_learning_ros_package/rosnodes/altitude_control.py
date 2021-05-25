@@ -86,6 +86,7 @@ class AltitudeControl:
         if self._fsm_state != FsmState[msg.data]:
             self._fsm_state = FsmState[msg.data]
             cprint(f'set state: {self._fsm_state}', self._logger)
+            self._reference_height = rospy.get_param('/starting_height', 1)
             if self._fsm_state == FsmState.TakenOver:
                 if not self._motors_enabled:
                     for agent, service in self._enable_motors_services.items():
