@@ -1,0 +1,50 @@
+delay_evaluation: 1
+goal:
+  x:
+    max: !!python/object/apply:numpy.core.multiarray.scalar
+    - &id001 !!python/object/apply:numpy.dtype
+      args:
+      - f8
+      - false
+      - true
+      state: !!python/tuple
+      - 3
+      - <
+      - null
+      - null
+      - null
+      - -1
+      - -1
+      - 0
+    - !!binary |
+      zczMzMzM9D8=
+    min: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id001
+    - !!binary |
+      ZmZmZmZm5j8=
+  y:
+    max: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id001
+    - !!binary |
+      shXkexgysT8=
+    min: !!python/object/apply:numpy.core.multiarray.scalar
+    - *id001
+    - !!binary |
+      fbC2I/AM4b8=
+  z:
+    max: 1.4336549809736858
+    min: 0.8336549809736857
+max_duration: 60
+starting_height: 1.1336549809736858
+waypoint_reached_distance: 0.2
+waypoints:
+- - !!python/object/apply:numpy.core.multiarray.scalar
+    - *id001
+    - !!binary |
+      AAAAAAAA8D8=
+  - !!python/object/apply:numpy.core.multiarray.scalar
+    - *id001
+    - !!binary |
+      jVt0KFrNzb8=
+  - 1.1336549809736858
+world_name: model
