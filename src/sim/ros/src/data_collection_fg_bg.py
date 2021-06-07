@@ -1,4 +1,5 @@
 import os
+from sys import argv
 import shutil
 import time
 import unittest
@@ -12,6 +13,7 @@ import matplotlib.pyplot as plt
 import rospy
 import subprocess
 import shlex
+import cv2 as cv
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, GetModelState
 from geometry_msgs.msg import Pose
@@ -26,8 +28,10 @@ from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 from src.sim.ros.src.utils import transform
 
 WORLD = 'gate_cone_line_realistic'
-TARGET = 'line'
-NUMBER = 100
+TARGET = argv[1]
+NUMBER = 150
+
+print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')
 
 
 def update_line_model():
@@ -189,10 +193,6 @@ def save(reference_pos,
     # store previous observation
     hdf5_data["observation"].append(deepcopy(experience.observation))
 
-    # TODO
-    plt.imshow(np.stack([0.4 + mask.squeeze()] * 3, axis=-1) * experience.observation.squeeze())
-    plt.show()
-
     # store velocity
     action = experience.action.value
     json_data["velocities"].append([action[0], action[1], action[2], action[5]])
@@ -213,7 +213,7 @@ def save(reference_pos,
     json_data["global_target_location"].append(list(reference_pos))
 
     # store global drone location
-    json_data["global_drone_pose"].append(list(experience.info['position']))
+    json_data["global_drone_pose"].append(list(experience.info['position']))            
 
 
 def dump(json_data, hdf5_data, output_dir):
@@ -241,6 +241,14 @@ def dump(json_data, hdf5_data, output_dir):
             sensor_name, data=np.stack(hdf5_data[sensor_name])
         )
     hdf5_file.close()
+    
+    if WORLD == 'gate_cone_line_realistic':
+        mask = np.asarray(hdf5_data['mask'][0]).squeeze()
+        obs = np.asarray(hdf5_data['observation'][0]).squeeze()
+        plt.imshow(np.stack([0.4 + mask] * 3, axis=-1) * obs)
+        os.makedirs(os.path.join(output_dir, 'imgs'), exist_ok=True)
+        plt.savefig(os.path.join(output_dir, 'imgs', f'{episode_id}.jpg'))
+        plt.close()
     return len(stored_data.keys())
 
 
@@ -279,6 +287,11 @@ if __name__ == '__main__':
         'gate': "drone_sim_forward_cam",
         'cone': "drone_sim",
         'line': "drone_sim_down_cam"
+    }
+    blur_sizes = {
+        'gate': 5,
+        'cone': 3,
+        'line': 3
     }
 
     environment_config_dict = {
@@ -369,6 +382,9 @@ if __name__ == '__main__':
             mask = deepcopy(environment.observation)
             mask = np.mean(mask, axis=2)
             mask[mask == 1] = 0
+            mask[mask != 0] = 1
+            k = blur_sizes[TARGET]
+            mask = cv.blur(mask,(k, k))
             mask[mask != 0] = 1
             save(reference_pos, experience, json_data, hdf5_data, mask)
             # put flying zone back

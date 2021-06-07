@@ -17,7 +17,7 @@
                           parent="base_link"
                           ros_topic="camera/image"
                           cam_info_topic="camera/camera_info"
-                          update_rate="10"
+                          update_rate="30"
                           res_x="200"
                           res_y="200"
                           image_format="R8G8B8" hfov="120">
