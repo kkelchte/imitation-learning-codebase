@@ -44,7 +44,7 @@ class TestRobots(unittest.TestCase):
         config = EnvironmentConfig().create(config_dict=config_dict)
         self._environment = RosEnvironment(config=config)
 
-    #@unittest.skip
+    @unittest.skip
     def test_turtlebot_sim(self):
         self.start(robot_name='turtlebot_sim', fsm_config='TakeOverRun')
         experience, _ = self._environment.reset()

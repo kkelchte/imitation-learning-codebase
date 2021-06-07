@@ -370,7 +370,7 @@ if __name__ == '__main__':
             if WORLD == 'gate_cone_line':
                 save(reference_pos, experience, json_data, hdf5_data)
             step_index += 1
-            if step_index >= stop_index:
+            if step_index >= stop_index and stop_index != -1:
                 break
 
         if WORLD == 'gate_cone_line_realistic':

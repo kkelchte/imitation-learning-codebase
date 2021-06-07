@@ -462,7 +462,7 @@ class TestMathiasController(unittest.TestCase):
             index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, 1])
             index = self.tweak_combined_axis_keyboard(measured_data, index, point=[3, 1, -1])
 
- #   @unittest.skip
+    @unittest.skip
     def test_waypoints_tracking_in_gazebo_with_KF_with_keyboard(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
@@ -680,7 +680,7 @@ class TestMathiasController(unittest.TestCase):
             print(f'waypoint: {self.ros_topic.topic_values["/reference_ground_point"]}')
             time.sleep(0.5)
 
-    @unittest.skip
+    #@unittest.skip
     def test_april_tag_detector_real_bebop_KF(self):
         self.output_dir = f'{get_data_dir(os.environ["CODEDIR"])}/test_dir/{get_filename_without_extension(__file__)}'
         os.makedirs(self.output_dir, exist_ok=True)
