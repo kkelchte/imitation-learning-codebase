@@ -25,8 +25,8 @@ from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 from src.sim.ros.src.utils import transform
 
-WORLD = 'gate_cone_line_realistic'
-TARGET = 'line'
+WORLD = 'gate_cone_line'
+TARGET = 'gate'
 NUMBER = 100
 
 
@@ -188,10 +188,6 @@ def save(reference_pos,
 
     # store previous observation
     hdf5_data["observation"].append(deepcopy(experience.observation))
-
-    # TODO
-    plt.imshow(np.stack([0.4 + mask.squeeze()] * 3, axis=-1) * experience.observation.squeeze())
-    plt.show()
 
     # store velocity
     action = experience.action.value
