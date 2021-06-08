@@ -83,7 +83,7 @@ class TerminationType(IntEnum):
 @dataclass
 class Action:
     actor_name: str = ''
-    value: Union[int, float, np.ndarray, torch.Tensor] = None
+    value: Union[int, float, list, np.ndarray, torch.Tensor] = None
 
     def __len__(self):
         return len(self.value) if self.value is not None else 0

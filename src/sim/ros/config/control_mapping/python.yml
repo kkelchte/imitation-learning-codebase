@@ -4,5 +4,6 @@ mapping:
   Terminated: {}
   Running:
     command: /ros_python_interface/cmd_vel
-  TakenOver: {}
+  TakenOver:
+    command: /actor/altitude_control/cmd_vel
   DriveBack: {}
