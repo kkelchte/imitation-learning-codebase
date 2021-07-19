@@ -1,14 +1,23 @@
 #!/usr/bin/python3.8
 import os
+import subprocess
+import time
 from math import sqrt, cos, sin
+import shlex
 from typing import Union, List, Tuple, Sequence
 from collections import namedtuple
 
+import cv2 as cv
+from gazebo_msgs.msg import ModelState
+from gazebo_msgs.srv import SetModelState
+from geometry_msgs.msg import Pose
+import xml.etree.ElementTree as ET
 import numpy as np
 import rospy
 from cv2 import cv2
 from imitation_learning_ros_package.msg import CombinedGlobalPoses
 from nav_msgs.msg import Odometry
+from scipy.interpolate import interp1d
 from scipy.spatial.transform import Rotation as R
 import skimage.transform as sm
 from geometry_msgs.msg import Twist, PoseStamped, Point, TransformStamped, PointStamped, TwistStamped, Quaternion, \
@@ -20,6 +29,153 @@ from src.core.data_types import Action
 from cv_bridge import CvBridge
 
 bridge = CvBridge()
+
+
+def update_line_model():
+    # create random line from x -4 till +4
+    number_of_points = 70
+    xmin = -1
+    xmax = 2
+    x = np.asarray([xmin, 0, xmax])
+    y = np.asarray([np.random.uniform(-xmin, xmin), 0, np.random.uniform(-xmax, xmax)])
+
+    interpolation = interp1d(x, y, kind='quadratic')
+    x_coords = np.linspace(xmin, xmax, num=number_of_points, endpoint=True)
+    y_coords = interpolation(x_coords)
+
+    # extract waypoint and goal
+    goal_x_est = 1.3
+    idx = (np.abs(x_coords - goal_x_est)).argmin()
+    x_g, y_g = x_coords[idx], y_coords[idx]
+    z_g = 1.  # np.random.uniform(0.7, 1.7)
+    set_goal(x_g, y_g, z_g)
+
+    # create a world file with corresponding tubes
+    r = 0.01
+    l = 0.06
+
+    # Load line_segment:
+    model_dir = 'src/sim/ros/gazebo/models/line_segment'
+    tree = ET.parse(os.path.join(os.environ['PWD'], model_dir, 'line.sdf'))
+    root = tree.getroot()
+
+    # remove any existing model
+    for child in root:
+        if child.get('name') == 'line':
+            root.remove(child)
+
+    # add model to world
+    model = ET.SubElement(root, 'model', attrib={'name': 'line'})
+    # Place small cylinders in one model
+    for index, (x, y) in enumerate(zip(x_coords, y_coords)):
+        static = ET.SubElement(model, 'static')
+        static.text = '1'
+        link = ET.SubElement(model, 'link', attrib={'name': f'link_{index}'})
+        pose = ET.SubElement(link, 'pose', attrib={'frame': ''})
+        next_x = x_coords[(index + 1) % len(x_coords)]
+        next_y = y_coords[(index + 1) % len(x_coords)]
+        derivative = (next_y - y) / (next_x - x)
+        slope = np.arctan(derivative)
+        pose.text = f'{x} {y} {r} 0 1.57 {slope}'
+        collision = ET.SubElement(link, 'collision', attrib={'name': 'collision'})
+        visual = ET.SubElement(link, 'visual', attrib={'name': 'visual'})
+        material = ET.SubElement(visual, 'material')
+        script = ET.SubElement(material, 'script')
+        name = ET.SubElement(script, 'name')
+        name.text = 'Gazebo/Black'
+        uri = ET.SubElement(script, 'uri')
+        uri.text = 'file://media/materials/scripts/gazebo.material'
+        for element in [collision, visual]:
+            geo = ET.SubElement(element, 'geometry')
+            cylinder = ET.SubElement(geo, 'cylinder')
+            radius = ET.SubElement(cylinder, 'radius')
+            radius.text = str(r)
+            length = ET.SubElement(cylinder, 'length')
+            length.text = str(l)
+
+    # Store model
+    tree.write(os.path.join(os.environ['PWD'], model_dir, 'line.sdf'), encoding="us-ascii", xml_declaration=True,
+               method="xml")
+    return x_g, y_g, z_g
+
+
+def spawn_line(world):
+    reference_pos = update_line_model()
+    args = shlex.split("rosrun gazebo_ros spawn_model -file " + os.environ[
+        "GAZEBO_MODEL_PATH"] + "/line_segment/line.sdf -sdf -model line -y 0 -x 0 " + ("-z 0.1" if world == "gate_cone_line_realistic" else ""))
+    subprocess.run(args)
+    return reference_pos
+
+
+def remove_line():
+    args = shlex.split("rosservice call gazebo/delete_model '{model_name: line}'")
+    subprocess.run(args)
+
+
+def send_reference_global(x: float = 0, y: float = 0, z: float = 0, delay: float = 1):
+    args = shlex.split("rostopic pub /reference_pose geometry_msgs/PointStamped "
+                       "'{header: {stamp: now, frame_id: global}, "
+                       "point: [" + str(x) + ", " + str(y) + ", " + str(z) + "]}'")
+    p = subprocess.Popen(args)
+    time.sleep(delay)
+    p.terminate()
+
+
+def send_reference_local(x: float = 0, y: float = 0, z: float = 0, delay: float = 1):
+    args = shlex.split("rostopic pub /reference_pose geometry_msgs/PointStamped "
+                       "'{header: {stamp: now, frame_id: agent}, "
+                       "point: [" + str(x) + ", " + str(y) + ", " + str(z) + "]}'")
+    p = subprocess.Popen(args)
+    time.sleep(delay)
+    p.terminate()
+
+
+def set_goal(x: float = 0, y: float = 0, z: float = 0):
+    margin = 0.5
+    args = shlex.split("rosparam set /world/goal '{x: {min: " + str(x - margin) + ", max: " + str(x + margin) + "}, y: {min: "+ str(y - margin)+ ", max: "+ str(y + margin) + "}, z: {min: " + str(0) + ", max: "+str(2)+"}}'")
+    subprocess.run(args)
+    args = shlex.split("rosparam set /starting_height '"+str(z)+"'")
+    subprocess.run(args)
+
+
+def set_random_gate_location():
+    set_model_state_service = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    model_state = ModelState()
+    model_state.pose = Pose()
+    model_state.model_name = 'gate'
+    model_state.pose.position.x = np.random.uniform(1, 4)
+    model_state.pose.position.y = np.random.uniform(-model_state.pose.position.x, model_state.pose.position.x)
+    yaw = np.sign(model_state.pose.position.y) * np.random.uniform(0, 30) * np.pi / 180
+    model_state.pose.orientation.w = np.cos(yaw * 0.5)
+    model_state.pose.orientation.z = np.sin(yaw * 0.5)
+    set_model_state_service.wait_for_service()
+    set_model_state_service(model_state)
+    x = model_state.pose.position.x
+    y = model_state.pose.position.y
+    z = 1.5
+    set_goal(x, y, z)
+    return x, y, z
+
+
+def set_random_cone_location(world):
+    set_model_state_service = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    model_state = ModelState()
+    model_state.pose = Pose()
+    model_state.model_name = 'cone'
+    model_state.pose.position.x = np.random.uniform(1.5, 4)
+    model_state.pose.position.y = np.random.uniform(-model_state.pose.position.x/2, model_state.pose.position.x/2)
+    model_state.pose.position.z = 0.1 if world == 'gate_cone_line_realistic' else 0
+    set_model_state_service.wait_for_service()
+    set_model_state_service(model_state)
+    z = 1.
+    x = model_state.pose.position.x
+    y = model_state.pose.position.y
+    set_goal(x, y, z)
+    return x, y, z
+
+
+def spawn_flying_zone():
+    subprocess.run(shlex.split("rosrun gazebo_ros spawn_model -database flyzone_wall -sdf -model flyzone_wall -x 12 -y 2 -Y -1.57"))
 
 
 def apply_noise_to_twist(twist: Twist, noise: np.ndarray) -> Twist():
