@@ -1,171 +1,36 @@
 import os
-from sys import argv
-import shutil
 import time
-import unittest
 from copy import deepcopy
 from typing import Union
+from sys import argv
 
 import torch
-from tqdm import tqdm
 import json
 import h5py
 import numpy as np
-import matplotlib.pyplot as plt
-import rospy
 import subprocess
 import shlex
-import cv2 as cv
-from gazebo_msgs.msg import ModelState
-from gazebo_msgs.srv import SetModelState, GetModelState
-from geometry_msgs.msg import Pose
-import xml.etree.ElementTree as ET
-from scipy.interpolate import interp1d
 import fgbg
 
-from src.core.utils import get_filename_without_extension, get_to_root_dir, get_date_time_tag
-from src.core.data_types import TerminationType, SensorType, Action
+from src.core.utils import get_date_time_tag
+from src.core.data_types import TerminationType, Action
 from src.sim.common.environment import EnvironmentConfig
 from src.sim.ros.src.ros_environment import RosEnvironment
-from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
-from src.sim.ros.src.utils import transform
+from src.sim.ros.src.utils import transform, set_random_cone_location, set_random_gate_location, spawn_line, \
+    remove_line, send_reference_local
 
 WORLD = 'gate_cone_line_realistic'
-TARGET = 'cone'  # gate line
-NUMBER = 5
-DS_TASK = 'waypoints'  # 'velocities'  # waypoints
-CHECKPOINT = None
+# TARGET = 'cone'  # cone gate line
+TARGET = argv[1]
+#DS_TASK = 'waypoints'  # 'velocities'  # waypoints
+DS_TASK = argv[2]
+NUMBER = 15
+# CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
+CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/down_stream', DS_TASK, TARGET)
+OUTPUTDIR = f"/home/klaas/code/contrastive-learning/data/eval_online/down_stream/{DS_TASK}/{TARGET}"
+os.makedirs(OUTPUTDIR, exist_ok=True)
 
 print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')
-
-
-def update_line_model():
-    # create random line from x -4 till +4
-    number_of_points = 70
-    xmin = -1
-    xmax = 2
-    x = np.asarray([xmin, 0, xmax])
-    y = np.asarray([np.random.uniform(-xmin, xmin), 0, np.random.uniform(-xmax, xmax)])
-
-    interpolation = interp1d(x, y, kind='quadratic')
-    x_coords = np.linspace(xmin, xmax, num=number_of_points, endpoint=True)
-    y_coords = interpolation(x_coords)
-
-    # extract waypoint and goal
-    goal_x_est = 1.75
-    idx = (np.abs(x_coords - goal_x_est)).argmin()
-    x_g, y_g = x_coords[idx], y_coords[idx]
-    z_g = np.random.uniform(0.7, 1.7)
-    send_reference_and_set_goal(x_g, y_g, z_g)
-
-    # create a world file with corresponding tubes
-    r = 0.01
-    l = 0.06
-
-    # Load line_segment:
-    model_dir = 'src/sim/ros/gazebo/models/line_segment'
-    tree = ET.parse(os.path.join(os.environ['PWD'], model_dir, 'line.sdf'))
-    root = tree.getroot()
-
-    # remove any existing model
-    for child in root:
-        if child.get('name') == 'line':
-            root.remove(child)
-
-    # add model to world
-    model = ET.SubElement(root, 'model', attrib={'name': 'line'})
-    # Place small cylinders in one model
-    for index, (x, y) in enumerate(zip(x_coords, y_coords)):
-        static = ET.SubElement(model, 'static')
-        static.text = '1'
-        link = ET.SubElement(model, 'link', attrib={'name': f'link_{index}'})
-        pose = ET.SubElement(link, 'pose', attrib={'frame': ''})
-        next_x = x_coords[(index + 1) % len(x_coords)]
-        next_y = y_coords[(index + 1) % len(x_coords)]
-        derivative = (next_y - y) / (next_x - x)
-        slope = np.arctan(derivative)
-        pose.text = f'{x} {y} {r} 0 1.57 {slope}'
-        collision = ET.SubElement(link, 'collision', attrib={'name': 'collision'})
-        visual = ET.SubElement(link, 'visual', attrib={'name': 'visual'})
-        material = ET.SubElement(visual, 'material')
-        script = ET.SubElement(material, 'script')
-        name = ET.SubElement(script, 'name')
-        name.text = 'Gazebo/Black'
-        uri = ET.SubElement(script, 'uri')
-        uri.text = 'file://media/materials/scripts/gazebo.material'
-        for element in [collision, visual]:
-            geo = ET.SubElement(element, 'geometry')
-            cylinder = ET.SubElement(geo, 'cylinder')
-            radius = ET.SubElement(cylinder, 'radius')
-            radius.text = str(r)
-            length = ET.SubElement(cylinder, 'length')
-            length.text = str(l)
-
-    # Store model
-    tree.write(os.path.join(os.environ['PWD'], model_dir, 'line.sdf'), encoding="us-ascii", xml_declaration=True,
-               method="xml")
-    return x_g, y_g, z_g
-
-
-def spawn_line():
-    reference_pos = update_line_model()
-    args = shlex.split("rosrun gazebo_ros spawn_model -file " + os.environ[
-        "GAZEBO_MODEL_PATH"] + "/line_segment/line.sdf -sdf -model line -y 0 -x 0 " + ("-z 0.1" if WORLD == "gate_cone_line_realistic" else ""))
-    subprocess.run(args)
-    return reference_pos
-
-
-def remove_line():
-    args = shlex.split("rosservice call gazebo/delete_model '{model_name: line}'")
-    subprocess.run(args)
-
-
-def send_reference_and_set_goal(x: float = 0, y: float = 0, z: float = 0):
-    margin = 0.5
-    args = shlex.split("rosparam set /world/goal '{x: {min: " + str(x - margin) + ", max: " + str(x + margin) + "}, y: {min: "+ str(y - margin)+ ", max: "+ str(y + margin) + "}, z: {min: " + str(z - margin) + ", max: "+str(z + margin)+"}}'")
-    subprocess.run(args)
-    args = shlex.split("rosparam set /starting_height '"+str(z)+"'")
-    subprocess.run(args)
-
-
-def set_random_gate_location():
-    set_model_state_service = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
-    model_state = ModelState()
-    model_state.pose = Pose()
-    model_state.model_name = 'gate'
-    model_state.pose.position.x = np.random.uniform(1, 4)
-    model_state.pose.position.y = np.random.uniform(-model_state.pose.position.x, model_state.pose.position.x)
-    yaw = np.sign(model_state.pose.position.y) * np.random.uniform(0, 30) * np.pi / 180
-    model_state.pose.orientation.w = np.cos(yaw * 0.5)
-    model_state.pose.orientation.z = np.sin(yaw * 0.5)
-    set_model_state_service.wait_for_service()
-    set_model_state_service(model_state)
-    x = model_state.pose.position.x
-    y = model_state.pose.position.y
-    z = np.random.uniform(1.2, 1.7)
-    send_reference_and_set_goal(x, y, z)
-    return x, y, z
-
-
-def set_random_cone_location():
-    set_model_state_service = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
-    model_state = ModelState()
-    model_state.pose = Pose()
-    model_state.model_name = 'cone'
-    model_state.pose.position.x = np.random.uniform(1.5, 4)
-    model_state.pose.position.y = np.random.uniform(-model_state.pose.position.x/2, model_state.pose.position.x/2)
-    model_state.pose.position.z = 0.1 if WORLD == 'gate_cone_line_realistic' else 0
-    set_model_state_service.wait_for_service()
-    set_model_state_service(model_state)
-    z = np.random.uniform(0.7, 1.7)
-    x = model_state.pose.position.x
-    y = model_state.pose.position.y
-    send_reference_and_set_goal(x, y, z)
-    return x, y, z
-
-
-def spawn_flying_zone():
-    subprocess.run(shlex.split("rosrun gazebo_ros spawn_model -database flyzone_wall -sdf -model flyzone_wall -x 12 -y 2 -Y -1.57"))
 
 
 def save(reference_pos,
@@ -186,11 +51,11 @@ def save(reference_pos,
     json_data["velocities"].append([action[0], action[1], action[2], action[5]])
 
     # store prediction
-    if DS_TASK == 'waypoint':
-        json_data["predictions"].append(prediction)
+    if DS_TASK == 'waypoints':
+        json_data["predictions"].append([float(p) for p in prediction])
     else:
         json_data["predictions"].append(
-            [prediction.value[0], prediction.value[1], prediction.value[2], prediction.value[5]]
+            [float(prediction.value[0]), float(prediction.value[1]), float(prediction.value[2]), float(prediction.value[5])]
         )
 
     # store relative target location
@@ -258,7 +123,7 @@ if __name__ == '__main__':
     }
 
     environment_config_dict = {
-        "output_path": f"{DS_TASK}/{TARGET}",
+        "output_path": OUTPUTDIR,
         "factory_key": "ROS",
         "max_number_of_steps": 100,
         "ros_config": {
@@ -296,8 +161,10 @@ if __name__ == '__main__':
     output_dir = config.output_path
 
     # Load model
-    model = fgbg.DownstreamNet(output_size=(4,) if DS_TASK == 'velocities' else (3,),
-                               encoder_ckpt_dir=CHECKPOINT)
+    model = fgbg.DownstreamNet(output_size=(4,) if DS_TASK == 'velocities' else (3,))
+    ckpt = torch.load(CHECKPOINT + '/checkpoint_model.ckpt', map_location=torch.device('cpu'))
+    model.load_state_dict(ckpt['state_dict'])
+    print(f'Loaded encoder from {CHECKPOINT}.')
 
     environment = RosEnvironment(
         config=config
@@ -321,11 +188,11 @@ if __name__ == '__main__':
 
         # collect info in corresponding objects
         if TARGET == 'cone':
-            reference_pos = set_random_cone_location()
+            reference_pos = set_random_cone_location(WORLD)
         elif TARGET == 'gate':
             reference_pos = set_random_gate_location()
         elif TARGET == 'line':
-            reference_pos = spawn_line()
+            reference_pos = spawn_line(WORLD)
         else:
             raise NotImplementedError
 
@@ -336,13 +203,7 @@ if __name__ == '__main__':
             output = model(tensor).detach().cpu().numpy().squeeze()
             if DS_TASK == 'waypoints':
                 print(f'sending {output}')
-                # Update waypoint
-                args = shlex.split("rostopic pub /reference_pose geometry_msgs/PointStamped "
-                                   "'{header: {stamp: now, frame_id: agent}, "
-                                   "point: ["+str(output[0])+", "+str(output[1])+", "+str(output[2])+"]}'")
-                p = subprocess.Popen(args)
-                time.sleep(1)
-                p.terminate()
+                send_reference_local(output[0], output[1], output[2], delay=1)
             else:
                 # output to action with velocities
                 output = Action(value=np.asarray([output[0], output[1], output[2], 0, 0, output[3]]))
@@ -354,13 +215,12 @@ if __name__ == '__main__':
             step_index += 1
 
         successes.append(experience.done == TerminationType.Success)
-
         if TARGET == 'line':
             remove_line()
 
         # dump data if run is successfully and at least 3 experiences are saved with something in view.
-        run_index = dump(json_data, hdf5_data, output_dir)
         print(f'{get_date_time_tag()}: stored {run_index} / {NUMBER} with {sum(successes)} / {len(successes)} success')
+        run_index = dump(json_data, hdf5_data, output_dir)
 
     # write results to output directory
     with open(os.path.join(config.output_path, 'results.txt'), 'w') as f:
