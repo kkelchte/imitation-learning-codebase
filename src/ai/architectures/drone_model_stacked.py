@@ -13,7 +13,7 @@ class Net(BaseNet):
 
     def __init__(self, config: ArchitectureConfig, quiet: bool = False):
         super().__init__(config=config, quiet=True)
-        self.input_size = (2,)
+        self.input_size_net = (2,)
         self.output_size = (8,)
         self.action_max = 0.5
         self.starting_height = -1
