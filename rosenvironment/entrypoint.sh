@@ -28,7 +28,7 @@ source "${CODEDIR}/src/sim/ros/python3_ros_ws/devel/setup.bash" --extend || exit
 
 
 export GAZEBO_MODEL_PATH="${CODEDIR}/src/sim/ros/gazebo/models"
-export FGBG='/home/klaas/code/contrastive-learning'
+export FGBG="$HOME/code/contrastive-learning"
 export PYTHONPATH=${PYTHONPATH}:${CODEDIR}:${FGBG}
 
 export LD_LIBRARY_PATH=/opt/ros/melodic/lib:${CODEDIR}/src/sim/ros/python2_ros_ws/devel/lib:${CODEDIR}/src/sim/ros/python3_ros_ws/devel/lib:/.singularity.d/libs

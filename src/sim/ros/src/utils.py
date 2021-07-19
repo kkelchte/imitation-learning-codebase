@@ -168,8 +168,10 @@ def set_random_cone_location(world):
     set_model_state_service.wait_for_service()
     set_model_state_service(model_state)
     z = 1.
-    x = model_state.pose.position.x
-    y = model_state.pose.position.y
+    n = np.sqrt((model_state.pose.position.y)**2 + (model_state.pose.position.x)**2)
+    d = n - 1  # set goal one meter before as cone is otherwise out of fow
+    x = d / n * model_state.pose.position.x
+    y = d / n * model_state.pose.position.y
     set_goal(x, y, z)
     return x, y, z
 

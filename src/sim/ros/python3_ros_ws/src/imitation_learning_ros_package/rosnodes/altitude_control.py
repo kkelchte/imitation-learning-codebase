@@ -39,6 +39,18 @@ class AltitudeControl:
         self._setup()
 
     def _setup(self):
+        self._fsm_state = FsmState.Unknown
+        rospy.Subscriber(name='/fsm/state',
+                         data_class=String,
+                         callback=self._set_fsm_state)
+
+        # field turn True when motors are enabled, don't publish control when motors are disabled
+        self._motors_enabled = False
+
+        # keep track of last commands to detect stable point
+        self._control_norm_window_length = 10
+        self._control_norm_window = []
+
         if 'turtle' in self._robot or 'default' in self._robot or 'real' in self._robot:
             cprint(f'altitude control not required for {self._robot}, shutting down...', self._logger)
             sys.exit(0)
@@ -69,18 +81,7 @@ class AltitudeControl:
                 rospy.wait_for_service(f'/{agent}/enable_motors')
                 self._enable_motors_services[agent] = rospy.ServiceProxy(f'/{agent}/enable_motors', EnableMotors)
 
-        self._fsm_state = FsmState.Unknown
-        rospy.Subscriber(name='/fsm/state',
-                         data_class=String,
-                         callback=self._set_fsm_state)
-
-        # field turn True when motors are enabled, don't publish control when motors are disabled
-        self._motors_enabled = False
-
-        # keep track of last commands to detect stable point
-        self._control_norm_window_length = 10
-        self._control_norm_window = []
-
+        
     def _set_fsm_state(self, msg: String):
         # detect transition
         if self._fsm_state != FsmState[msg.data]:

@@ -24,10 +24,10 @@ WORLD = 'gate_cone_line_realistic'
 TARGET = argv[1]
 #DS_TASK = 'waypoints'  # 'velocities'  # waypoints
 DS_TASK = argv[2]
-NUMBER = 15
-# CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
-CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/down_stream', DS_TASK, TARGET)
-OUTPUTDIR = f"/home/klaas/code/contrastive-learning/data/eval_online/down_stream/{DS_TASK}/{TARGET}"
+NUMBER = 5
+CHECKPOINT = os.path.join(os.environ["HOME"], 'code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
+# CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/down_stream', DS_TASK, TARGET)
+OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/eval_online_ood/down_stream/{DS_TASK}/{TARGET}"
 os.makedirs(OUTPUTDIR, exist_ok=True)
 
 print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     environment_config_dict = {
         "output_path": OUTPUTDIR,
         "factory_key": "ROS",
-        "max_number_of_steps": 100,
+        "max_number_of_steps": 150,
         "ros_config": {
             "observation": "camera",
             "info": ["position"],
@@ -219,7 +219,7 @@ if __name__ == '__main__':
             remove_line()
 
         # dump data if run is successfully and at least 3 experiences are saved with something in view.
-        print(f'{get_date_time_tag()}: stored {run_index} / {NUMBER} with {sum(successes)} / {len(successes)} success')
+        print(f'{get_date_time_tag()}: stored {run_index + 1} / {NUMBER} with {sum(successes)} / {len(successes)} success')
         run_index = dump(json_data, hdf5_data, output_dir)
 
     # write results to output directory
