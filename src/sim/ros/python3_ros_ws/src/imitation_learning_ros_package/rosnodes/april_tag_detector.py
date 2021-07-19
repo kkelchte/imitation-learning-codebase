@@ -69,6 +69,8 @@ class AprilTagDetector:
             self._optical_to_base_transformation['rotation'] = [0.707, -0.707, 0.000, 0.000]
         elif msg.angular.y == 0:
             self._optical_to_base_transformation['rotation'] = [0., 0., 0., 1.0]
+        else:
+            self._optical_to_base_transformation['rotation'] = [0.553, -0.553, 0.44, 0.44]
 
     def _set_tag_transforms(self, msg: AprilTagDetectionArray):
         if self._calculating:

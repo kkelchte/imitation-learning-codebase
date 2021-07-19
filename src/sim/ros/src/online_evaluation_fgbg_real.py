@@ -37,7 +37,7 @@ WORLD = 'gate_cone_line_realistic'
 TARGET = 'cone'  # gate line
 NUMBER = 5
 DS_TASK = 'velocities'  # 'velocities'  # waypoints
-CHECKPOINT = None
+CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
 
 
 if __name__ == '__main__':
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         'april_tag_detector': False,
         'altitude_control': False,
         'mathias_controller_with_KF': True,
-        'starting_height': 1.,
+        'starting_height': 1.5,
         'keyboard': True,
         'mathias_controller_config_file_path_with_extension':
             f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF_real_bebop.yml',
