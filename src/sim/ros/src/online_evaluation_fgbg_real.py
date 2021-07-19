@@ -33,11 +33,11 @@ from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.test.common_utils import TopicConfig, TestPublisherSubscriber
 from src.sim.ros.src.utils import transform
 
-WORLD = 'gate_cone_line_realistic'
+WORLD = 'real_world'
 TARGET = 'cone'  # gate line
 NUMBER = 5
 DS_TASK = 'velocities'  # 'velocities'  # waypoints
-CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
+CHECKPOINT = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
 
 
 if __name__ == '__main__':
