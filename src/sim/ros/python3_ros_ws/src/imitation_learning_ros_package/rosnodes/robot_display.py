@@ -1,4 +1,4 @@
-#!/usr/bin/python3.8
+#!/usr/data/kkelchtel/miniconda3/envs/venv/bin/python3.8
 import time
 from typing import Union, Tuple
 

@@ -1,4 +1,3 @@
-0.1.9 add  subversion cmake libopencv-dev libeigen3-dev libv4l-dev for installing apriltags
 0.1.8 add tinker and kornia for data augmentation
 0.1.7 pull out tellopy and remove qt of opencv for debugger to work
 0.1.6 add realsense, ip and ffmpeg

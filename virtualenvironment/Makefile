@@ -6,9 +6,12 @@ install:
 	rm Miniconda3-latest-Linux-x86_64.sh
 
 create_env:
-	conda create --name venv python=3.8
+	${HOME}/miniconda3/bin/activate && \
+	conda create --yes --name venv python=3.8
 
 install_packages:
+	${HOME}/miniconda3/bin/activate && \
+	conda activate venv && \
 	conda install --yes --file requirements-conda && \
 	conda install --yes pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch && \
 	python3 -m pip install -r requirements-pip
