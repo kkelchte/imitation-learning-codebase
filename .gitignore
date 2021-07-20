@@ -183,6 +183,7 @@ test_dir/
 /src/sim/ros/python2_ros_ws/*
 *CMakeLists.txt*
 
+/yolov3_files
 /experimental_data
 /src/ai/algorithms/results
 /test_output

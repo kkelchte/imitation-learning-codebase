@@ -111,14 +111,14 @@ class RobotDisplay:
 
     def _subscribe(self):
         # Robot sensors:
-        sensor = '/robot/forward_camera'
-        if rospy.has_param(f'{sensor}_topic'):
-            sensor_topic = rospy.get_param(f'{sensor}_topic')
-            sensor_type = rospy.get_param(f'{sensor}_type')
+        sensor = '/robot/camera_sensor'
+        if rospy.has_param(f'{sensor}/topic'):
+            sensor_topic = rospy.get_param(f'{sensor}/topic')
+            sensor_type = rospy.get_param(f'{sensor}/type')
             sensor_callback = f'_process_{camelcase_to_snake_format(sensor_type)}'
             if sensor_callback not in self.__dir__():
                 cprint(f'Could not find sensor_callback {sensor_callback}', self._logger)
-            sensor_stats = rospy.get_param(f'{sensor}_stats') if rospy.has_param(f'{sensor}_stats') else {}
+            sensor_stats = rospy.get_param(f'{sensor}/stats') if rospy.has_param(f'{sensor}/stats') else {}
             rospy.Subscriber(name=sensor_topic,
                              data_class=eval(sensor_type),
                              callback=eval(f'self.{sensor_callback}'),
@@ -134,7 +134,7 @@ class RobotDisplay:
                              callback_args=('action', {}))
         # fsm state
         self._fsm_state = None
-        rospy.Subscriber(name=rospy.get_param('/fsm/state_topic'),
+        rospy.Subscriber(name='/fsm/state',
                          data_class=String,
                          callback=self._set_field,
                          callback_args=('fsm_state', {}))
@@ -142,7 +142,7 @@ class RobotDisplay:
         # Reward topic
         self._reward = None
         self._terminal_state = TerminationType.Unknown
-        rospy.Subscriber(name=rospy.get_param('/fsm/reward_topic', ''),
+        rospy.Subscriber(name='/fsm/reward_topic',
                          data_class=RosReward,
                          callback=self._set_field,
                          callback_args=('reward', {}))
