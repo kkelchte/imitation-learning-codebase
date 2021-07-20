@@ -150,9 +150,12 @@ def set_random_gate_location():
     model_state.pose.orientation.z = np.sin(yaw * 0.5)
     set_model_state_service.wait_for_service()
     set_model_state_service(model_state)
-    x = model_state.pose.position.x
-    y = model_state.pose.position.y
     z = 1.5
+    n = np.sqrt((model_state.pose.position.y)**2 + (model_state.pose.position.x)**2)
+    d = n - 0.5  # set goal one meter before as cone is otherwise out of fow
+    x = d / n * model_state.pose.position.x
+    y = d / n * model_state.pose.position.y
+
     set_goal(x, y, z)
     return x, y, z
 
