@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from geometry_msgs.msg import PointStamped, PoseStamped, Pose, Point, Quaternion
 from scipy.spatial.transform import Rotation as R
 
+from math import pi
 from src.core.utils import get_filename_without_extension, get_data_dir
 from src.sim.ros.src.utils import calculate_bounding_box, distance, array_to_combined_global_pose, get_iou, \
     process_combined_global_poses, transform, to_ros_time, calculate_relative_orientation
@@ -56,31 +57,40 @@ class TestUtils(unittest.TestCase):
         distance(np.asarray([0, 0, 2]).reshape((1, 1, 3)), np.asarray([0, 0, 0]).reshape((1, 1, 3)))
 
     def test_bounding_box(self):
-        resolution = (1000, 1000)
-        tracking_agent_position = [1, 0, 1]
+        resolution = (400, 400)
+        tracking_agent_position = [0, 0, 4]
         tracking_agent_orientation = [0, 0, 0]
-        fleeing_agent_position = [1, 3, 1]
+        fleeing_agent_position = [2, 0, 1]
         bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
                                                        *fleeing_agent_position,
                                                        *tracking_agent_orientation],
                                                 resolution=resolution)
+        position = bounding_boxes[3]
+        width = bounding_boxes[4]
+        height = bounding_boxes[5]
+        frame = np.zeros(resolution)
+        frame[position[1]-height//2:position[1]+height//2,
+              position[0]-width//2:position[0]+width//2] = 1
+        plt.imshow(frame)
+        plt.show()
+
         self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (500, 500), 66, 66))
 
-        fleeing_agent_position = [0, 3, 1]
+        fleeing_agent_position = [3, 2, 1]
         bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
                                                        *fleeing_agent_position,
                                                        *tracking_agent_orientation],
                                                 resolution=resolution)
         self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (166, 500), 63, 66))
 
-        fleeing_agent_position = [2, 3, 1]
+        fleeing_agent_position = [3, 0, 1]
         bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
                                                        *fleeing_agent_position,
                                                        *tracking_agent_orientation],
                                                 resolution=resolution)
         self.assertEqual(bounding_boxes, ((500, 500), 66, 66, (833, 500), 63, 66))
 
-        fleeing_agent_position = [1, 4, 1]
+        fleeing_agent_position = [4, 1, 1]
         tracking_agent_orientation = [0.3, 0, 0]
         bounding_boxes = calculate_bounding_box(state=[*tracking_agent_position,
                                                        *fleeing_agent_position,
@@ -98,30 +108,30 @@ class TestUtils(unittest.TestCase):
         # a=100
 
     def test_intersection_over_union(self):
-        tracking_agent_position = [1, 0, 1]
+        tracking_agent_position = [0, 1, 1]
         tracking_agent_orientation = [0, 0, 0]
-        fleeing_agent_position = [1, 3, 1]
+        fleeing_agent_position = [3, 1, 1]
         info = {'combined_global_poses': array_to_combined_global_pose([*tracking_agent_position,
                                                                         *fleeing_agent_position,
                                                                         *tracking_agent_orientation])}
         result = get_iou(info)
         self.assertEqual(result, 1)
 
-        fleeing_agent_position = [0, 3, 1]
+        fleeing_agent_position = [3, 2, 1]
         info = {'combined_global_poses': array_to_combined_global_pose([*tracking_agent_position,
                                                                         *fleeing_agent_position,
                                                                         *tracking_agent_orientation])}
         result = get_iou(info)
         self.assertEqual(result, 0)
 
-        fleeing_agent_position = [1.1, 3, 1.1]
+        fleeing_agent_position = [3, 0.9, 1.1]
         info = {'combined_global_poses': array_to_combined_global_pose([*tracking_agent_position,
                                                                         *fleeing_agent_position,
                                                                         *tracking_agent_orientation])}
         result = get_iou(info)
         self.assertEqual(round(result, 3), 0.143)
 
-        fleeing_agent_position = [1.01, 3, 1.01]
+        fleeing_agent_position = [3, 0.99, 1.01]
         info = {'combined_global_poses': array_to_combined_global_pose([*tracking_agent_position,
                                                                         *fleeing_agent_position,
                                                                         *tracking_agent_orientation])}
@@ -139,28 +149,6 @@ class TestUtils(unittest.TestCase):
         # plt.imshow(frame)
         # plt.show()
         # a = 100
-
-    def test_transform_points(self):
-        pos_a = PointStamped()
-        pos_a.header.frame_id = 'world_a'
-        pos_a.point.x = 1
-        pos_b = PointStamped()
-        pos_b.header.frame_id = 'world_b'
-        pos_b.point.y = 1
-        pos_a.point, pos_b.point = transform([pos_a.point, pos_b.point],
-                                             R.from_euler('XYZ', (0, 0, 3.14/2),
-                                                          degrees=False).as_matrix())
-        results_array = transform([np.asarray([1, 0, 0]), np.asarray([0, 1, 0])],
-                                  R.from_euler('XYZ', (0, 0, 3.14/2),
-                                               degrees=False).as_matrix())
-
-        self.assertAlmostEqual(pos_a.point.x, results_array[0][0])
-        self.assertAlmostEqual(pos_a.point.y, results_array[0][1])
-        self.assertAlmostEqual(pos_a.point.z, results_array[0][2])
-
-        self.assertAlmostEqual(pos_b.point.x, results_array[1][0])
-        self.assertAlmostEqual(pos_b.point.y, results_array[1][1])
-        self.assertAlmostEqual(pos_b.point.z, results_array[1][2])
 
     def tearDown(self) -> None:
         shutil.rmtree(self.output_dir, ignore_errors=True)

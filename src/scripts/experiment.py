@@ -209,10 +209,10 @@ class Experiment:
             time.sleep(0.1)
             raise FileNotFoundError
         # Get checkpoint in following order
-        if os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')):
-            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')
-        elif os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')):
+        if os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')):
             checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_latest.ckpt')
+        elif os.path.isfile(os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')):
+            checkpoint_file = os.path.join(checkpoint_dir, 'checkpoint_best.ckpt')
         else:
             checkpoints = {int(f.split('.')[0].split('_')[-1]): os.path.join(checkpoint_dir, f)
                            for f in os.listdir(checkpoint_dir)}

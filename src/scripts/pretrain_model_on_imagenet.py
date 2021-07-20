@@ -218,7 +218,7 @@ def main():
     print(f'{time.strftime("%H:%M:%S")}: training finished.')
 
     model.to(torch.device('cpu'))
-    # copy pretrained weights to target network
+    # copy yolov3_files weights to target network
     target_model = eval(args.architecture).Net(ArchitectureConfig().create(config_dict={
         'architecture': '',
         'batch_normalisation': True,

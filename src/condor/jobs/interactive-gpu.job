@@ -5,7 +5,7 @@
 RequestCpus     = 2
 RequestMemory   = 30G
 RequestDisk 	 = 52G
-+RequestWallTime = 30*60
++RequestWallTime = 2*60*60
 Request_GPUs = 1
 
 # If you want X11 forwarding, uncomment this

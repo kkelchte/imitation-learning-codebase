@@ -54,7 +54,12 @@ class TensorboardWrapper(SummaryWriter):
         if len(frames) == 0:
             return
         # map uint8 to int16 due to pytorch bug https://github.com/facebookresearch/InferSent/issues/99
-        video_tensor = torch.stack([torch.as_tensor(f.astype(np.int16), dtype=torch.uint8) for f in frames[::10]])
+        for f in frames[::10]:
+            try:
+                video_tensor = torch.stack([torch.as_tensor(f.astype(np.int16), dtype=torch.uint8)])
+            except AttributeError:
+                print("Nonetype exception raised")
+                continue
         video_tensor.unsqueeze_(dim=0)  # add batch dimension
         if len(video_tensor.shape) == 4:  # add channel dimension in case of grayscale images
             video_tensor.unsqueeze_(dim=2)

@@ -55,7 +55,7 @@ class TestModifiedStatePublisher(unittest.TestCase):
             publish_topics=publish_topics
         )
         # test center view
-        message = get_fake_combined_global_poses(0, 0, 1, 1, 0, 1, 0, 0, 0)
+        message = get_fake_combined_global_poses(0, 0, 1, 3, 1, 1, 0, 0, 0)
         rospy.sleep(2)
         self.ros_topic.publishers[self.modified_state_topic].publish(message)
 

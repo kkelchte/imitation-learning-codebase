@@ -161,6 +161,6 @@ class BaseNet(nn.Module):
         :return: None
         """
         self.global_step = checkpoint['global_step']
-        self.load_state_dict(checkpoint['model_state'])
+        self.load_state_dict(checkpoint['model_state'], strict=False)
         self.set_device(self._device)
         cprint(f'checksum: {self.get_checksum()}', self._logger)

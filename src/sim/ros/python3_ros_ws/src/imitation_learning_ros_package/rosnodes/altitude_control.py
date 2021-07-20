@@ -29,7 +29,7 @@ class AltitudeControl:
         self._output_path = get_output_path()
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
 
-        self._reference_height = rospy.get_param('/starting_height', 1)
+        self._reference_height = {}
         self._rate_fps = 60
         self._go_publisher = rospy.Publisher('/fsm/go', Empty, queue_size=10)
         self._robot = rospy.get_param('/robot/model_name', 'default')
@@ -56,6 +56,7 @@ class AltitudeControl:
             sys.exit(0)
         elif self._robot == 'quadrotor':
             # in case of single quadrotor
+            self._reference_height['default'] = rospy.get_param('/starting_height', 1)
             self._publishers['default'] = rospy.Publisher('cmd_vel', Twist, queue_size=10)
             sensor = SensorType.position
             sensor_topic = rospy.get_param(f'/robot/{sensor.name}_sensor/topic')
@@ -70,6 +71,8 @@ class AltitudeControl:
             # in case of tracking fleeing quadrotor
             self._publishers['tracking'] = rospy.Publisher('cmd_vel', Twist, queue_size=10)
             self._publishers['fleeing'] = rospy.Publisher('cmd_vel_1', Twist, queue_size=10)
+            self._reference_height['tracking'] = rospy.get_param('/starting_height_tracking', 4)
+            self._reference_height['fleeing'] = rospy.get_param('/starting_height_fleeing', 1)
             for agent in ['tracking', 'fleeing']:
                 sensor = SensorType.position
                 sensor_topic = rospy.get_param(f'/robot/{agent}_{sensor.name}_sensor/topic')
@@ -110,9 +113,10 @@ class AltitudeControl:
     def _get_twist(self, agent: str = 'default') -> Twist:
         twist = Twist()
         height = self._height[agent]
-        if height < (self._reference_height - 0.1):
-            twist.linear.z = +0.5
-        elif height > (self._reference_height + 0.1):
+        reference_height = self._reference_height[agent]
+        if height < (reference_height - 0.1):
+            twist.linear.z = +(reference_height - height)
+        elif height > (reference_height + 0.1):
             twist.linear.z = -0.5
         else:
             twist.linear.z = 0

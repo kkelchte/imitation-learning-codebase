@@ -486,10 +486,11 @@ def calculate_relative_orientation(robot_pose: PoseStamped,
 
 
 def calculate_bounding_box(state: Sequence,
-                           resolution: tuple = (100, 100),
-                           focal_length: int = 30,
-                           kx: int = 50,
-                           ky: int = 50,
+                           resolution: tuple = (400, 400),
+                           orientation: tuple = (1, 0, 0),
+                           focal_length: int = 20,
+                           kx: int = 20,
+                           ky: int = 20,
                            skew: float = 0) -> Tuple[Tuple[int, int], int, int, Tuple[int, int], int, int]:
     """
     Fleeing agent in the frame of tracking agent is represented as a bounding box
@@ -503,10 +504,14 @@ def calculate_bounding_box(state: Sequence,
     y0 = resolution[1] // 2
     agent0 = np.asarray(state[:3])
     agent1 = np.asarray(state[3:6])
-    yaw = state[6]
+    roll = state[6]
     pitch = state[7]
-    roll = state[8]
-    x, z, y = get_relative_coordinates(agent0, agent1, yaw, pitch, roll)
+    yaw = state[8]
+
+    z, x, y = relative_coordinates(agent0, agent1, yaw, pitch, roll, orientation)
+
+    if z == 0:
+        z = 0.1
 
     u = focal_length * x / z
     v = focal_length * y / z
@@ -517,22 +522,26 @@ def calculate_bounding_box(state: Sequence,
     h_drone = 0.2
 
     pos0 = (x0, y0)
-    pos1 = (int(u * kx + v * skew + x0), int(y0 + v * ky))
+    pos1 = (int(x0 - u * x0 / kx + v * skew), int(y0 - v * y0 / ky))
+
+    if pos1[0] < 0 or pos1[0] > resolution[0] or pos1[1] < 0 or pos1[1] > resolution[1]:
+        pos1 = None
 
     mx = z / sqrt(z ** 2 + x ** 2)
     my = z / sqrt(z ** 2 + y ** 2)
-    w0 = int(kx * w_drone * focal_length / min_dist)
-    h0 = int(ky * h_drone * focal_length / min_dist)
-    w1 = int(mx * kx * w_drone * focal_length / z)
-    h1 = int(my * ky * h_drone * focal_length / z)
+    w0 = 3 * int(x0 / kx * w_drone * focal_length / min_dist)
+    h0 = 3 * int(y0 / ky * h_drone * focal_length / min_dist)
+    w1 = 3 * int(mx * x0 / kx * w_drone * focal_length / z)
+    h1 = 3 * int(my * y0 / ky * h_drone * focal_length / z)
     return pos0, w0, h0, pos1, w1, h1
 
 
-def get_relative_coordinates(pos_agent0: np.ndarray,
-                             pos_agent1: np.ndarray,
-                             yaw: float,
-                             pitch: float,
-                             roll: float) -> np.ndarray:
+def relative_coordinates(pos_agent0: np.ndarray,
+                         pos_agent1: np.ndarray,
+                         yaw: float,
+                         pitch: float,
+                         roll: float,
+                         orientation: tuple = (1, 0, 0)) -> np.ndarray:
     """
     pos_agent0: 3d global coordinates of agent 0 (tracking)
     pos_agent1: 3d global coordinates of agent 1 (fleeing)
@@ -541,11 +550,20 @@ def get_relative_coordinates(pos_agent0: np.ndarray,
     pitch: float global pitch turn pos_agent0
     return relative pose (rotation and translation) of agent1 (fleeing) in the frame of agent0 (tracking)
     """
+    if orientation == (0, 0, 1):
+        cam_angle = -pi/2
+    elif orientation == (1, 0, 1):
+        cam_angle = -pi/4
+    else:
+        cam_angle = 0
+
+    pre_rot = np.array([[cos(cam_angle), 0, sin(cam_angle)], [0, 1, 0], [-sin(cam_angle), 0, cos(cam_angle)]])
     rot = np.array([[cos(yaw) * cos(pitch), cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll),
                      cos(yaw) * sin(pitch) * cos(roll) + sin(yaw) * sin(roll)],
                     [sin(yaw) * cos(pitch), sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll),
                      sin(yaw) * sin(pitch) * sin(roll) - cos(yaw) * sin(roll)],
                     [-sin(pitch), cos(pitch) * sin(roll), cos(pitch) * cos(roll)]])
+    rot = pre_rot.dot(rot)
     relative_pos = np.squeeze(np.transpose(rot.dot(np.transpose(np.array(pos_agent1 - pos_agent0)))))
     return relative_pos
 
@@ -557,13 +575,15 @@ def distance(a: Sequence, b: Sequence) -> float:
 
 def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
     pos0, w0, h0, pos1, w1, h1 = bounding_boxes
+    x0, y0 = pos0
+    x1, y1 = pos1
 
     square = namedtuple('square', 'xmin ymin xmax ymax')
 
-    square0 = square(pos0[0] - w0 // 2, pos0[1] - h0 // 2,
-                     pos0[0] + w0 // 2, pos0[1] + h0 // 2)
-    square1 = square(pos1[0] - w1 // 2, pos1[1] - h1 // 2,
-                     pos1[0] + w1 // 2, pos1[1] + h1 // 2)
+    square0 = square(x0 - w0 // 2, y0 - h0 // 2,
+                     x0 + w0 // 2, y0 + h0 // 2)
+    square1 = square(x1 - w1 // 2, y1 - h1 // 2,
+                     x1 + w1 // 2, y1 + h1 // 2)
 
     dx = min(square0.xmax, square1.xmax) - max(square0.xmin, square1.xmin)
     dy = min(square0.ymax, square1.ymax) - max(square0.ymin, square1.ymin)
@@ -575,6 +595,13 @@ def calculate_iou_from_bounding_boxes(bounding_boxes) -> float:
     union = w0 * h0 + w1 * h1 - intersection
 
     return intersection / union
+
+
+def calculate_inverse_relative_pixel_distance(center, pixel_pos) -> float:
+    size = 2 * center
+    max_dist = distance(center, size)
+    dist = distance(center, pixel_pos)
+    return (max_dist - dist) / max_dist
 
 
 #########################################
@@ -598,7 +625,27 @@ def get_iou(info: dict) -> float:
         bounding_boxes = calculate_bounding_box(state=np.asarray(state))
         result = calculate_iou_from_bounding_boxes(bounding_boxes)
     except:
-        result = 5
+        result = 0
+    return result
+
+
+def get_iou_stacked(info: dict) -> float:
+    if info['combined_global_poses'] is None:
+        return None
+    state = [info['combined_global_poses'].tracking_x,
+             info['combined_global_poses'].tracking_y,
+             info['combined_global_poses'].tracking_z,
+             info['combined_global_poses'].fleeing_x,
+             info['combined_global_poses'].fleeing_y,
+             info['combined_global_poses'].fleeing_z,
+             info['combined_global_poses'].tracking_roll,
+             info['combined_global_poses'].tracking_pitch,
+             info['combined_global_poses'].tracking_yaw]
+    try:
+        bounding_boxes = calculate_bounding_box(state=np.asarray(state), orientation=(0, 0, 1))
+        result = calculate_iou_from_bounding_boxes(bounding_boxes)
+    except:
+        result = 0
     return result
 
 
@@ -623,23 +670,41 @@ def get_distance_between_agents(info: dict) -> float:
                     [msg.fleeing_x, msg.fleeing_y, msg.fleeing_z]) if msg is not None else None
 
 
-def get_timestamp(stamped_var: Union[PoseStamped, PointStamped, TransformStamped, TwistStamped, Odometry]) -> float:
-    '''Returns the timestamp of 'stamped_var' (any stamped msg, eg.
-    PoseStamped, Pointstamped, TransformStamped,...) in seconds.
-    '''
-    time = float(stamped_var.header.stamp.to_sec())
-    return time
+def get_inverse_relative_pixel_distance(info: dict) -> float:
+    if info['combined_global_poses'] is None:
+        return None
+    state = [info['combined_global_poses'].tracking_x,
+             info['combined_global_poses'].tracking_y,
+             info['combined_global_poses'].tracking_z,
+             info['combined_global_poses'].fleeing_x,
+             info['combined_global_poses'].fleeing_y,
+             info['combined_global_poses'].fleeing_z,
+             info['combined_global_poses'].tracking_roll,
+             info['combined_global_poses'].tracking_pitch,
+             info['combined_global_poses'].tracking_yaw]
+    try:
+        pos0, w0, h0, pos1, w1, h1 = calculate_bounding_box(state=np.asarray(state))
+        result = calculate_inverse_relative_pixel_distance(pos0, pos1)
+    except:
+        result = 0
+    return result
 
 
-def get_time_diff(stamp1: Union[PoseStamped, PointStamped, TransformStamped, TwistStamped, Odometry],
-                  stamp2: Union[PoseStamped, PointStamped, TransformStamped, TwistStamped, Odometry]) -> float:
-    '''Returns the difference between to timestamped messages (any stamped
-    msg, eg. PoseStamped, Pointstamped, TransformStamped,...) in seconds.
-    '''
-    time_diff = get_timestamp(stamp1) - get_timestamp(stamp2)
-    return time_diff
-
-
-def to_ros_time(time: float) -> rospy.Time:
-    return rospy.Time(secs=int(time),
-                      nsecs=int((time - int(time))*10**9))
+def get_inverse_relative_pixel_distance_stacked(info: dict) -> float:
+    if info['combined_global_poses'] is None:
+        return None
+    state = [info['combined_global_poses'].tracking_x,
+             info['combined_global_poses'].tracking_y,
+             info['combined_global_poses'].tracking_z,
+             info['combined_global_poses'].fleeing_x,
+             info['combined_global_poses'].fleeing_y,
+             info['combined_global_poses'].fleeing_z,
+             info['combined_global_poses'].tracking_roll,
+             info['combined_global_poses'].tracking_pitch,
+             info['combined_global_poses'].tracking_yaw]
+    try:
+        pos0, w0, h0, pos1, w1, h1 = calculate_bounding_box(state=np.asarray(state), orientation=(0, 0, 1))
+        result = calculate_inverse_relative_pixel_distance(pos0, pos1)
+    except:
+        result = 0
+    return result
