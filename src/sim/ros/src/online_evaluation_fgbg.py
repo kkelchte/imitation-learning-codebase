@@ -24,10 +24,10 @@ WORLD = 'gate_cone_line_realistic'
 TARGET = argv[1]
 #DS_TASK = 'waypoints'  # 'velocities'  # waypoints
 DS_TASK = argv[2]
-NUMBER = 5
+NUMBER = 10
 CHECKPOINT = os.path.join(os.environ["HOME"], 'code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
 # CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/down_stream', DS_TASK, TARGET)
-OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/eval_online_ood/down_stream/{DS_TASK}/{TARGET}"
+OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/eval_online_ood/{DS_TASK}/{TARGET}"
 os.makedirs(OUTPUTDIR, exist_ok=True)
 
 print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')
@@ -100,10 +100,12 @@ def dump(json_data, hdf5_data, output_dir):
 
     episode_id = hash(tuple(json_data["global_target_location"][0]))
 
+    # store json data
     stored_data[episode_id] = json_data
     with open(output_json_path, "w") as f:
         json.dump(stored_data, f)
 
+    # store hdf5 data
     hdf5_file = h5py.File(output_hdf5_path, "a")
     episode_group = hdf5_file.create_group(str(episode_id))
     for sensor_name in hdf5_data.keys():
@@ -111,6 +113,13 @@ def dump(json_data, hdf5_data, output_dir):
             sensor_name, data=np.stack(hdf5_data[sensor_name])
         )
     hdf5_file.close()
+
+    # store trajectory
+    os.makedirs(os.path.join(output_dir, 'trajectories'), exist_ok=True)
+    fgbg.draw_trajectory(os.path.join(output_dir, 'trajectories', str(episode_id) + '.jpg'), 
+                         json_data['global_target_location'][0], 
+                         json_data['global_drone_pose'])
+    
     return len(stored_data.keys())
 
 
