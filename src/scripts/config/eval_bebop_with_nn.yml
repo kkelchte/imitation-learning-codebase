@@ -1,0 +1,27 @@
+output_path: test_bebop_flight_tacking
+number_of_epochs: 1
+episode_runner_config:
+  number_of_episodes: 10
+architecture_config:
+  architecture: drone_model_stacked
+  device: cuda
+load_checkpoint_dir: /home/klaas/code/imitation_learning_codebase/experimental_data/tracking/short
+environment_config:
+  factory_key: ROS
+  max_number_of_steps: -1
+  ros_config:
+    observation: camera
+    action_topic: python
+    visible_xterm: true
+    ros_launch_config:
+      random_seed: 123
+      robot_name: bebop_real
+      robot_display: true
+      fsm_mode: TakeOverRun
+      fsm: true
+      control_mapping: true
+      waypoint_indicator: false
+      control_mapping_config: keyboard_python
+    actor_configs:
+      - name: keyboard
+        file: src/sim/ros/config/actor/keyboard_bebop_real.yml

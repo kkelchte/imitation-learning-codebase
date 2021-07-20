@@ -1,0 +1,41 @@
+output_path: adversarial_agents_stacked_ros/short
+number_of_epochs: 10
+episode_runner_config:
+  number_of_episodes: 10
+  train_every_n_steps: -1
+architecture_config:
+  log_std: -0.5
+  architecture: adversarial_actor_critic_stacked_ros
+  device: cpu
+  initialisation_type: orthogonal
+  random_seed: 123
+environment_config:
+  factory_key: ROS
+  normalize_rewards: true
+  reward_clipping: 10
+  max_number_of_steps: 1000
+  ros_config:
+    info:
+      - frame
+    observation: modified_state
+    action_topic: python
+    num_action_publishers: 2
+    visible_xterm: false
+    step_rate_fps: 100
+    ros_launch_config:
+      random_seed: 123
+      robot_name: stacked_drone_sim
+      fsm_mode: TakeOverRun
+      fsm: true
+      control_mapping: true
+      distance_tracking_fleeing_m: 0.5
+      modified_state_publisher: true
+      modified_state_publisher_mode: CombinedGlobalPoses
+      modified_state_frame_visualizer: true
+      waypoint_indicator: false
+      control_mapping_config: python_adversarial
+      world_name: tracking_stacked
+      gazebo: True
+      starting_height: 0.5
+    actor_configs:
+      - name: altitude_control
