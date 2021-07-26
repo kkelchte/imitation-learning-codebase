@@ -10,7 +10,7 @@ import numpy as np
 import rospy
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState
-from geometry_msgs.msg import Twist, Pose
+from geometry_msgs.msg import Twist, Pose, PointStamped, Point
 from std_msgs.msg import String, Float32MultiArray, Empty
 from std_srvs.srv import Empty as Emptyservice, EmptyRequest
 from sensor_msgs.msg import Image, CompressedImage, LaserScan
@@ -109,6 +109,7 @@ class RosEnvironment(Environment):
         self._action_publishers = [rospy.Publisher(f'/ros_python_interface/cmd_vel{f"_{i}" if i != 0 else ""}',
                                                    Twist, queue_size=10)
                                    for i in range(self._config.ros_config.num_action_publishers)]
+        self._waypoint_publisher = rospy.Publisher('/reference_pose', PointStamped, queue_size=10)
         # Catch kill signals:
         signal.signal(signal.SIGTERM, self._signal_handler)
 
@@ -335,7 +336,7 @@ class RosEnvironment(Environment):
         self._previous_observation = deepcopy(self.observation)
         return self._current_experience, deepcopy(self.observation)
 
-    def step(self, action: Action = None) -> Tuple[Experience, np.ndarray]:
+    def step(self, action: Action = None, waypoint: np.ndarray = None) -> Tuple[Experience, np.ndarray]:
         self._step += 1
         if action is not None:
             for index, msg in enumerate(adapt_action_to_twist(action)):
@@ -347,6 +348,13 @@ class RosEnvironment(Environment):
                                      f'instead of {self._config.ros_config.num_action_publishers}')
             if self._config.ros_config.action_topic == 'python':
                 self.action = deepcopy(action)
+        if waypoint is not None:
+            assert len(waypoint) == 3
+            msg = PointStamped()
+            msg.header.stamp = rospy.Time.now()
+            msg.header.frame_id = "agent"
+            msg.point = Point(waypoint[0], waypoint[1], waypoint[2])
+            self._waypoint_publisher(msg)
         self._run_and_update_experience()
         return self._current_experience, deepcopy(self.observation)
 

@@ -19,14 +19,14 @@ from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.src.utils import transform, set_random_cone_location, set_random_gate_location, spawn_line, \
     remove_line, send_reference_local
 
-WORLD = 'gate_cone_line_realistic'
+#WORLD = 'gate_cone_line_realistic'
+WORLD = 'gate_cone_line'
 # TARGET = 'cone'  # cone gate line
 TARGET = argv[1]
-#DS_TASK = 'waypoints'  # 'velocities'  # waypoints
+#DS_TASK = 'waypoints'  # 'velocities'
 DS_TASK = argv[2]
 NUMBER = 10
 CHECKPOINT = os.path.join(os.environ["HOME"], 'code/contrastive-learning/data/best_down_stream', TARGET, DS_TASK)
-# CHECKPOINT = os.path.join('/home/klaas/code/contrastive-learning/data/down_stream', DS_TASK, TARGET)
 OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/eval_online_ood/{DS_TASK}/{TARGET}"
 os.makedirs(OUTPUTDIR, exist_ok=True)
 
@@ -210,14 +210,9 @@ if __name__ == '__main__':
         while experience.done == TerminationType.NotDone:
             tensor = torch.from_numpy(observation).permute(2, 0, 1).float().unsqueeze(0)
             output = model(tensor).detach().cpu().numpy().squeeze()
-            if DS_TASK == 'waypoints':
-                print(f'sending {output}')
-                send_reference_local(output[0], output[1], output[2], delay=1)
-            else:
-                # output to action with velocities
-                output = Action(value=np.asarray([output[0], output[1], output[2], 0, 0, output[3]]))
             experience, observation = environment.step(
-                action=output if DS_TASK == 'velocities' else None)
+                action=Action(value=np.asarray([output[0], output[1], output[2], 0, 0, output[3]])) if DS_TASK == 'velocities' else None,
+                waypoint=output if DS_TASK == 'waypoints' else None)
             loss = save(reference_pos, experience, json_data, hdf5_data, prediction=output)
             if loss is not None:
                 losses.append(loss)
