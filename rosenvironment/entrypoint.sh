@@ -28,6 +28,7 @@ source "${CODEDIR}/src/sim/ros/python3_ros_ws/devel/setup.bash" --extend || exit
 
 
 export GAZEBO_MODEL_PATH="${CODEDIR}/src/sim/ros/gazebo/models"
+export GAZEBO_RESOURCE_PATH="/usr/share/gazebo-9:${CODEDIR}/src/sim/ros/gazebo"
 export FGBG="$HOME/code/contrastive-learning"
 export PYTHONPATH=${PYTHONPATH}:${CODEDIR}:${FGBG}
 
