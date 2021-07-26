@@ -82,9 +82,9 @@ def update_line_model():
         material = ET.SubElement(visual, 'material')
         script = ET.SubElement(material, 'script')
         name = ET.SubElement(script, 'name')
-        name.text = 'Gazebo/Black'
+        name.text = 'RepeatedTexture'
         uri = ET.SubElement(script, 'uri')
-        uri.text = 'file://media/materials/scripts/gazebo.material'
+        uri.text = 'file://materials/scripts/repeated.material'
         for element in [collision, visual]:
             geo = ET.SubElement(element, 'geometry')
             cylinder = ET.SubElement(geo, 'cylinder')
