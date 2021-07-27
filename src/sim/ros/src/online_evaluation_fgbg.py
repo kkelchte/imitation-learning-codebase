@@ -31,7 +31,7 @@ WORLD = "gate_cone_line"
 TARGET = argv[1]
 DS_TASK = "velocities"  # 'waypoints'  # 'velocities'
 # DS_TASK = argv[2]
-NUMBER = 10
+NUMBER = 20
 CHECKPOINT = os.path.join(
     os.environ["HOME"],
     "code/contrastive-learning/data/down_stream",
