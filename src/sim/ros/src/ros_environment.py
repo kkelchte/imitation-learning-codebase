@@ -18,40 +18,70 @@ from nav_msgs.msg import Odometry
 
 from imitation_learning_ros_package.msg import RosReward
 from src.core.logger import cprint, MessageType
-from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge.core import CvBridge
+from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import (
+    FsmState,
+)
+from src.sim.ros.python3_ros_ws.src.vision_opencv.cv_bridge.python.cv_bridge.core import (
+    CvBridge,
+)
 from src.core.utils import camelcase_to_snake_format, ros_message_to_type_str
-from src.core.data_types import Action, Experience, TerminationType, ProcessState, SensorType
+from src.core.data_types import (
+    Action,
+    Experience,
+    TerminationType,
+    ProcessState,
+    SensorType,
+)
 from src.sim.common.environment import EnvironmentConfig, Environment
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import quaternion_from_euler, adapt_action_to_twist, process_imu, \
-    process_compressed_image, process_image, process_odometry, process_laser_scan, process_twist, \
-    process_float32multi_array, process_pose_stamped, process_combined_global_poses
+from src.sim.ros.src.utils import (
+    quaternion_from_euler,
+    adapt_action_to_twist,
+    process_imu,
+    process_compressed_image,
+    process_image,
+    process_odometry,
+    process_laser_scan,
+    process_twist,
+    process_float32multi_array,
+    process_pose_stamped,
+    process_combined_global_poses,
+)
 
 bridge = CvBridge()
 
 
 class RosEnvironment(Environment):
-
     def __init__(self, config: EnvironmentConfig):
         super().__init__(config)
-        self._pause_period = 1./config.ros_config.step_rate_fps
+        self._pause_period = 1.0 / config.ros_config.step_rate_fps
         roslaunch_arguments = config.ros_config.ros_launch_config.__dict__
         # Add automatically added values according to robot_name, world_name, actor_configs
         if config.ros_config.actor_configs is not None:
             for actor_config in config.ros_config.actor_configs:
                 roslaunch_arguments[actor_config.name] = True
                 if actor_config.file is not None:
-                    config_file = actor_config.file if actor_config.file.startswith('/') \
-                        else os.path.join(os.environ['CODEDIR'], actor_config.file)
-                    roslaunch_arguments[f'{actor_config.name}_config_file_path_with_extension'] = config_file
+                    config_file = (
+                        actor_config.file
+                        if actor_config.file.startswith("/")
+                        else os.path.join(os.environ["CODEDIR"], actor_config.file)
+                    )
+                    roslaunch_arguments[
+                        f"{actor_config.name}_config_file_path_with_extension"
+                    ] = config_file
         # check if world config file exists
-        assert os.path.isfile(os.path.join(os.getcwd(), 'src/sim/ros/config/world/',
-                                           roslaunch_arguments['world_name']) + '.yml')
+        assert os.path.isfile(
+            os.path.join(
+                os.getcwd(),
+                "src/sim/ros/config/world/",
+                roslaunch_arguments["world_name"],
+            )
+            + ".yml"
+        )
         self._ros = RosWrapper(
             config=roslaunch_arguments,
-            launch_file='load_ros.launch',
-            visible=config.ros_config.visible_xterm
+            launch_file="load_ros.launch",
+            visible=config.ros_config.visible_xterm,
         )
 
         # Fields
@@ -62,42 +92,59 @@ class RosEnvironment(Environment):
 
         # Services
         if self._config.ros_config.ros_launch_config.gazebo:
-            self._pause_client = rospy.ServiceProxy('/gazebo/pause_physics', Emptyservice)
-            self._unpause_client = rospy.ServiceProxy('/gazebo/unpause_physics', Emptyservice)
-            self._set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+            self._pause_client = rospy.ServiceProxy(
+                "/gazebo/pause_physics", Emptyservice
+            )
+            self._unpause_client = rospy.ServiceProxy(
+                "/gazebo/unpause_physics", Emptyservice
+            )
+            self._set_model_state = rospy.ServiceProxy(
+                "/gazebo/set_model_state", SetModelState
+            )
 
         # Subscribers
         # FSM
         self.fsm_state = None
-        rospy.Subscriber(name='/fsm/state',
-                         data_class=String,
-                         callback=self._set_field,
-                         callback_args=('fsm_state', {}))
+        rospy.Subscriber(
+            name="/fsm/state",
+            data_class=String,
+            callback=self._set_field,
+            callback_args=("fsm_state", {}),
+        )
 
         # Reward topic
         self.reward = None
         self.terminal_state = TerminationType.Unknown
-        rospy.Subscriber(name='/fsm/reward',
-                         data_class=RosReward,
-                         callback=self._set_field,
-                         callback_args=('reward', {}))
+        rospy.Subscriber(
+            name="/fsm/reward",
+            data_class=RosReward,
+            callback=self._set_field,
+            callback_args=("reward", {}),
+        )
 
         # Subscribe to observation
         self.observation = None
-        if self._config.ros_config.observation != '':
+        if self._config.ros_config.observation != "":
             sensor = SensorType[self._config.ros_config.observation]
-            rospy.Subscriber(name=rospy.get_param(f'/robot/{sensor.name}_sensor/topic'),
-                             data_class=eval(rospy.get_param(f'/robot/{sensor.name}_sensor/type')),
-                             callback=self._set_field,
-                             callback_args=('observation', rospy.get_param(f'/robot/{sensor.name}_sensor/stats', {})))
+            rospy.Subscriber(
+                name=rospy.get_param(f"/robot/{sensor.name}_sensor/topic"),
+                data_class=eval(rospy.get_param(f"/robot/{sensor.name}_sensor/type")),
+                callback=self._set_field,
+                callback_args=(
+                    "observation",
+                    rospy.get_param(f"/robot/{sensor.name}_sensor/stats", {}),
+                ),
+            )
 
         # Subscribe to action
         self.action = None
-        if self._config.ros_config.action_topic != 'python':
-            rospy.Subscriber(name=self._config.ros_config.action_topic,
-                             data_class=Twist,
-                             callback=self._set_field,
-                             callback_args=('action', {}))
+        if self._config.ros_config.action_topic != "python":
+            rospy.Subscriber(
+                name=self._config.ros_config.action_topic,
+                data_class=Twist,
+                callback=self._set_field,
+                callback_args=("action", {}),
+            )
 
         # Add info sensors
         self.info = {}
@@ -105,119 +152,159 @@ class RosEnvironment(Environment):
             self._subscribe_info()
 
         # Publishers
-        self._reset_publisher = rospy.Publisher('/fsm/reset', Empty, queue_size=10)
-        self._action_publishers = [rospy.Publisher(f'/ros_python_interface/cmd_vel{f"_{i}" if i != 0 else ""}',
-                                                   Twist, queue_size=10)
-                                   for i in range(self._config.ros_config.num_action_publishers)]
-        self._waypoint_publisher = rospy.Publisher('/reference_pose', PointStamped, queue_size=10)
+        self._reset_publisher = rospy.Publisher("/fsm/reset", Empty, queue_size=10)
+        self._action_publishers = [
+            rospy.Publisher(
+                f'/ros_python_interface/cmd_vel{f"_{i}" if i != 0 else ""}',
+                Twist,
+                queue_size=10,
+            )
+            for i in range(self._config.ros_config.num_action_publishers)
+        ]
+        self._waypoint_publisher = rospy.Publisher(
+            "/reference_pose", PointStamped, queue_size=10
+        )
         # Catch kill signals:
         signal.signal(signal.SIGTERM, self._signal_handler)
 
         # Start ROS node:
-        rospy.init_node('ros_python_interface', anonymous=True)
+        rospy.init_node("ros_python_interface", anonymous=True)
 
         # assert fsm has started properly
         if self._config.ros_config.ros_launch_config.fsm:
-            cprint('Wait till fsm has started properly.', self._logger)
+            cprint("Wait till fsm has started properly.", self._logger)
             while self.fsm_state is None:
                 self._run_shortly()
 
         # assert all experience fields are updated once:
-        if self._config.ros_config.observation != '':
-            cprint('Wait till observation sensor has started properly.', self._logger)
+        if self._config.ros_config.observation != "":
+            cprint("Wait till observation sensor has started properly.", self._logger)
             while self.observation is None:
                 self._run_shortly()
-        cprint('ready', self._logger)
+        cprint("ready", self._logger)
 
     def _set_field(self, msg, args: Tuple) -> None:
         field_name, sensor_stats = args
-        if field_name == 'fsm_state':
+        if field_name == "fsm_state":
             self.fsm_state = FsmState[msg.data]
-        elif field_name == 'observation':
+        elif field_name == "observation":
             msg_type = camelcase_to_snake_format(ros_message_to_type_str(msg))
-            self.observation = eval(f'process_{msg_type}(msg, sensor_stats)')
-        elif field_name == 'action':
-            self.action = Action(actor_name=self._config.ros_config.action_topic,
-                                 value=process_twist(msg).value)
-        elif field_name == 'reward':
+            self.observation = eval(f"process_{msg_type}(msg, sensor_stats)")
+        elif field_name == "action":
+            self.action = Action(
+                actor_name=self._config.ros_config.action_topic,
+                value=process_twist(msg).value,
+            )
+        elif field_name == "reward":
             self.reward = msg.reward
             self.terminal_state = TerminationType[msg.termination]
-        elif field_name.startswith('info:'):
+        elif field_name.startswith("info:"):
             info_key = field_name[5:]
             msg_type = camelcase_to_snake_format(ros_message_to_type_str(msg))
-            self.info[info_key] = eval(f'process_{msg_type}(msg, sensor_stats)')
+            self.info[info_key] = eval(f"process_{msg_type}(msg, sensor_stats)")
         else:
-            raise NotImplementedError(f'{field_name}: {msg}')
-        cprint(f'set field {field_name}',
-               self._logger,
-               msg_type=MessageType.debug)
+            raise NotImplementedError(f"{field_name}: {msg}")
+        cprint(f"set field {field_name}", self._logger, msg_type=MessageType.debug)
 
     def _subscribe_info(self) -> None:
         for info in self._config.ros_config.info:
             if info in [s.name for s in SensorType]:
-                sensor_topic = rospy.get_param(f'/robot/{info}_sensor/topic')
-                sensor_type = rospy.get_param(f'/robot/{info}_sensor/type')
-                sensor_stats = rospy.get_param(f'/robot/{info}_sensor/stats', {})
-                rospy.Subscriber(name=sensor_topic,
-                                 data_class=eval(sensor_type),
-                                 callback=self._set_field,
-                                 callback_args=(f'info:{info}', sensor_stats))
-            elif info == 'current_waypoint':
+                sensor_topic = rospy.get_param(f"/robot/{info}_sensor/topic")
+                sensor_type = rospy.get_param(f"/robot/{info}_sensor/type")
+                sensor_stats = rospy.get_param(f"/robot/{info}_sensor/stats", {})
+                rospy.Subscriber(
+                    name=sensor_topic,
+                    data_class=eval(sensor_type),
+                    callback=self._set_field,
+                    callback_args=(f"info:{info}", sensor_stats),
+                )
+            elif info == "current_waypoint":
                 # add waypoint subscriber as extra sensor
-                rospy.Subscriber(name='/waypoint_indicator/current_waypoint',
-                                 data_class=Float32MultiArray,
-                                 callback=self._set_field,
-                                 callback_args=('info:current_waypoint', {}))
-            elif info.startswith('/'):  # subscribe to rostopic for action, expecting twist message
-                rospy.Subscriber(name=info,
-                                 data_class=Twist,
-                                 callback=self._set_field,
-                                 callback_args=(f'info:{info}', {}))
+                rospy.Subscriber(
+                    name="/waypoint_indicator/current_waypoint",
+                    data_class=Float32MultiArray,
+                    callback=self._set_field,
+                    callback_args=("info:current_waypoint", {}),
+                )
+            elif info.startswith(
+                "/"
+            ):  # subscribe to rostopic for action, expecting twist message
+                rospy.Subscriber(
+                    name=info,
+                    data_class=Twist,
+                    callback=self._set_field,
+                    callback_args=(f"info:{info}", {}),
+                )
             self.info[info] = None
 
     def _signal_handler(self, signal_number: int, _) -> None:
         return_value = self.remove()
-        cprint(f'received signal {signal_number}.', self._logger,
-               msg_type=MessageType.info if return_value == ProcessState.Terminated else MessageType.error)
+        cprint(
+            f"received signal {signal_number}.",
+            self._logger,
+            msg_type=MessageType.info
+            if return_value == ProcessState.Terminated
+            else MessageType.error,
+        )
         sys.exit(0)
 
     def _internal_update_terminal_state(self):
-        if self.fsm_state == FsmState.Running and \
-                self._config.max_number_of_steps != -1 and \
-                self._config.max_number_of_steps <= self._step:
+        if (
+            self.fsm_state == FsmState.Running
+            and self._config.max_number_of_steps != -1
+            and self._config.max_number_of_steps <= self._step
+        ):
             self.terminal_state = TerminationType.Done
-            cprint(f'reach max number of steps {self._config.max_number_of_steps} < {self._step}', self._logger)
+            cprint(
+                f"reach max number of steps {self._config.max_number_of_steps} < {self._step}",
+                self._logger,
+            )
 
     def _pause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
         self._pause_client.wait_for_service()
         self._pause_client(EmptyRequest())
-        #os.system("rosservice call gazebo/pause_physics")
+        # os.system("rosservice call gazebo/pause_physics")
 
     def _unpause_gazebo(self):
         assert self._config.ros_config.ros_launch_config.gazebo
         self._unpause_client.wait_for_service()
         self._unpause_client(EmptyRequest())
-        #os.system("rosservice call gazebo/unpause_physics")
+        # os.system("rosservice call gazebo/unpause_physics")
 
     def _reset_gazebo(self):
         def set_model_state(name: str):
             model_state = ModelState()
             model_state.pose = Pose()
             model_state.model_name = name
-            model_state.pose.position.x = self._config.ros_config.ros_launch_config.x_pos
-            if 'fleeing' in name:
-                model_state.pose.position.x += self._config.ros_config.ros_launch_config.distance_tracking_fleeing_m
-            model_state.pose.position.y = self._config.ros_config.ros_launch_config.y_pos
-            model_state.pose.position.z = self._config.ros_config.ros_launch_config.z_pos
-            yaw = self._config.ros_config.ros_launch_config.yaw_or if 'fleeing' not in name else \
-                self._config.ros_config.ros_launch_config.yaw_or + 3.14
-            model_state.pose.orientation.x, model_state.pose.orientation.y, model_state.pose.orientation.z, \
-                model_state.pose.orientation.w = quaternion_from_euler((0, 0, yaw))
+            model_state.pose.position.x = (
+                self._config.ros_config.ros_launch_config.x_pos
+            )
+            if "fleeing" in name:
+                model_state.pose.position.x += (
+                    self._config.ros_config.ros_launch_config.distance_tracking_fleeing_m
+                )
+            model_state.pose.position.y = (
+                self._config.ros_config.ros_launch_config.y_pos
+            )
+            model_state.pose.position.z = (
+                self._config.ros_config.ros_launch_config.z_pos
+            )
+            yaw = (
+                self._config.ros_config.ros_launch_config.yaw_or
+                if "fleeing" not in name
+                else self._config.ros_config.ros_launch_config.yaw_or + 3.14
+            )
+            (
+                model_state.pose.orientation.x,
+                model_state.pose.orientation.y,
+                model_state.pose.orientation.z,
+                model_state.pose.orientation.w,
+            ) = quaternion_from_euler((0, 0, yaw))
             self._set_model_state.wait_for_service()
             self._set_model_state(model_state)
 
-        model_name = rospy.get_param('/robot/model_name')
+        model_name = rospy.get_param("/robot/model_name")
         if isinstance(model_name, list):
             for model in model_name:
                 set_model_state(model)
@@ -227,13 +314,17 @@ class RosEnvironment(Environment):
     def _clear_experience_values(self):
         """Set all experience fields to None"""
         self.observation = None
-        if self._config.ros_config.action_topic != 'python':
+        if self._config.ros_config.action_topic != "python":
             self.action = None
         self.reward = None
         self.terminal_state = None
-        self.info = {k: None for k in self.info.keys() if k != 'unfiltered_reward' and k != 'return'}
-        if 'return' in self.info.keys():
-            del self.info['return']
+        self.info = {
+            k: None
+            for k in self.info.keys()
+            if k != "unfiltered_reward" and k != "return"
+        }
+        if "return" in self.info.keys():
+            del self.info["return"]
 
     def _update_current_experience(self) -> bool:
         """
@@ -243,29 +334,37 @@ class RosEnvironment(Environment):
         :return: Bool whether all fields are updated
         """
         self._internal_update_terminal_state()  # check count_steps for termination
-        if self._config.ros_config.observation != '' and self.observation is None:
+        if self._config.ros_config.observation != "" and self.observation is None:
             cprint("waiting for observation", self._logger, msg_type=MessageType.debug)
             return False
         if self.reward is None:
             cprint("waiting for reward", self._logger, msg_type=MessageType.debug)
             return False
         if self.terminal_state is None:
-            cprint("waiting for terminal state", self._logger, msg_type=MessageType.debug)
+            cprint(
+                "waiting for terminal state", self._logger, msg_type=MessageType.debug
+            )
             return False
         if self.action is None and self.terminal_state == TerminationType.NotDone:
             # Don't wait for next action if episode is finished
             cprint("waiting for action", self._logger, msg_type=MessageType.debug)
             return False
-        if None in [v for v in self.info.values() if not isinstance(v, Iterable)] and \
-                self.terminal_state == TerminationType.NotDone:  # Don't wait for next info if episode is finished:
+        if (
+            None in [v for v in self.info.values() if not isinstance(v, Iterable)]
+            and self.terminal_state == TerminationType.NotDone
+        ):  # Don't wait for next info if episode is finished:
             cprint("waiting for info", self._logger, msg_type=MessageType.debug)
             return False
         self.observation = self._filter_observation(self.observation)
-        self.info['unfiltered_reward'] = deepcopy(self.reward)
+        self.info["unfiltered_reward"] = deepcopy(self.reward)
         self._return += self.reward
         self.reward = self._filter_reward(self.reward)
-        if self.terminal_state in [TerminationType.Done, TerminationType.Success, TerminationType.Failure]:
-            self.info['return'] = self._return
+        if self.terminal_state in [
+            TerminationType.Done,
+            TerminationType.Success,
+            TerminationType.Failure,
+        ]:
+            self.info["return"] = self._return
 
         self._current_experience = Experience(
             done=deepcopy(self.terminal_state),
@@ -274,14 +373,19 @@ class RosEnvironment(Environment):
             reward=deepcopy(self.reward),
             time_stamp=int(rospy.get_time() * 10 ** 3),
             info={
-                field_name: deepcopy(self.info[field_name]) for field_name in self.info.keys()
-            }
+                field_name: deepcopy(self.info[field_name])
+                for field_name in self.info.keys()
+            },
         )
-        cprint(f"update current experience: "
-               f"done {self._current_experience.done}, "
-               f"reward {self._current_experience.reward}, "
-               f"time_stamp {self._current_experience.time_stamp}, "
-               f"info: {[k for k in self._current_experience.info.keys()]}", self._logger, msg_type=MessageType.debug)
+        cprint(
+            f"update current experience: "
+            f"done {self._current_experience.done}, "
+            f"reward {self._current_experience.reward}, "
+            f"time_stamp {self._current_experience.time_stamp}, "
+            f"info: {[k for k in self._current_experience.info.keys()]}",
+            self._logger,
+            msg_type=MessageType.debug,
+        )
         self._previous_observation = deepcopy(self.observation)
         return True
 
@@ -299,21 +403,28 @@ class RosEnvironment(Environment):
         self._run_shortly()
         while not self._update_current_experience():
             self._run_shortly()
-            if time.time() - start_time > self._config.ros_config.max_update_wait_period_s:
-                cprint(f"ros seems to be stuck, waiting for more than "
-                       f"{self._config.ros_config.max_update_wait_period_s}s, so exit.",
-                       self._logger,
-                       msg_type=MessageType.warning)
+            if (
+                time.time() - start_time
+                > self._config.ros_config.max_update_wait_period_s
+            ):
+                cprint(
+                    f"ros seems to be stuck, waiting for more than "
+                    f"{self._config.ros_config.max_update_wait_period_s}s, so exit.",
+                    self._logger,
+                    msg_type=MessageType.warning,
+                )
                 self.remove()
                 sys.exit(1)
-        self._current_experience.info['run_time_duration_s'] = rospy.get_time() - start_rospy_time
+        self._current_experience.info["run_time_duration_s"] = (
+            rospy.get_time() - start_rospy_time
+        )
 
     def reset(self) -> Tuple[Experience, np.ndarray]:
         """
         reset gazebo, reset fsm, wait till fsm in 'running' state
         return experience without reward or action
         """
-        cprint(f'resetting', self._logger)
+        cprint(f"resetting", self._logger)
         self._reset_filters()
         self._step = 0
         self._return = 0
@@ -321,32 +432,38 @@ class RosEnvironment(Environment):
             self._reset_gazebo()
         self._reset_publisher.publish(Empty())
         self._clear_experience_values()
-        while self.fsm_state != FsmState.Running \
-                or self.observation is None \
-                or self.terminal_state is None \
-                or self.terminal_state is TerminationType.Unknown:
+        while (
+            self.fsm_state != FsmState.Running
+            or self.observation is None
+            or self.terminal_state is None
+            or self.terminal_state is TerminationType.Unknown
+        ):
             self._run_shortly()
         self.observation = self._filter_observation(self.observation)
         self._current_experience = Experience(
             done=deepcopy(self.terminal_state),
             observation=deepcopy(self.observation),
             time_stamp=int(rospy.get_time() * 10 ** 3),
-            info={}
+            info={},
         )
         self._previous_observation = deepcopy(self.observation)
         return self._current_experience, deepcopy(self.observation)
 
-    def step(self, action: Action = None, waypoint: np.ndarray = None) -> Tuple[Experience, np.ndarray]:
+    def step(
+        self, action: Action = None, waypoint: np.ndarray = None
+    ) -> Tuple[Experience, np.ndarray]:
         self._step += 1
         if action is not None:
             for index, msg in enumerate(adapt_action_to_twist(action)):
                 try:
                     self._action_publishers[index].publish(msg)
                 except IndexError:
-                    raise IndexError(f'action of {action.actor_name} requires '
-                                     f'self._config.ros_config.num_action_publishers set to 2 '
-                                     f'instead of {self._config.ros_config.num_action_publishers}')
-            if self._config.ros_config.action_topic == 'python':
+                    raise IndexError(
+                        f"action of {action.actor_name} requires "
+                        f"self._config.ros_config.num_action_publishers set to 2 "
+                        f"instead of {self._config.ros_config.num_action_publishers}"
+                    )
+            if self._config.ros_config.action_topic == "python":
                 self.action = deepcopy(action)
         if waypoint is not None:
             assert len(waypoint) == 3
@@ -354,7 +471,7 @@ class RosEnvironment(Environment):
             msg.header.stamp = rospy.Time.now()
             msg.header.frame_id = "agent"
             msg.point = Point(waypoint[0], waypoint[1], waypoint[2])
-            self._waypoint_publisher(msg)
+            self._waypoint_publisher.publish(msg)
         self._run_and_update_experience()
         return self._current_experience, deepcopy(self.observation)
 
