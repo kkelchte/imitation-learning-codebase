@@ -25,7 +25,7 @@ https://wiki.paparazziuav.org/wiki/Bebop
 
 CHANGE LOG
 
-** White bebop **
+** White and red bebop **
 Changed /data/dragon.conf autorecord -> false.
 Added default restart of dragon-prog in a startup_script.sh called from /etc/init.d/rcS 
 Restart dragon prog with following settings:

@@ -61,23 +61,25 @@ class RobotDisplay:
         while not rospy.has_param('/output_path') and time.time() < stime + max_duration:
             time.sleep(0.01)
         self._output_path = get_output_path()
-        self._rate_fps = 10
+        self._rate_fps = 30
         self._border_width = 300
         self._counter = 0
         self._skip_first_n = 30
         self._skip_every_n = 4
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
-        self._subscribe()
         self._build_gui()
+        self._subscribe()
+        # Loop GUI
+        self._window.mainloop()
+
 
     def _build_gui(self):
         self._window = Tk()
         self._window.title("Autonomous Navigation User Interface")
-        self._window.geometry("500x800")
+        self._window.geometry("500x400")
         # Frame for stats
         self._frame = Frame(self._window)
-        # self._frame.grid(row=0, column=0, sticky="n")
-        self._frame.pack()
+        self._frame.grid(row=0, column=0, sticky="n")
         self._fsm_label = Label(
             self._frame, text=f"", font=(FONT, 20), fg=COLOR_FG, bg=COLOR_BG
         )
@@ -86,11 +88,18 @@ class RobotDisplay:
             self._frame, text=f"", font=(FONT, 20), fg=COLOR_FG, bg=COLOR_BG
         )
         self._battery_label.grid(column=0, row=1)
-        
+
+        self._cmd_label = Label(self._frame, text='', font=(FONT, 20), fg=COLOR_FG, bg=COLOR_BG)
+        self._cmd_label.grid(row=2, column=0)
+
+        self._wp_label = Label(self._frame, text='', font=(FONT, 20), fg=COLOR_FG, bg=COLOR_BG)
+        self._wp_label.grid(row=3, column=0)
+
         # Frame for images
-        self._img_canvas = Canvas(self._window, width=480, height=240)
-        # self._img_canvas.grid(row=1, column=0)
-        self._img_canvas.pack()
+        self._img_canvas = Canvas(self._window, width=500, height=240)
+        self._img_canvas.grid(row=1, column=0)
+        self._img_canvas.place(relx=0.5, rely=0.5, anchor="center")
+
 
         self._img_canvas.configure(bg=COLOR_BG)
         dummy_img = PILImage.fromarray(np.random.randint(0, 255, size=(200,200,3), dtype=np.uint8))
@@ -103,47 +112,6 @@ class RobotDisplay:
         self._mask_label = Label(self._img_canvas, image=self._mask)
         self._mask_label.grid(row=0, column=1)
     
-        # Draw canvas for velocities
-        self._cmd_canvas = Canvas(self._window, width=480, height=260)
-        # self._cmd_canvas.grid(row=2, column=0)
-        self._cmd_canvas.pack()
-        self._cmd_canvas.configure(bg=COLOR_BG)
-
-        # Draw waypoints
-        self._fig = Figure(figsize=(5, 5))
-        self._traj_plot = self._fig.add_subplot(111)
-        # self._animation = animation.FuncAnimation(self._fig, self._animate, interval=1000)
-        # self.plot.scatter(np.random.uniform(0,1), np.random.uniform(0,1))
-        self._fig_canvas = FigureCanvasTkAgg(self._fig, master=self._window)  # A tk.DrawingArea.
-        self._fig_canvas.draw()
-        self._fig_canvas.get_tk_widget().pack()
-        
-
-        # self._wp_canvas = Canvas(self._window, width=480, height=260)
-        # self._wp_canvas.grid(row=3, column=0)
-        # self._wp_canvas.configure(bg=COLOR_BG)
-
-        # self._wp_fig, self._wp_ax = plt.subplots(1, 2, figsize=(9, 4), dpi=50)
-        # self._wp_ax[0].set_xlim(-4, 4)
-        # self._wp_ax[0].set_ylim(0, 4)
-        # self._wp_ax[0].set_title("Reference Point")
-        # self._reference_line, = self._wp_ax[0].plot([], [], 'o-', lw=2)
-        # self._wp_ax[1].set_title("Trajectory")
-
-        # self._fig_canvas = FigureCanvasTkAgg(self._wp_fig, master=self._window)  # A tk.DrawingArea.
-        # self._fig_canvas.draw()
-        # self._fig_canvas.get_tk_widget().grid(row=3, column=0)
-        # data = np.fromstring(self._wp_fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-        # data = data.reshape(self._wp_fig.canvas.get_width_height()[::-1] + (3,))
-
-        # dummy_fig = PILImage.fromarray(data)
-        # self._fig = ImageTk.PhotoImage(dummy_fig)
-        # self._fig_label = Label(self._wp_canvas, image=self._fig)
-        # self._fig_label.grid(row=0, column=1)
-    
-        # Loop GUI
-        self._window.mainloop()
-
     def _subscribe(self):
         # Robot sensors:
         if rospy.has_param('/robot/camera_sensor'):
@@ -223,7 +191,7 @@ class RobotDisplay:
         elif field_name == "mask":
             self._mask = ImageTk.PhotoImage(image)
             self._mask_label.configure(image=self._mask)
-        cprint(f'set field {field_name}', self._logger, msg_type=MessageType.info)
+        # cprint(f'set field {field_name}', self._logger, msg_type=MessageType.info)
 
     def _set_field(self, msg: Union[String, Twist, RosReward, CommonCommonStateBatteryStateChanged, Odometry],
                    args: Tuple) -> None:
@@ -232,13 +200,13 @@ class RobotDisplay:
             self._fsm_label.configure(text=f"FSM state: {FsmState[msg.data].name}")
         elif field_name == 'action':
             cmd = process_twist(msg).value
-            # self._draw_velocity_commands(cmd[0], cmd[1], cmd[2], cmd[5])
+            self._cmd_label.configure(text=f"Command: x: {cmd[0]:0.2f}, y: {cmd[1]:0.2f}, z: {cmd[2]:0.2f}, yaw: {cmd[5]:0.2f}")
         elif field_name == 'reward':
             self._reward = msg.reward
             self._terminal_state = TerminationType[msg.termination]
         elif field_name == 'reference_pose':
             self._reference_pose = np.asarray([msg.point.x, msg.point.y, msg.point.z])
-            self._animate()
+            self._wp_label.configure(text=f"Reference point: x: {self._reference_pose[0]:0.2f}, y: {self._reference_pose[1]:0.2f}, z: {self._reference_pose[2]:0.2f}")
         elif field_name == 'battery':
             self._battery_label.configure(text=f'Battery level: {msg.percent}%')
         elif field_name == 'trajectory':
@@ -247,39 +215,7 @@ class RobotDisplay:
             # self._update_wp()
         else:
             raise NotImplementedError
-        cprint(f'set field {field_name}', self._logger, msg_type=MessageType.info)
-
-
-    def _animate(self):
-        print('animating')
-        self._traj_plot.clear()
-        self._traj_plot.scatter(np.random.uniform(0,1), np.random.uniform(0,1))
-        
-        # self._fig_canvas.draw()
-        # Reference point
-        # self._fig_canvas = FigureCanvasTkAgg(self._wp_fig, master=self._window)  # A tk.DrawingArea.
-        # self._fig_canvas.get_tk_widget().pack()
-        # self._fig_canvas.draw()
-        # self._fig_canvas.get_tk_widget().pack()
-        # self._observation = ImageTk.PhotoImage(image)
-        # self._observation_label.configure(image=self._observation)
-        # # if self._reference_pose is not None:
-        #     # self._wp_ax[0].clear()
-        #     # self._wp_ax[0].annotate(
-        #     #     "",
-        #     #     xy=(self._reference_pose[1], self._reference_pose[0]),
-        #     #     xytext=(0, 0),
-        #     #     arrowprops=dict(arrowstyle="->"),
-        #     # )
-
-        # # Trajectory
-        # if self._trajectory is not None:
-        #     self._wp_ax[1].scatter([p[0] for p in self._trajectory], [p[1] for p in self._trajectory])
-
-
-    def _draw_velocity_commands(self, x_vel: float = 0., y_vel: float = 0., z_vel: float = 0., yaw_vel: float = 0.):
-        pass        
-
+        #cprint(f'set field {field_name}', self._logger, msg_type=MessageType.info)
 
     def _cleanup(self):
         cv2.destroyAllWindows()
@@ -295,103 +231,3 @@ class RobotDisplay:
 if __name__ == "__main__":
     robot_display = RobotDisplay()
     robot_display.run()
-
-
-# bar_width = 20
-# sec_bar_width = 15
-# bar_length = 200
-# max_vel = 1
-# x_vel = 0.5
-
-# x velocity
-# cmd_canvas.create_rectangle(
-#     120 - int(bar_width / 2),
-#     20,
-#     120 + int(bar_width / 2),
-#     20 + bar_length,
-#     fill=COLOR_VEL_0,
-# )
-# cmd_canvas.create_rectangle(
-#     120 - int(bar_width / 2),
-#     20,
-#     120 + int(bar_width / 2),
-#     20 + bar_length // 2,
-#     fill=COLOR_VEL_0,
-# )
-# self._x_bar = cmd_canvas.create_rectangle(
-#     120 - sec_bar_width // 2,
-#     20 + bar_length // 2,
-#     120 + sec_bar_width // 2,
-#     20 + (bar_length // 2) - x_vel * (bar_length // 2),
-#     fill=COLOR_VEL_1,
-# )
-# cmd_canvas.create_text(120, 10, text=f"x: {x_vel}", font=(FONT, 20))
-
-# y velocity
-# cmd_canvas.create_rectangle(
-#     20, 235 - bar_width // 2, 20 + bar_length, 235 + bar_width // 2, fill=COLOR_VEL_0,
-# )
-# cmd_canvas.create_rectangle(
-#     20,
-#     235 - bar_width // 2,
-#     20 + bar_length // 2,
-#     235 + bar_width // 2,
-#     fill=COLOR_VEL_0,
-# )
-# cmd_canvas.create_rectangle(
-#     20 + bar_length // 2,
-#     235 - sec_bar_width // 2,
-#     20 + (bar_length // 2) + y_vel * (bar_length // 2),
-#     235 + sec_bar_width // 2,
-#     fill=COLOR_VEL_1,
-# )
-# cmd_canvas.create_text(
-#     10, 205, text=f"y: {y_vel}", anchor="nw", font=(FONT, 20), fill=COLOR_FG
-# )
-
-# # z velocity
-# n_z_vel = z_vel / max_vel
-# cmd_canvas.create_rectangle(
-#     350 - bar_width // 2, 20, 350 + bar_width // 2, 20 + bar_length, fill=COLOR_VEL_0,
-# )
-# cmd_canvas.create_rectangle(
-#     350 - bar_width // 2,
-#     20,
-#     350 + bar_width // 2,
-#     20 + bar_length // 2,
-#     fill=COLOR_VEL_0,
-# )
-# cmd_canvas.create_rectangle(
-#     350 - sec_bar_width // 2,
-#     20 + bar_length // 2,
-#     350 + sec_bar_width // 2,
-#     20 + (bar_length // 2) - int(n_z_vel * (bar_length // 2)),
-#     fill=COLOR_VEL_1,
-# )
-# cmd_canvas.create_text(350, 10, text=f"z: {z_vel}", font=(FONT, 20), fill=COLOR_FG)
-
-# # yaw velocity
-# cmd_canvas.create_rectangle(
-#     250,
-#     235 - int(bar_width / 2),
-#     250 + bar_length,
-#     235 + int(bar_width / 2),
-#     fill=COLOR_VEL_0,
-# )
-# cmd_canvas.create_rectangle(
-#     250,
-#     235 - int(bar_width / 2),
-#     250 + bar_length // 2,
-#     235 + int(bar_width / 2),
-#     fill=COLOR_VEL_0,
-# )
-# cmd_canvas.create_rectangle(
-#     250 + bar_length // 2,
-#     235 - sec_bar_width // 2,
-#     250 + (bar_length // 2) + yaw_vel * (bar_length // 2),
-#     235 + sec_bar_width // 2,
-#     fill=COLOR_VEL_1,
-# )
-# cmd_canvas.create_text(
-#     240, 205, text="\u03c8" + str(yaw_vel), anchor="nw", font=(FONT, 20), fill=COLOR_FG
-# )

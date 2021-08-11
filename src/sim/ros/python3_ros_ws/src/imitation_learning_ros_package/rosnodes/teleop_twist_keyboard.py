@@ -150,9 +150,15 @@ class KeyboardActor(Actor):
             self.camera_direction = 'down'
         elif self.camera_direction == 'down':
             twist = Twist()
+            twist.angular.y = -10
+            self.camera_control_publisher.publish(twist)
+            self.camera_direction = 'tilt'
+        elif self.camera_direction == 'tilt':
+            twist = Twist()
             twist.angular.y = 0
             self.camera_control_publisher.publish(twist)
             self.camera_direction = 'straight'
+        cprint(f'placed camera {self.camera_direction}', self._logger)
 
 
 if __name__ == "__main__":

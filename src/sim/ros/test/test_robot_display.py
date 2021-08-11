@@ -78,7 +78,7 @@ class TestRobotDisplay(unittest.TestCase):
             self.ros_topic.publishers['/bebop/image_raw'].publish(get_random_image())
             self.ros_topic.publishers['/mask'].publish(get_random_image())
             self.ros_topic.publishers['/reference_pose'].publish(get_random_reference_pose())       
-            rospy.sleep(1)
+            rospy.sleep(0.01)
 
     def tearDown(self) -> None:
         print(f'shutting down...')
