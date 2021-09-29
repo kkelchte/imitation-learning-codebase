@@ -6,7 +6,7 @@ camera_sensor:
   stats:
     height: 200
     width: 200
-    depth: 1
+    depth: 3
 position_sensor:
   topic: /bebop/odom
   type: Odometry

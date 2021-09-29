@@ -7,6 +7,7 @@ from nav_msgs.msg import *  # Do not remove!
 from std_msgs.msg import *  # Do not remove!
 from sensor_msgs.msg import *  # Do not remove!
 from geometry_msgs.msg import *  # Do not remove!
+from bebop_msgs.msg import CommonCommonStateBatteryStateChanged
 
 from imitation_learning_ros_package.msg import *
 
@@ -126,4 +127,34 @@ def get_fake_combined_global_poses(tx: float = 0,
     msg.tracking_roll = troll
     msg.tracking_pitch = tpitch
     msg.tracking_yaw = tyaw
+    return msg
+
+def get_random_twist():
+    msg = Twist()
+    msg.linear.x = np.random.uniform(-1, 1)
+    msg.linear.y = np.random.uniform(-1, 1)
+    msg.linear.z = np.random.uniform(-1, 1)
+    msg.angular.x = 0
+    msg.angular.y = 0
+    msg.angular.z = np.random.uniform(-1, 1)
+    return msg
+
+
+def get_random_image():
+    image = Image()
+    image.data = list(np.random.randint(0, 255, size=200*200*3, dtype=np.uint8))
+    # image.data = [int(5)]*200*200*3
+    image.height = 200
+    image.width = 200
+    image.encoding = 'rgb8'
+    return image
+
+
+def get_random_reference_pose():
+    msg = PointStamped()
+    msg.header.stamp = rospy.Time.now()
+    msg.header.frame_id = 'agent'
+    msg.point.x = np.random.uniform(1, 3)
+    msg.point.y = np.random.uniform(-3, 3)
+    msg.point.z = np.random.uniform(0.5, 3)
     return msg
