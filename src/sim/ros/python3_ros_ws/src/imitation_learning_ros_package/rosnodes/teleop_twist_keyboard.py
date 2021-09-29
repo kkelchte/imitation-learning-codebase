@@ -150,7 +150,7 @@ class KeyboardActor(Actor):
             self.camera_direction = 'down'
         elif self.camera_direction == 'down':
             twist = Twist()
-            twist.angular.y = -10
+            twist.angular.y = -13
             self.camera_control_publisher.publish(twist)
             self.camera_direction = 'tilt'
         elif self.camera_direction == 'tilt':
