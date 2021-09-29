@@ -29,18 +29,20 @@ from src.sim.ros.src.utils import (
 WORLD = "gate_cone_line"
 # TARGET = 'cone'  # cone gate line
 TARGET = argv[1]
-DS_TASK = "velocities"  # 'waypoints'  # 'velocities'
-# DS_TASK = argv[2]
-NUMBER = 20
+# DS_TASK = "velocities"  # 'waypoints'  # 'velocities'
+DS_TASK = argv[2]
+NUMBER = 5
+BATCHNORM = True
 CHECKPOINT = os.path.join(
     os.environ["HOME"],
     "code/contrastive-learning/data/down_stream",
     DS_TASK,
     TARGET,
-    "best"
+    "best",
 )
-OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/eval_online_nood/{DS_TASK}/{TARGET}"
-os.makedirs(OUTPUTDIR, exist_ok=True)
+OUTPUTDIR = CHECKPOINT
+# OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/ds_eval/{WORLD}/{DS_TASK}/{TARGET}"
+#os.makedirs(OUTPUTDIR, exist_ok=True)
 
 print(
     f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}'
@@ -135,7 +137,10 @@ def dump(json_data, hdf5_data, output_dir):
         json_data["global_target_location"][0],
         json_data["global_drone_pose"],
     )
-
+    fgbg.create_trajectory_gif(
+        os.path.join(output_dir, "trajectories", str(episode_id) + "_observation.gif"),
+        list(hdf5_data["observation"]),
+    )
     return len(stored_data.keys())
 
 
@@ -188,7 +193,9 @@ if __name__ == "__main__":
     output_dir = config.output_path
 
     # Load model
-    model = fgbg.DownstreamNet(output_size=(4,) if DS_TASK == "velocities" else (3,), batch_norm=True)
+    model = fgbg.DownstreamNet(
+        output_size=(4,) if DS_TASK == "velocities" else (3,), batch_norm=BATCHNORM
+    )
     ckpt = torch.load(
         CHECKPOINT + "/checkpoint_model.ckpt", map_location=torch.device("cpu")
     )

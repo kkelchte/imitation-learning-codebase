@@ -16,5 +16,4 @@ rospkg
 torch
 frozendict
 gym
-opencv-python
 kornia
