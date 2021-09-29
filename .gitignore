@@ -199,3 +199,4 @@ test_dir/
 *.sif
 *.code-workspace
 *.vscode
+src/sim/ros/gazebo/models/line_segment/line.sdf
