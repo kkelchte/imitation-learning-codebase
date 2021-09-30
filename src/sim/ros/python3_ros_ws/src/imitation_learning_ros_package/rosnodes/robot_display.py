@@ -4,6 +4,7 @@ from typing import Union, Tuple
 
 import rospy
 import cv2
+from scipy.spatial.transform import Rotation as R
 import numpy as np
 from bebop_msgs.msg import CommonCommonStateBatteryStateChanged
 from imitation_learning_ros_package.msg import RosReward
@@ -14,7 +15,7 @@ from std_msgs.msg import String, Empty
 from src.core.data_types import Action, TerminationType
 from src.core.logger import get_logger, cprint, MessageType
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import FsmState
-from src.sim.ros.src.utils import process_image, process_compressed_image, get_output_path, process_odometry, process_twist
+from src.sim.ros.src.utils import process_image, process_compressed_image, get_output_path, process_odometry, process_twist, transform
 from src.core.utils import camelcase_to_snake_format, get_filename_without_extension
 
 JOYSTICK_BUTTON_MAPPING = {
@@ -43,6 +44,19 @@ class RobotDisplay:
         self._counter = 0
         self._skip_first_n = 30
         self._skip_every_n = 4
+        # Camera matrices
+        self._intrinsic_matrix = np.asarray([[100, 0.0, 100], 
+                                             [0.0, 100, 100], 
+                                             [0.0, 0.0, 1.0]])
+        self._cam_to_opt_rotation = R.from_quat([0.5, -0.5, 0.5, 0.5]).as_matrix()
+        self._base_to_cam_dict = {
+            0: R.from_quat([0, 0, 0, 1]).as_matrix(),
+            -13: R.from_quat([0, -0.113, 0, 0.994]).as_matrix(),
+            -90: R.from_quat([ 0, 0.7071068, 0, 0.7071068]).as_matrix(),
+        }
+        self._base_to_cam_translation = np.asarray([0.1, 0, 0])
+        self._reference_image_location = None
+
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         self._subscribe()
         self._add_control_specs()
@@ -51,7 +65,7 @@ class RobotDisplay:
         self._control_specs = {}
         if rospy.has_param('/actor/joystick/teleop'):
             specs = rospy.get_param('/actor/joystick/teleop')
-            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera_forward_down']:
+            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera']:
                 if name in specs.keys():
                     button_integers = specs[name][
                         'deadman_buttons' if 'deadman_buttons' in specs[name].keys() else 'buttons']
@@ -62,7 +76,6 @@ class RobotDisplay:
         if self._action is not None:
             forward_speed = 200 * self._action.value[0]
             direction = np.arccos(self._action.value[-1])
-#            origin = (int(image.shape[1] / 2), int(image.shape[0] / 2))
             origin = (50, int(image.shape[0] / 2) if height == -1 else height + 50)
             try:
                 steering_point = (int(origin[0] - forward_speed * np.cos(direction)),
@@ -81,7 +94,8 @@ class RobotDisplay:
                          'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._reference_pose)
                          if self._reference_pose is not None else None,
                          'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
-                         'battery': f'battery: {self._battery}%' if self._battery is not None else None}.items():
+                         'battery': f'battery: {self._battery}%' if self._battery is not None else None,
+                         'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None}.items():
             if msg is not None:
                 image = cv2.putText(image, msg, (3, height + 15),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
@@ -101,6 +115,9 @@ class RobotDisplay:
         self._counter += 1
         if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
             return
+        if self._reference_image_location is not None:
+            u, v, _ = self._reference_image_location
+            image = cv2.circle(image, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
         border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
         image = np.concatenate([border, image, border], axis=1)
         image, height = self._write_info(image)
@@ -176,11 +193,19 @@ class RobotDisplay:
                             callback_args=('trajectory', {})
             )
 
+        # camera orientation
+        self._camera_orientation = None
+        rospy.Subscriber(name='/bebop/camera_control',
+                        data_class=Twist,
+                        callback=self._set_field,
+                        callback_args=('camera_orientation', {}))
+
     def _reset(self, msg: Empty = None):
         self._reward = None
         self._fsm_state = None
         self._terminal_state = None
         self._action = None
+        self._reference_image_location = None
 
     def _process_image(self, msg: Union[Image, CompressedImage], args: tuple) -> None:
         field_name, sensor_stats = args
@@ -207,13 +232,35 @@ class RobotDisplay:
             self._terminal_state = TerminationType[msg.termination]
         elif field_name == 'reference_pose':
             self._reference_pose = np.asarray([msg.point.x, msg.point.y, msg.point.z])
+            self._calculate_ref_in_img()
         elif field_name == 'battery':
             self._battery = msg.percent
         elif field_name == 'trajectory':
             global_pose = process_odometry(msg)
             self._trajectory.append(global_pose)
+        elif field_name == 'camera_orientation':
+            self._camera_orientation = float(msg.angular.y)
         else:
             raise NotImplementedError
+
+    def _calculate_ref_in_img(self):
+        if self._reference_pose is None:
+            return None
+        print(f'reference pose: {self._reference_pose}')
+        # translate to camera location
+        p = self._reference_pose - self._base_to_cam_translation
+        # rotate to camera orientation
+        base_to_cam_rot = self._base_to_cam_dict[self._camera_orientation if self._camera_orientation is not None else 0]
+        p = np.matmul(base_to_cam_rot, p)
+        print(f'reference in camera frame: {p}')
+        # rotate to optical frame
+        p = np.matmul(self._cam_to_opt_rotation, p)
+        print(f'reference in optical frame: {p}')
+        # map to image coords
+        p = np.matmul(self._intrinsic_matrix, p)
+        self._reference_image_location = p / p[2]
+        print(f'pixel coordinates: {self._reference_image_location}')
+
 
     def _cleanup(self):
         cv2.destroyAllWindows()

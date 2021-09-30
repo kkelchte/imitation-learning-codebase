@@ -1,0 +1,11 @@
+K_theta: 1.0
+Kd_x: 0.6
+Kd_y: 0.6
+Kd_z: 0.0
+Ki_x: 0.0
+Ki_y: 0.0
+Ki_z: 0.0
+Kp_x: 0.6
+Kp_y: 0.6
+Kp_z: 1.0
+rate_fps: 30

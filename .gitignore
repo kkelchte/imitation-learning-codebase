@@ -199,3 +199,6 @@ test_dir/
 *.sif
 *.code-workspace
 *.vscode
+frames_broken.pdf
+frames.gv
+frames.pdf
