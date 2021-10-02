@@ -118,6 +118,8 @@ class RobotDisplay:
         if self._reference_image_location is not None:
             u, v, _ = self._reference_image_location
             image = cv2.circle(image, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
+        if self._mask is not None:
+            image = np.concatenate([image, self._mask], axis=1) 
         border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
         image = np.concatenate([border, image, border], axis=1)
         image, height = self._write_info(image)
@@ -210,14 +212,13 @@ class RobotDisplay:
     def _process_image(self, msg: Union[Image, CompressedImage], args: tuple) -> None:
         field_name, sensor_stats = args
         image = process_image(msg, sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, sensor_stats)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
         if field_name == "observation":
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
             self._draw(image)
-        # elif field_name == "mask":
-        #     self._mask = ImageTk.PhotoImage(image)
-        #     self._mask_label.configure(image=self._mask)
-        # cprint(f'set field {field_name}', self._logger, msg_type=MessageType.info)
+        elif field_name == "mask":
+            # print(len(set(list(np.asarray(image).flatten()))))
+            self._mask = cv2.applyColorMap(image, cv2.COLORMAP_AUTUMN)
+        #cprint(f'set field {field_name}', self._logger, msg_type=MessageType.info)
 
     def _set_field(self, msg: Union[String, Twist, RosReward, CommonCommonStateBatteryStateChanged, Odometry],
                    args: Tuple) -> None:

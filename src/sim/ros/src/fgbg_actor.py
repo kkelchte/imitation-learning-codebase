@@ -78,7 +78,8 @@ class Actor:
 
     def _publish_mask(self, mask):
         msg = Image()
-        msg.data = list((mask * 255).astype(np.uint8).flatten())
+        mask = (mask * 255).astype(np.uint8).flatten()
+        msg.data = list(mask) 
         msg.height = 200
         msg.width = 200
         msg.encoding = 'rgb8'
@@ -101,20 +102,12 @@ class Actor:
 
 
 if __name__ == '__main__':
-    task = 'pretrain'
-    target = 'line'
-    config = {
-        'cone': 'deep_supervision_blur',
-        'gate': 'deep_supervision_blur',
-        'line': 'deep_supervision_blur'
-    }
-    lrs = {
-        'cone': 1e-05,
-        'gate': 1e-05,
-        'line': 0.01
-    }
-    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/best_down_stream', task, target)
-    ckpt = os.path.join(os.environ['HOME'], 'mount/esat/code/contrastive-learning/data/dtd_augmented', task, config[target], target, str(lrs[target]))
+    task = 'pretrain' # 'waypoints'
+    target = 'cone'
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/best_encoders', target, 'best')
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
+    # ckpt = os.path.join(os.environ['HOME'], 'mount/esat/code/contrastive-learning/data/dtd_augmented', task, config[target], target, str(lrs[target]))
     assert os.path.isdir(ckpt)
     actor = Actor(task, ckpt)
     actor.run()
