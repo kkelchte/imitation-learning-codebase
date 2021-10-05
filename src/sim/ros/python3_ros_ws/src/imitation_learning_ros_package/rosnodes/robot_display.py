@@ -176,7 +176,7 @@ class RobotDisplay:
     def _draw_top_down_waypoint(self, image: np.ndarray, height: int = -1) -> np.ndarray:
         if self._reference_pose is not None:
             origin = (self._border_width - 50, int(image.shape[0] / 2) if height == -1 else height + 50)
-            scale = 100
+            scale = 20
             try:
                 reference_point = (int(origin[0] - scale * self._reference_pose[1]),
                                    int(origin[1] - scale * self._reference_pose[0]))
@@ -185,20 +185,6 @@ class RobotDisplay:
             image = cv2.circle(image, origin, radius=2, color=(0, 0, 0, 0.3), thickness=1)
             image = cv2.arrowedLine(image, origin, reference_point, (1, 0, 0), thickness=1)
         return image
-
-    def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
-        for key, msg in {'fsm': self._fsm_state.name if self._fsm_state is not None else None,
-                         'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._reference_pose)
-                         if self._reference_pose is not None else None,
-                         'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
-                         'battery': f'battery: {self._battery}%' if self._battery is not None else None,
-                         'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None,
-                         'update_rate': f'update_rate: {self._update_rate:.0f}' if self._update_rate is not None else None}.items():
-            if msg is not None:
-                image = cv2.putText(image, msg, (3, height + 15),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
-                height += 15
-        return image, height
     
     def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
         for key, msg in {'fsm': self._fsm_state.name if self._fsm_state is not None else None,
@@ -206,7 +192,8 @@ class RobotDisplay:
                          if self._reference_pose is not None else None,
                          'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
                          'battery': f'battery: {self._battery}%' if self._battery is not None else None,
-                         'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None}.items():
+                         'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None,
+                         'rate': f'update rate: {self._update_rate:.3f} fps' if self._update_rate is not None else None}.items():
             if msg is not None:
                 image = cv2.putText(image, msg, (3, height + 15),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
@@ -242,9 +229,9 @@ class RobotDisplay:
             image *= 255
             self._mask = cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
             self._update_rate_time_tags.append(time.time_ns())
-            if len(self._update_rate_time_tags) == 5:
+            if len(self._update_rate_time_tags) >= 5:
                 differences = [
-                    (self._update_rate_time_tags[i] - self._update_rate_time_tags[i+1]) * 10**-9 
+                    (self._update_rate_time_tags[i+1] - self._update_rate_time_tags[i]) * 10**-9 
                     for i in range(len(self._update_rate_time_tags) - 1)]
                 self._update_rate = 1/(np.mean(differences))
                 self._update_rate_time_tags.pop(0)

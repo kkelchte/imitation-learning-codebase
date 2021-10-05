@@ -113,12 +113,14 @@ class Actor:
 
 if __name__ == '__main__':
     # task = 'pretrain' 
+    target = 'cone'
+    config = 'default_fg'
     task = 'waypoints'
-    target = 'line'
+    #target = 'line'
     ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/best_encoders', target, 'best')
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
-    # ckpt = os.path.join(os.environ['HOME'], 'mount/esat/code/contrastive-learning/data/dtd_augmented', task, config[target], target, str(lrs[target]))
+    #ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_augmented', task, config, target, 'best')
     assert os.path.isdir(ckpt)
     actor = Actor(task, ckpt)
     actor.run()
