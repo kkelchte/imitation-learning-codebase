@@ -1,19 +1,8 @@
 import os
-import sys
-import time
-
-import rospy
-from geometry_msgs.msg import Point, PointStamped
-from sensor_msgs.msg import Image
-import fgbg
-import torch
 
 from src.sim.ros.src.process_wrappers import RosWrapper
-from src.sim.ros.src.utils import process_image
 
-TARGET = 'cone'
 DS_TASK = 'waypoints'  # 'velocities'  # waypoints
-CHECKPOINT = f'{os.environ["HOME"]}/code/contrastive-learning/data/down_stream/{DS_TASK}/{TARGET}/best/checkpoint_model.ckpt'
 
 if __name__ == '__main__':
     config = {

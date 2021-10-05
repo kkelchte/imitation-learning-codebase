@@ -1,3 +1,4 @@
+#!/usr/bin/python3.8
 import os
 from sys import argv
 import shutil
@@ -7,6 +8,7 @@ from copy import deepcopy
 from typing import Union
 
 import torch
+import matplotlib.pyplot as plt
 from std_msgs.msg import Empty
 import numpy as np
 import rospy
@@ -73,16 +75,16 @@ class Actor:
             mask = self.model.encoder(image_tensor).detach().cpu().numpy().squeeze()
         else:
             mask = prediction
-        mask = np.stack([mask] * 3, axis=-1)
+#        mask = np.stack([mask] * 3, axis=-1)
         self._publish_mask(mask)
 
     def _publish_mask(self, mask):
         msg = Image()
-        mask = (mask * 255).astype(np.uint8).flatten()
-        msg.data = list(mask) 
+        mask = (mask * 255.).flatten().astype(np.uint8)
+        msg.data = [m for m in mask]
         msg.height = 200
         msg.width = 200
-        msg.encoding = 'rgb8'
+        msg.encoding = 'mono8'
         self._mask_publisher.publish(msg)
 
     def _publish(self, prediction):
@@ -102,11 +104,12 @@ class Actor:
 
 
 if __name__ == '__main__':
-    task = 'pretrain' # 'waypoints'
-    target = 'cone'
-    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
+    # task = 'pretrain' 
+    task = 'waypoints'
+    target = 'line'
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/best_encoders', target, 'best')
-    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
     # ckpt = os.path.join(os.environ['HOME'], 'mount/esat/code/contrastive-learning/data/dtd_augmented', task, config[target], target, str(lrs[target]))
     assert os.path.isdir(ckpt)
     actor = Actor(task, ckpt)

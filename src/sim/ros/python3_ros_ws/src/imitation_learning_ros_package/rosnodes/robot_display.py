@@ -111,25 +111,26 @@ class RobotDisplay:
             height += 15
         return image
 
-    def _draw(self, image: np.ndarray):
+    def _draw(self):
         self._counter += 1
         if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
             return
-        if self._reference_image_location is not None:
-            u, v, _ = self._reference_image_location
-            image = cv2.circle(image, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
+        image = np.zeros((200, 400, 3))
         if self._mask is not None:
-            image = np.concatenate([image, self._mask], axis=1) 
+            image[:, 200:, :] = self._mask[:]
+        if self._view is not None:
+            image[:, :200, :] = self._view[:]
         border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
         image = np.concatenate([border, image, border], axis=1)
         image, height = self._write_info(image)
         image = self._draw_action(image, height)
         image = self._write_control_specs(image)
         cv2.imshow("Image window", image)
-        cv2.waitKey(3)        
+        cv2.waitKey(1)        
 
     def _subscribe(self):
         # Robot sensors:
+        self._view = None
         if rospy.has_param('/robot/camera_sensor'):
             sensor_topic = rospy.get_param('/robot/camera_sensor/topic')
             sensor_type = rospy.get_param('/robot/camera_sensor/type')
@@ -146,7 +147,7 @@ class RobotDisplay:
         self._mask = None
         rospy.Subscriber(name='/mask', data_class=Image,
                              callback=self._process_image,
-                             callback_args=("mask", {}))
+                             callback_args=("mask", {'height': 200, 'width': 200, 'depth': 1}))
 
         rospy.Subscriber('/fsm/reset', Empty, self._reset)
 
@@ -213,12 +214,13 @@ class RobotDisplay:
         field_name, sensor_stats = args
         image = process_image(msg, sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, sensor_stats)
         if field_name == "observation":
-            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            self._draw(image)
+            self._view = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            if self._reference_image_location is not None:
+                u, v, _ = self._reference_image_location
+                self._view = cv2.circle(self._view, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
         elif field_name == "mask":
-            # print(len(set(list(np.asarray(image).flatten()))))
-            self._mask = cv2.applyColorMap(image, cv2.COLORMAP_AUTUMN)
-        #cprint(f'set field {field_name}', self._logger, msg_type=MessageType.info)
+            image *= 255
+            self._mask = cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
 
     def _set_field(self, msg: Union[String, Twist, RosReward, CommonCommonStateBatteryStateChanged, Odometry],
                    args: Tuple) -> None:
@@ -247,20 +249,20 @@ class RobotDisplay:
     def _calculate_ref_in_img(self):
         if self._reference_pose is None:
             return None
-        print(f'reference pose: {self._reference_pose}')
+        #print(f'reference pose: {self._reference_pose}')
         # translate to camera location
         p = self._reference_pose - self._base_to_cam_translation
         # rotate to camera orientation
         base_to_cam_rot = self._base_to_cam_dict[self._camera_orientation if self._camera_orientation is not None else 0]
         p = np.matmul(base_to_cam_rot, p)
-        print(f'reference in camera frame: {p}')
+        #print(f'reference in camera frame: {p}')
         # rotate to optical frame
         p = np.matmul(self._cam_to_opt_rotation, p)
-        print(f'reference in optical frame: {p}')
+        #print(f'reference in optical frame: {p}')
         # map to image coords
         p = np.matmul(self._intrinsic_matrix, p)
         self._reference_image_location = p / p[2]
-        print(f'pixel coordinates: {self._reference_image_location}')
+        #print(f'pixel coordinates: {self._reference_image_location}')
 
 
     def _cleanup(self):
@@ -269,6 +271,7 @@ class RobotDisplay:
     def run(self):
         rate = rospy.Rate(self._rate_fps)
         while not rospy.is_shutdown():
+            self._draw()
             rate.sleep()
         self._cleanup()
 

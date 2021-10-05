@@ -140,13 +140,12 @@ def get_random_twist():
     return msg
 
 
-def get_random_image():
+def get_random_image(size: tuple = (200, 200, 3)):
     image = Image()
-    image.data = list(np.random.randint(0, 255, size=200*200*3, dtype=np.uint8))
-    # image.data = [int(5)]*200*200*3
-    image.height = 200
-    image.width = 200
-    image.encoding = 'rgb8'
+    image.data = list(np.random.randint(0, 255, size=size[0] * size[1] * size[2], dtype=np.uint8))
+    image.height = size[0]
+    image.width = size[1]
+    image.encoding = 'rgb8' if size[2] == 3 else 'mono8'
     return image
 
 
