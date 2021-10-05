@@ -45,6 +45,7 @@ class Actor:
         max_duration = 60
         while not rospy.has_param('/output_path') and time.time() < stime + max_duration:
             time.sleep(0.01)
+        self._last_image = None
         rospy.Subscriber(name=rospy.get_param(f'/robot/camera_sensor/topic'),
                          data_class=eval(rospy.get_param(f'/robot/camera_sensor/type')),
                          callback=self._camera_callback)
@@ -60,23 +61,14 @@ class Actor:
                 queue_size=10,
             )
 
-        self._mask_publisher = rospy.Publisher('/mask', Image, queue_size=10)
+        self._mask_publisher = rospy.Publisher('/mask', Image, queue_size=1)
 
     def reset(self):
         self._reset_publisher(Empty())
+        self._last_image = None
 
     def _camera_callback(self, msg: Image):
-        image = process_image(msg, {'height': 200, 'width': 200, 'depth': 3})
-        image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
-        
-        prediction = self.model(image_tensor).detach().cpu().numpy().squeeze()
-        if self._task != 'pretrain':
-            self._publish(prediction)       
-            mask = self.model.encoder(image_tensor).detach().cpu().numpy().squeeze()
-        else:
-            mask = prediction
-#        mask = np.stack([mask] * 3, axis=-1)
-        self._publish_mask(mask)
+        self._last_image  = msg
 
     def _publish_mask(self, mask):
         msg = Image()
@@ -87,7 +79,7 @@ class Actor:
         msg.encoding = 'mono8'
         self._mask_publisher.publish(msg)
 
-    def _publish(self, prediction):
+    def _publish_prediction(self, prediction):
         if self._task == 'waypoints':
             msg = PointStamped()
             msg.header.stamp = rospy.Time.now()
@@ -97,9 +89,25 @@ class Actor:
             msg = adapt_action_to_twist(Action(name='agent', value=prediction))        
         self._prediction_publisher.publish(msg)
 
+    def _update(self):
+        if self._last_image is not None:
+            image = deepcopy(self._last_image)
+            self._last_image = None
+            image = process_image(image, {'height': 200, 'width': 200, 'depth': 3})
+            image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
+            
+            prediction = self.model(image_tensor).detach().cpu().numpy().squeeze()
+            if self._task != 'pretrain':
+                self._publish_prediction(prediction)       
+                mask = self.model.encoder(image_tensor).detach().cpu().numpy().squeeze()
+            else:
+                mask = prediction
+            self._publish_mask(mask)
+
     def run(self):
         rate = rospy.Rate(100)
         while not rospy.is_shutdown():
+            self._update()
             rate.sleep()
 
 

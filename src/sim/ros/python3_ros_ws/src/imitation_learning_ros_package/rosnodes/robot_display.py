@@ -56,78 +56,13 @@ class RobotDisplay:
         }
         self._base_to_cam_translation = np.asarray([0.1, 0, 0])
         self._reference_image_location = None
+        self._update_rate_time_tags = []
+        self._update_rate = None
 
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         self._subscribe()
         self._add_control_specs()
-
-    def _add_control_specs(self):
-        self._control_specs = {}
-        if rospy.has_param('/actor/joystick/teleop'):
-            specs = rospy.get_param('/actor/joystick/teleop')
-            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera']:
-                if name in specs.keys():
-                    button_integers = specs[name][
-                        'deadman_buttons' if 'deadman_buttons' in specs[name].keys() else 'buttons']
-                    self._control_specs[name] = ' '.join([JOYSTICK_BUTTON_MAPPING[button_integer]
-                                                          for button_integer in button_integers])
     
-    def _draw_action(self, image: np.ndarray, height: int = -1) -> np.ndarray:
-        if self._action is not None:
-            forward_speed = 200 * self._action.value[0]
-            direction = np.arccos(self._action.value[-1])
-            origin = (50, int(image.shape[0] / 2) if height == -1 else height + 50)
-            try:
-                steering_point = (int(origin[0] - forward_speed * np.cos(direction)),
-                                  int(origin[1] - forward_speed * np.sin(direction)))
-            except ValueError:
-                steering_point = (int(origin[0]), int(origin[1]))
-            image = cv2.circle(image, origin, radius=20, color=(0, 0, 0, 0.3), thickness=3)
-            image = cv2.arrowedLine(image, origin, steering_point, (255, 0, 0), thickness=1)
-            msg = '[' + ', '.join(f'{e:.1f}' for e in self._action.value) + ']'
-            image = cv2.putText(image, msg, (3, origin[1] + 55 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0),
-                                thickness=2)
-        return image
-
-    def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
-        for key, msg in {'fsm': self._fsm_state.name if self._fsm_state is not None else None,
-                         'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._reference_pose)
-                         if self._reference_pose is not None else None,
-                         'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
-                         'battery': f'battery: {self._battery}%' if self._battery is not None else None,
-                         'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None}.items():
-            if msg is not None:
-                image = cv2.putText(image, msg, (3, height + 15),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
-                height += 15
-        return image, height
-
-    def _write_control_specs(self, image: np.ndarray) -> np.ndarray:
-        height = 0
-        for key, value in self._control_specs.items():
-            msg = f'{key}: {value}'
-            image = cv2.putText(image, msg, (image.shape[1] - self._border_width + 5, height + 15),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
-            height += 15
-        return image
-
-    def _draw(self):
-        self._counter += 1
-        if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
-            return
-        image = np.zeros((200, 400, 3))
-        if self._mask is not None:
-            image[:, 200:, :] = self._mask[:]
-        if self._view is not None:
-            image[:, :200, :] = self._view[:]
-        border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
-        image = np.concatenate([border, image, border], axis=1)
-        image, height = self._write_info(image)
-        image = self._draw_action(image, height)
-        image = self._write_control_specs(image)
-        cv2.imshow("Image window", image)
-        cv2.waitKey(1)        
-
     def _subscribe(self):
         # Robot sensors:
         self._view = None
@@ -210,6 +145,91 @@ class RobotDisplay:
         self._action = None
         self._reference_image_location = None
 
+    def _add_control_specs(self):
+        self._control_specs = {}
+        if rospy.has_param('/actor/joystick/teleop'):
+            specs = rospy.get_param('/actor/joystick/teleop')
+            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera']:
+                if name in specs.keys():
+                    button_integers = specs[name][
+                        'deadman_buttons' if 'deadman_buttons' in specs[name].keys() else 'buttons']
+                    self._control_specs[name] = ' '.join([JOYSTICK_BUTTON_MAPPING[button_integer]
+                                                          for button_integer in button_integers])
+    
+    def _draw_action(self, image: np.ndarray, height: int = -1) -> np.ndarray:
+        if self._action is not None:
+            forward_speed = 200 * self._action.value[0]
+            direction = np.arccos(self._action.value[-1])
+            origin = (50, int(image.shape[0] / 2) if height == -1 else height + 50)
+            try:
+                steering_point = (int(origin[0] - forward_speed * np.cos(direction)),
+                                  int(origin[1] - forward_speed * np.sin(direction)))
+            except ValueError:
+                steering_point = (int(origin[0]), int(origin[1]))
+            image = cv2.circle(image, origin, radius=20, color=(0, 0, 0, 0.3), thickness=3)
+            image = cv2.arrowedLine(image, origin, steering_point, (255, 0, 0), thickness=1)
+            msg = '[' + ', '.join(f'{e:.1f}' for e in self._action.value) + ']'
+            image = cv2.putText(image, msg, (3, origin[1] + 55 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0),
+                                thickness=2)
+        return image
+
+    def _draw_top_down_waypoint(self, image: np.ndarray, height: int = -1) -> np.ndarray:
+        if self._reference_pose is not None:
+            origin = (self._border_width - 50, int(image.shape[0] / 2) if height == -1 else height + 50)
+            scale = 100
+            try:
+                reference_point = (int(origin[0] - scale * self._reference_pose[1]),
+                                   int(origin[1] - scale * self._reference_pose[0]))
+            except ValueError:
+                reference_point = (int(origin[0]), int(origin[1]))
+            image = cv2.circle(image, origin, radius=2, color=(0, 0, 0, 0.3), thickness=1)
+            image = cv2.arrowedLine(image, origin, reference_point, (1, 0, 0), thickness=1)
+        return image
+
+    def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
+        for key, msg in {'fsm': self._fsm_state.name if self._fsm_state is not None else None,
+                         'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._reference_pose)
+                         if self._reference_pose is not None else None,
+                         'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
+                         'battery': f'battery: {self._battery}%' if self._battery is not None else None,
+                         'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None,
+                         'update_rate': f'update_rate: {self._update_rate:.0f}' if self._update_rate is not None else None}.items():
+            if msg is not None:
+                image = cv2.putText(image, msg, (3, height + 15),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+                height += 15
+        return image, height
+    
+    def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
+        for key, msg in {'fsm': self._fsm_state.name if self._fsm_state is not None else None,
+                         'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._reference_pose)
+                         if self._reference_pose is not None else None,
+                         'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
+                         'battery': f'battery: {self._battery}%' if self._battery is not None else None,
+                         'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None}.items():
+            if msg is not None:
+                image = cv2.putText(image, msg, (3, height + 15),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+                height += 15
+        return image, height
+
+    def _draw(self):
+        self._counter += 1
+        if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
+            return
+        image = np.zeros((200, 400, 3))
+        if self._mask is not None:
+            image[:, 200:, :] = self._mask[:]
+        if self._view is not None:
+            image[:, :200, :] = self._view[:]
+        border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
+        image = np.concatenate([border, image, border], axis=1)
+        image, height = self._write_info(image)
+        image = self._draw_action(image, height)
+        image = self._draw_top_down_waypoint(image, height)
+        cv2.imshow("Image window", image)
+        cv2.waitKey(1)        
+
     def _process_image(self, msg: Union[Image, CompressedImage], args: tuple) -> None:
         field_name, sensor_stats = args
         image = process_image(msg, sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, sensor_stats)
@@ -221,6 +241,13 @@ class RobotDisplay:
         elif field_name == "mask":
             image *= 255
             self._mask = cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
+            self._update_rate_time_tags.append(time.time_ns())
+            if len(self._update_rate_time_tags) == 5:
+                differences = [
+                    (self._update_rate_time_tags[i] - self._update_rate_time_tags[i+1]) * 10**-9 
+                    for i in range(len(self._update_rate_time_tags) - 1)]
+                self._update_rate = 1/(np.mean(differences))
+                self._update_rate_time_tags.pop(0)
 
     def _set_field(self, msg: Union[String, Twist, RosReward, CommonCommonStateBatteryStateChanged, Odometry],
                    args: Tuple) -> None:
@@ -264,6 +291,14 @@ class RobotDisplay:
         self._reference_image_location = p / p[2]
         #print(f'pixel coordinates: {self._reference_image_location}')
 
+    def _write_control_specs(self, image: np.ndarray) -> np.ndarray:
+        height = 0
+        for key, value in self._control_specs.items():
+            msg = f'{key}: {value}'
+            image = cv2.putText(image, msg, (image.shape[1] - self._border_width + 5, height + 15),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+            height += 15
+        return image
 
     def _cleanup(self):
         cv2.destroyAllWindows()
