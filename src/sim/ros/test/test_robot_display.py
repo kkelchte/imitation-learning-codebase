@@ -64,7 +64,7 @@ class TestRobotDisplay(unittest.TestCase):
             publish_topics=publish_topics
         )
 
-        while True:
+        while not rospy.is_shutdown():
             # put something random on each topic every second
             # reset
             if np.random.binomial(1, 0.2) == 1:
@@ -75,10 +75,11 @@ class TestRobotDisplay(unittest.TestCase):
             battery.percent = np.random.randint(0, 100, dtype=np.uint8)
             self.ros_topic.publishers['/bebop/states/common/CommonState/BatteryStateChanged'].publish(battery)
             self.ros_topic.publishers['/bebop/cmd_vel'].publish(get_random_twist())
-            self.ros_topic.publishers['/bebop/image_raw'].publish(get_random_image())
-            self.ros_topic.publishers['/mask'].publish(get_random_image())
-            self.ros_topic.publishers['/reference_pose'].publish(get_random_reference_pose())       
-            rospy.sleep(0.01)
+            self.ros_topic.publishers['/bebop/image_raw'].publish(get_random_image((200,200,3)))
+            self.ros_topic.publishers['/mask'].publish(get_random_image((200,200,1)))
+#            self.ros_topic.publishers['/reference_pose'].publish(get_random_reference_pose())       
+            self.ros_topic.publishers['/reference_pose'].publish(PointStamped(point=Point(x=2, y=0.5, z=0.5)))       
+            rospy.sleep(0.1)
 
     def tearDown(self) -> None:
         print(f'shutting down...')

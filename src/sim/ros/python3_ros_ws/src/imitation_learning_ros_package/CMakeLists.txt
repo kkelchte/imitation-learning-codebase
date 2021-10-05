@@ -54,6 +54,7 @@ catkin_install_python(PROGRAMS
   rosnodes/modified_state_publisher.py
   rosnodes/modified_state_frame_visualizer.py
   rosnodes/april_tag_detector.py
+  rosnodes/fgbg_actor.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(DIRECTORY launch

@@ -1,3 +1,4 @@
+#!/usr/bin/python3.8
 import os
 from sys import argv
 import shutil
@@ -7,6 +8,7 @@ from copy import deepcopy
 from typing import Union
 
 import torch
+import matplotlib.pyplot as plt
 from std_msgs.msg import Empty
 import numpy as np
 import rospy
@@ -43,6 +45,7 @@ class Actor:
         max_duration = 60
         while not rospy.has_param('/output_path') and time.time() < stime + max_duration:
             time.sleep(0.01)
+        self._last_image = None
         rospy.Subscriber(name=rospy.get_param(f'/robot/camera_sensor/topic'),
                          data_class=eval(rospy.get_param(f'/robot/camera_sensor/type')),
                          callback=self._camera_callback)
@@ -58,33 +61,25 @@ class Actor:
                 queue_size=10,
             )
 
-        self._mask_publisher = rospy.Publisher('/mask', Image, queue_size=10)
+        self._mask_publisher = rospy.Publisher('/mask', Image, queue_size=1)
 
     def reset(self):
         self._reset_publisher(Empty())
+        self._last_image = None
 
     def _camera_callback(self, msg: Image):
-        image = process_image(msg, {'height': 200, 'width': 200, 'depth': 3})
-        image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
-        
-        prediction = self.model(image_tensor).detach().cpu().numpy().squeeze()
-        if self._task != 'pretrain':
-            self._publish(prediction)       
-            mask = self.model.encoder(image_tensor).detach().cpu().numpy().squeeze()
-        else:
-            mask = prediction
-        mask = np.stack([mask] * 3, axis=-1)
-        self._publish_mask(mask)
+        self._last_image  = msg
 
     def _publish_mask(self, mask):
         msg = Image()
-        msg.data = list((mask * 255).astype(np.uint8).flatten())
+        mask = (mask * 255.).flatten().astype(np.uint8)
+        msg.data = [m for m in mask]
         msg.height = 200
         msg.width = 200
-        msg.encoding = 'rgb8'
+        msg.encoding = 'mono8'
         self._mask_publisher.publish(msg)
 
-    def _publish(self, prediction):
+    def _publish_prediction(self, prediction):
         if self._task == 'waypoints':
             msg = PointStamped()
             msg.header.stamp = rospy.Time.now()
@@ -94,27 +89,38 @@ class Actor:
             msg = adapt_action_to_twist(Action(name='agent', value=prediction))        
         self._prediction_publisher.publish(msg)
 
+    def _update(self):
+        if self._last_image is not None:
+            image = deepcopy(self._last_image)
+            self._last_image = None
+            image = process_image(image, {'height': 200, 'width': 200, 'depth': 3})
+            image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
+            
+            prediction = self.model(image_tensor).detach().cpu().numpy().squeeze()
+            if self._task != 'pretrain':
+                self._publish_prediction(prediction)       
+                mask = self.model.encoder(image_tensor).detach().cpu().numpy().squeeze()
+            else:
+                mask = prediction
+            self._publish_mask(mask)
+
     def run(self):
         rate = rospy.Rate(100)
         while not rospy.is_shutdown():
+            self._update()
             rate.sleep()
 
 
 if __name__ == '__main__':
-    task = 'pretrain'
-    target = 'line'
-    config = {
-        'cone': 'deep_supervision_blur',
-        'gate': 'deep_supervision_blur',
-        'line': 'deep_supervision_blur'
-    }
-    lrs = {
-        'cone': 1e-05,
-        'gate': 1e-05,
-        'line': 0.01
-    }
-    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/best_down_stream', task, target)
-    ckpt = os.path.join(os.environ['HOME'], 'mount/esat/code/contrastive-learning/data/dtd_augmented', task, config[target], target, str(lrs[target]))
+    # task = 'pretrain' 
+    target = 'cone'
+    config = 'default_fg'
+    task = 'waypoints'
+    #target = 'line'
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/best_encoders', target, 'best')
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
+    #ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_augmented', task, config, target, 'best')
     assert os.path.isdir(ckpt)
     actor = Actor(task, ckpt)
     actor.run()

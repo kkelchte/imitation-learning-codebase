@@ -78,7 +78,7 @@ class Datasaver:
 
 
 if __name__ == '__main__':
-    target = 'gate'
+    target = 'cone'
     output_directory = f'{os.environ["HOME"]}/code/contrastive-learning/data/datasets/bebop_real_movies/{target}'
     os.makedirs(output_directory, exist_ok=True)
     print(f"saving in {output_directory}")

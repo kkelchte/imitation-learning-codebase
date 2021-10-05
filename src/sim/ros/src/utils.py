@@ -250,17 +250,20 @@ def adapt_action_to_twist(action: Action) -> List[Twist]:
 
 def resize_image(img: np.ndarray, sensor_stats: dict) -> np.ndarray:
     if 'height' in sensor_stats.keys() and 'width' in sensor_stats.keys():
-        size = [sensor_stats['height'], sensor_stats['width'], 3]
+        if 'depth' in sensor_stats.keys():
+            size = [sensor_stats['height'], sensor_stats['width'], 3]
     else:
         return img
     if 'depth' in sensor_stats.keys():
         size[2] = sensor_stats['depth']
     scale = [max(int(img.shape[i] / size[i]), 1) for i in range(2)]
+    if len(img.shape) == 2:
+        img = np.expand_dims(img, axis=-1)
     img = img[::scale[0],
           ::scale[1],
           :]
     img = sm.resize(img, size, mode='constant').astype(np.float32)
-    if size[-1] == 1:
+    if size[-1] == 1 and img.shape[-1] != 1:
         img = img.mean(axis=-1, keepdims=True)
     return img
 
