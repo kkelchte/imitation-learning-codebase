@@ -24,7 +24,7 @@ from src.sim.ros.src.utils import transform, set_random_cone_location, set_rando
 WORLD = 'gate_cone_line_realistic'
 #WORLD = 'gate_cone_line'
 TARGET = argv[1]
-NUMBER = 100
+NUMBER = 30
 
 print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')
 
@@ -64,7 +64,7 @@ def save(reference_pos,
                                             orientation=experience.info['position'][3:],
                                             translation=np.asarray(experience.info['position'][:3]),
                                             invert=True)[0]
-    if TARGET == 'line':  # scale to fixed length
+    if TARGET == 'line' or TARGET == 'red_line':  # scale to fixed length
         norm = np.sqrt(np.sum(relative_reference_position ** 2))
         ref_distance = 0.5
         relative_reference_position = relative_reference_position * ref_distance / norm
@@ -104,7 +104,7 @@ def dump(json_data, hdf5_data, output_dir):
         )
     hdf5_file.close()
     
-    if WORLD == 'gate_cone_line_realistic':
+    if False:  # WORLD == 'gate_cone_line_realistic':
         mask = np.asarray(hdf5_data['mask'][0]).squeeze()
         obs = np.asarray(hdf5_data['observation'][0]).squeeze()
         plt.imshow(np.stack([0.4 + mask] * 3, axis=-1) * obs)
@@ -148,12 +148,14 @@ if __name__ == '__main__':
     robot_dict = {
         'gate': "drone_sim_forward_cam",
         'cone': "drone_sim",
-        'line': "drone_sim_down_cam"
+        'line': "drone_sim_down_cam",
+        'red_line': "drone_sim_down_cam"
     }
     blur_sizes = {
         'gate': 5,
         'cone': 3,
-        'line': 3
+        'line': 3,
+        'red_line': 3
     }
 
     environment_config_dict = {
@@ -217,12 +219,15 @@ if __name__ == '__main__':
         elif TARGET == 'line':
             reference_pos = spawn_line(WORLD)
             send_reference_global(reference_pos[0], reference_pos[1], reference_pos[2])
+        elif TARGET == 'red_line':
+            reference_pos = spawn_line(WORLD, color='red')
+            send_reference_global(reference_pos[0], reference_pos[1], reference_pos[2])
         else:
             raise NotImplementedError
 
         if WORLD == 'gate_cone_line_realistic':
             # decide at which step to randomly stop
-            average_lengths = {'cone': 36, 'line': 32, 'gate': 47}
+            average_lengths = {'cone': 36, 'line': 32, 'red_line': 32, 'gate': 47}
             stop_index = np.random.uniform(0, average_lengths[TARGET])
             print(f'stopping at {stop_index}')
         else:
@@ -255,7 +260,7 @@ if __name__ == '__main__':
             # put flying zone back
             spawn_flying_zone()
 
-        if TARGET == 'line':
+        if TARGET == 'line' or TARGET == 'red_line':
             remove_line()
         # dump data if run is successfully and at least 3 experiences are saved with something in view.
         if WORLD == 'gate_cone_line_realistic' or \

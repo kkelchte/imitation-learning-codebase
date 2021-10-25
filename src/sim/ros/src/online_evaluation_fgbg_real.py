@@ -2,7 +2,7 @@ import os
 
 from src.sim.ros.src.process_wrappers import RosWrapper
 
-DS_TASK = 'waypoints'  # 'velocities'  # waypoints
+DS_TASK = 'pretrain'  # 'velocities'  # waypoints
 
 if __name__ == '__main__':
     config = {

@@ -1,4 +1,4 @@
-material RepeatedTexture
+material RepeatedBlueTexture
 {
   technique
   {
@@ -17,6 +17,30 @@ material RepeatedTexture
       {
         // Relative to the location of the material script
         texture ../textures/pipe_raw.png
+        scale 0.25 0.25
+      }
+    }
+  }
+}
+material RepeatedRedTexture
+{
+  technique
+  {
+    pass
+    {
+        // base colours, not needed for rendering, but as information
+        // to lighting pass categorisation routine
+
+        ambient 2 79 155
+        diffuse 0 0 0 
+        specular 0 0 0 0
+    }
+    pass
+    {
+      texture_unit
+      {
+        // Relative to the location of the material script
+        texture ../textures/pipe_raw_red.png
         scale 0.25 0.25
       }
     }

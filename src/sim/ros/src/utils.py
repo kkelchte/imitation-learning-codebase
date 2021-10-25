@@ -31,7 +31,7 @@ from cv_bridge import CvBridge
 bridge = CvBridge()
 
 
-def update_line_model():
+def update_line_model(color: str = 'blue'):
     # create random line from x -4 till +4
     number_of_points = 70
     xmin = -1
@@ -82,7 +82,7 @@ def update_line_model():
         material = ET.SubElement(visual, 'material')
         script = ET.SubElement(material, 'script')
         name = ET.SubElement(script, 'name')
-        name.text = 'RepeatedTexture'
+        name.text = 'RepeatedBlueTexture' if color == 'blue' else 'RepeatedRedTexture'
         uri = ET.SubElement(script, 'uri')
         uri.text = 'file://materials/scripts/repeated.material'
         for element in [collision, visual]:
@@ -99,8 +99,8 @@ def update_line_model():
     return x_g, y_g, z_g
 
 
-def spawn_line(world):
-    reference_pos = update_line_model()
+def spawn_line(world, color: str = 'blue'):
+    reference_pos = update_line_model(color)
     args = shlex.split("rosrun gazebo_ros spawn_model -file " + os.environ[
         "GAZEBO_MODEL_PATH"] + "/line_segment/line.sdf -sdf -model line -y 0 -x 0 " + ("-z 0.1" if world == "gate_cone_line_realistic" else ""))
     subprocess.run(args)
