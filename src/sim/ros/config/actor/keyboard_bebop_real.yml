@@ -1,15 +1,9 @@
 specs:
   message: "
-             Reading from the keyboard  and Publishing to Twist!
-              ---------------------------
-              Moving around:
-                u (roll left)   i (up)         o (roll right)  p (take off)
-                j (turn left)   k (straight)   l (turn right)  m (go)
-                , (land)        ; (down)
-
-               space (take over)
-               e (emergency) 
-               d (toggle camera)"
+u (roll left)   i (up)         o (roll right)  p (take off)
+j (turn left)   k (straight)   l (turn right)  m (go)
+, (land)        ; (down)
+space (take over) e (emergency) d (toggle camera)"
   speed: 0.1
   turn: 0.5
   rate_fps: 10
