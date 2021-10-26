@@ -25,8 +25,8 @@ from src.sim.ros.src.utils import (
     send_reference_local,
 )
 
-# WORLD = 'gate_cone_line_realistic'
-WORLD = "gate_cone_line"
+WORLD = "gate_cone_line_realistic"
+# WORLD = "gate_cone_line"
 # TARGET = 'cone'  # cone gate line
 TARGET = argv[1]
 # DS_TASK = "velocities"  # 'waypoints'  # 'velocities'
@@ -42,7 +42,7 @@ CHECKPOINT = os.path.join(
 )
 OUTPUTDIR = CHECKPOINT
 # OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/ds_eval/{WORLD}/{DS_TASK}/{TARGET}"
-#os.makedirs(OUTPUTDIR, exist_ok=True)
+# os.makedirs(OUTPUTDIR, exist_ok=True)
 
 print(
     f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}'
@@ -261,7 +261,7 @@ if __name__ == "__main__":
         run_index = dump(json_data, hdf5_data, output_dir)
 
     # write results to output directory
-    with open(os.path.join(config.output_path, "results.txt"), "w") as f:
+    with open(os.path.join(config.output_path, "results.txt"), "a") as f:
         f.write(f"Success rate: {np.mean(successes)}\n")
         f.write(f"RMSE: {np.mean(losses)}\n")
         f.write(f"RMSE std: {np.std(losses)}\n")
