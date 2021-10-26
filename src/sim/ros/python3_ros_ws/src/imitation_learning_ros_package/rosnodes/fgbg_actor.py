@@ -118,7 +118,7 @@ if __name__ == '__main__':
     # task = 'waypoints'
     #target = 'line'
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
-    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/encoders/red_line')
+    ckpt = f'/usr/data/kkelchtel/code/contrastive-learning/data/encoders/red_line'
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
     #ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_augmented', task, config, target, 'best')
     assert os.path.isdir(ckpt)
