@@ -30,7 +30,7 @@ class Actor:
         if task == 'pretrain':
             self.model = fgbg.DeepSupervisionNet(batch_norm=False)
         else:
-            self.model = fgbg.DownstreamNet(output_size=(4,) if self._task == "velocities" else (3,), batch_norm=True)
+            self.model = fgbg.DownstreamNet(output_size=(4,) if self._task == "velocities" else (3,), batch_norm=False)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if ckpt is not None:
             ckpt = torch.load(
@@ -112,13 +112,12 @@ class Actor:
 
 
 if __name__ == '__main__':
-    task = 'pretrain' 
+    # task = 'pretrain' 
     # target = 'cone'
     # config = 'default_fg'
-    # task = 'waypoints'
-    #target = 'line'
-    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
-    ckpt = f'/usr/data/kkelchtel/code/contrastive-learning/data/encoders/red_line'
+    task = 'waypoints'
+    target = 'red_line'
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
     #ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_augmented', task, config, target, 'best')
     assert os.path.isdir(ckpt)

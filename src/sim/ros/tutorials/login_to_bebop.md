@@ -8,7 +8,7 @@ To make permanent changes, you have to make the file system writable:
 mount -o remount,rw /
 
 Check the PID of the dragon-prog to kill it with top or ps:
-ps -ef | grep dragon
+ps | grep dragon
 kill -9 <fill in PID>
 restart dragon-prog with new settings, see -h for more option:
 /usr/bin/dragon-prog -S 0 -s 640x480 -V 115
