@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from std_msgs.msg import Empty
 import numpy as np
 import rospy
+from PIL import Image as PILImage 
+from PIL import ImageEnhance as PILImageEnhance
 from geometry_msgs.msg import Twist, PointStamped, Point
 from std_msgs.msg import String, Float32MultiArray, Empty
 from sensor_msgs.msg import Image
@@ -71,7 +73,11 @@ class Actor:
         self._last_image  = msg
 
     def _publish_mask(self, mask):
+        # np.save(f'/home/kkelchte/tmp/test_{time.time_ns()}_.npy', mask)
         msg = Image()
+        print(f'mask range [{mask.min(), mask.max()}]')
+        mask -= mask.min()
+        mask /= mask.max()
         mask = (mask * 255.).flatten().astype(np.uint8)
         msg.data = [m for m in mask]
         msg.height = 200
@@ -94,7 +100,15 @@ class Actor:
             image = deepcopy(self._last_image)
             self._last_image = None
             image = process_image(image, {'height': 200, 'width': 200, 'depth': 3})
-            image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
+            print(f'pixel dis: {image.mean()*255}+-{image.std()*255}')
+            original_mean = image.mean()*255
+            enhance_factor = 140 / original_mean
+            image = PILImage.fromarray(np.uint8(image * 255))
+            enhancer = PILImageEnhance.Brightness(image)
+            im_output = np.asarray(enhancer.enhance(enhance_factor))
+            print(f'enhanced pixel dis: {im_output.mean()}+-{im_output.std()}')
+            
+            image_tensor = torch.from_numpy(im_output/255).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
             
             prediction = self.model(image_tensor).detach().cpu().numpy().squeeze()
             if self._task != 'pretrain':
