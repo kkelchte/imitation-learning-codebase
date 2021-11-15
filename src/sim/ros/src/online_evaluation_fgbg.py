@@ -40,9 +40,9 @@ CHECKPOINT = os.path.join(
     TARGET,
     "best",
 )
-OUTPUTDIR = CHECKPOINT
+OUTPUTDIR = CHECKPOINT + "/online_eval"
 # OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/ds_eval/{WORLD}/{DS_TASK}/{TARGET}"
-# os.makedirs(OUTPUTDIR, exist_ok=True)
+os.makedirs(OUTPUTDIR, exist_ok=True)
 
 print(
     f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}'

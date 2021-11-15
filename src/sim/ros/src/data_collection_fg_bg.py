@@ -21,9 +21,9 @@ from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.src.utils import transform, set_random_cone_location, set_random_gate_location, spawn_line, \
     spawn_flying_zone, remove_line, send_reference_global
 
-WORLD = 'gate_cone_line_realistic'
-#WORLD = 'gate_cone_line'
-TARGET = argv[1]
+#WORLD = 'gate_cone_line_realistic'
+WORLD = 'gate_cone_line'
+TARGET = 'cone'
 NUMBER = 100
 
 print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')

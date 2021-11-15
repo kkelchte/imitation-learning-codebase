@@ -116,7 +116,7 @@
     </library_effects>
     <library_images>
         <image id="ID6">
-            <init_from>yellow_image.jpg</init_from>
+            <init_from>white_image.jpg</init_from>
         </image>
     </library_images>
     <scene>
