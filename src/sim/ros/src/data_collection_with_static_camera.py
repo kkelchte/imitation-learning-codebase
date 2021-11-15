@@ -14,6 +14,7 @@ import cv2 as cv
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SetModelState, GetModelState
 
+from src.sim.ros.src.process_wrappers import RosWrapper
 from src.core.utils import get_date_time_tag
 from src.core.data_types import TerminationType
 from src.sim.common.environment import EnvironmentConfig
@@ -21,10 +22,10 @@ from src.sim.ros.src.ros_environment import RosEnvironment
 from src.sim.ros.src.utils import transform, set_random_cone_location, set_random_gate_location, spawn_line, \
     spawn_flying_zone, remove_line, send_reference_global
 
-#WORLD = 'gate_cone_line_realistic'
-WORLD = 'gate_cone_line'
-TARGET = 'cone'
-NUMBER = 100
+WORLD = 'gate_cone_line_realistic'
+#WORLD = 'gate_cone_line'
+TARGET = 'red_line'
+NUMBER = 30
 
 print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')
 
@@ -45,7 +46,7 @@ def save(reference_pos,
         mask[mask == 1] = 0
         mask[mask != 0] = 1
 
-    # don't save is item not in view
+    # don't save if item not in view
     if np.sum(mask) < (1000 if TARGET == 'gate' else 20):
         return
 
@@ -54,10 +55,6 @@ def save(reference_pos,
 
     # store previous observation
     hdf5_data["observation"].append(deepcopy(experience.observation))
-
-    # store velocity
-    action = experience.action.value
-    json_data["velocities"].append([action[0], action[1], action[2], action[5]])
 
     # store relative target location
     relative_reference_position = transform(points=[np.asarray(reference_pos)],
@@ -133,79 +130,32 @@ def run_shortly_while_freezing_drone():
     args = shlex.split("rostopic pub /cmd_vel geometry_msgs/Twist '{}'")
     speed_p = subprocess.Popen(args)
 
-    environment._clear_experience_values()
-    environment._pause_period = 1 / 100.
-    while environment.observation is None:
-        set_model_state_service.call(model_state)
-        environment._run_shortly()
-
     overtake_p.terminate()
     speed_p.terminate()
 
-
 if __name__ == '__main__':
-
-    robot_dict = {
-        'gate': "drone_sim_forward_cam",
-        'cone': "drone_sim",
-        'line': "drone_sim_down_cam",
-        'red_line': "drone_sim_down_cam"
-    }
-    blur_sizes = {
-        'gate': 5,
-        'cone': 3,
-        'line': 3,
-        'red_line': 3
+    config = {
+        'output_path': "static_camera_dataset",
+        'gazebo': True,
+        'robot_name': 'static_drone_sim_down_cam',
+        'world_name': WORLD,
+        'fsm': False,
+        'control_mapping': False,
+        'altitude_control': False,
+        'mathias_controller_with_KF': False,
     }
 
-    environment_config_dict = {
-        "output_path": f"{WORLD}/{TARGET}",
-        "factory_key": "ROS",
-        "max_number_of_steps": 200,
-        "ros_config": {
-            "observation": "camera",
-            "info": ["position"],
-            "max_update_wait_period_s": 10,
-            "visible_xterm": True,
-            "step_rate_fps": 60,
-            "ros_launch_config": {
-                "random_seed": 123,
-                "robot_name": robot_dict[TARGET],
-                "fsm_mode": "TakeOverRun",
-                "fsm": True,
-                "altitude_control": True,
-                "robot_display": False,
-                "control_mapping": True,
-                "waypoint_indicator": False,
-                "control_mapping_config": "mathias_controller",
-                "world_name": WORLD,
-                "starting_height": 1.,
-                "z_pos": 0.2,
-                "yaw_or": 0.0,
-                "gazebo": True,
-            },
-            "actor_configs": [{
-                "name": "mathias_controller_with_KF",
-                "file": f'{os.environ["CODEDIR"]}/src/sim/ros/config/actor/mathias_controller_with_KF.yml',
-        }],
-        }
-    }
-    config = EnvironmentConfig().create(
-        config_dict=environment_config_dict
-    )
-    output_dir = config.output_path
-    environment = RosEnvironment(
-        config=config
-    )
-    time.sleep(5)
+    # spinoff roslaunch
+    ros_process = RosWrapper(launch_file='load_ros.launch',
+                             config=config,
+                             visible=True)
+    output_dir = config['output_path']
+    
     run_index = 0
     while run_index < NUMBER:
         # create output json and hdf5 file
         json_data = {
-            "velocities": [],
-            "global_target_location": [],
-            "relative_target_location": [],
-            "global_drone_pose": []}
+            "relative_target_location": []}
         hdf5_data = {"mask": [],
                      "observation": []}
 
@@ -225,46 +175,7 @@ if __name__ == '__main__':
         else:
             raise NotImplementedError
 
-        if WORLD == 'gate_cone_line_realistic':
-            # decide at which step to randomly stop
-            average_lengths = {'cone': 36, 'line': 32, 'red_line': 32, 'gate': 47}
-            stop_index = np.random.uniform(0, average_lengths[TARGET])
-            print(f'stopping at {stop_index}')
-        else:
-            stop_index = -1
-
-        step_index = 0
-        experience, _ = environment.reset()
-        while experience.done == TerminationType.NotDone:
-            experience, observation = environment.step()
-            if WORLD == 'gate_cone_line':
-                save(reference_pos, experience, json_data, hdf5_data)
-            step_index += 1
-            if step_index >= stop_index != -1:
-                break
-
-        if WORLD == 'gate_cone_line_realistic':
-            # delete flying zone
-            subprocess.run(shlex.split("rosservice call gazebo/delete_model '{model_name: flyzone_wall}'"))
-            # freeze drone (or make static) run shortly till till new observation
-            run_shortly_while_freezing_drone()
-            # extract mask from observation
-            mask = deepcopy(environment.observation)
-            mask = np.mean(mask, axis=2)
-            mask[mask == 1] = 0
-            mask[mask != 0] = 1
-            k = blur_sizes[TARGET]
-            mask = cv.blur(mask, (k, k))
-            mask[mask != 0] = 1
-            save(reference_pos, experience, json_data, hdf5_data, mask)
-            # put flying zone back
-            spawn_flying_zone()
-
-        if TARGET == 'line' or TARGET == 'red_line':
-            remove_line()
-        # dump data if run is successfully and at least 3 experiences are saved with something in view.
-        if WORLD == 'gate_cone_line_realistic' or \
-                (experience.done == TerminationType.Success and len(hdf5_data['mask']) > 5):
-            run_index = dump(json_data, hdf5_data, output_dir)
-            print(f'{get_date_time_tag()}: stored {run_index} / {NUMBER}')
-    print(f'finished {environment.remove()}')
+        # place camera somewhere randomly between in x, y, z sampled from [-0.5, +0.5]
+        camera_position = np.random.uniform(-0.5, 0.5, 3)
+        while not rospy.is_shutdown():
+            time.sleep(1.)

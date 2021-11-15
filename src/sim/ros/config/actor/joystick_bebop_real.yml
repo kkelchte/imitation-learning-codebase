@@ -18,7 +18,7 @@ teleop:
       -
         axis: 1  # Left thumb stick (up/down)
         target: linear.z
-        scale: 0.5
+        scale: 0.2
         offset: 0.0
       -
         axis: 0  # Left thumb stick (left/right)

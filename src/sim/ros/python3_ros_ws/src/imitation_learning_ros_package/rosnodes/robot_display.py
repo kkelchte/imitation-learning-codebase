@@ -40,7 +40,7 @@ class RobotDisplay:
             time.sleep(0.01)
         self._output_path = get_output_path()
         self._rate_fps = 10
-        self._border_width = 300
+        self._border_width = 400
         self._counter = 0
         self._skip_first_n = 30
         self._skip_every_n = 4
@@ -149,12 +149,15 @@ class RobotDisplay:
         self._control_specs = {}
         if rospy.has_param('/actor/joystick/teleop'):
             specs = rospy.get_param('/actor/joystick/teleop')
-            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera']:
+            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera_forward_down']:
                 if name in specs.keys():
                     button_integers = specs[name][
                         'deadman_buttons' if 'deadman_buttons' in specs[name].keys() else 'buttons']
                     self._control_specs[name] = ' '.join([JOYSTICK_BUTTON_MAPPING[button_integer]
                                                           for button_integer in button_integers])
+        if rospy.has_param('/actor/keyboard/specs/message'):
+            self._control_specs['message'] = rospy.get_param('/actor/keyboard/specs/message')
+            print(self._control_specs['message'])
     
     def _draw_action(self, image: np.ndarray, height: int = -1) -> np.ndarray:
         if self._action is not None:
@@ -176,14 +179,14 @@ class RobotDisplay:
     def _draw_top_down_waypoint(self, image: np.ndarray, height: int = -1) -> np.ndarray:
         if self._reference_pose is not None:
             origin = (self._border_width - 50, int(image.shape[0] / 2) if height == -1 else height + 50)
-            scale = 20
+            scale = 60
             try:
                 reference_point = (int(origin[0] - scale * self._reference_pose[1]),
                                    int(origin[1] - scale * self._reference_pose[0]))
             except ValueError:
                 reference_point = (int(origin[0]), int(origin[1]))
-            image = cv2.circle(image, origin, radius=2, color=(0, 0, 0, 0.3), thickness=1)
-            image = cv2.arrowedLine(image, origin, reference_point, (1, 0, 0), thickness=1)
+            image = cv2.circle(image, origin, radius=4, color=(0, 0, 0, 0.3), thickness=2)
+            image = cv2.arrowedLine(image, origin, reference_point, (1, 0, 0), thickness=2)
         return image
     
     def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
@@ -214,6 +217,7 @@ class RobotDisplay:
         image, height = self._write_info(image)
         image = self._draw_action(image, height)
         image = self._draw_top_down_waypoint(image, height)
+        image = self._write_control_specs(image)
         cv2.imshow("Image window", image)
         cv2.waitKey(1)        
 
@@ -281,9 +285,17 @@ class RobotDisplay:
     def _write_control_specs(self, image: np.ndarray) -> np.ndarray:
         height = 0
         for key, value in self._control_specs.items():
-            msg = f'{key}: {value}'
-            image = cv2.putText(image, msg, (image.shape[1] - self._border_width + 5, height + 15),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+            if key != 'message':
+                msg = f'{key}: {value}'
+                image = cv2.putText(image, msg, (image.shape[1] - self._border_width + 5, height + 15),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+            else:
+                step = 40
+                for index in range(0, len(value), step):
+                    line = value[index:min([len(value), index + step])]
+                    image = cv2.putText(image, line, (image.shape[1] - self._border_width + 5, height + 15),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+                    height += 15
             height += 15
         return image
 
