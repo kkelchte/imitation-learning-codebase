@@ -64,6 +64,12 @@ def update_line_model(color: str = 'blue'):
         if child.get('name') == 'line':
             root.remove(child)
 
+    # pick one color for tube
+    if color == 'blue':
+        material_name = 'RepeatedBlueTexture'
+    else:
+        material_name = np.random.choice(['RepeatedRedTexture', 'RepeatedRedTexture2', 'RepeatedRedTexture3'])
+
     # add model to world
     model = ET.SubElement(root, 'model', attrib={'name': 'line'})
     # Place small cylinders in one model
@@ -82,10 +88,7 @@ def update_line_model(color: str = 'blue'):
         material = ET.SubElement(visual, 'material')
         script = ET.SubElement(material, 'script')
         name = ET.SubElement(script, 'name')
-        if color == 'blue':
-            name.text = 'RepeatedBlueTexture'
-        else:
-            name.text = np.random.choice(['RepeatedRedTexture', 'RepeatedRedTexture2', 'RepeatedRedTexture3'])
+        name.text = material_name
         uri = ET.SubElement(script, 'uri')
         uri.text = 'file://materials/scripts/repeated.material'
         for element in [collision, visual]:
