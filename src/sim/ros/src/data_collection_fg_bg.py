@@ -23,7 +23,7 @@ from src.sim.ros.src.utils import transform, set_random_cone_location, set_rando
 
 #WORLD = 'gate_cone_line_realistic'
 WORLD = 'gate_cone_line'
-TARGET = 'cone'
+TARGET = 'red_line'
 NUMBER = 100
 
 print(f'{"x"*100}\n Running {NUMBER} times in world {WORLD} with target {TARGET} \n{"x"*100}')
