@@ -25,14 +25,15 @@ from src.sim.ros.src.utils import process_image, adapt_action_to_twist
 
 class Actor:
 
-    def __init__(self, task: str, ckpt: str = None):
+    def __init__(self, task: str, ckpt: str = None, batch_norm: bool = False, enhance_brightness: bool = False):
         rospy.init_node('fgbg_actor')
         self._task = task
+        self._enhance_brightness = enhance_brightness
         # Load model
         if task == 'pretrain':
-            self.model = fgbg.DeepSupervisionNet(batch_norm=False)
+            self.model = fgbg.DeepSupervisionNet(batch_norm=batch_norm)
         else:
-            self.model = fgbg.DownstreamNet(output_size=(4,) if self._task == "velocities" else (3,), batch_norm=False)
+            self.model = fgbg.DownstreamNet(output_size=(4,) if self._task == "velocities" else (3,), batch_norm=batch_norm)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if ckpt is not None:
             ckpt = torch.load(
@@ -98,16 +99,15 @@ class Actor:
             image = deepcopy(self._last_image)
             self._last_image = None
             image = process_image(image, {'height': 200, 'width': 200, 'depth': 3})
-            print(f'pixel dis: {image.mean()*255}+-{image.std()*255}')
-            original_mean = image.mean()*255
-            enhance_factor = 140 / original_mean
-            image = PILImage.fromarray(np.uint8(image * 255))
-            enhancer = PILImageEnhance.Brightness(image)
-            im_output = np.asarray(enhancer.enhance(enhance_factor))
-            print(f'enhanced pixel dis: {im_output.mean()}+-{im_output.std()}')
-            
-            image_tensor = torch.from_numpy(im_output/255).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
-            
+            if self._enhance_brightness:
+                original_mean = image.mean()*255
+                enhance_factor = 140 / original_mean
+                image = PILImage.fromarray(np.uint8(image * 255))
+                enhancer = PILImageEnhance.Brightness(image)
+                im_output = np.asarray(enhancer.enhance(enhance_factor))
+                image_tensor = torch.from_numpy(im_output/255).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
+            else:
+                image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
             prediction = self.model(image_tensor).detach().cpu().numpy().squeeze()
             if self._task != 'pretrain':
                 self._publish_prediction(prediction)       
@@ -125,15 +125,26 @@ class Actor:
 
 if __name__ == '__main__':
     # REDLINE
-    task = 'waypoints'
+    # task = 'waypoints'
+    # target = 'red_line'
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
+    # batch_norm = False
+    # enhance_brightness = True
+
+    # REDLINE PRETRAIN
+    task = 'pretrain'
     target = 'red_line'
-    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
-    
-    # GATE
-    task = 'waypoints'
-    target = 'gate'
-    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/gate/waypoints')
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/red_line/deep_supervision_reference')
+    batch_norm = False
+    enhance_brightness = True
+
+    # GATE PRETRAIN
+    # task = 'pretrain'
+    # target = 'gate'
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/gate/deep_supervision_comb_blur_brightness_hue_bn')
+    # batch_norm = True
+    # enhance_brightness = True
 
     assert os.path.isdir(ckpt)
-    actor = Actor(task, ckpt)
+    actor = Actor(task, ckpt, batch_norm, enhance_brightness)
     actor.run()

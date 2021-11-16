@@ -228,9 +228,9 @@ class RobotDisplay:
         image = process_image(msg, sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, sensor_stats)
         if field_name == "observation":
             self._view = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            if self._reference_image_location is not None:
-                u, v, _ = self._reference_image_location
-                self._view = cv2.circle(self._view, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
+            # if self._reference_image_location is not None:
+            #     u, v, _ = self._reference_image_location
+            #     self._view = cv2.circle(self._view, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
         elif field_name == "mask":
             self._certainty = np.mean(image[::10, ::10])
             image -= image.min()
