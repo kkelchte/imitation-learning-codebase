@@ -34,6 +34,12 @@ class EdgeDisplay:
         self._skip_first_n = 30
         self._skip_every_n = 4
         self._subscribe()
+        self._fsm_state_name_mapper = {
+            "Unknown": "Loading",
+            "Running": "Autonomous",
+            "TakenOver": "Pilot",
+            "Terminated": "Finished",
+        }
     
     def _subscribe(self):
         # Robot sensors:
@@ -92,18 +98,26 @@ class EdgeDisplay:
                 steering_point = (int(origin[0]), int(origin[1]))
             image = cv2.circle(image, origin, radius=20, color=(0, 0, 0, 0.3), thickness=3)
             image = cv2.arrowedLine(image, origin, steering_point, (255, 0, 0), thickness=1)
-            msg = '[' + ', '.join(f'{e:.1f}' for e in self._action.value) + ']'
+            #msg = '[' + ', '.join(f'{e:.1f}' for e in self._action.value) + ']'
+            msg = 'velocity'
             image = cv2.putText(image, msg, (3, origin[1] + 55 + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0),
                                 thickness=2)
         return image
     
     def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:
-        for key, msg in {'State': self._fsm_state.name if self._fsm_state is not None else None,
-                         'wp': 'wp: '+' '.join(f'{e:.3f}' for e in self._reference_pose)
+        for key, msg in {'state': self._fsm_state_name_mapper[self._fsm_state.name] if self._fsm_state is not None else None,
+                         'wp': 'waypoint: '+' '.join(f'{e:.3f}' for e in self._reference_pose)
                          if self._reference_pose is not None else None}.items():
             if msg is not None:
-                image = cv2.putText(image, msg, (3, height + 15),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
+                if key == 'state' and self._fsm_state.name == 'Running':
+                    image = cv2.putText(image, msg, (3, height + 15),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 1, 0), thickness=2)
+                elif key == 'state' and self._fsm_state.name == 'TakenOver':
+                    image = cv2.putText(image, msg, (3, height + 15),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 1), thickness=2)
+                else:
+                    image = cv2.putText(image, msg, (3, height + 15),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (1, 0, 0), thickness=2)
                 height += 15
         return image, height
 
@@ -119,7 +133,7 @@ class EdgeDisplay:
         border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
         image = np.concatenate([border, image], axis=1)
         image, height = self._write_info(image)
-        image = self._draw_action(image, height)
+        image = self._draw_action(image, height + 50)
         cv2.imshow("Edge Display", image)
         cv2.waitKey(1)        
 
@@ -142,7 +156,6 @@ class EdgeDisplay:
                                   value=process_twist(msg).value)
         elif field_name == 'reference_pose':
             self._reference_pose = np.asarray([msg.point.x, msg.point.y, msg.point.z])
-            self._calculate_ref_in_img()
         else:
             raise NotImplementedError
 
