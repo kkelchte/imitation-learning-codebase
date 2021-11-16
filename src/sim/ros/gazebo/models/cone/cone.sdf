@@ -7,14 +7,14 @@
 	<collision name="collision">
 	<geometry>
           <mesh>
-		<uri>/cone/meshes/yellow_cone.dae</uri>
+		<uri>/cone/meshes/white_cone.dae</uri>
 	  </mesh>
         </geometry>
 	</collision>
       <visual name="visual">
         <geometry>
           <mesh>
-		<uri>/cone/meshes/yellow_cone.dae</uri>
+		<uri>/cone/meshes/white_cone.dae</uri>
 	  </mesh>
         </geometry>
       </visual>

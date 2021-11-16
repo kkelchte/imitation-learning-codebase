@@ -82,7 +82,10 @@ def update_line_model(color: str = 'blue'):
         material = ET.SubElement(visual, 'material')
         script = ET.SubElement(material, 'script')
         name = ET.SubElement(script, 'name')
-        name.text = 'RepeatedBlueTexture' if color == 'blue' else 'RepeatedRedTexture'
+        if color == 'blue':
+            name.text = 'RepeatedBlueTexture'
+        else:
+            name.text = np.random.choice(['RepeatedRedTexture', 'RepeatedRedTexture2', 'RepeatedRedTexture3'])
         uri = ET.SubElement(script, 'uri')
         uri.text = 'file://materials/scripts/repeated.material'
         for element in [collision, visual]:

@@ -48,8 +48,8 @@ class MathiasController:
         self._output_path = get_output_path()
         self._logger = get_logger(get_filename_without_extension(__file__), self._output_path)
         cprint(f'controller specifications: {self._specs}', self._logger)
-        with open(os.path.join(self._output_path, 'controller_specs.yml'), 'w') as f:
-            yaml.dump(self._specs, f)
+        # with open(os.path.join(self._output_path, 'controller_specs.yml'), 'w') as f:
+        #     yaml.dump(self._specs, f)
         self._reference_height = rospy.get_param('/world/starting_height', 1)
 
         self._rate_fps = self._specs['rate_fps'] if 'rate_fps' in self._specs.keys() else 15

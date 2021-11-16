@@ -149,7 +149,7 @@ class RobotDisplay:
         self._control_specs = {}
         if rospy.has_param('/actor/joystick/teleop'):
             specs = rospy.get_param('/actor/joystick/teleop')
-            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera']:
+            for name in ['takeoff', 'land', 'emergency', 'flattrim', 'go', 'overtake', 'toggle_camera_forward_down']:
                 if name in specs.keys():
                     button_integers = specs[name][
                         'deadman_buttons' if 'deadman_buttons' in specs[name].keys() else 'buttons']
@@ -179,14 +179,14 @@ class RobotDisplay:
     def _draw_top_down_waypoint(self, image: np.ndarray, height: int = -1) -> np.ndarray:
         if self._reference_pose is not None:
             origin = (self._border_width - 50, int(image.shape[0] / 2) if height == -1 else height + 50)
-            scale = 20
+            scale = 60
             try:
                 reference_point = (int(origin[0] - scale * self._reference_pose[1]),
                                    int(origin[1] - scale * self._reference_pose[0]))
             except ValueError:
                 reference_point = (int(origin[0]), int(origin[1]))
-            image = cv2.circle(image, origin, radius=2, color=(0, 0, 0, 0.3), thickness=1)
-            image = cv2.arrowedLine(image, origin, reference_point, (1, 0, 0), thickness=1)
+            image = cv2.circle(image, origin, radius=4, color=(0, 0, 0, 0.3), thickness=2)
+            image = cv2.arrowedLine(image, origin, reference_point, (1, 0, 0), thickness=2)
         return image
     
     def _write_info(self, image: np.ndarray, height: int = 0) -> Tuple[np.ndarray, int]:

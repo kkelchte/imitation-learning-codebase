@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 from std_msgs.msg import Empty
 import numpy as np
 import rospy
+from PIL import Image as PILImage 
+from PIL import ImageEnhance as PILImageEnhance
 from geometry_msgs.msg import Twist, PointStamped, Point
 from std_msgs.msg import String, Float32MultiArray, Empty
 from sensor_msgs.msg import Image
@@ -30,7 +32,7 @@ class Actor:
         if task == 'pretrain':
             self.model = fgbg.DeepSupervisionNet(batch_norm=False)
         else:
-            self.model = fgbg.DownstreamNet(output_size=(4,) if self._task == "velocities" else (3,), batch_norm=True)
+            self.model = fgbg.DownstreamNet(output_size=(4,) if self._task == "velocities" else (3,), batch_norm=False)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         if ckpt is not None:
             ckpt = torch.load(
@@ -71,7 +73,11 @@ class Actor:
         self._last_image  = msg
 
     def _publish_mask(self, mask):
+        # np.save(f'/home/kkelchte/tmp/test_{time.time_ns()}_.npy', mask)
         msg = Image()
+        print(f'mask range [{mask.min(), mask.max()}]')
+        mask -= mask.min()
+        mask /= mask.max()
         mask = (mask * 255.).flatten().astype(np.uint8)
         msg.data = [m for m in mask]
         msg.height = 200
@@ -94,7 +100,15 @@ class Actor:
             image = deepcopy(self._last_image)
             self._last_image = None
             image = process_image(image, {'height': 200, 'width': 200, 'depth': 3})
-            image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
+            print(f'pixel dis: {image.mean()*255}+-{image.std()*255}')
+            original_mean = image.mean()*255
+            enhance_factor = 140 / original_mean
+            image = PILImage.fromarray(np.uint8(image * 255))
+            enhancer = PILImageEnhance.Brightness(image)
+            im_output = np.asarray(enhancer.enhance(enhance_factor))
+            print(f'enhanced pixel dis: {im_output.mean()}+-{im_output.std()}')
+            
+            image_tensor = torch.from_numpy(im_output/255).permute(2, 0, 1).float().unsqueeze(0).to(self.device)
             
             prediction = self.model(image_tensor).detach().cpu().numpy().squeeze()
             if self._task != 'pretrain':
@@ -112,13 +126,12 @@ class Actor:
 
 
 if __name__ == '__main__':
-    task = 'pretrain' 
+    # task = 'pretrain' 
     # target = 'cone'
     # config = 'default_fg'
-    # task = 'waypoints'
-    #target = 'line'
-    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, 'best')
-    ckpt = f'/usr/data/kkelchtel/code/contrastive-learning/data/encoders/red_line'
+    task = 'waypoints'
+    target = 'red_line'
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_and_places_augmented/default', target, 'best')
     #ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/dtd_augmented', task, config, target, 'best')
     assert os.path.isdir(ckpt)

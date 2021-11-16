@@ -1,0 +1,8 @@
+rate_fps: 60
+mapping:
+  Unknown:
+    command: /actor/joystick/cmd_vel
+  Running:
+    command: /actor/mathias_controller/cmd_vel
+  TakenOver:
+    command: /actor/joystick/cmd_vel
