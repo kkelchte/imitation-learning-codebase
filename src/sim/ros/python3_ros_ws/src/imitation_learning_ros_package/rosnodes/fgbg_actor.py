@@ -73,11 +73,9 @@ class Actor:
         self._last_image  = msg
 
     def _publish_mask(self, mask):
-        # np.save(f'/home/kkelchte/tmp/test_{time.time_ns()}_.npy', mask)
         msg = Image()
-        print(f'mask range [{mask.min(), mask.max()}]')
-        mask -= mask.min()
-        mask /= mask.max()
+        # mask -= mask.min()
+        # mask /= mask.max()
         mask = (mask * 255.).flatten().astype(np.uint8)
         msg.data = [m for m in mask]
         msg.height = 200

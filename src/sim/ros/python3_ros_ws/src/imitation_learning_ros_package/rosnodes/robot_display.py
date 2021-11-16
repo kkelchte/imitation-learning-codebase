@@ -80,6 +80,7 @@ class RobotDisplay:
             self._observation = None
 
         self._mask = None
+        self._certainty = None
         rospy.Subscriber(name='/mask', data_class=Image,
                              callback=self._process_image,
                              callback_args=("mask", {'height': 200, 'width': 200, 'depth': 1}))
@@ -196,6 +197,7 @@ class RobotDisplay:
                          'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
                          'battery': f'battery: {self._battery}%' if self._battery is not None else None,
                          'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None,
+                         'certainty': f'certainty {self._certainty:.3f}' if self._certainty is not None else None,
                          'rate': f'update rate: {self._update_rate:.3f} fps' if self._update_rate is not None else None}.items():
             if msg is not None:
                 image = cv2.putText(image, msg, (3, height + 15),
@@ -230,6 +232,9 @@ class RobotDisplay:
                 u, v, _ = self._reference_image_location
                 self._view = cv2.circle(self._view, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
         elif field_name == "mask":
+            self._certainty = np.mean(image[::10, ::10])
+            image -= image.min()
+            image /= image.max()
             image *= 255
             self._mask = cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
             self._update_rate_time_tags.append(time.time_ns())
