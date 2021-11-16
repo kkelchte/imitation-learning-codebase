@@ -20,7 +20,16 @@ install_python3_ros_ws: python3_ros_ws/src
 	catkin build -DPYTHON_EXECUTABLE=/usr/bin/python3.8 -DPYTHON_INCLUDE_DIR=/usr/include/python3.8 \
 	-DPYTHON_LIBRARY=/usr/lib/python3.8
 	# Build twice because bebop autonomy has some dependencies on itself which requires a rebuild
-
+	# git clone https://github.com/ros-perception/openslam_gmapping.git -b melodic-devel src/openslam_gmapping && \
+	# git clone https://github.com/ros-perception/slam_gmapping.git -b melodic-devel src/slam_gmapping && \
+	# git clone -b melodic https://github.com/ros-perception/image_pipeline.git src/image_pipeline && \
+	# git clone https://github.com/kkelchte/dso_ros.git -b master src/dso_ros && \
+	# git clone https://github.com/ros-planning/navigation.git -b melodic-devel src/navigation && \
+	# git clone https://github.com/ros-perception/camera_info_manager_py.git src/camera_info_manager_py && \
+	# git clone https://github.com/yoshito-n-students/codec_image_transport.git src/codec_image_transport && \
+	# git clone https://github.com/kkelchte/tello_driver.git -b development src/tello_driver && \
+	# git clone https://github.com/ros/geometry2.git -b melodic-devel src/geometry2 && \
+	
 
 python3_ros_ws/devel/setup.bash: $(wildcard python3_ros_ws/src/**/*)
 	cd python3_ros_ws && \
