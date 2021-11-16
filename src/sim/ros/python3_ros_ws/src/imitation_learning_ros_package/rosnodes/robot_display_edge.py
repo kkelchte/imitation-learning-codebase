@@ -50,13 +50,15 @@ class EdgeDisplay:
             rospy.Subscriber(name=sensor_topic,
                              data_class=eval(sensor_type),
                              callback=self._process_image,
-                             callback_args=("observation", {'height': 400, 'width': 400, 'depth': 3}))
+                             callback_args=("observation", {}))
             self._observation = None
+            self._observation_sensor_stats = {'height': 400, 'width': 400, 'depth': 3}
 
         self._mask = None
         rospy.Subscriber(name='/mask', data_class=Image,
                              callback=self._process_image,
-                             callback_args=("mask", {'height': 400, 'width': 400, 'depth': 1}))
+                             callback_args=("mask", {}))
+        self._mask_sensor_stats = {'height': 400, 'width': 400, 'depth': 1}
 
         rospy.Subscriber('/fsm/reset', Empty, self._reset)
 
@@ -126,10 +128,12 @@ class EdgeDisplay:
         if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
             return
         image = np.zeros((400, 800, 3))
-        if self._mask is not None:
-            image[:, 400:, :] = self._mask[:]
-        if self._view is not None:
-            image[:, :400, :] = self._view[:]
+        result = self._process_mask()
+        if result is not None:
+            image[:, 200:, :] = result
+        result = self._process_observation()
+        if result is not None:
+            image[:, :200, :] = result
         border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
         image = np.concatenate([border, image], axis=1)
         image, height = self._write_info(image)
@@ -139,12 +143,30 @@ class EdgeDisplay:
 
     def _process_image(self, msg: Union[Image, CompressedImage], args: tuple) -> None:
         field_name, sensor_stats = args
-        image = process_image(msg, sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, sensor_stats)
         if field_name == "observation":
-            self._view = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            self._view = msg
         elif field_name == "mask":
-            image *= 255
-            self._mask = cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
+            self._mask = msg
+
+    def _process_observation(self):
+        if self._view is None:
+            return None
+        msg = copy.deepcopy(self._view)
+        self._view = None
+        image = process_image(msg, self._observation_sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, self._observation_sensor_stats)
+        return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    def _process_mask(self):
+        if self._mask is None:
+            return None
+        msg = copy.deepcopy(self._mask)
+        self._mask = None
+        image = process_image(msg, self._mask_sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, self._mask_sensor_stats)        
+        self._certainty = np.mean(image[::10, ::10])
+        image -= image.min()
+        image /= image.max()
+        image *= 255
+        return cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
 
     def _set_field(self, msg: Union[String, Twist, RosReward, CommonCommonStateBatteryStateChanged, Odometry],
                    args: Tuple) -> None:

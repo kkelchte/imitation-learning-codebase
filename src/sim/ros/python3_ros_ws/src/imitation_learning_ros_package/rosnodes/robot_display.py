@@ -1,6 +1,7 @@
 #!/usr/bin/python3.8
 import time
 from typing import Union, Tuple
+import copy
 
 import rospy
 import cv2
@@ -69,20 +70,19 @@ class RobotDisplay:
         if rospy.has_param('/robot/camera_sensor'):
             sensor_topic = rospy.get_param('/robot/camera_sensor/topic')
             sensor_type = rospy.get_param('/robot/camera_sensor/type')
-            sensor_callback = f'_process_image'
-            if sensor_callback not in self.__dir__():
-                cprint(f'Could not find sensor_callback {sensor_callback}', self._logger)
-            sensor_stats = rospy.get_param('/robot/camera_sensor/stats', {})
             rospy.Subscriber(name=sensor_topic,
                              data_class=eval(sensor_type),
                              callback=self._process_image,
-                             callback_args=("observation", sensor_stats))
+                             callback_args=("observation", {}))
+            self._observation_sensor_stats = {'height': 200, 'width': 200, 'depth': 3}
             self._observation = None
 
         self._mask = None
+        self._certainty = None
         rospy.Subscriber(name='/mask', data_class=Image,
                              callback=self._process_image,
-                             callback_args=("mask", {'height': 200, 'width': 200, 'depth': 1}))
+                             callback_args=("mask", {}))
+        self._mask_sensor_stats = {'height': 200, 'width': 200, 'depth': 1}
 
         rospy.Subscriber('/fsm/reset', Empty, self._reset)
 
@@ -196,6 +196,7 @@ class RobotDisplay:
                          'reward': f'reward: {self._reward:.2f}' if self._reward is not None else None,
                          'battery': f'battery: {self._battery}%' if self._battery is not None else None,
                          'camera': f'camera pitch: {self._camera_orientation:.0f}' if self._camera_orientation is not None else None,
+                         'certainty': f'certainty {self._certainty:.3f}' if self._certainty is not None else None,
                          'rate': f'update rate: {self._update_rate:.3f} fps' if self._update_rate is not None else None}.items():
             if msg is not None:
                 image = cv2.putText(image, msg, (3, height + 15),
@@ -208,10 +209,12 @@ class RobotDisplay:
         if self._counter < self._skip_first_n or self._counter % self._skip_every_n == 0:
             return
         image = np.zeros((200, 400, 3))
-        if self._mask is not None:
-            image[:, 200:, :] = self._mask[:]
-        if self._view is not None:
-            image[:, :200, :] = self._view[:]
+        result = self._process_mask()
+        if result is not None:
+            image[:, 200:, :] = result
+        result = self._process_observation()
+        if result is not None:
+            image[:, :200, :] = result
         border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
         image = np.concatenate([border, image, border], axis=1)
         image, height = self._write_info(image)
@@ -223,15 +226,10 @@ class RobotDisplay:
 
     def _process_image(self, msg: Union[Image, CompressedImage], args: tuple) -> None:
         field_name, sensor_stats = args
-        image = process_image(msg, sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, sensor_stats)
         if field_name == "observation":
-            self._view = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            if self._reference_image_location is not None:
-                u, v, _ = self._reference_image_location
-                self._view = cv2.circle(self._view, (int(u), int(v)), radius=10, color=(1, 1, 1, 0.5), thickness=1)
+            self._view = msg
         elif field_name == "mask":
-            image *= 255
-            self._mask = cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
+            self._mask = msg
             self._update_rate_time_tags.append(time.time_ns())
             if len(self._update_rate_time_tags) >= 5:
                 differences = [
@@ -240,6 +238,26 @@ class RobotDisplay:
                 self._update_rate = 1/(np.mean(differences))
                 self._update_rate_time_tags.pop(0)
 
+    def _process_observation(self):
+        if self._view is None:
+            return None
+        msg = copy.deepcopy(self._view)
+        self._view = None
+        image = process_image(msg, self._observation_sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, self._observation_sensor_stats)
+        return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+    def _process_mask(self):
+        if self._mask is None:
+            return None
+        msg = copy.deepcopy(self._mask)
+        self._mask = None
+        image = process_image(msg, self._mask_sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, self._mask_sensor_stats)        
+        self._certainty = np.mean(image[::10, ::10])
+        image -= image.min()
+        image /= image.max()
+        image *= 255
+        return cv2.applyColorMap(image.astype(np.uint8), cv2.COLORMAP_AUTUMN)/255.
+        
     def _set_field(self, msg: Union[String, Twist, RosReward, CommonCommonStateBatteryStateChanged, Odometry],
                    args: Tuple) -> None:
         field_name, _ = args
