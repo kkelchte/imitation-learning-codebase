@@ -43,7 +43,7 @@ HOST_IP_ADDRESS="$(ip addr | grep inet | grep 192 |  cut -d '/' -f 1 | cut -d ' 
 alias turtle='export ROS_MASTER_URI=http://${HOST_IP_ADDRESS}:11311 && export ROS_HOSTNAME=${HOST_IP_ADDRESS}'
 alias bebop_demo='python3.8 src/sim/ros/src/online_evaluation_fgbg_real.py'
 alias bebop_demo_full='export ROS_MASTER_URI=http://192.168.42.9:11311 && export ROS_HOSTNAME=192.168.42.9 && python3.8 src/sim/ros/src/online_evaluation_fgbg_real.py'
-alias bebop_edge='export ROS_MASTER_URI=http://192.168.42.9:11311 && export ROS_HOSTNAME=192.168.42.72'
+alias bebop_edge='export ROS_MASTER_URI=http://192.168.42.9:11311 && export ROS_HOSTNAME=192.168.42.72 && rosrun imitation_learning_ros_package robot_display_edge.py'
 
 #alias turtle='export ROS_MASTER_URI=http://192.168.0.149:11311 && export ROS_HOSTNAME=192.168.0.149'
 #alias turtle='export ROS_MASTER_URI=http://192.168.0.129:11311 && export ROS_HOSTNAME=192.168.0.129'

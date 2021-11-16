@@ -45,8 +45,8 @@ class EdgeDisplay:
         # Robot sensors:
         self._view = None
         if rospy.has_param('/robot/camera_sensor'):
-            sensor_topic = rospy.get_param('/robot/camera_sensor/topic')
-            sensor_type = rospy.get_param('/robot/camera_sensor/type')
+            sensor_topic = '/bebop/image_raw/compressed'
+            sensor_type = 'CompressedImage'
             rospy.Subscriber(name=sensor_topic,
                              data_class=eval(sensor_type),
                              callback=self._process_image,
@@ -130,10 +130,10 @@ class EdgeDisplay:
         image = np.zeros((400, 800, 3))
         result = self._process_mask()
         if result is not None:
-            image[:, 200:, :] = result
+            image[:, 400:, :] = result
         result = self._process_observation()
         if result is not None:
-            image[:, :200, :] = result
+            image[:, :400, :] = result
         border = np.ones((image.shape[0], self._border_width, 3), dtype=image.dtype)
         image = np.concatenate([border, image], axis=1)
         image, height = self._write_info(image)
@@ -142,7 +142,7 @@ class EdgeDisplay:
         cv2.waitKey(1)        
 
     def _process_image(self, msg: Union[Image, CompressedImage], args: tuple) -> None:
-        field_name, sensor_stats = args
+        field_name, _ = args
         if field_name == "observation":
             self._view = msg
         elif field_name == "mask":
@@ -152,15 +152,15 @@ class EdgeDisplay:
         if self._view is None:
             return None
         msg = copy.deepcopy(self._view)
-        self._view = None
+        # self._view = None
         image = process_image(msg, self._observation_sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, self._observation_sensor_stats)
-        return cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        return cv2.cvtColor(image, cv2.COLOR_RGB2BGR) if isinstance(msg, Image) else image
 
     def _process_mask(self):
         if self._mask is None:
             return None
         msg = copy.deepcopy(self._mask)
-        self._mask = None
+        # self._mask = None
         image = process_image(msg, self._mask_sensor_stats) if isinstance(msg, Image) else process_compressed_image(msg, self._mask_sensor_stats)        
         self._certainty = np.mean(image[::10, ::10])
         image -= image.min()
