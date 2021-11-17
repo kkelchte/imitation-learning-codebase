@@ -91,7 +91,8 @@ class Actor:
             msg.header.frame_id = "agent"
             msg.point = Point(prediction[0], prediction[1], prediction[2])
         else:
-            msg = adapt_action_to_twist(Action(name='agent', value=prediction))        
+            msg = Twist()
+            msg.linear.x, msg.linear.y, msg.linear.z, msg.angular.z = tuple(prediction)     
         self._prediction_publisher.publish(msg)
 
     def _update(self):
@@ -124,24 +125,31 @@ class Actor:
 
 
 if __name__ == '__main__':
-    # REDLINE
+    # REDLINE 0.0
+    task = 'waypoints'
+    target = 'red_line'
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
+    batch_norm = False
+    enhance_brightness = True
+
+    # BLUE LINE WAYPOINTS
     # task = 'waypoints'
-    # target = 'red_line'
+    # target = 'line'
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
     # batch_norm = False
     # enhance_brightness = True
 
-    # REDLINE PRETRAIN
-    task = 'pretrain'
-    target = 'red_line'
-    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/red_line/deep_supervision_reference')
-    batch_norm = False
-    enhance_brightness = True
+    # BLUE LINE VELOCITIES
+    # task = 'velocities'
+    # target = 'line'
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
+    # batch_norm = False
+    # enhance_brightness = True
 
     # GATE PRETRAIN
-    # task = 'pretrain'
+    # task = 'waypoints'
     # target = 'gate'
-    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/gate/deep_supervision_comb_blur_brightness_hue_bn')
+    # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/gate/deep_supervision_comb_blur_brightness_hue_bn/waypoints')
     # batch_norm = True
     # enhance_brightness = True
 
