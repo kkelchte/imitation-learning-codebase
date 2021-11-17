@@ -126,18 +126,18 @@ class Actor:
 
 if __name__ == '__main__':
     # REDLINE 0.0
-    task = 'waypoints'
-    target = 'red_line'
-    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
-    batch_norm = False
-    enhance_brightness = True
-
-    # BLUE LINE WAYPOINTS
     # task = 'waypoints'
-    # target = 'line'
+    # target = 'red_line'
     # ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
     # batch_norm = False
     # enhance_brightness = True
+
+    # BLUE LINE WAYPOINTS
+    task = 'waypoints'
+    target = 'line'
+    ckpt = os.path.join(os.environ['HOME'], 'code/contrastive-learning/data/down_stream', task, target, '1e-05')
+    batch_norm = False
+    enhance_brightness = True
 
     # BLUE LINE VELOCITIES
     # task = 'velocities'
