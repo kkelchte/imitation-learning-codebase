@@ -171,7 +171,8 @@
   </library_effects>
   <library_images>
     <image id="green_sq_png" name="green_sq_png">
-      <init_from>green_sq.png</init_from>
+      <!-- <init_from>green_sq.png</init_from> -->
+      <init_from>square.png</init_from>
     </image>
     <image id="mdf_jpg" name="mdf_jpg">
       <init_from>mdf.jpg</init_from>
