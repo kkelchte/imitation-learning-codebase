@@ -12,13 +12,14 @@ from std_msgs.msg import Empty
 import numpy as np
 import rospy
 from geometry_msgs.msg import Twist, PointStamped, Point
+from nav_msgs.msg import Odometry
 from std_msgs.msg import String, Float32MultiArray, Empty
 from sensor_msgs.msg import Image
 from scipy.interpolate import interp1d
 import fgbg
 
 from src.core.data_types import Action
-from src.sim.ros.src.utils import process_image, adapt_action_to_twist
+from src.sim.ros.src.utils import process_image, adapt_action_to_twist, process_odometry
 from src.sim.ros.python3_ros_ws.src.imitation_learning_ros_package.rosnodes.fsm import Fsm, FsmState
 
 class Datasaver:
@@ -34,6 +35,10 @@ class Datasaver:
         rospy.Subscriber(name=rospy.get_param(f'/robot/camera_sensor/topic'),
                          data_class=eval(rospy.get_param(f'/robot/camera_sensor/type')),
                          callback=self._camera_callback)
+        rospy.Subscriber(name=rospy.get_param(f'/robot/position_sensor/topic'),
+                         data_class=eval(rospy.get_param(f'/robot/position_sensor/type')),
+                         callback=self._position_callback)
+        self._last_odom = None
         # fsm state
         rospy.Subscriber(name='/fsm/state',
                          data_class=String,
@@ -55,7 +60,7 @@ class Datasaver:
 
     def _reset(self):
         self._episode_id += 1
-        self._hdf5_data = {"observation": []}
+        self._hdf5_data = {"observation": [], "odometry": []}
 
     def _set_fsm_state(self, msg: String):
         if self._fsm_state == FsmState.Running and FsmState[msg.data] == FsmState.TakenOver:
@@ -64,12 +69,16 @@ class Datasaver:
         if self._fsm_state != FsmState[msg.data]:
             self._fsm_state = FsmState[msg.data]        
             print(f'set state to {self._fsm_state}')
-            
+
+    def _position_callback(self, msg: Odometry):
+        self._last_odom = process_odometry(msg)
+
     def _camera_callback(self, msg: Image):
         image = process_image(msg, {'height': 200, 'width': 200, 'depth': 3})
         if self._fsm_state == FsmState.Running:
             # store previous observation
             self._hdf5_data["observation"].append(deepcopy(image))
+            self._hdf5_data["odometry"].append(deepcopy(self._last_odom))
 
     def run(self):
         rate = rospy.Rate(100)
@@ -78,8 +87,7 @@ class Datasaver:
 
 
 if __name__ == '__main__':
-    target = 'cone'
-    output_directory = f'{os.environ["HOME"]}/code/contrastive-learning/data/datasets/bebop_real_movies/{target}'
+    output_directory = f'{os.environ["HOME"]}/code/imitation-learning-codebase/experimental_data/calibrate_camera/0_0_5_roll_0.785'
     os.makedirs(output_directory, exist_ok=True)
     print(f"saving in {output_directory}")
     data_saver = Datasaver(output_dir=output_directory)

@@ -1,0 +1,17 @@
+material psi_logo
+{
+  technique
+  {
+    pass
+    {
+      lighting off
+      texture_unit
+      {
+        texture poster-psi-drone-logo.png
+        filtering none none none
+        scale 1.0 1.0
+      }
+    }
+  }
+}
+

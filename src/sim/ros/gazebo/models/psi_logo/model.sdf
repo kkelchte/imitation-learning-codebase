@@ -1,0 +1,23 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='psi_logo'>
+    <link name='main'>
+    <pose frame=''>0 0 0 0 0 0</pose>
+      <visual name='main_Visual'>
+        <geometry>
+          <box>
+            <size>0.350479 0.25 0.001</size>
+          </box>
+        </geometry>
+           <material>
+          <script>
+            <uri>model://psi_logo/materials/scripts</uri>
+            <uri>model://psi_logo/materials/textures</uri>
+            <name>psi_logo</name>
+          </script>
+        </material>
+      </visual>
+     </link>
+    <static>1</static>
+  </model>
+</sdf>

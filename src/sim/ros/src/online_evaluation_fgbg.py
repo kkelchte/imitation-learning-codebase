@@ -27,18 +27,19 @@ from src.sim.ros.src.utils import (
 
 WORLD = "gate_cone_line_realistic"
 # WORLD = "gate_cone_line"
-# TARGET = 'cone'  # cone gate line
-TARGET = argv[1]
-# DS_TASK = "velocities"  # 'waypoints'  # 'velocities'
-DS_TASK = argv[2]
-NUMBER = 5
-BATCHNORM = True
+TARGET = 'line'  # cone gate line
+# TARGET = argv[1]
+DS_TASK = "waypoints"  # 'waypoints'  # 'velocities'
+# DS_TASK = argv[2]
+CONFIG = 'baseline'
+NUMBER = 10
+BATCHNORM = False
 CHECKPOINT = os.path.join(
     os.environ["HOME"],
-    "code/contrastive-learning/data/down_stream",
-    DS_TASK,
+    # "code/contrastive-learning/data/down_stream",
+    "code/imitation-learning-codebase/experimental_data",
     TARGET,
-    "best",
+    CONFIG
 )
 OUTPUTDIR = CHECKPOINT + "/online_eval"
 # OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/ds_eval/{WORLD}/{DS_TASK}/{TARGET}"

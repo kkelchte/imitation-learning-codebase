@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<launch>
+    <!--######################## GENERAL ########################-->
+    <arg name="random_seed" default="1234"/>
+    <param name="random_seed" value="$(arg random_seed)"/>
+    <arg name="output_path" default="experimental_data/calibrate_camera"/>
+    <param name="output_path" value="$(arg output_path)"/>
+    <arg name="world_name" default="calibrate_logo"/>
+    
+    <!--######################## GAZEBO ########################-->
+    <arg name="gazebo" default="true"/>
+    <group if="$(arg gazebo)">
+        <include file="$(find imitation_learning_ros_package)/launch/gazebo.launch">
+            <arg name="world_name" value="$(env CODEDIR)/src/sim/ros/gazebo/worlds/$(arg world_name).world"/>
+            <arg name="gui" value="true"/>
+            <arg name="headless" default="true"/>
+            <arg name="paused" default="false"/>
+        </include>
+    </group>
+
+    <!--######################## ROBOTS ########################-->
+    <arg name="robot_name" default="drone_sim_down_cam"/>
+    <rosparam command="load" file="$(env CODEDIR)/src/sim/ros/config/robot/$(arg robot_name).yml" ns="robot"/>
+
+    <arg name="x_pos" default="0"/>
+    <arg name="y_pos" default="0"/>
+    <arg name="z_pos" default="0."/>
+    <arg name="yaw_or" default="0"/>
+    <arg name="starting_height" default="1"/>
+    <param name="/starting_height" value="$(arg starting_height)"/>
+
+    <group if="$(eval arg('robot_name') == 'drone_sim_down_cam' or arg('robot_name') == 'drone_sim_forward_cam' or arg('robot_name') == 'drone_sim')">
+        <arg name="model_name" default="$(arg robot_name)"/>
+        <!-- Spawn simulated quadrotor uav -->
+        <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
+            <!-- Note: do not change quadrotor model with model argument as then pose estimation fails to start and /ground_truth/state will not be published on which fsm.py depends to start the simulation.-->
+            <arg name="x" value="$(arg x_pos)"/>
+            <arg name="y" value="$(arg y_pos)"/>
+            <arg name="z" value="$(arg z_pos)"/>
+            <arg name="Y" default="$(arg yaw_or)"/>
+            <arg name="model" default="$(env CODEDIR)/src/sim/ros/gazebo/urdf/$(arg model_name).gazebo.xacro"/>
+        </include>
+    </group>
+
+    <!--######################## HELPER NODES ########################-->
+    <arg name="fsm" default="true"/>
+    <arg name="fsm_mode" default="TakeOverRun"/>
+    <param name="/fsm/mode" value="$(arg fsm_mode)"/>
+    <group if="$(arg fsm)">
+        <node pkg="imitation_learning_ros_package"
+              name="fsm"
+              type="fsm.py"
+              output="screen"/>
+    </group>
+
+    <arg name="control_mapping" default="true"/>
+    <arg name="control_mapping_config" default="keyboard"/>
+    <rosparam command="load"
+                  file="$(env CODEDIR)/src/sim/ros/config/control_mapping/$(arg control_mapping_config).yml"
+                  ns="control_mapping"/>
+    <group if="$(arg control_mapping)">
+        <node pkg="imitation_learning_ros_package"
+              name="control_mapping"
+              type="control_mapping.py"
+              output="screen"
+              launch-prefix="bash -c 'sleep 6; $0 $@' "/>
+    </group>
+
+
+    <!--######################## ACTOR NODES ########################-->
+    <arg name="keyboard" default="true"/>
+    <group if="$(arg keyboard)">
+        <arg name="keyboard_config_file_path_with_extension"
+             default="$(env CODEDIR)/src/sim/ros/config/actor/keyboard_$(arg robot_name).yml"/>
+        <rosparam command="load"
+                  file="$(arg keyboard_config_file_path_with_extension)"
+                  ns="/actor/keyboard"/>
+        <node pkg="imitation_learning_ros_package"
+              name="teleop_twist_keyboard"
+              type="teleop_twist_keyboard.py"
+              output="screen"
+              ns="/actor/keyboard"/>
+    </group>
+
+</launch>
