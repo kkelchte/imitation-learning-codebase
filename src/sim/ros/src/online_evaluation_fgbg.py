@@ -31,7 +31,7 @@ TARGET = 'line'  # cone gate line
 # TARGET = argv[1]
 DS_TASK = "waypoints"  # 'waypoints'  # 'velocities'
 # DS_TASK = argv[2]
-CONFIG = 'baseline'
+CONFIG = 'deep_supervision_triplet'
 NUMBER = 10
 BATCHNORM = False
 CHECKPOINT = os.path.join(
@@ -41,7 +41,7 @@ CHECKPOINT = os.path.join(
     TARGET,
     CONFIG
 )
-OUTPUTDIR = CHECKPOINT + "/online_eval"
+OUTPUTDIR = CHECKPOINT + "/tmp"
 # OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/ds_eval/{WORLD}/{DS_TASK}/{TARGET}"
 os.makedirs(OUTPUTDIR, exist_ok=True)
 
@@ -133,15 +133,15 @@ def dump(json_data, hdf5_data, output_dir):
 
     # store trajectory
     os.makedirs(os.path.join(output_dir, "trajectories"), exist_ok=True)
-    fgbg.draw_trajectory(
-        os.path.join(output_dir, "trajectories", str(episode_id) + ".jpg"),
-        json_data["global_target_location"][0],
-        json_data["global_drone_pose"],
-    )
-    fgbg.create_trajectory_gif(
-        os.path.join(output_dir, "trajectories", str(episode_id) + "_observation.gif"),
-        list(hdf5_data["observation"]),
-    )
+    # fgbg.draw_trajectory(
+    #     os.path.join(output_dir, "trajectories", str(episode_id) + ".jpg"),
+    #     json_data["global_target_location"][0],
+    #     json_data["global_drone_pose"],
+    # )
+    # fgbg.create_trajectory_gif(
+    #     os.path.join(output_dir, "trajectories", str(episode_id) + "_observation.gif"),
+    #     list(hdf5_data["observation"]),
+    # )
     return len(stored_data.keys())
 
 
@@ -244,6 +244,7 @@ if __name__ == "__main__":
                 else None,
                 waypoint=output if DS_TASK == "waypoints" else None,
             )
+            import pdb; pdb.set_trace()
             loss = save(
                 reference_pos, experience, json_data, hdf5_data, prediction=output
             )
@@ -266,5 +267,6 @@ if __name__ == "__main__":
         f.write(f"Success rate: {np.mean(successes)}\n")
         f.write(f"RMSE: {np.mean(losses)}\n")
         f.write(f"RMSE std: {np.std(losses)}\n")
+        f.write(f"& {np.mean(losses):.4f} ({np.std(losses):.3f}) & {np.sum(successes)} / {len(successes)}\n")
     print(f"finished {environment.remove()}")
 
