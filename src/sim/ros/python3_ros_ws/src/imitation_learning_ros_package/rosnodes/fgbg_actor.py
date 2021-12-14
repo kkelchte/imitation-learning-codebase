@@ -133,13 +133,14 @@ if __name__ == '__main__':
     # enhance_brightness = True
 
     # BLUE LINE WAYPOINTS
-    task = 'waypoints'
+    task = 'velocities' # 'waypoints'
     target = 'line'
     # ckpt = os.path.join(os.environ['HOME'], 'code/imitation-learning-codebase/experimental_data/line/baseline')
     # ckpt = os.path.join(os.environ['HOME'], 'code/imitation-learning-codebase/experimental_data/line/deep_supervision')
-    ckpt = os.path.join(os.environ['HOME'], 'code/imitation-learning-codebase/experimental_data/line/deep_supervision_triplet')
+    # ckpt = os.path.join(os.environ['HOME'], 'code/imitation-learning-codebase/experimental_data/line/deep_supervision_triplet')
+    ckpt = os.path.join(os.environ['HOME'], 'code/imitation-learning-codebase/experimental_data/line/deep_supervision_triplet_velocities')
     batch_norm = False
-    enhance_brightness = False
+    enhance_brightness = True
 
     # BLUE LINE VELOCITIES
     # task = 'velocities'

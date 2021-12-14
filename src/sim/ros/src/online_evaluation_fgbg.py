@@ -29,18 +29,19 @@ WORLD = "gate_cone_line_realistic"
 # WORLD = "gate_cone_line"
 TARGET = 'line'  # cone gate line
 # TARGET = argv[1]
-DS_TASK = "waypoints"  # 'waypoints'  # 'velocities'
+DS_TASK = "velocities"  # 'waypoints'  # 'velocities'
 # DS_TASK = argv[2]
 CONFIG = 'deep_supervision_triplet'
 NUMBER = 10
 BATCHNORM = False
-CHECKPOINT = os.path.join(
-    os.environ["HOME"],
-    # "code/contrastive-learning/data/down_stream",
-    "code/imitation-learning-codebase/experimental_data",
-    TARGET,
-    CONFIG
-)
+CHECKPOINT = "/home/kkelchte/code/imitation-learning-codebase/experimental_data/line/deep_supervision_triplet_velocities"
+# CHECKPOINT = os.path.join(
+#     os.environ["HOME"],
+#     # "code/contrastive-learning/data/down_stream",
+#     "code/imitation-learning-codebase/experimental_data",
+#     TARGET,
+#     CONFIG
+# )
 OUTPUTDIR = CHECKPOINT + "/tmp"
 # OUTPUTDIR = f"{os.environ['HOME']}/code/contrastive-learning/data/ds_eval/{WORLD}/{DS_TASK}/{TARGET}"
 os.makedirs(OUTPUTDIR, exist_ok=True)
@@ -244,7 +245,6 @@ if __name__ == "__main__":
                 else None,
                 waypoint=output if DS_TASK == "waypoints" else None,
             )
-            import pdb; pdb.set_trace()
             loss = save(
                 reference_pos, experience, json_data, hdf5_data, prediction=output
             )
