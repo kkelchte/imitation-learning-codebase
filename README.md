@@ -1,9 +1,11 @@
 # imitation-learning-codebase overview
-integrated code base for future imitation learning projects
+integrated code base for imitation learning projects
+
+Installation with ROS environment is defined in /rosenvironment by a singularity definition file installing all dependencies. For only using the pytorch AI code, installing in the virtualenvironment defined in /virtualenvironment should be enough. 
+The Makefile are better used as references rather than blindly using it with make as sourcing or activitating environments are not conveniently done in a make command.
 
 ### /rosenvironment 
-Directory contains the definition file of the singularity container as well as the build instructions in the make file, 
-assuming a build on a macbook.
+Directory contains the definition file of the singularity container as well as the build instructions in the make file.
 
 ### /virtualenvironment
 Directory contains python virtual environment which requires to be sourced to run python scripts.
